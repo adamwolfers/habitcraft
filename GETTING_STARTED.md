@@ -123,8 +123,8 @@ psql -d habittracker -f shared/database/schema.sql
 
 ### 3. Choose Your Development Path
 
-**Path A: Continue Node.js Backend**
-- Implement database connection
+**Path A: Continue Node.js Backend** ✅ Database Connection Complete!
+- ✅ Implement database connection (COMPLETED - see `backends/node/db/`)
 - Add user authentication
 - Implement CRUD endpoints
 - Follow the TDD approach
