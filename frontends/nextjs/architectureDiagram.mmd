@@ -1,0 +1,65 @@
+graph TB
+    subgraph "Client Layer"
+        WebApp[Web Application<br/>React/Vue/Angular]
+        MobileApp[Mobile App<br/>iOS/Android]
+    end
+
+    subgraph "API Gateway Layer"
+        Gateway[API Gateway<br/>Load Balancer<br/>Rate Limiting]
+    end
+
+    subgraph "Application Layer"
+        Auth[Authentication Service<br/>JWT/OAuth]
+        UserAPI[User Management API<br/>Profile & Settings]
+        HabitAPI[Habit Tracking API<br/>CRUD Operations]
+        AnalyticsAPI[Analytics API<br/>Statistics & Insights]
+        NotificationAPI[Notification Service<br/>Reminders]
+    end
+
+    subgraph "Data Layer"
+        PrimaryDB[(Primary Database<br/>PostgreSQL/MySQL<br/>User & Habit Data)]
+        CacheDB[(Cache Layer<br/>Redis<br/>Session & Temp Data)]
+        FileStore[File Storage<br/>S3/Cloud Storage<br/>Profile Images]
+    end
+
+    subgraph "External Services"
+        EmailService[Email Service<br/>SendGrid/SES]
+        PushService[Push Notifications<br/>FCM/APNS]
+    end
+
+    WebApp --> Gateway
+    MobileApp --> Gateway
+    
+    Gateway --> Auth
+    Gateway --> UserAPI
+    Gateway --> HabitAPI
+    Gateway --> AnalyticsAPI
+    Gateway --> NotificationAPI
+    
+    Auth --> PrimaryDB
+    Auth --> CacheDB
+    
+    UserAPI --> PrimaryDB
+    UserAPI --> FileStore
+    
+    HabitAPI --> PrimaryDB
+    HabitAPI --> CacheDB
+    
+    AnalyticsAPI --> PrimaryDB
+    AnalyticsAPI --> CacheDB
+    
+    NotificationAPI --> EmailService
+    NotificationAPI --> PushService
+    NotificationAPI --> PrimaryDB
+    
+    style WebApp fill:#e1f5ff
+    style MobileApp fill:#e1f5ff
+    style Gateway fill:#fff4e1
+    style Auth fill:#f0e1ff
+    style UserAPI fill:#f0e1ff
+    style HabitAPI fill:#f0e1ff
+    style AnalyticsAPI fill:#f0e1ff
+    style NotificationAPI fill:#f0e1ff
+    style PrimaryDB fill:#e1ffe1
+    style CacheDB fill:#e1ffe1
+    style FileStore fill:#e1ffe1

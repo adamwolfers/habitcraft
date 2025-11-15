@@ -1,0 +1,182 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:14-alpine
+    container_name: habittracker-db
+    environment:
+      POSTGRES_DB: habittracker
+      POSTGRES_USER: habituser
+      POSTGRES_PASSWORD: habitpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./shared/database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - habittracker-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habituser -d habittracker"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js Backend
+  backend-node:
+    build:
+      context: ./backends/node
+      dockerfile: Dockerfile
+    container_name: habittracker-backend-node
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      JWT_SECRET: your-secret-key-change-in-production
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backends/node:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - habittracker-network
+    command: npm run dev
+
+  # Python Backend (FastAPI)
+  backend-python:
+    build:
+      context: ./backends/python
+      dockerfile: Dockerfile
+    container_name: habittracker-backend-python
+    environment:
+      ENVIRONMENT: development
+      PORT: 3001
+      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      JWT_SECRET: your-secret-key-change-in-production
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backends/python:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - habittracker-network
+    command: uvicorn main:app --host 0.0.0.0 --port 3001 --reload
+
+  # Go Backend
+  backend-go:
+    build:
+      context: ./backends/golang
+      dockerfile: Dockerfile
+    container_name: habittracker-backend-go
+    environment:
+      ENVIRONMENT: development
+      PORT: 3002
+      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      JWT_SECRET: your-secret-key-change-in-production
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./backends/golang:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - habittracker-network
+
+  # Java Backend (Spring Boot)
+  backend-java:
+    build:
+      context: ./backends/java
+      dockerfile: Dockerfile
+    container_name: habittracker-backend-java
+    environment:
+      SPRING_PROFILES_ACTIVE: development
+      SERVER_PORT: 3003
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/habittracker
+      SPRING_DATASOURCE_USERNAME: habituser
+      SPRING_DATASOURCE_PASSWORD: habitpass
+      JWT_SECRET: your-secret-key-change-in-production
+    ports:
+      - "3003:3003"
+    volumes:
+      - ./backends/java:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - habittracker-network
+
+  # Next.js Frontend
+  frontend-nextjs:
+    build:
+      context: ./frontends/nextjs
+      dockerfile: Dockerfile
+    container_name: habittracker-frontend-nextjs
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+    ports:
+      - "3100:3000"
+    volumes:
+      - ./frontends/nextjs:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - habittracker-network
+    command: npm run dev
+
+  # React SPA Frontend
+  frontend-react:
+    build:
+      context: ./frontends/react
+      dockerfile: Dockerfile
+    container_name: habittracker-frontend-react
+    environment:
+      REACT_APP_API_URL: http://localhost:3000/api/v1
+    ports:
+      - "3101:3000"
+    volumes:
+      - ./frontends/react:/app
+      - /app/node_modules
+    networks:
+      - habittracker-network
+    command: npm start
+
+  # Vue.js Frontend
+  frontend-vue:
+    build:
+      context: ./frontends/vue
+      dockerfile: Dockerfile
+    container_name: habittracker-frontend-vue
+    environment:
+      VITE_API_URL: http://localhost:3000/api/v1
+    ports:
+      - "3102:3000"
+    volumes:
+      - ./frontends/vue:/app
+      - /app/node_modules
+    networks:
+      - habittracker-network
+    command: npm run dev
+
+  # Adminer - Database management UI
+  adminer:
+    image: adminer:latest
+    container_name: habittracker-adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - habittracker-network
+    depends_on:
+      - postgres
+
+networks:
+  habittracker-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
