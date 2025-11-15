@@ -99,6 +99,7 @@ cp .env.example .env
 ### 2. Set Up Database ✅ COMPLETED
 
 Using Docker (recommended):
+
 ```bash
 # Start just the database
 docker-compose up postgres
@@ -110,9 +111,11 @@ docker-compose up -d postgres
 **Status:** PostgreSQL 14.20 running in Docker with schema loaded (users, habits, completions tables)
 
 **View Database:** Adminer is running at http://localhost:8080
+
 - Login with: habituser / habitpass / habittracker
 
 Manual setup:
+
 ```bash
 # Create database
 createdb habittracker
@@ -124,22 +127,30 @@ psql -d habittracker -f shared/database/schema.sql
 ### 3. Choose Your Development Path
 
 **Path A: Continue Node.js Backend** ✅ Database Connection Complete!
+
 - ✅ Implement database connection (COMPLETED - see `backends/node/db/`)
+- Implement habit creation endpoint
+- Implement habit read endpoint
+- Implement habit update endpoint
+- Implement habit delete endpoint
 - Add user authentication
 - Implement CRUD endpoints
 - Follow the TDD approach
 
 **Path B: Explore Next.js Frontend**
+
 - Review the existing implementation
 - Connect to a backend API
 - Customize the UI
 
 **Path C: Start Another Backend**
+
 - Choose Python, Go, or Java
 - Follow the same API spec
 - Compare implementation approaches
 
 **Path D: Start Another Frontend**
+
 - Choose React or Vue
 - Implement the same features
 - Compare framework approaches
@@ -175,18 +186,21 @@ npm test
 ### API Documentation
 
 The OpenAPI specification is available at:
+
 - File: `shared/api-spec/openapi.yaml`
 - View online: Use [Swagger Editor](https://editor.swagger.io/) and paste the file contents
 
 ## Learning Resources
 
 Each backend/frontend directory has its own README with:
+
 - Tech stack details
 - Installation instructions
 - Development commands
 - Project structure
 
 Check these files:
+
 - `backends/node/README.md`
 - `backends/python/README.md`
 - `backends/golang/README.md`
