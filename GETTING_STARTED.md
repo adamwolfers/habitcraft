@@ -85,7 +85,7 @@ habittracker_fullstack/
 
 ## Next Steps
 
-### 1. Set Up Environment Variables
+### 1. Set Up Environment Variables ✅ COMPLETED
 
 ```bash
 # Copy the example env file
@@ -94,7 +94,9 @@ cp .env.example .env
 # Edit .env and update with your values (especially JWT_SECRET)
 ```
 
-### 2. Set Up Database
+**Status:** `.env` file created with secure JWT_SECRET
+
+### 2. Set Up Database ✅ COMPLETED
 
 Using Docker (recommended):
 ```bash
@@ -104,6 +106,11 @@ docker-compose up postgres
 # Or start it in the background
 docker-compose up -d postgres
 ```
+
+**Status:** PostgreSQL 14.20 running in Docker with schema loaded (users, habits, completions tables)
+
+**View Database:** Adminer is running at http://localhost:8080
+- Login with: habituser / habitpass / habittracker
 
 Manual setup:
 ```bash
