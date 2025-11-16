@@ -6,6 +6,54 @@ const { mockAuthMiddleware } = require('../middleware/mockAuth');
 const router = express.Router();
 
 /**
+ * GET /api/v1/habits
+ * Get all habits for the authenticated user
+ */
+router.get('/', mockAuthMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId; // Set by mockAuthMiddleware
+    const { status } = req.query; // Optional status filter
+
+    // Build query based on filter
+    let queryText = `
+      SELECT
+        id,
+        user_id as "userId",
+        name,
+        description,
+        frequency,
+        target_days as "targetDays",
+        color,
+        icon,
+        status,
+        created_at as "createdAt",
+        updated_at as "updatedAt"
+      FROM habits
+      WHERE user_id = $1
+    `;
+    const queryParams = [userId];
+
+    // Add status filter if provided
+    if (status) {
+      queryText += ' AND status = $2';
+      queryParams.push(status);
+    }
+
+    queryText += ' ORDER BY created_at ASC';
+
+    const result = await query(queryText, queryParams);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Error fetching habits:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: 'Failed to fetch habits',
+      statusCode: 500
+    });
+  }
+});
+
+/**
  * POST /api/v1/habits
  * Create a new habit
  */
