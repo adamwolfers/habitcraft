@@ -142,6 +142,10 @@ psql -d habittracker -f shared/database/schema.sql
 - Implement habit delete endpoint (DELETE /api/v1/habits/:id)
 - Replace mock auth with real JWT authentication
 - Continue following the TDD approach
+- **TODO:** Add acceptance/integration tests that test against real database
+  - Current tests use mocks for fast unit testing
+  - Need end-to-end tests to verify actual database integration
+  - Consider using a separate test database or test containers
 
 **Path B: Explore Next.js Frontend**
 
