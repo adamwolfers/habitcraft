@@ -1,6 +1,10 @@
 const express = require('express');
 const { query } = require('./db/pool');
+const habitsRouter = require('./routes/habits');
 const app = express();
+
+// Middleware
+app.use(express.json());
 
 app.get('/hello', (req, res) => {
   res.json({ message: 'Hello World!' });
@@ -27,5 +31,8 @@ app.get('/health', async (req, res) => {
     res.status(503).json(health);
   }
 });
+
+// API routes
+app.use('/api/v1/habits', habitsRouter);
 
 module.exports = app;

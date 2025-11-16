@@ -32,6 +32,11 @@ services:
       NODE_ENV: development
       PORT: 3000
       DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: habittracker
+      DB_USER: habituser
+      DB_PASSWORD: habitpass
       JWT_SECRET: your-secret-key-change-in-production
     ports:
       - "3000:3000"

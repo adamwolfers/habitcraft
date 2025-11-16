@@ -126,16 +126,18 @@ psql -d habittracker -f shared/database/schema.sql
 
 ### 3. Choose Your Development Path
 
-**Path A: Continue Node.js Backend** ✅ Database Connection Complete!
+**Path A: Continue Node.js Backend** ✅ Database Connection & Habit Creation Complete!
 
 - ✅ Implement database connection (COMPLETED - see `backends/node/db/`)
-- Implement habit creation endpoint
-- Implement habit read endpoint
-- Implement habit update endpoint
-- Implement habit delete endpoint
-- Add user authentication
-- Implement CRUD endpoints
-- Follow the TDD approach
+- ✅ Implement habit creation endpoint (COMPLETED - see `backends/node/routes/habits.js`)
+  - Mock authentication middleware using X-User-Id header
+  - Comprehensive input validation
+  - 9 passing tests following TDD approach
+- Implement habit read endpoint (GET /api/v1/habits)
+- Implement habit update endpoint (PUT /api/v1/habits/:id)
+- Implement habit delete endpoint (DELETE /api/v1/habits/:id)
+- Replace mock auth with real JWT authentication
+- Continue following the TDD approach
 
 **Path B: Explore Next.js Frontend**
 
