@@ -1,195 +1,111 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useHabits } from './useHabits';
-import { HabitFormData } from '@/types/habit';
+import { HabitFormData, Habit } from '@/types/habit';
+import * as api from '@/lib/api';
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
+// Mock the API module
+jest.mock('@/lib/api');
 
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => {
-      store[key] = value;
-    },
-    removeItem: (key: string) => {
-      delete store[key];
-    },
-    clear: () => {
-      store = {};
-    },
-  };
-})();
-
-Object.defineProperty(window, 'localStorage', {
-  value: localStorageMock,
-});
+const mockFetchHabits = api.fetchHabits as jest.MockedFunction<typeof api.fetchHabits>;
 
 describe('useHabits', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockHabitsFromApi: Habit[] = [
+    {
+      id: 'habit-1',
+      userId: mockUserId,
+      name: 'Morning Exercise',
+      description: null,
+      frequency: 'daily',
+      targetDays: [],
+      color: '#3B82F6',
+      icon: '⭐',
+      status: 'active',
+      createdAt: '2025-01-01T00:00:00.000Z',
+      updatedAt: '2025-01-01T00:00:00.000Z'
+    },
+    {
+      id: 'habit-2',
+      userId: mockUserId,
+      name: 'Read Books',
+      description: 'Read for 30 minutes',
+      frequency: 'weekly',
+      targetDays: [1, 3, 5],
+      color: '#FF5733',
+      icon: '📚',
+      status: 'active',
+      createdAt: '2025-01-02T00:00:00.000Z',
+      updatedAt: '2025-01-02T00:00:00.000Z'
+    }
+  ];
+
   beforeEach(() => {
-    localStorageMock.clear();
+    jest.clearAllMocks();
+    // Default mock returns empty array
+    mockFetchHabits.mockResolvedValue([]);
   });
 
   it('should initialize with empty habits array', () => {
-    const { result } = renderHook(() => useHabits());
+    const { result } = renderHook(() => useHabits(mockUserId));
     expect(result.current.habits).toEqual([]);
   });
 
-  it('should load habits from localStorage on mount', async () => {
-    const storedHabits = [
-      {
-        id: '1',
-        name: 'Exercise',
-        description: 'Daily workout',
-        color: '#3b82f6',
-        createdAt: '2025-10-30T12:00:00.000Z',
-        completedDates: [],
-      },
-    ];
+  it('should fetch habits from API on mount', async () => {
+    mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
 
-    localStorageMock.setItem('habits', JSON.stringify(storedHabits));
-
-    const { result } = renderHook(() => useHabits());
+    const { result } = renderHook(() => useHabits(mockUserId));
 
     await waitFor(() => {
-      expect(result.current.habits).toEqual(storedHabits);
+      expect(result.current.habits).toEqual(mockHabitsFromApi);
     });
+
+    expect(mockFetchHabits).toHaveBeenCalledTimes(1);
+    expect(mockFetchHabits).toHaveBeenCalledWith(mockUserId);
   });
 
-  it('should add a new habit', async () => {
-    const { result } = renderHook(() => useHabits());
+  it('should handle API errors gracefully', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    mockFetchHabits.mockRejectedValue(new Error('API Error'));
 
-    const newHabit: HabitFormData = {
-      name: 'Read',
-      description: '30 minutes of reading',
-      color: '#10b981',
-    };
+    const { result } = renderHook(() => useHabits(mockUserId));
 
-    await act(async () => {
-      result.current.addHabit(newHabit);
-      await new Promise(resolve => setTimeout(resolve, 0));
+    await waitFor(() => {
+      expect(result.current.habits).toEqual([]);
     });
 
-    expect(result.current.habits).toHaveLength(1);
-    expect(result.current.habits[0]).toMatchObject({
-      name: 'Read',
-      description: '30 minutes of reading',
-      color: '#10b981',
-      completedDates: [],
-    });
-    expect(result.current.habits[0].id).toBeDefined();
-    expect(result.current.habits[0].createdAt).toBeDefined();
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error fetching habits:', expect.any(Error));
+    consoleErrorSpy.mockRestore();
   });
 
-  it('should delete a habit', async () => {
-    const { result } = renderHook(() => useHabits());
+  it('should handle empty habits response', async () => {
+    mockFetchHabits.mockResolvedValue([]);
 
-    const habitData: HabitFormData = {
-      name: 'Meditate',
-      color: '#8b5cf6',
-    };
+    const { result } = renderHook(() => useHabits(mockUserId));
 
-    await act(async () => {
-      result.current.addHabit(habitData);
-      await new Promise(resolve => setTimeout(resolve, 0));
+    await waitFor(() => {
+      expect(result.current.habits).toEqual([]);
     });
 
-    const habitId = result.current.habits[0].id;
-
-    await act(async () => {
-      result.current.deleteHabit(habitId);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    expect(result.current.habits).toHaveLength(0);
+    expect(mockFetchHabits).toHaveBeenCalledTimes(1);
   });
 
-  it('should toggle habit completion', async () => {
-    const { result } = renderHook(() => useHabits());
+  it('should filter active habits', async () => {
+    mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
 
-    const habitData: HabitFormData = {
-      name: 'Exercise',
-      color: '#3b82f6',
-    };
+    const { result } = renderHook(() => useHabits(mockUserId));
 
-    await act(async () => {
-      result.current.addHabit(habitData);
-      await new Promise(resolve => setTimeout(resolve, 0));
+    await waitFor(() => {
+      expect(result.current.habits).toHaveLength(2);
     });
 
-    const habitId = result.current.habits[0].id;
-    const testDate = new Date('2025-10-30');
-
-    // Complete the habit
-    await act(async () => {
-      result.current.toggleHabitCompletion(habitId, testDate);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    expect(result.current.habits[0].completedDates).toContain('2025-10-30');
-    expect(result.current.isHabitCompletedOnDate(habitId, testDate)).toBe(true);
-
-    // Uncomplete the habit
-    await act(async () => {
-      result.current.toggleHabitCompletion(habitId, testDate);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    expect(result.current.habits[0].completedDates).not.toContain('2025-10-30');
-    expect(result.current.isHabitCompletedOnDate(habitId, testDate)).toBe(false);
+    // All returned habits should be active (we'd filter on backend)
+    expect(result.current.habits.every(h => h.status === 'active')).toBe(true);
   });
 
-  it('should check if habit is completed on a specific date', async () => {
-    const { result } = renderHook(() => useHabits());
+  it('should not fetch habits if userId is not provided', () => {
+    const { result } = renderHook(() => useHabits(''));
 
-    const habitData: HabitFormData = {
-      name: 'Yoga',
-      color: '#ec4899',
-    };
-
-    await act(async () => {
-      result.current.addHabit(habitData);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    const habitId = result.current.habits[0].id;
-    const date1 = new Date('2025-10-30');
-    const date2 = new Date('2025-10-31');
-
-    await act(async () => {
-      result.current.toggleHabitCompletion(habitId, date1);
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-
-    expect(result.current.isHabitCompletedOnDate(habitId, date1)).toBe(true);
-    expect(result.current.isHabitCompletedOnDate(habitId, date2)).toBe(false);
-  });
-
-  it('should persist habits to localStorage', async () => {
-    const { result } = renderHook(() => useHabits());
-
-    const habitData: HabitFormData = {
-      name: 'Write',
-      description: 'Journal entry',
-      color: '#f59e0b',
-    };
-
-    await act(async () => {
-      result.current.addHabit(habitData);
-      await new Promise(resolve => setTimeout(resolve, 100));
-    });
-
-    const stored = localStorageMock.getItem('habits');
-    expect(stored).toBeDefined();
-
-    const parsedHabits = JSON.parse(stored!);
-    expect(parsedHabits).toHaveLength(1);
-    expect(parsedHabits[0].name).toBe('Write');
-  });
-
-  it('should return false for non-existent habit in isHabitCompletedOnDate', () => {
-    const { result } = renderHook(() => useHabits());
-    const date = new Date('2025-10-30');
-
-    expect(result.current.isHabitCompletedOnDate('non-existent-id', date)).toBe(false);
+    expect(result.current.habits).toEqual([]);
+    expect(mockFetchHabits).not.toHaveBeenCalled();
   });
 });

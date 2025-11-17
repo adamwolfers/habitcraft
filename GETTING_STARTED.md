@@ -26,9 +26,9 @@ curl http://localhost:3000/hello
 # Should return: {"message":"Hello World!"}
 ```
 
-### Option 2: Next.js Frontend (Fully Implemented)
+### Option 2: Next.js Frontend (Connected to Backend API)
 
-The Next.js frontend is fully implemented and ready to use.
+The Next.js frontend is connected to the Node.js backend API.
 
 ```bash
 # 1. Navigate to the Next.js frontend
@@ -37,10 +37,14 @@ cd frontends/nextjs
 # 2. Install dependencies (if not already done)
 npm install
 
-# 3. Start the development server
+# 3. Copy environment variables
+cp .env.example .env.local
+
+# 4. Start the development server
 npm run dev
 
-# 4. Open browser to http://localhost:3000
+# 5. Open browser to http://localhost:3000
+# Note: Make sure the backend is running on port 3000
 ```
 
 ### Option 3: Full Stack with Docker
@@ -64,12 +68,12 @@ docker-compose up postgres backend-node frontend-nextjs
 ```
 habittracker_fullstack/
 ├── backends/              # Multiple backend implementations
-│   ├── node/             # ✅ Node.js (Hello World implemented)
+│   ├── node/             # ✅ Node.js (CRUD endpoints + CORS)
 │   ├── python/           # 📅 Planned
 │   ├── golang/           # 📅 Planned
 │   └── java/             # 📅 Planned
 ├── frontends/            # Multiple frontend implementations
-│   ├── nextjs/           # ✅ Fully implemented
+│   ├── nextjs/           # ✅ Connected to backend API
 │   ├── react/            # 📅 Planned
 │   └── vue/              # 📅 Planned
 ├── infrastructure/       # Deployment configs
@@ -126,10 +130,10 @@ psql -d habittracker -f shared/database/schema.sql
 
 ### 3. Choose Your Development Path
 
-**Path A: Continue Node.js Backend** ✅ Database Connection & Habit Creation Complete!
+**Path A: Continue Node.js Backend** ✅ CRUD Read Operations Complete!
 
 - ✅ Implement database connection (COMPLETED - see `backends/node/db/`)
-- ✅ Implement habit creation endpoint (COMPLETED - see `backends/node/routes/habits.js`)
+- ✅ Implement habit creation endpoint (COMPLETED - POST /api/v1/habits)
   - Mock authentication middleware using X-User-Id header
   - Comprehensive input validation
   - 9 passing tests following TDD approach
@@ -138,20 +142,44 @@ psql -d habittracker -f shared/database/schema.sql
   - Supports optional status filter (active/archived)
   - User isolation (only returns user's own habits)
   - 6 passing tests following TDD approach
-- Implement habit update endpoint (PUT /api/v1/habits/:id)
-- Implement habit delete endpoint (DELETE /api/v1/habits/:id)
-- Replace mock auth with real JWT authentication
-- Continue following the TDD approach
+- ✅ Add CORS support (COMPLETED - see `backends/node/app.js`)
+  - Enables frontend to call backend from different port
+  - Required for Next.js (localhost:3100) to call API (localhost:3000)
+- 📋 Implement habit update endpoint (PUT /api/v1/habits/:id)
+- 📋 Implement habit delete endpoint (DELETE /api/v1/habits/:id)
+- 📋 Implement completions endpoints (POST/GET /api/v1/habits/:id/completions)
+- 📋 Replace mock auth with real JWT authentication
+- 📋 Continue following the TDD approach
 - **TODO:** Add acceptance/integration tests that test against real database
   - Current tests use mocks for fast unit testing
   - Need end-to-end tests to verify actual database integration
   - Consider using a separate test database or test containers
 
-**Path B: Explore Next.js Frontend**
+**Path B: Next.js Frontend Integration** ✅ Connected to Backend!
 
-- Review the existing implementation
-- Connect to a backend API
-- Customize the UI
+- ✅ Connect frontend to backend API (COMPLETED - TDD approach)
+  - Created API client service (`frontends/nextjs/lib/api.ts`)
+  - 7 passing unit tests for API client
+  - Updated type definitions to match backend schema
+  - Updated useHabits hook to fetch from API instead of localStorage
+  - 6 passing unit tests for useHabits hook
+  - Environment variable configuration for API base URL
+- ✅ Display habits from database (COMPLETED)
+  - Shows frequency, status, target days, icons
+  - Read-only view of habits from backend
+- 📋 Implement habit creation in frontend (POST to API)
+  - Connect AddHabitForm to POST /api/v1/habits endpoint
+  - Update useHabits to support creating habits
+  - Add tests for creation flow
+- 📋 Implement habit deletion in frontend (DELETE from API)
+  - Add delete functionality to useHabits hook
+  - Add tests for deletion flow
+- 📋 Add loading states and error handling to UI
+  - Show loading spinner while fetching
+  - Display user-friendly error messages
+- 📋 Implement completion tracking (requires completions API endpoint)
+  - Track daily habit completions
+  - Calculate streaks from completion data
 
 **Path C: Start Another Backend**
 
@@ -184,13 +212,20 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend
+# Node.js backend (15 tests)
 cd backends/node
 npm test
 
-# Next.js frontend
+# Run specific test file
+npm test -- routes/habits.test.js
+
+# Next.js frontend (13 tests)
 cd frontends/nextjs
 npm test
+
+# Run specific test file
+npm test -- lib/api.test.ts
+npm test -- hooks/useHabits.test.ts
 ```
 
 ### API Documentation
@@ -241,6 +276,46 @@ docker-compose logs postgres
 
 # Verify connection
 psql postgresql://habituser:habitpass@localhost:5432/habittracker -c "SELECT 1"
+```
+
+### CORS Issues (Frontend Can't Access Backend)
+
+If the frontend shows "No habits found" but the backend has data:
+
+```bash
+# 1. Verify backend has CORS enabled
+curl -i http://localhost:3000/hello | grep "Access-Control"
+# Should show: Access-Control-Allow-Origin: *
+
+# 2. Check browser console for CORS errors
+# Open DevTools (F12) → Console tab
+
+# 3. Verify backend is accessible
+curl -H "X-User-Id: 123e4567-e89b-12d3-a456-426614174000" \
+  http://localhost:3000/api/v1/habits
+
+# 4. If CORS header is missing, restart backend
+docker-compose restart backend-node
+```
+
+### Creating Test Data
+
+```bash
+# Create a test user first
+docker exec habittracker-db psql -U habituser -d habittracker -c \
+  "INSERT INTO users (id, email, password_hash, name) VALUES \
+  ('123e4567-e89b-12d3-a456-426614174000', 'demo@example.com', 'hash', 'Demo User');"
+
+# Create test habits via API
+curl -X POST http://localhost:3000/api/v1/habits \
+  -H "Content-Type: application/json" \
+  -H "X-User-Id: 123e4567-e89b-12d3-a456-426614174000" \
+  -d '{
+    "name": "Morning Exercise",
+    "frequency": "daily",
+    "color": "#3B82F6",
+    "icon": "🏃"
+  }'
 ```
 
 ## Contributing to This Project

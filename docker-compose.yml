@@ -123,7 +123,9 @@ services:
       dockerfile: Dockerfile
     container_name: habittracker-frontend-nextjs
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
+      # Note: This URL is accessed from the browser, not from the container
+      # So we use localhost (host machine) not backend-node (container network)
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
     ports:
       - "3100:3000"
     volumes:
