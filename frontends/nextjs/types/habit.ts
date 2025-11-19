@@ -20,3 +20,11 @@ export interface HabitFormData {
   color?: string;
   icon?: string;
 }
+
+export interface Completion {
+  id: string;
+  habitId: string;
+  date: string; // YYYY-MM-DD format
+  notes: string | null;
+  createdAt: string;
+}

@@ -1,5 +1,5 @@
-import { fetchHabits } from './api';
-import { Habit } from '@/types/habit';
+import { fetchHabits, fetchCompletions, createCompletion, deleteCompletion } from './api';
+import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -141,5 +141,236 @@ describe('fetchHabits', () => {
     });
 
     await expect(fetchHabits(mockUserId)).rejects.toThrow('Invalid JSON');
+  });
+});
+
+describe('fetchCompletions', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockHabitId = 'habit-123';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  const mockCompletions: Completion[] = [
+    {
+      id: 'completion-1',
+      habitId: mockHabitId,
+      date: '2025-01-15',
+      notes: 'Great session',
+      createdAt: '2025-01-15T10:00:00.000Z'
+    },
+    {
+      id: 'completion-2',
+      habitId: mockHabitId,
+      date: '2025-01-14',
+      notes: null,
+      createdAt: '2025-01-14T10:00:00.000Z'
+    }
+  ];
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should fetch completions successfully', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockCompletions
+    });
+
+    const result = await fetchCompletions(mockUserId, mockHabitId);
+
+    expect(result).toEqual(mockCompletions);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': mockUserId
+        }
+      }
+    );
+  });
+
+  it('should fetch completions with date range', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [mockCompletions[0]]
+    });
+
+    const result = await fetchCompletions(mockUserId, mockHabitId, '2025-01-10', '2025-01-15');
+
+    expect(result).toEqual([mockCompletions[0]]);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions?startDate=2025-01-10&endDate=2025-01-15`,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'X-User-Id': mockUserId
+        })
+      })
+    );
+  });
+
+  it('should return empty array when no completions exist', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => []
+    });
+
+    const result = await fetchCompletions(mockUserId, mockHabitId);
+
+    expect(result).toEqual([]);
+  });
+
+  it('should throw error when API returns error', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404
+    });
+
+    await expect(fetchCompletions(mockUserId, mockHabitId)).rejects.toThrow('Failed to fetch completions: 404');
+  });
+});
+
+describe('createCompletion', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockHabitId = 'habit-123';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should create a completion successfully', async () => {
+    const mockCompletion: Completion = {
+      id: 'completion-1',
+      habitId: mockHabitId,
+      date: '2025-01-15',
+      notes: 'Completed 30 minutes',
+      createdAt: '2025-01-15T10:00:00.000Z'
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => mockCompletion
+    });
+
+    const result = await createCompletion(mockUserId, mockHabitId, '2025-01-15', 'Completed 30 minutes');
+
+    expect(result).toEqual(mockCompletion);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': mockUserId
+        },
+        body: JSON.stringify({
+          date: '2025-01-15',
+          notes: 'Completed 30 minutes'
+        })
+      }
+    );
+  });
+
+  it('should create a completion without notes', async () => {
+    const mockCompletion: Completion = {
+      id: 'completion-1',
+      habitId: mockHabitId,
+      date: '2025-01-15',
+      notes: null,
+      createdAt: '2025-01-15T10:00:00.000Z'
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => mockCompletion
+    });
+
+    const result = await createCompletion(mockUserId, mockHabitId, '2025-01-15');
+
+    expect(result).toEqual(mockCompletion);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
+      expect.objectContaining({
+        body: JSON.stringify({ date: '2025-01-15' })
+      })
+    );
+  });
+
+  it('should throw error when creation fails', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 409
+    });
+
+    await expect(createCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow('Failed to create completion: 409');
+  });
+});
+
+describe('deleteCompletion', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockHabitId = 'habit-123';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should delete a completion successfully', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 204
+    });
+
+    await deleteCompletion(mockUserId, mockHabitId, '2025-01-15');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions/2025-01-15`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': mockUserId
+        }
+      }
+    );
+  });
+
+  it('should throw error when deletion fails', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404
+    });
+
+    await expect(deleteCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow('Failed to delete completion: 404');
   });
 });
