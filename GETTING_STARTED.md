@@ -147,7 +147,13 @@ psql -d habittracker -f shared/database/schema.sql
   - Required for Next.js (localhost:3100) to call API (localhost:3000)
 - 📋 Implement habit update endpoint (PUT /api/v1/habits/:id)
 - 📋 Implement habit delete endpoint (DELETE /api/v1/habits/:id)
-- 📋 Implement completions endpoints (POST/GET /api/v1/habits/:id/completions)
+- ✅ Implement completions endpoints (COMPLETED - TDD approach)
+  - POST /api/v1/habits/:habitId/completions - Create completion
+  - GET /api/v1/habits/:habitId/completions - Get completions (with date filtering)
+  - DELETE /api/v1/habits/:habitId/completions/:date - Remove completion
+  - 17 passing tests for completions API
+  - Validates habit ownership and date formats
+  - Handles duplicate completions (409 Conflict)
 - 📋 Replace mock auth with real JWT authentication
 - 📋 Continue following the TDD approach
 - **TODO:** Add acceptance/integration tests that test against real database
@@ -214,12 +220,13 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend (27 tests)
+# Node.js backend (44 tests)
 cd backends/node
 npm test
 
 # Run specific test file
 npm test -- routes/habits.test.js
+npm test -- routes/completions.test.js
 
 # Next.js frontend (48 tests passing)
 cd frontends/nextjs

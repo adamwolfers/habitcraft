@@ -2,6 +2,7 @@ const express = require('express');
 const { query } = require('../db/pool');
 const { validateHabitInput } = require('../validators/habitValidator');
 const { mockAuthMiddleware } = require('../middleware/mockAuth');
+const completionsRouter = require('./completions');
 
 const router = express.Router();
 
@@ -101,5 +102,8 @@ router.post('/', mockAuthMiddleware, validateHabitInput, async (req, res) => {
     });
   }
 });
+
+// Mount completions router
+router.use('/:habitId/completions', completionsRouter);
 
 module.exports = router;
