@@ -167,10 +167,12 @@ psql -d habittracker -f shared/database/schema.sql
 - ✅ Display habits from database (COMPLETED)
   - Shows frequency, status, target days, icons
   - Read-only view of habits from backend
-- 📋 Implement habit creation in frontend (POST to API)
-  - Connect AddHabitForm to POST /api/v1/habits endpoint
-  - Update useHabits to support creating habits
-  - Add tests for creation flow
+- ✅ Implement habit creation in frontend (COMPLETED - TDD approach)
+  - Connected AddHabitForm to POST /api/v1/habits endpoint
+  - Implemented createHabit API function (`frontends/nextjs/lib/api.ts`)
+  - Updated useHabits hook to support creating habits
+  - 9 passing unit tests for useHabits hook (including 3 new createHabit tests)
+  - Habits immediately appear in UI after creation without refresh
 - 📋 Implement habit deletion in frontend (DELETE from API)
   - Add delete functionality to useHabits hook
   - Add tests for deletion flow
@@ -212,14 +214,14 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend (15 tests)
+# Node.js backend (27 tests)
 cd backends/node
 npm test
 
 # Run specific test file
 npm test -- routes/habits.test.js
 
-# Next.js frontend (13 tests)
+# Next.js frontend (48 tests passing)
 cd frontends/nextjs
 npm test
 

@@ -1,13 +1,22 @@
 'use client';
 
 import { useHabits } from '@/hooks/useHabits';
+import AddHabitForm from '@/components/AddHabitForm';
 import Footer from '@/components/Footer';
+import { HabitFormData } from '@/types/habit';
 
 // TODO: Replace with real authentication
 const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export default function Home() {
-  const { habits } = useHabits(MOCK_USER_ID);
+  const { habits, createHabit } = useHabits(MOCK_USER_ID);
+
+  const handleAddHabit = async (habitData: HabitFormData) => {
+    await createHabit({
+      ...habitData,
+      frequency: 'daily', // Default to daily for now
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
@@ -20,6 +29,8 @@ export default function Home() {
         </header>
 
         <div className="space-y-6">
+          <AddHabitForm onAdd={handleAddHabit} />
+
           {habits.length === 0 ? (
             <div className="text-center py-16 text-gray-400">
               <svg
@@ -35,8 +46,7 @@ export default function Home() {
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                 />
               </svg>
-              <p className="text-lg">No habits found in database</p>
-              <p className="text-sm mt-2">User ID: {MOCK_USER_ID}</p>
+              <p className="text-lg">No habits yet. Add your first habit to get started!</p>
             </div>
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
