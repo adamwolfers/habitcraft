@@ -179,15 +179,26 @@ psql -d habittracker -f shared/database/schema.sql
   - Updated useHabits hook to support creating habits
   - 9 passing unit tests for useHabits hook (including 3 new createHabit tests)
   - Habits immediately appear in UI after creation without refresh
+- ✅ Implement completions API client (COMPLETED - TDD approach)
+  - fetchCompletions, createCompletion, deleteCompletion functions
+  - Added Completion type definition
+  - 9 new passing tests for completions API
+  - Total: 16 API tests passing (7 habits + 9 completions)
+  - Supports date range filtering
+- 📋 Implement completion tracking in useHabits hook
+  - Add toggleCompletion and fetchCompletions to hook
+  - Add tests for completion tracking flow
+  - Calculate streaks from completion data
+- 📋 Restore full HabitCard UI with completion tracking
+  - Daily completion toggles (last 7 days)
+  - Streak calculation and display
+  - Visual completion indicators
 - 📋 Implement habit deletion in frontend (DELETE from API)
   - Add delete functionality to useHabits hook
   - Add tests for deletion flow
 - 📋 Add loading states and error handling to UI
   - Show loading spinner while fetching
   - Display user-friendly error messages
-- 📋 Implement completion tracking (requires completions API endpoint)
-  - Track daily habit completions
-  - Calculate streaks from completion data
 
 **Path C: Start Another Backend**
 
