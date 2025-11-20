@@ -151,7 +151,11 @@ psql -d habittracker -f shared/database/schema.sql
   - Enables frontend to call backend from different port
   - Required for Next.js (localhost:3100) to call API (localhost:3000)
 - 📋 Implement habit update endpoint (PUT /api/v1/habits/:id)
-- 📋 Implement habit delete endpoint (DELETE /api/v1/habits/:id)
+- ✅ Implement habit delete endpoint (COMPLETED - DELETE /api/v1/habits/:id)
+  - Validates habit ID format
+  - Enforces user ownership (users can only delete their own habits)
+  - Returns 204 on success, 404 if not found, 400 for invalid format
+  - 6 passing tests following TDD approach
 - ✅ Implement completions endpoints (COMPLETED - TDD approach)
   - POST /api/v1/habits/:habitId/completions - Create completion
   - GET /api/v1/habits/:habitId/completions - Get completions (with date filtering)
@@ -242,7 +246,7 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend (44 tests)
+# Node.js backend (50 tests)
 cd backends/node
 npm test
 

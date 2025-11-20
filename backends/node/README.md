@@ -4,17 +4,18 @@ Node.js + Express implementation of the Habit Tracker API.
 
 ## Status
 
-🚧 **In Progress** - Core features implemented, authentication and some CRUD operations remaining
+🚧 **In Progress** - Most habit CRUD operations complete (missing update)
 
 ### Completed
 - [x] Project setup with npm
-- [x] Testing framework (Jest + Supertest) - 44 tests passing
+- [x] Testing framework (Jest + Supertest) - 50 tests passing
 - [x] Hello World endpoint with tests
 - [x] Database connection (PostgreSQL with pg pool)
 - [x] Mock authentication (X-User-Id header for development)
 - [x] CORS support for frontend integration
 - [x] Habit creation endpoint (POST /api/v1/habits)
 - [x] Habit read endpoint (GET /api/v1/habits with status filtering)
+- [x] Habit delete endpoint (DELETE /api/v1/habits/:id)
 - [x] Completion tracking - all 3 endpoints:
   - POST /api/v1/habits/:habitId/completions
   - GET /api/v1/habits/:habitId/completions (with date filtering)
@@ -23,7 +24,7 @@ Node.js + Express implementation of the Habit Tracker API.
 ### In Progress / TODO
 - [ ] Real JWT authentication (currently using mock X-User-Id header)
 - [ ] Habit update endpoint (PUT /api/v1/habits/:id)
-- [ ] Habit delete endpoint (DELETE /api/v1/habits/:id)
+- [ ] Habit get by ID endpoint (GET /api/v1/habits/:id)
 - [ ] Statistics calculation endpoint
 - [ ] Integration tests with real database
 - [ ] API documentation endpoint (Swagger UI)
@@ -34,7 +35,7 @@ Node.js + Express implementation of the Habit Tracker API.
 - **Framework**: Express.js 5
 - **Language**: JavaScript (CommonJS)
 - **Database**: PostgreSQL with pg (node-postgres)
-- **Testing**: Jest + Supertest (44 tests passing)
+- **Testing**: Jest + Supertest (50 tests passing)
 - **CORS**: cors middleware
 - **Environment**: dotenv
 - **Authentication**: Mock (X-User-Id header) - JWT planned
@@ -101,6 +102,7 @@ See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for full API
 **Habits:**
 - `POST /api/v1/habits` - Create habit (requires X-User-Id header)
 - `GET /api/v1/habits` - List habits (supports ?status=active|archived filter)
+- `DELETE /api/v1/habits/:id` - Delete habit (enforces user ownership)
 
 **Completions:**
 - `POST /api/v1/habits/:habitId/completions` - Mark habit complete for a date
@@ -113,10 +115,9 @@ See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for full API
 - `POST /auth/register` - User registration with JWT
 - `POST /auth/login` - User login with JWT
 - `GET /users/me` - Get current user profile
-- `GET /habits/:id` - Get single habit by ID
-- `PUT /habits/:id` - Update habit
-- `DELETE /habits/:id` - Delete habit
-- `GET /habits/:id/statistics` - Get habit statistics (streaks, completion rate, etc.)
+- `GET /api/v1/habits/:id` - Get single habit by ID
+- `PUT /api/v1/habits/:id` - Update habit
+- `GET /api/v1/habits/:id/statistics` - Get habit statistics (streaks, completion rate, etc.)
 
 ## Project Structure
 
@@ -147,7 +148,7 @@ backends/node/
 This project follows Test-Driven Development (TDD):
 
 ```bash
-# Run all tests (44 tests passing)
+# Run all tests (50 tests passing)
 npm test
 
 # Run tests in watch mode
@@ -163,9 +164,9 @@ npm test -- db/pool.test.js
 - App configuration: 4 tests
 - Database pool: 6 tests
 - Database config: 5 tests
-- Habit endpoints: 15 tests
+- Habit endpoints: 21 tests (including 6 for DELETE)
 - Completion endpoints: 17 tests
-- **Total: 44 tests passing**
+- **Total: 50 tests passing**
 
 ## Docker
 

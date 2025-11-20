@@ -433,3 +433,96 @@ describe('GET /api/v1/habits', () => {
     expect(query).not.toHaveBeenCalled();
   });
 });
+
+describe('DELETE /api/v1/habits/:id', () => {
+  const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
+  const HABIT_ID = 'habit-123';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    await closePool();
+  });
+
+  it('should successfully delete a habit that belongs to the user', async () => {
+    // Mock successful deletion (rowCount 1 means one row was deleted)
+    query.mockResolvedValue({ rows: [], rowCount: 1 });
+
+    const response = await request(app)
+      .delete(`/api/v1/habits/${HABIT_ID}`)
+      .set('X-User-Id', TEST_USER_ID)
+      .expect(204);
+
+    expect(response.body).toEqual({});
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('DELETE FROM habits'),
+      [HABIT_ID, TEST_USER_ID]
+    );
+  });
+
+  it('should return 404 if habit does not exist', async () => {
+    // Mock no rows deleted
+    query.mockResolvedValue({ rows: [], rowCount: 0 });
+
+    const response = await request(app)
+      .delete(`/api/v1/habits/${HABIT_ID}`)
+      .set('X-User-Id', TEST_USER_ID)
+      .expect(404);
+
+    expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toContain('not found');
+    expect(query).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return 404 when trying to delete another user\'s habit', async () => {
+    // Mock no rows deleted (because WHERE clause includes user_id)
+    query.mockResolvedValue({ rows: [], rowCount: 0 });
+
+    const response = await request(app)
+      .delete(`/api/v1/habits/${HABIT_ID}`)
+      .set('X-User-Id', TEST_USER_ID)
+      .expect(404);
+
+    expect(response.body).toHaveProperty('error');
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE id = $1 AND user_id = $2'),
+      [HABIT_ID, TEST_USER_ID]
+    );
+  });
+
+  it('should return 401 if user ID is not provided', async () => {
+    const response = await request(app)
+      .delete(`/api/v1/habits/${HABIT_ID}`)
+      .expect(401);
+
+    expect(response.body).toHaveProperty('error');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('should return 400 if habit ID is invalid format', async () => {
+    const invalidId = 'invalid@id!';
+
+    const response = await request(app)
+      .delete(`/api/v1/habits/${invalidId}`)
+      .set('X-User-Id', TEST_USER_ID)
+      .expect(400);
+
+    expect(response.body).toHaveProperty('error');
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('should handle database errors gracefully', async () => {
+    query.mockRejectedValue(new Error('Database connection failed'));
+
+    const response = await request(app)
+      .delete(`/api/v1/habits/${HABIT_ID}`)
+      .set('X-User-Id', TEST_USER_ID)
+      .expect(500);
+
+    expect(response.body).toHaveProperty('error');
+    expect(response.body.error).toBe('Internal server error');
+  });
+});

@@ -139,14 +139,33 @@ MIT License - feel free to use this for your own learning!
 
 ## Roadmap
 
-- [x] Node.js backend - Hello World API with TDD
-- [x] Next.js frontend - Full implementation
-- [ ] Complete Node.js backend with full CRUD operations
+### Backend - Node.js
+- [x] Hello World API with TDD
+- [x] Database connection and configuration
+- [x] Mock authentication (X-User-Id header)
+- [x] Habit Create endpoint (POST /api/v1/habits)
+- [x] Habit Read endpoint (GET /api/v1/habits)
+- [ ] Habit Update endpoint (PUT /api/v1/habits/:id)
+- [x] Habit Delete endpoint (DELETE /api/v1/habits/:id)
+- [x] Completions tracking (Create, Read, Delete)
+- [ ] JWT authentication
+- [ ] Statistics endpoint
+
+### Frontend - Next.js
+- [x] Full implementation with API integration
+- [x] Habit display and creation
+- [x] Completion tracking
+
+### Other Backends
 - [ ] Python backend implementation
 - [ ] Go backend implementation
 - [ ] Java backend implementation
+
+### Other Frontends
 - [ ] React SPA implementation
 - [ ] Vue.js implementation
+
+### Infrastructure
 - [ ] Docker Compose configuration
 - [ ] CI/CD pipelines
 - [ ] Terraform infrastructure
