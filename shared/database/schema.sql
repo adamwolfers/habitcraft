@@ -85,16 +85,12 @@ FROM habits h
 LEFT JOIN completions c ON h.id = c.habit_id
 GROUP BY h.id, h.user_id, h.name;
 
--- Sample data for development (optional - comment out for production)
--- INSERT INTO users (id, email, password_hash, name) VALUES
--- ('123e4567-e89b-12d3-a456-426614174000', 'demo@example.com', '$2b$10$...', 'Demo User');
-
 -- Comments for documentation
 COMMENT ON TABLE users IS 'Stores user account information';
 COMMENT ON TABLE habits IS 'Stores user habits to track';
 COMMENT ON TABLE completions IS 'Records when habits are completed';
 
-COMMENT ON COLUMN habits.frequency IS 'How often the habit should be done: daily, weekly, or custom';
+COMMENT ON COLUMN habits.frequency IS 'How often the habit should be done: daily or weekly';
 COMMENT ON COLUMN habits.target_days IS 'For weekly habits: array of day numbers (0=Sunday, 6=Saturday)';
 COMMENT ON COLUMN habits.color IS 'Hex color code for UI display';
 COMMENT ON COLUMN habits.icon IS 'Emoji or icon identifier for UI display';

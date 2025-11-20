@@ -22,7 +22,7 @@ This directory contains the shared database schema used by all backend implement
    - id (UUID, primary key)
    - user_id (foreign key to users)
    - name, description
-   - frequency (daily, weekly, custom)
+   - frequency (daily, weekly)
    - target_days (array for weekly schedules)
    - color, icon (UI customization)
    - status (active, archived)
@@ -41,9 +41,31 @@ This directory contains the shared database schema used by all backend implement
 users (1) ──< (N) habits (1) ──< (N) completions
 ```
 
+## Files
+
+- **schema.sql** - Database schema definition (tables, indexes, triggers, views)
+- **seed.sql** - Development seed data (demo user and sample habits)
+
+The seed data is automatically loaded when using docker-compose and includes:
+- Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`, email: `demo@example.com`)
+- Sample habits for testing
+
 ## Usage
 
-### Creating the Database
+### Automated Setup (Recommended)
+
+When using docker-compose (from project root), the database is automatically initialized with schema and seed data:
+
+```bash
+docker-compose up postgres
+```
+
+This will:
+1. Create the database with schema (01-schema.sql)
+2. Load seed data with demo user and sample habits (02-seed.sql)
+3. Make the app immediately usable for testing
+
+### Creating the Database Manually
 
 ```bash
 # Connect to PostgreSQL

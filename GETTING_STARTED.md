@@ -112,11 +112,16 @@ docker-compose up postgres
 docker-compose up -d postgres
 ```
 
-**Status:** PostgreSQL 14.20 running in Docker with schema loaded (users, habits, completions tables)
+**Status:** PostgreSQL 14.20 running in Docker with:
+- ✅ Schema loaded (users, habits, completions tables)
+- ✅ Seed data loaded automatically:
+  - Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`)
+  - 3 sample habits (Morning Exercise, Read Books, Meditation)
 
 **View Database:** Adminer is running at http://localhost:8080
 
 - Login with: habituser / habitpass / habittracker
+- Demo user email: demo@example.com
 
 Manual setup:
 
@@ -324,15 +329,17 @@ curl -H "X-User-Id: 123e4567-e89b-12d3-a456-426614174000" \
 docker-compose restart backend-node
 ```
 
-### Creating Test Data
+### Working with the Demo User
+
+The database is automatically seeded with a demo user on first startup:
+- **User ID:** `123e4567-e89b-12d3-a456-426614174000`
+- **Email:** demo@example.com
+- **Sample Habits:** 3 pre-created habits
+
+All API requests in development use the `X-User-Id` header for authentication:
 
 ```bash
-# Create a test user first
-docker exec habittracker-db psql -U habituser -d habittracker -c \
-  "INSERT INTO users (id, email, password_hash, name) VALUES \
-  ('123e4567-e89b-12d3-a456-426614174000', 'demo@example.com', 'hash', 'Demo User');"
-
-# Create test habits via API
+# Create additional test habits via API
 curl -X POST http://localhost:3000/api/v1/habits \
   -H "Content-Type: application/json" \
   -H "X-User-Id: 123e4567-e89b-12d3-a456-426614174000" \
