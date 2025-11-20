@@ -10,15 +10,19 @@ import { HabitFormData } from '@/types/habit';
 const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export default function Home() {
-  const { habits, createHabit, toggleCompletion, isHabitCompletedOnDate } = useHabits(MOCK_USER_ID);
+  const { habits, createHabit, toggleCompletion, isHabitCompletedOnDate, deleteHabit } = useHabits(MOCK_USER_ID);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
     await createHabit(habitData);
   };
 
-  const handleDeleteHabit = (habitId: string) => {
-    // TODO: Implement delete functionality
-    console.log('Delete habit:', habitId);
+  const handleDeleteHabit = async (habitId: string) => {
+    try {
+      await deleteHabit(habitId);
+    } catch (error) {
+      console.error('Failed to delete habit:', error);
+      // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
+    }
   };
 
   return (

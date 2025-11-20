@@ -208,9 +208,16 @@ psql -d habittracker -f shared/database/schema.sql
   - Click to toggle completion status
   - Fully integrated with backend API
   - Fixed timezone handling for date parsing
-- 📋 Implement habit deletion in frontend (DELETE from API)
-  - Add delete functionality to useHabits hook
-  - Add tests for deletion flow
+- ✅ Implement habit deletion in frontend (COMPLETED - TDD approach)
+  - Implemented deleteHabit API function (`frontends/nextjs/lib/api.ts`)
+  - Added deleteHabit function to useHabits hook
+  - Wired delete button to UI in page.tsx
+  - Removes habit from local state
+  - Removes associated completions when habit is deleted
+  - 12 new passing tests (4 API + 4 hook + 4 page tests)
+  - Total: 72 frontend tests passing
+  - Proper error handling for delete failures (400, 401, 404)
+  - Delete button integrated into HabitCard component
 - 📋 Add loading states and error handling to UI
   - Show loading spinner while fetching
   - Display user-friendly error messages
@@ -254,13 +261,14 @@ npm test
 npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
 
-# Next.js frontend (60 tests passing)
+# Next.js frontend (72 tests passing)
 cd frontends/nextjs
 npm test
 
 # Run specific test file
 npm test -- lib/api.test.ts
 npm test -- hooks/useHabits.test.ts
+npm test -- app/page.test.tsx
 ```
 
 ### API Documentation
