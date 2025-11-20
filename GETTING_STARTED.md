@@ -1,6 +1,6 @@
-# Getting Started with Habit Tracker
+# Getting Started with HabitCraft
 
-Quick start guide for the Habit Tracker polyglot learning project.
+Quick start guide for the HabitCraft polyglot learning project.
 
 ## Quick Start Options
 
@@ -120,17 +120,17 @@ docker-compose up -d postgres
 
 **View Database:** Adminer is running at http://localhost:8080
 
-- Login with: habituser / habitpass / habittracker
+- Login with: habituser / habitpass / habitcraft
 - Demo user email: demo@example.com
 
 Manual setup:
 
 ```bash
 # Create database
-createdb habittracker
+createdb habitcraft
 
 # Run schema
-psql -d habittracker -f shared/database/schema.sql
+psql -d habitcraft -f shared/database/schema.sql
 ```
 
 ### 3. Choose Your Development Path
@@ -240,10 +240,10 @@ psql -d habittracker -f shared/database/schema.sql
 
 ```bash
 # Access database with psql
-psql postgresql://habituser:habitpass@localhost:5432/habittracker
+psql postgresql://habituser:habitpass@localhost:5432/habitcraft
 
 # View schema
-psql postgresql://habituser:habitpass@localhost:5432/habittracker -c "\dt"
+psql postgresql://habituser:habitpass@localhost:5432/habitcraft -c "\dt"
 
 # Use Adminer (web UI)
 docker-compose up adminer
@@ -318,7 +318,7 @@ docker-compose ps
 docker-compose logs postgres
 
 # Verify connection
-psql postgresql://habituser:habitpass@localhost:5432/habittracker -c "SELECT 1"
+psql postgresql://habituser:habitpass@localhost:5432/habitcraft -c "SELECT 1"
 ```
 
 ### CORS Issues (Frontend Can't Access Backend)

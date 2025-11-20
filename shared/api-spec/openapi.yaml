@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Habit Tracker API
+  title: HabitCraft API
   description: |
-    REST API specification for the Habit Tracker application.
+    REST API specification for the HabitCraft application.
     All backend implementations should follow this specification.
   version: 1.0.0
   contact:
@@ -13,7 +13,7 @@ info:
 servers:
   - url: http://localhost:3000/api/v1
     description: Local development server
-  - url: https://api.habittracker.example.com/v1
+  - url: https://api.habitcraft.example.com/v1
     description: Production server
 
 tags:

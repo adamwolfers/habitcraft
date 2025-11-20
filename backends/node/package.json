@@ -1,7 +1,7 @@
 {
-  "name": "habittracker_backend_node",
+  "name": "habitcraft-backend-node",
   "version": "1.0.0",
-  "description": "",
+  "description": "HabitCraft Node.js backend API",
   "main": "index.js",
   "scripts": {
     "start": "node server.js",

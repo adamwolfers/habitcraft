@@ -1,12 +1,10 @@
-version: '3.8'
-
 services:
   # PostgreSQL Database
   postgres:
     image: postgres:14-alpine
-    container_name: habittracker-db
+    container_name: habitcraft-db
     environment:
-      POSTGRES_DB: habittracker
+      POSTGRES_DB: habitcraft
       POSTGRES_USER: habituser
       POSTGRES_PASSWORD: habitpass
     ports:
@@ -16,9 +14,9 @@ services:
       - ./shared/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
       - ./shared/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     networks:
-      - habittracker-network
+      - habitcraft-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U habituser -d habittracker"]
+      test: ["CMD-SHELL", "pg_isready -U habituser -d habitcraft"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,14 +26,14 @@ services:
     build:
       context: ./backends/node
       dockerfile: Dockerfile
-    container_name: habittracker-backend-node
+    container_name: habitcraft-backend-node
     environment:
       NODE_ENV: development
       PORT: 3000
-      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habitcraft
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: habittracker
+      DB_NAME: habitcraft
       DB_USER: habituser
       DB_PASSWORD: habitpass
       JWT_SECRET: your-secret-key-change-in-production
@@ -48,7 +46,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - habittracker-network
+      - habitcraft-network
     command: npm run dev
 
   # Python Backend (FastAPI)
@@ -56,11 +54,11 @@ services:
     build:
       context: ./backends/python
       dockerfile: Dockerfile
-    container_name: habittracker-backend-python
+    container_name: habitcraft-backend-python
     environment:
       ENVIRONMENT: development
       PORT: 3001
-      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habitcraft
       JWT_SECRET: your-secret-key-change-in-production
     ports:
       - "3001:3001"
@@ -70,7 +68,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - habittracker-network
+      - habitcraft-network
     command: uvicorn main:app --host 0.0.0.0 --port 3001 --reload
 
   # Go Backend
@@ -78,11 +76,11 @@ services:
     build:
       context: ./backends/golang
       dockerfile: Dockerfile
-    container_name: habittracker-backend-go
+    container_name: habitcraft-backend-go
     environment:
       ENVIRONMENT: development
       PORT: 3002
-      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habittracker
+      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habitcraft
       JWT_SECRET: your-secret-key-change-in-production
     ports:
       - "3002:3002"
@@ -92,18 +90,18 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - habittracker-network
+      - habitcraft-network
 
   # Java Backend (Spring Boot)
   backend-java:
     build:
       context: ./backends/java
       dockerfile: Dockerfile
-    container_name: habittracker-backend-java
+    container_name: habitcraft-backend-java
     environment:
       SPRING_PROFILES_ACTIVE: development
       SERVER_PORT: 3003
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/habittracker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/habitcraft
       SPRING_DATASOURCE_USERNAME: habituser
       SPRING_DATASOURCE_PASSWORD: habitpass
       JWT_SECRET: your-secret-key-change-in-production
@@ -115,14 +113,14 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - habittracker-network
+      - habitcraft-network
 
   # Next.js Frontend
   frontend-nextjs:
     build:
       context: ./frontends/nextjs
       dockerfile: Dockerfile
-    container_name: habittracker-frontend-nextjs
+    container_name: habitcraft-frontend-nextjs
     environment:
       # Note: This URL is accessed from the browser, not from the container
       # So we use localhost (host machine) not backend-node (container network)
@@ -134,7 +132,7 @@ services:
       - /app/node_modules
       - /app/.next
     networks:
-      - habittracker-network
+      - habitcraft-network
     command: npm run dev
 
   # React SPA Frontend
@@ -142,7 +140,7 @@ services:
     build:
       context: ./frontends/react
       dockerfile: Dockerfile
-    container_name: habittracker-frontend-react
+    container_name: habitcraft-frontend-react
     environment:
       REACT_APP_API_URL: http://localhost:3000/api/v1
     ports:
@@ -151,7 +149,7 @@ services:
       - ./frontends/react:/app
       - /app/node_modules
     networks:
-      - habittracker-network
+      - habitcraft-network
     command: npm start
 
   # Vue.js Frontend
@@ -159,7 +157,7 @@ services:
     build:
       context: ./frontends/vue
       dockerfile: Dockerfile
-    container_name: habittracker-frontend-vue
+    container_name: habitcraft-frontend-vue
     environment:
       VITE_API_URL: http://localhost:3000/api/v1
     ports:
@@ -168,22 +166,22 @@ services:
       - ./frontends/vue:/app
       - /app/node_modules
     networks:
-      - habittracker-network
+      - habitcraft-network
     command: npm run dev
 
   # Adminer - Database management UI
   adminer:
     image: adminer:latest
-    container_name: habittracker-adminer
+    container_name: habitcraft-adminer
     ports:
       - "8080:8080"
     networks:
-      - habittracker-network
+      - habitcraft-network
     depends_on:
       - postgres
 
 networks:
-  habittracker-network:
+  habitcraft-network:
     driver: bridge
 
 volumes:

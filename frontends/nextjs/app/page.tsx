@@ -29,7 +29,7 @@ export default function Home() {
     <div className="min-h-screen bg-gray-900 text-white flex flex-col">
       <div className="max-w-7xl mx-auto px-4 py-8 flex-1">
         <header className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Habit Tracker</h1>
+          <h1 className="text-4xl font-bold mb-2">HabitCraft</h1>
           <p className="text-gray-400">
             Connected to Backend API - Viewing habits from database
           </p>

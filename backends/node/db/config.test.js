@@ -17,7 +17,7 @@ describe('Database Config', () => {
       // Check that it reads from env (we know .env exists)
       expect(config.host).toBe(process.env.DB_HOST || 'localhost');
       expect(config.port).toBe(parseInt(process.env.DB_PORT || '5432'));
-      expect(config.database).toBe(process.env.DB_NAME || 'habittracker');
+      expect(config.database).toBe(process.env.DB_NAME || 'habitcraft');
       expect(config.user).toBe(process.env.DB_USER || 'habituser');
     });
 

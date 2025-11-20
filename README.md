@@ -1,10 +1,10 @@
-# Habit Tracker - Full Stack Learning Project
+# HabitCraft - Full Stack Learning Project
 
 A polyglot habit tracking application built with multiple technology stacks for learning and portfolio purposes.
 
 ## Project Overview
 
-This repository demonstrates the implementation of the same habit tracker application using different programming languages and frameworks. Each variant follows the same API specification and data model, making it easy to mix and match frontends with backends.
+This repository demonstrates the implementation of HabitCraft using different programming languages and frameworks. Each variant follows the same API specification and data model, making it easy to mix and match frontends with backends.
 
 ## Project Structure
 
@@ -30,7 +30,7 @@ habittracker_fullstack/
 
 ## Features
 
-The Habit Tracker application includes:
+The HabitCraft application includes:
 
 - User authentication and authorization
 - Create, read, update, delete (CRUD) habits

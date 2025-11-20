@@ -1,6 +1,6 @@
-# Habit Tracker - Node.js Backend
+# HabitCraft - Node.js Backend
 
-Node.js + Express implementation of the Habit Tracker API.
+Node.js + Express implementation of the HabitCraft API.
 
 ## Status
 
@@ -85,7 +85,7 @@ Create a `.env` file in this directory:
 ```env
 NODE_ENV=development
 PORT=3000
-DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habittracker
+DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habitcraft
 JWT_SECRET=your-secret-key-change-in-production
 JWT_EXPIRES_IN=7d
 ```
@@ -172,12 +172,12 @@ npm test -- db/pool.test.js
 
 ```bash
 # Build image
-docker build -t habittracker-node .
+docker build -t habitcraft-node .
 
 # Run container
 docker run -p 3000:3000 \
-  -e DATABASE_URL=postgresql://habituser:habitpass@postgres:5432/habittracker \
-  habittracker-node
+  -e DATABASE_URL=postgresql://habituser:habitpass@postgres:5432/habitcraft \
+  habitcraft-node
 
 # Or use docker-compose from root
 cd ../..

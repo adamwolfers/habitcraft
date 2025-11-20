@@ -72,10 +72,10 @@ This will:
 psql -U postgres
 
 # Create database
-CREATE DATABASE habittracker;
+CREATE DATABASE habitcraft;
 
 # Connect to the database
-\c habittracker
+\c habitcraft
 
 # Run the schema
 \i schema.sql
@@ -85,15 +85,15 @@ CREATE DATABASE habittracker;
 
 ```bash
 # Start PostgreSQL with Docker
-docker run --name habittracker-db \
-  -e POSTGRES_DB=habittracker \
+docker run --name habitcraft-db \
+  -e POSTGRES_DB=habitcraft \
   -e POSTGRES_USER=habituser \
   -e POSTGRES_PASSWORD=habitpass \
   -p 5432:5432 \
   -d postgres:14
 
 # Import schema
-docker exec -i habittracker-db psql -U habituser -d habittracker < schema.sql
+docker exec -i habitcraft-db psql -U habituser -d habitcraft < schema.sql
 ```
 
 ### Migrations
@@ -114,10 +114,10 @@ All backends should use these environment variables for database connection:
 ```env
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=habittracker
+DB_NAME=habitcraft
 DB_USER=habituser
 DB_PASSWORD=habitpass
-DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habittracker
+DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habitcraft
 ```
 
 ## Data Model Diagram
