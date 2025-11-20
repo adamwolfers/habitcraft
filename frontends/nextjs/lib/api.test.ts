@@ -1,4 +1,4 @@
-import { fetchHabits, fetchCompletions, createCompletion, deleteCompletion } from './api';
+import { fetchHabits, fetchCompletions, createCompletion, deleteCompletion, deleteHabit } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -372,5 +372,70 @@ describe('deleteCompletion', () => {
     });
 
     await expect(deleteCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow('Failed to delete completion: 404');
+  });
+});
+
+describe('deleteHabit', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockHabitId = 'habit-123';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should delete a habit successfully', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 204
+    });
+
+    await deleteHabit(mockUserId, mockHabitId);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': mockUserId
+        }
+      }
+    );
+  });
+
+  it('should throw error when deletion fails due to not found', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404
+    });
+
+    await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 404');
+  });
+
+  it('should throw error when deletion fails due to invalid habit ID', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400
+    });
+
+    await expect(deleteHabit(mockUserId, 'invalid-id')).rejects.toThrow('Failed to delete habit: 400');
+  });
+
+  it('should throw error when deletion fails due to unauthorized', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 401
+    });
+
+    await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 401');
   });
 });

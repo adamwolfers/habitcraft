@@ -153,3 +153,25 @@ export async function deleteCompletion(
     throw new Error(`Failed to delete completion: ${response.status}`);
   }
 }
+
+/**
+ * Delete a habit
+ * @param userId - The user ID
+ * @param habitId - The habit ID to delete
+ */
+export async function deleteHabit(
+  userId: string,
+  habitId: string
+): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete habit: ${response.status}`);
+  }
+}

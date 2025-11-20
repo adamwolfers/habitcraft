@@ -7,7 +7,8 @@ import {
   createHabit as apiCreateHabit,
   fetchCompletions as apiFetchCompletions,
   createCompletion as apiCreateCompletion,
-  deleteCompletion as apiDeleteCompletion
+  deleteCompletion as apiDeleteCompletion,
+  deleteHabit as apiDeleteHabit
 } from '@/lib/api';
 
 // Helper to format date as YYYY-MM-DD
@@ -101,10 +102,28 @@ export const useHabits = (userId: string) => {
     }
   };
 
+  const deleteHabit = async (habitId: string): Promise<void> => {
+    try {
+      await apiDeleteHabit(userId, habitId);
+
+      // Remove habit from local state
+      setHabits(habits.filter(h => h.id !== habitId));
+
+      // Remove habit's completions from local state
+      const newCompletions = new Map(completions);
+      newCompletions.delete(habitId);
+      setCompletions(newCompletions);
+    } catch (error) {
+      console.error('Error deleting habit:', error);
+      throw error;
+    }
+  };
+
   return {
     habits,
     createHabit,
     toggleCompletion,
     isHabitCompletedOnDate,
+    deleteHabit,
   };
 };

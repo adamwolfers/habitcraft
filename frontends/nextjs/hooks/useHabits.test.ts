@@ -11,6 +11,7 @@ const mockCreateHabit = api.createHabit as jest.MockedFunction<typeof api.create
 const mockFetchCompletions = api.fetchCompletions as jest.MockedFunction<typeof api.fetchCompletions>;
 const mockCreateCompletion = api.createCompletion as jest.MockedFunction<typeof api.createCompletion>;
 const mockDeleteCompletion = api.deleteCompletion as jest.MockedFunction<typeof api.deleteCompletion>;
+const mockDeleteHabit = api.deleteHabit as jest.MockedFunction<typeof api.deleteHabit>;
 
 describe('useHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -393,6 +394,130 @@ describe('useHabits', () => {
 
       const isCompleted = result.current.isHabitCompletedOnDate('non-existent', new Date('2025-01-15'));
       expect(isCompleted).toBe(false);
+    });
+  });
+
+  describe('deleteHabit', () => {
+    it('should delete a habit via API and update local state', async () => {
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockDeleteHabit.mockResolvedValue();
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait for initial fetch to complete
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+
+      // Verify we have 2 habits initially
+      expect(result.current.habits).toHaveLength(2);
+
+      // Delete the first habit
+      await act(async () => {
+        await result.current.deleteHabit('habit-1');
+      });
+
+      // Verify API was called with correct data
+      expect(mockDeleteHabit).toHaveBeenCalledWith(mockUserId, 'habit-1');
+
+      // Verify habit was removed from local state
+      expect(result.current.habits).toHaveLength(1);
+      expect(result.current.habits[0].id).toBe('habit-2');
+      expect(result.current.habits.find(h => h.id === 'habit-1')).toBeUndefined();
+    });
+
+    it('should handle deletion errors gracefully', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockDeleteHabit.mockRejectedValue(new Error('API Error'));
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait for initial fetch to complete
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+
+      // Try to delete a habit (should throw)
+      await act(async () => {
+        try {
+          await result.current.deleteHabit('habit-1');
+        } catch (error) {
+          // Expected to throw
+        }
+      });
+
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting habit:', expect.any(Error));
+
+      // Verify habits array wasn't modified
+      expect(result.current.habits).toEqual(mockHabitsFromApi);
+      expect(result.current.habits).toHaveLength(2);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should remove habit completions when habit is deleted', async () => {
+      const mockCompletions: Completion[] = [
+        {
+          id: 'completion-1',
+          habitId: 'habit-1',
+          date: '2025-01-15',
+          notes: null,
+          createdAt: '2025-01-15T10:00:00.000Z'
+        }
+      ];
+
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchCompletions.mockImplementation((userId, habitId) => {
+        if (habitId === 'habit-1') {
+          return Promise.resolve(mockCompletions);
+        }
+        return Promise.resolve([]);
+      });
+      mockDeleteHabit.mockResolvedValue();
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait for initial fetch to complete
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(2);
+      });
+
+      // Verify completion exists for habit-1
+      expect(result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'))).toBe(true);
+
+      // Delete the habit
+      await act(async () => {
+        await result.current.deleteHabit('habit-1');
+      });
+
+      // Verify habit and its completions are removed
+      expect(result.current.habits).toHaveLength(1);
+      expect(result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'))).toBe(false);
+    });
+
+    it('should handle deletion of non-existent habit ID', async () => {
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockDeleteHabit.mockResolvedValue();
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait for initial fetch to complete
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(2);
+      });
+
+      // Delete a non-existent habit (API returns 204 even if not found in some cases)
+      await act(async () => {
+        await result.current.deleteHabit('non-existent-id');
+      });
+
+      // Verify API was called
+      expect(mockDeleteHabit).toHaveBeenCalledWith(mockUserId, 'non-existent-id');
+
+      // Verify habits array is unchanged (habit wasn't in local state)
+      expect(result.current.habits).toEqual(mockHabitsFromApi);
     });
   });
 });
