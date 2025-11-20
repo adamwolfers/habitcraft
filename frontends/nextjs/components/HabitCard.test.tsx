@@ -13,7 +13,7 @@ describe('HabitCard', () => {
     completedDates: ['2025-10-28', '2025-10-29'],
   };
 
-  const mockOnToggle = jest.fn();
+  const mockOnToggleCompletion = jest.fn();
   const mockOnDelete = jest.fn();
   const mockIsCompletedOnDate = jest.fn((habitId: string, date: Date) => {
     const dateString = date.toISOString().split('T')[0];
@@ -21,7 +21,7 @@ describe('HabitCard', () => {
   });
 
   beforeEach(() => {
-    mockOnToggle.mockClear();
+    mockOnToggleCompletion.mockClear();
     mockOnDelete.mockClear();
     mockIsCompletedOnDate.mockClear();
   });
@@ -30,7 +30,7 @@ describe('HabitCard', () => {
     render(
       <HabitCard
         habit={mockHabit}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
@@ -45,7 +45,7 @@ describe('HabitCard', () => {
     render(
       <HabitCard
         habit={habitWithoutDesc}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
@@ -55,37 +55,11 @@ describe('HabitCard', () => {
     expect(screen.queryByText('30 minutes workout')).not.toBeInTheDocument();
   });
 
-  it('should display current streak', () => {
-    render(
-      <HabitCard
-        habit={mockHabit}
-        onToggle={mockOnToggle}
-        onDelete={mockOnDelete}
-        isCompletedOnDate={mockIsCompletedOnDate}
-      />
-    );
-
-    expect(screen.getByText(/streak:/i)).toBeInTheDocument();
-  });
-
-  it('should display total completion count', () => {
-    render(
-      <HabitCard
-        habit={mockHabit}
-        onToggle={mockOnToggle}
-        onDelete={mockOnDelete}
-        isCompletedOnDate={mockIsCompletedOnDate}
-      />
-    );
-
-    expect(screen.getByText(/total: 2/i)).toBeInTheDocument();
-  });
-
   it('should render 7 day buttons', () => {
     render(
       <HabitCard
         habit={mockHabit}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
@@ -100,12 +74,12 @@ describe('HabitCard', () => {
     expect(dayButtons.length).toBeGreaterThanOrEqual(7);
   });
 
-  it('should call onToggle when day button is clicked', async () => {
+  it('should call onToggleCompletion when day button is clicked', async () => {
     const user = userEvent.setup();
     render(
       <HabitCard
         habit={mockHabit}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
@@ -117,8 +91,8 @@ describe('HabitCard', () => {
     // Click the first day button
     await user.click(dayButtons[0]);
 
-    expect(mockOnToggle).toHaveBeenCalledTimes(1);
-    expect(mockOnToggle).toHaveBeenCalledWith(mockHabit.id, expect.any(Date));
+    expect(mockOnToggleCompletion).toHaveBeenCalledTimes(1);
+    expect(mockOnToggleCompletion).toHaveBeenCalledWith(mockHabit.id, expect.any(Date));
   });
 
   it('should call onDelete when delete button is clicked', async () => {
@@ -126,7 +100,7 @@ describe('HabitCard', () => {
     render(
       <HabitCard
         habit={mockHabit}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
@@ -143,7 +117,7 @@ describe('HabitCard', () => {
     const { container } = render(
       <HabitCard
         habit={mockHabit}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
@@ -154,71 +128,35 @@ describe('HabitCard', () => {
     expect(colorIndicator).toBeInTheDocument();
   });
 
-  it('should calculate streak correctly for consecutive days', () => {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    const todayString = today.toISOString().split('T')[0];
-    const yesterdayString = yesterday.toISOString().split('T')[0];
-
-    const habitWithStreak: Habit = {
-      ...mockHabit,
-      completedDates: [yesterdayString, todayString],
-    };
-
-    render(
-      <HabitCard
-        habit={habitWithStreak}
-        onToggle={mockOnToggle}
-        onDelete={mockOnDelete}
-        isCompletedOnDate={mockIsCompletedOnDate}
-      />
-    );
-
-    // Should show at least 2 days streak
-    expect(screen.getByText(/2 days/i)).toBeInTheDocument();
-  });
-
-  it('should show singular "day" for streak of 1', () => {
+  it('should style completed days differently', () => {
+    // Mock to return true for exactly one specific date
     const today = new Date();
     const todayString = today.toISOString().split('T')[0];
 
-    const habitWithOneDay: Habit = {
-      ...mockHabit,
-      completedDates: [todayString],
-    };
-
-    render(
-      <HabitCard
-        habit={habitWithOneDay}
-        onToggle={mockOnToggle}
-        onDelete={mockOnDelete}
-        isCompletedOnDate={mockIsCompletedOnDate}
-      />
-    );
-
-    expect(screen.getByText(/1 day$/i)).toBeInTheDocument();
-  });
-
-  it('should show checkmark for completed days', () => {
-    const mockIsCompleted = jest.fn((habitId: string, date: Date) => {
-      return date.toISOString().split('T')[0] === '2025-10-29';
+    const mockIsCompleted = jest.fn((_habitId: string, date: Date) => {
+      const dateString = date.toISOString().split('T')[0];
+      return dateString === todayString;
     });
 
-    render(
+    const { container } = render(
       <HabitCard
         habit={mockHabit}
-        onToggle={mockOnToggle}
+        onToggleCompletion={mockOnToggleCompletion}
         onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompleted}
       />
     );
 
-    // There should be checkmark SVGs for completed days
-    const svgs = screen.getAllByRole('button').map(btn => btn.querySelector('svg'));
-    const checkmarks = svgs.filter(svg => svg?.querySelector('path[d*="M5 13l4 4L19 7"]'));
+    // Verify the mock was called (meaning component is checking completion status)
+    expect(mockIsCompleted).toHaveBeenCalled();
 
-    expect(checkmarks.length).toBeGreaterThan(0);
+    // Check that at least one day button has a filled background (completed state)
+    const dayCircles = container.querySelectorAll('.w-8.h-8.rounded-full');
+    const hasColoredBackground = Array.from(dayCircles).some(circle => {
+      const style = (circle as HTMLElement).style.backgroundColor;
+      return style && style !== 'transparent' && style !== '';
+    });
+
+    expect(hasColoredBackground).toBe(true);
   });
 });

@@ -2,6 +2,7 @@
 
 import { useHabits } from '@/hooks/useHabits';
 import AddHabitForm from '@/components/AddHabitForm';
+import HabitCard from '@/components/HabitCard';
 import Footer from '@/components/Footer';
 import { HabitFormData } from '@/types/habit';
 
@@ -9,13 +10,15 @@ import { HabitFormData } from '@/types/habit';
 const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export default function Home() {
-  const { habits, createHabit } = useHabits(MOCK_USER_ID);
+  const { habits, createHabit, toggleCompletion, isHabitCompletedOnDate } = useHabits(MOCK_USER_ID);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
-    await createHabit({
-      ...habitData,
-      frequency: 'daily', // Default to daily for now
-    });
+    await createHabit(habitData);
+  };
+
+  const handleDeleteHabit = (habitId: string) => {
+    // TODO: Implement delete functionality
+    console.log('Delete habit:', habitId);
   };
 
   return (
@@ -51,41 +54,13 @@ export default function Home() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
               {habits.map((habit) => (
-                <div key={habit.id} className="bg-gray-800 rounded-lg p-6 space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <span className="text-3xl">{habit.icon}</span>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg truncate">{habit.name}</h3>
-                        {habit.description && (
-                          <p className="text-sm text-gray-400">{habit.description}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div
-                      className="w-4 h-4 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: habit.color }}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-400">Frequency:</span>
-                      <p className="font-semibold capitalize">{habit.frequency}</p>
-                    </div>
-                    <div>
-                      <span className="text-gray-400">Status:</span>
-                      <p className="font-semibold capitalize">{habit.status}</p>
-                    </div>
-                    {habit.targetDays.length > 0 && (
-                      <div className="col-span-2">
-                        <span className="text-gray-400">Target Days:</span>
-                        <p className="font-semibold">
-                          {habit.targetDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <HabitCard
+                  key={habit.id}
+                  habit={habit}
+                  onToggleCompletion={toggleCompletion}
+                  onDelete={handleDeleteHabit}
+                  isCompletedOnDate={isHabitCompletedOnDate}
+                />
               ))}
             </div>
           )}

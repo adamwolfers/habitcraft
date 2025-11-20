@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useHabits } from './useHabits';
-import { HabitFormData, Habit } from '@/types/habit';
+import { HabitFormData, Habit, Completion } from '@/types/habit';
 import * as api from '@/lib/api';
 
 // Mock the API module
@@ -8,6 +8,9 @@ jest.mock('@/lib/api');
 
 const mockFetchHabits = api.fetchHabits as jest.MockedFunction<typeof api.fetchHabits>;
 const mockCreateHabit = api.createHabit as jest.MockedFunction<typeof api.createHabit>;
+const mockFetchCompletions = api.fetchCompletions as jest.MockedFunction<typeof api.fetchCompletions>;
+const mockCreateCompletion = api.createCompletion as jest.MockedFunction<typeof api.createCompletion>;
+const mockDeleteCompletion = api.deleteCompletion as jest.MockedFunction<typeof api.deleteCompletion>;
 
 describe('useHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -232,6 +235,164 @@ describe('useHabits', () => {
 
       // Verify the returned habit matches what was created
       expect(returnedHabit).toEqual(createdHabit);
+    });
+  });
+
+  describe('completion tracking', () => {
+    const mockCompletions: Completion[] = [
+      {
+        id: 'completion-1',
+        habitId: 'habit-1',
+        date: '2025-01-15',
+        notes: null,
+        createdAt: '2025-01-15T10:00:00.000Z'
+      },
+      {
+        id: 'completion-2',
+        habitId: 'habit-1',
+        date: '2025-01-14',
+        notes: 'Great session',
+        createdAt: '2025-01-14T10:00:00.000Z'
+      }
+    ];
+
+    beforeEach(() => {
+      // Default mock for completions
+      mockFetchCompletions.mockResolvedValue([]);
+    });
+
+    it('should fetch completions for each habit on mount', async () => {
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+
+      // Should fetch completions for each habit
+      expect(mockFetchCompletions).toHaveBeenCalledTimes(mockHabitsFromApi.length);
+      expect(mockFetchCompletions).toHaveBeenCalledWith(mockUserId, 'habit-1');
+      expect(mockFetchCompletions).toHaveBeenCalledWith(mockUserId, 'habit-2');
+    });
+
+    it('should check if habit is completed on a specific date', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Check completed date
+      const isCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'));
+      expect(isCompleted).toBe(true);
+
+      // Check non-completed date
+      const isNotCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-16'));
+      expect(isNotCompleted).toBe(false);
+    });
+
+    it('should toggle completion - create when not completed', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue([]);
+
+      const newCompletion: Completion = {
+        id: 'completion-new',
+        habitId: 'habit-1',
+        date: '2025-01-16',
+        notes: null,
+        createdAt: '2025-01-16T10:00:00.000Z'
+      };
+
+      mockCreateCompletion.mockResolvedValue(newCompletion);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Toggle completion (should create)
+      await act(async () => {
+        await result.current.toggleCompletion('habit-1', new Date('2025-01-16'));
+      });
+
+      expect(mockCreateCompletion).toHaveBeenCalledWith(mockUserId, 'habit-1', '2025-01-16');
+
+      // Verify completion is now marked as completed
+      const isCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-16'));
+      expect(isCompleted).toBe(true);
+    });
+
+    it('should toggle completion - delete when already completed', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockDeleteCompletion.mockResolvedValue();
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Verify initially completed
+      let isCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'));
+      expect(isCompleted).toBe(true);
+
+      // Toggle completion (should delete)
+      await act(async () => {
+        await result.current.toggleCompletion('habit-1', new Date('2025-01-15'));
+      });
+
+      expect(mockDeleteCompletion).toHaveBeenCalledWith(mockUserId, 'habit-1', '2025-01-15');
+
+      // Verify completion is now removed
+      isCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'));
+      expect(isCompleted).toBe(false);
+    });
+
+    it('should handle toggle completion errors gracefully', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue([]);
+      mockCreateCompletion.mockRejectedValue(new Error('API Error'));
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Try to toggle completion
+      await act(async () => {
+        await result.current.toggleCompletion('habit-1', new Date('2025-01-16'));
+      });
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error toggling completion:', expect.any(Error));
+
+      // Verify state wasn't updated
+      const isCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-16'));
+      expect(isCompleted).toBe(false);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should return false for non-existent habit', async () => {
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchCompletions.mockResolvedValue([]);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(2);
+      });
+
+      const isCompleted = result.current.isHabitCompletedOnDate('non-existent', new Date('2025-01-15'));
+      expect(isCompleted).toBe(false);
     });
   });
 });

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { HabitFormData } from '@/types/habit';
 
 interface AddHabitFormProps {
-  onAdd: (habit: HabitFormData) => void;
+  onAdd: (habit: HabitFormData) => Promise<void> | void;
 }
 
 const PRESET_COLORS = [
@@ -24,14 +24,25 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      onAdd({ name: name.trim(), description: description.trim(), color });
-      setName('');
-      setDescription('');
-      setColor(PRESET_COLORS[0]);
-      setIsOpen(false);
+      try {
+        await onAdd({
+          name: name.trim(),
+          description: description.trim(),
+          color,
+          frequency: 'daily' // Default to daily for now
+        });
+        // Only clear form and close if successful
+        setName('');
+        setDescription('');
+        setColor(PRESET_COLORS[0]);
+        setIsOpen(false);
+      } catch (error) {
+        console.error('Error adding habit:', error);
+        // Form stays open so user can retry
+      }
     }
   };
 

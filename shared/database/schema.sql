@@ -23,7 +23,7 @@ CREATE TABLE habits (
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(100) NOT NULL,
     description TEXT,
-    frequency VARCHAR(20) NOT NULL CHECK (frequency IN ('daily', 'weekly', 'custom')),
+    frequency VARCHAR(20) NOT NULL CHECK (frequency IN ('daily', 'weekly')),
     target_days INTEGER[] DEFAULT '{}',  -- Array of integers (0-6 for days of week)
     color VARCHAR(7) DEFAULT '#3B82F6',
     icon VARCHAR(10) DEFAULT '⭐',

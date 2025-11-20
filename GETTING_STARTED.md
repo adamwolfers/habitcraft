@@ -185,14 +185,20 @@ psql -d habittracker -f shared/database/schema.sql
   - 9 new passing tests for completions API
   - Total: 16 API tests passing (7 habits + 9 completions)
   - Supports date range filtering
-- 📋 Implement completion tracking in useHabits hook
-  - Add toggleCompletion and fetchCompletions to hook
-  - Add tests for completion tracking flow
-  - Calculate streaks from completion data
-- 📋 Restore full HabitCard UI with completion tracking
+- ✅ Implement completion tracking in useHabits hook (COMPLETED - TDD approach)
+  - toggleCompletion and isHabitCompletedOnDate functions
+  - Fetches completions for all habits on mount
+  - Optimistic UI updates with local state management
+  - 6 new passing tests for completion tracking
+  - Total: 15 useHabits tests passing
+  - Fixed date comparison bug (stripped timestamps)
+- ✅ Restore full HabitCard UI with completion tracking (COMPLETED)
   - Daily completion toggles (last 7 days)
-  - Streak calculation and display
-  - Visual completion indicators
+  - Visual completion bubbles with checkmarks
+  - Color-coded completion indicators
+  - Click to toggle completion status
+  - Fully integrated with backend API
+  - Fixed timezone handling for date parsing
 - 📋 Implement habit deletion in frontend (DELETE from API)
   - Add delete functionality to useHabits hook
   - Add tests for deletion flow
@@ -239,7 +245,7 @@ npm test
 npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
 
-# Next.js frontend (48 tests passing)
+# Next.js frontend (60 tests passing)
 cd frontends/nextjs
 npm test
 

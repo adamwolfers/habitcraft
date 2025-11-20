@@ -495,7 +495,7 @@ components:
           maxLength: 500
         frequency:
           type: string
-          enum: [daily, weekly, custom]
+          enum: [daily, weekly]
           example: daily
         targetDays:
           type: array

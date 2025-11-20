@@ -42,7 +42,7 @@ services:
       - "3000:3000"
     volumes:
       - ./backends/node:/app
-      - /app/node_modules
+      - backend_node_modules:/app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -187,3 +187,4 @@ networks:
 
 volumes:
   postgres_data:
+  backend_node_modules:

@@ -4,27 +4,40 @@ Node.js + Express implementation of the Habit Tracker API.
 
 ## Status
 
-🚧 **In Progress** - Currently implementing basic endpoints with TDD approach
+🚧 **In Progress** - Core features implemented, authentication and some CRUD operations remaining
 
 ### Completed
 - [x] Project setup with npm
-- [x] Testing framework (Jest + Supertest)
+- [x] Testing framework (Jest + Supertest) - 44 tests passing
 - [x] Hello World endpoint with tests
-- [ ] Database connection (Prisma/TypeORM)
-- [ ] User authentication (JWT)
-- [ ] Habit CRUD endpoints
-- [ ] Completion tracking
-- [ ] Statistics calculation
+- [x] Database connection (PostgreSQL with pg pool)
+- [x] Mock authentication (X-User-Id header for development)
+- [x] CORS support for frontend integration
+- [x] Habit creation endpoint (POST /api/v1/habits)
+- [x] Habit read endpoint (GET /api/v1/habits with status filtering)
+- [x] Completion tracking - all 3 endpoints:
+  - POST /api/v1/habits/:habitId/completions
+  - GET /api/v1/habits/:habitId/completions (with date filtering)
+  - DELETE /api/v1/habits/:habitId/completions/:date
+
+### In Progress / TODO
+- [ ] Real JWT authentication (currently using mock X-User-Id header)
+- [ ] Habit update endpoint (PUT /api/v1/habits/:id)
+- [ ] Habit delete endpoint (DELETE /api/v1/habits/:id)
+- [ ] Statistics calculation endpoint
+- [ ] Integration tests with real database
+- [ ] API documentation endpoint (Swagger UI)
 
 ## Tech Stack
 
 - **Runtime**: Node.js 18+
-- **Framework**: Express.js
+- **Framework**: Express.js 5
 - **Language**: JavaScript (CommonJS)
-- **Database**: PostgreSQL with Prisma/TypeORM
-- **Testing**: Jest + Supertest
-- **Validation**: express-validator
-- **Authentication**: jsonwebtoken + bcrypt
+- **Database**: PostgreSQL with pg (node-postgres)
+- **Testing**: Jest + Supertest (44 tests passing)
+- **CORS**: cors middleware
+- **Environment**: dotenv
+- **Authentication**: Mock (X-User-Id header) - JWT planned
 
 ## Prerequisites
 
@@ -82,50 +95,51 @@ See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for full API
 
 ### Currently Implemented
 
+**Health/Testing:**
 - `GET /hello` - Hello World endpoint
+
+**Habits:**
+- `POST /api/v1/habits` - Create habit (requires X-User-Id header)
+- `GET /api/v1/habits` - List habits (supports ?status=active|archived filter)
+
+**Completions:**
+- `POST /api/v1/habits/:habitId/completions` - Mark habit complete for a date
+- `GET /api/v1/habits/:habitId/completions` - List completions (supports ?startDate & ?endDate filters)
+- `DELETE /api/v1/habits/:habitId/completions/:date` - Remove completion
 
 ### Planned
 
-- `GET /health` - Health check
-- `POST /auth/register` - User registration
-- `POST /auth/login` - User login
-- `GET /users/me` - Get current user
-- `GET /habits` - List habits
-- `POST /habits` - Create habit
-- `GET /habits/:id` - Get habit
+- `GET /health` - Health check endpoint
+- `POST /auth/register` - User registration with JWT
+- `POST /auth/login` - User login with JWT
+- `GET /users/me` - Get current user profile
+- `GET /habits/:id` - Get single habit by ID
 - `PUT /habits/:id` - Update habit
 - `DELETE /habits/:id` - Delete habit
-- `GET /habits/:id/completions` - List completions
-- `POST /habits/:id/completions` - Mark complete
-- `DELETE /habits/:id/completions/:date` - Remove completion
-- `GET /habits/:id/statistics` - Get statistics
+- `GET /habits/:id/statistics` - Get habit statistics (streaks, completion rate, etc.)
 
 ## Project Structure
 
 ```
 backends/node/
-├── app.js              # Express app configuration
-├── server.js           # Server entry point
-├── app.test.js         # API tests
-├── package.json        # Dependencies and scripts
-└── README.md          # This file
-```
-
-Planned structure:
-```
-backends/node/
-├── src/
-│   ├── config/        # Configuration files
-│   ├── controllers/   # Route controllers
-│   ├── middleware/    # Express middleware
-│   ├── models/        # Database models
-│   ├── routes/        # API routes
-│   ├── services/      # Business logic
-│   ├── utils/         # Utilities
-│   └── app.js        # Express app
-├── tests/            # Test files
-├── server.js         # Entry point
-└── package.json
+├── app.js                          # Express app configuration
+├── server.js                       # Server entry point
+├── app.test.js                     # App-level tests
+├── db/                            # Database layer
+│   ├── pool.js                    # PostgreSQL connection pool
+│   ├── pool.test.js              # Pool tests
+│   ├── config.js                 # Database configuration
+│   ├── config.test.js            # Config tests
+│   └── README.md                 # Database documentation
+├── routes/                        # API route handlers
+│   ├── habits.js                 # Habit CRUD endpoints
+│   ├── habits.test.js           # Habit endpoint tests
+│   ├── completions.js           # Completion tracking endpoints
+│   └── completions.test.js      # Completion endpoint tests
+├── middleware/                    # Express middleware
+│   └── auth.js                   # Mock authentication (X-User-Id header)
+├── package.json                   # Dependencies and scripts
+└── README.md                     # This file
 ```
 
 ## Testing
@@ -133,15 +147,25 @@ backends/node/
 This project follows Test-Driven Development (TDD):
 
 ```bash
-# Run all tests
+# Run all tests (44 tests passing)
 npm test
 
 # Run tests in watch mode
 npm run test:watch
 
-# Run tests with coverage
-npm run test:coverage
+# Run specific test file
+npm test -- routes/habits.test.js
+npm test -- routes/completions.test.js
+npm test -- db/pool.test.js
 ```
+
+**Test Coverage:**
+- App configuration: 4 tests
+- Database pool: 6 tests
+- Database config: 5 tests
+- Habit endpoints: 15 tests
+- Completion endpoints: 17 tests
+- **Total: 44 tests passing**
 
 ## Docker
 

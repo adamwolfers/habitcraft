@@ -49,6 +49,7 @@ describe('AddHabitForm', () => {
       name: 'Morning Run',
       description: '5km jog',
       color: '#3b82f6', // Default color
+      frequency: 'daily',
     });
   });
 
@@ -87,6 +88,7 @@ describe('AddHabitForm', () => {
       name: 'Exercise',
       description: 'Workout',
       color: '#3b82f6',
+      frequency: 'daily',
     });
   });
 
@@ -119,6 +121,7 @@ describe('AddHabitForm', () => {
       name: 'Read',
       description: '',
       color: '#10b981', // Second color in PRESET_COLORS
+      frequency: 'daily',
     });
   });
 
@@ -176,6 +179,7 @@ describe('AddHabitForm', () => {
       name: 'Walk',
       description: '',
       color: '#3b82f6',
+      frequency: 'daily',
     });
   });
 });

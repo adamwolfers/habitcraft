@@ -29,7 +29,7 @@ export interface AuthResponse {
 }
 
 // Habit types
-export type HabitFrequency = 'daily' | 'weekly' | 'custom';
+export type HabitFrequency = 'daily' | 'weekly';
 export type HabitStatus = 'active' | 'archived';
 
 export interface HabitInput {
