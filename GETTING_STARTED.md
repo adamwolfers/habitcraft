@@ -150,7 +150,13 @@ psql -d habitcraft -f shared/database/schema.sql
 - ✅ Add CORS support (COMPLETED - see `backends/node/app.js`)
   - Enables frontend to call backend from different port
   - Required for Next.js (localhost:3100) to call API (localhost:3000)
-- 📋 Implement habit update endpoint (PUT /api/v1/habits/:id)
+- ✅ Implement habit update endpoint (COMPLETED - PUT /api/v1/habits/:id)
+  - Updates habit fields (name, description, frequency, targetDays, color, icon, status)
+  - Validates habit ID format and input fields
+  - Enforces user ownership (users can only update their own habits)
+  - Returns 200 with updated habit, 404 if not found, 400 for invalid input
+  - Supports status changes (active/archived)
+  - 12 passing tests following TDD approach
 - ✅ Implement habit delete endpoint (COMPLETED - DELETE /api/v1/habits/:id)
   - Validates habit ID format
   - Enforces user ownership (users can only delete their own habits)
@@ -253,7 +259,7 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend (50 tests)
+# Node.js backend (62 tests)
 cd backends/node
 npm test
 

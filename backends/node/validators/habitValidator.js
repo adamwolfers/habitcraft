@@ -4,12 +4,13 @@
  */
 
 const VALID_FREQUENCIES = ['daily', 'weekly', 'custom'];
+const VALID_STATUSES = ['active', 'archived'];
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 500;
 
 function validateHabitInput(req, res, next) {
-  const { name, frequency, targetDays, color, description, icon } = req.body;
+  const { name, frequency, targetDays, color, description, icon, status } = req.body;
   const errors = [];
 
   // Validate required fields
@@ -60,6 +61,13 @@ function validateHabitInput(req, res, next) {
   // Validate icon if provided (basic validation - just check it's a string)
   if (icon !== undefined && typeof icon !== 'string') {
     errors.push('icon must be a string');
+  }
+
+  // Validate status if provided
+  if (status !== undefined) {
+    if (typeof status !== 'string' || !VALID_STATUSES.includes(status)) {
+      errors.push(`status must be one of: ${VALID_STATUSES.join(', ')}`);
+    }
   }
 
   // If there are validation errors, return 400
