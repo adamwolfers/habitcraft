@@ -73,9 +73,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **Update Protected Routes**
   - [x] Write tests for habit endpoints with JWT authentication
   - [x] Write tests for completion endpoints with JWT authentication
-  - [x] Replace mockAuth with jwtAuth middleware
+  - [x] Replace mockAuth with jwtAuth middleware (with X-User-Id fallback for development)
   - [x] Remove mockAuth.js file
   - [x] Verify user isolation and data access controls
+  - [ ] Remove X-User-Id fallback once frontend JWT auth is complete
 
 #### Habit Management
 - [x] **POST /api/v1/habits** - Create habit

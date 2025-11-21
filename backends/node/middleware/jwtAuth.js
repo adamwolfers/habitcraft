@@ -5,6 +5,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 function jwtAuthMiddleware(req, res, next) {
   const authHeader = req.headers.authorization;
 
+  // Development fallback: accept X-User-Id header until frontend JWT is complete
+  // TODO: Remove this fallback once frontend authentication is implemented
+  if (!authHeader && req.headers['x-user-id']) {
+    req.userId = req.headers['x-user-id'];
+    return next();
+  }
+
   if (!authHeader) {
     return res.status(401).json({ error: 'No token provided' });
   }
