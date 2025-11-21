@@ -116,21 +116,28 @@ describe('dateUtils', () => {
 
     it('should start on Sunday', () => {
       const week = getCalendarWeek(0);
-      const firstDay = new Date(week[0] + 'T00:00:00');
+      // Parse as local date to avoid timezone issues
+      const [year, month, day] = week[0].split('-').map(Number);
+      const firstDay = new Date(year, month - 1, day);
       expect(firstDay.getDay()).toBe(0); // 0 = Sunday
     });
 
     it('should end on Saturday', () => {
       const week = getCalendarWeek(0);
-      const lastDay = new Date(week[6] + 'T00:00:00');
+      // Parse as local date to avoid timezone issues
+      const [year, month, day] = week[6].split('-').map(Number);
+      const lastDay = new Date(year, month - 1, day);
       expect(lastDay.getDay()).toBe(6); // 6 = Saturday
     });
 
     it('should return consecutive days', () => {
       const week = getCalendarWeek(0);
       for (let i = 0; i < week.length - 1; i++) {
-        const current = new Date(week[i] + 'T00:00:00');
-        const next = new Date(week[i + 1] + 'T00:00:00');
+        // Parse as local date to avoid timezone issues
+        const [year1, month1, day1] = week[i].split('-').map(Number);
+        const current = new Date(year1, month1 - 1, day1);
+        const [year2, month2, day2] = week[i + 1].split('-').map(Number);
+        const next = new Date(year2, month2 - 1, day2);
         const diffInDays = (next.getTime() - current.getTime()) / (1000 * 60 * 60 * 24);
         expect(diffInDays).toBe(1);
       }
@@ -140,8 +147,11 @@ describe('dateUtils', () => {
       const currentWeek = getCalendarWeek(0);
       const previousWeek = getCalendarWeek(-1);
 
-      const currentStart = new Date(currentWeek[0] + 'T00:00:00');
-      const previousStart = new Date(previousWeek[0] + 'T00:00:00');
+      // Parse as local date to avoid timezone issues
+      const [year1, month1, day1] = currentWeek[0].split('-').map(Number);
+      const currentStart = new Date(year1, month1 - 1, day1);
+      const [year2, month2, day2] = previousWeek[0].split('-').map(Number);
+      const previousStart = new Date(year2, month2 - 1, day2);
 
       const diffInDays = (currentStart.getTime() - previousStart.getTime()) / (1000 * 60 * 60 * 24);
       expect(diffInDays).toBe(7);
@@ -151,8 +161,11 @@ describe('dateUtils', () => {
       const currentWeek = getCalendarWeek(0);
       const nextWeek = getCalendarWeek(1);
 
-      const currentStart = new Date(currentWeek[0] + 'T00:00:00');
-      const nextStart = new Date(nextWeek[0] + 'T00:00:00');
+      // Parse as local date to avoid timezone issues
+      const [year1, month1, day1] = currentWeek[0].split('-').map(Number);
+      const currentStart = new Date(year1, month1 - 1, day1);
+      const [year2, month2, day2] = nextWeek[0].split('-').map(Number);
+      const nextStart = new Date(year2, month2 - 1, day2);
 
       const diffInDays = (nextStart.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24);
       expect(diffInDays).toBe(7);

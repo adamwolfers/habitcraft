@@ -1,5 +1,8 @@
 export const formatDate = (date: Date): string => {
-  return date.toISOString().split('T')[0];
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 export const isToday = (dateString: string): boolean => {
@@ -18,12 +21,16 @@ export const getLastNDays = (n: number): string[] => {
 };
 
 export const getDayName = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Parse as local date to avoid timezone shifts
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('en-US', { weekday: 'short' });
 };
 
 export const getMonthDay = (dateString: string): string => {
-  const date = new Date(dateString);
+  // Parse as local date to avoid timezone shifts
+  const [year, month, day] = dateString.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 

@@ -44,25 +44,6 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, isCompl
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm border-t border-gray-700 pt-4">
-        <div>
-          <span className="text-gray-400">Frequency:</span>
-          <p className="font-semibold capitalize">{habit.frequency}</p>
-        </div>
-        <div>
-          <span className="text-gray-400">Status:</span>
-          <p className="font-semibold capitalize">{habit.status}</p>
-        </div>
-        {habit.targetDays && habit.targetDays.length > 0 && (
-          <div className="col-span-2">
-            <span className="text-gray-400">Target Days:</span>
-            <p className="font-semibold">
-              {habit.targetDays.map(d => ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d]).join(', ')}
-            </p>
-          </div>
-        )}
-      </div>
-
       <div className="border-t border-gray-700 pt-4">
         <div className="flex items-center justify-between mb-3">
           <button

@@ -6,18 +6,22 @@ import { Habit } from '@/types/habit';
 describe('HabitCard', () => {
   const mockHabit: Habit = {
     id: '1',
+    userId: 'user-1',
     name: 'Exercise',
     description: '30 minutes workout',
     color: '#3b82f6',
+    icon: '🏃',
+    frequency: 'daily',
+    targetDays: [],
+    status: 'active',
     createdAt: '2025-10-30T12:00:00.000Z',
-    completedDates: ['2025-10-28', '2025-10-29'],
+    updatedAt: '2025-10-30T12:00:00.000Z',
   };
 
   const mockOnToggleCompletion = jest.fn();
   const mockOnDelete = jest.fn();
-  const mockIsCompletedOnDate = jest.fn((habitId: string, date: Date) => {
-    const dateString = date.toISOString().split('T')[0];
-    return mockHabit.completedDates.includes(dateString);
+  const mockIsCompletedOnDate = jest.fn((_habitId: string, _date: Date) => {
+    return false;
   });
 
   beforeEach(() => {
@@ -41,7 +45,7 @@ describe('HabitCard', () => {
   });
 
   it('should render habit without description', () => {
-    const habitWithoutDesc = { ...mockHabit, description: undefined };
+    const habitWithoutDesc = { ...mockHabit, description: null };
     render(
       <HabitCard
         habit={habitWithoutDesc}
