@@ -175,7 +175,11 @@ router.delete('/:date', mockAuthMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Completion not found' });
     }
 
-    res.status(204).send();
+    res.status(200).json({
+      message: 'Completion deleted successfully',
+      habitId: habitId,
+      date: date
+    });
   } catch (error) {
     console.error('Error deleting completion:', error);
     res.status(500).json({ error: 'Internal server error' });

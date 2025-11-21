@@ -278,7 +278,12 @@ describe('Completions API', () => {
         .delete(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
         .set('X-User-Id', mockUserId);
 
-      expect(response.status).toBe(204);
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        message: 'Completion deleted successfully',
+        habitId: mockHabitId,
+        date: mockDate
+      });
       expect(pool.query).toHaveBeenCalledWith(
         expect.stringContaining('DELETE FROM completions'),
         expect.arrayContaining([mockHabitId, mockDate])
