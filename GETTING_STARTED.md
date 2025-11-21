@@ -1,12 +1,12 @@
 # Getting Started with HabitCraft
 
-Quick start guide for the HabitCraft polyglot learning project.
+Quick start guide for running HabitCraft locally.
 
 ## Quick Start Options
 
-### Option 1: Node.js Backend (Currently Implemented)
+### Option 1: Node.js Backend
 
-The Node.js backend has a basic "Hello World" API ready to go.
+The Node.js backend provides full habit tracking API with CRUD operations.
 
 ```bash
 # 1. Navigate to the Node.js backend
@@ -63,33 +63,24 @@ docker-compose up postgres backend-node frontend-nextjs
 # - Database Admin (Adminer): http://localhost:8080
 ```
 
-## Project Structure Overview
+## Project Structure
 
 ```
 habittracker_fullstack/
-├── backends/              # Multiple backend implementations
-│   ├── node/             # ✅ Node.js (CRUD endpoints + CORS)
-│   ├── python/           # 📅 Planned
-│   ├── golang/           # 📅 Planned
-│   └── java/             # 📅 Planned
-├── frontends/            # Multiple frontend implementations
-│   ├── nextjs/           # ✅ Connected to backend API
-│   ├── react/            # 📅 Planned
-│   └── vue/              # 📅 Planned
-├── infrastructure/       # Deployment configs
-│   └── terraform/        # 📅 Planned
+├── backends/node/        # Node.js + Express backend
+├── frontends/nextjs/     # Next.js frontend
 ├── shared/               # Shared resources
-│   ├── api-spec/         # ✅ OpenAPI specification
-│   ├── database/         # ✅ PostgreSQL schema
-│   └── types/            # ✅ Shared type definitions
-├── docker-compose.yml    # ✅ Orchestration config
-├── .env.example          # ✅ Environment variables template
-└── README.md             # ✅ Main documentation
+│   ├── api-spec/         # OpenAPI specification
+│   ├── database/         # PostgreSQL schema and migrations
+│   └── types/            # Shared type definitions
+├── docker-compose.yml    # Docker orchestration
+├── PROJECT_PLAN.md       # Detailed development roadmap
+└── README.md             # Project overview
 ```
 
-## Next Steps
+## Setup Steps
 
-### 1. Set Up Environment Variables ✅ COMPLETED
+### 1. Set Up Environment Variables
 
 ```bash
 # Copy the example env file
@@ -98,9 +89,7 @@ cp .env.example .env
 # Edit .env and update with your values (especially JWT_SECRET)
 ```
 
-**Status:** `.env` file created with secure JWT_SECRET
-
-### 2. Set Up Database ✅ COMPLETED
+### 2. Set Up Database
 
 Using Docker (recommended):
 
@@ -112,16 +101,13 @@ docker-compose up postgres
 docker-compose up -d postgres
 ```
 
-**Status:** PostgreSQL 14.20 running in Docker with:
-- ✅ Schema loaded (users, habits, completions tables)
-- ✅ Seed data loaded automatically:
-  - Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`)
-  - 3 sample habits (Morning Exercise, Read Books, Meditation)
-
-**View Database:** Adminer is running at http://localhost:8080
-
-- Login with: habituser / habitpass / habitcraft
-- Demo user email: demo@example.com
+The database includes:
+- Schema with users, habits, and completions tables
+- Seed data with a demo user and sample habits
+- Adminer web UI at http://localhost:8080
+  - Login: habituser / habitpass / habitcraft
+  - Demo user ID: `123e4567-e89b-12d3-a456-426614174000`
+  - Demo email: demo@example.com
 
 Manual setup:
 
@@ -133,141 +119,28 @@ createdb habitcraft
 psql -d habitcraft -f shared/database/schema.sql
 ```
 
-### 3. Choose Your Development Path
+## Current Features
 
-**Path A: Continue Node.js Backend** ✅ CRUD Read Operations Complete!
+### Backend (Node.js + Express)
+- Full habit CRUD operations (Create, Read, Update, Delete)
+- Completion tracking (mark complete, view history, remove)
+- Mock authentication (X-User-Id header for development)
+- CORS support for frontend integration
+- PostgreSQL database with connection pooling
 
-- ✅ Implement database connection (COMPLETED - see `backends/node/db/`)
-- ✅ Implement habit creation endpoint (COMPLETED - POST /api/v1/habits)
-  - Mock authentication middleware using X-User-Id header
-  - Comprehensive input validation
-  - 9 passing tests following TDD approach
-- ✅ Implement habit read endpoint (COMPLETED - GET /api/v1/habits)
-  - Returns all habits for authenticated user
-  - Supports optional status filter (active/archived)
-  - User isolation (only returns user's own habits)
-  - 6 passing tests following TDD approach
-- ✅ Add CORS support (COMPLETED - see `backends/node/app.js`)
-  - Enables frontend to call backend from different port
-  - Required for Next.js (localhost:3100) to call API (localhost:3000)
-- ✅ Implement habit update endpoint (COMPLETED - PUT /api/v1/habits/:id)
-  - Updates habit fields (name, description, frequency, targetDays, color, icon, status)
-  - Validates habit ID format and input fields
-  - Enforces user ownership (users can only update their own habits)
-  - Returns 200 with updated habit, 404 if not found, 400 for invalid input
-  - Supports status changes (active/archived)
-  - 12 passing tests following TDD approach
-- ✅ Implement habit delete endpoint (COMPLETED - DELETE /api/v1/habits/:id)
-  - Validates habit ID format
-  - Enforces user ownership (users can only delete their own habits)
-  - Returns 204 on success, 404 if not found, 400 for invalid format
-  - 6 passing tests following TDD approach
-- ✅ Implement completions endpoints (COMPLETED - TDD approach)
-  - POST /api/v1/habits/:habitId/completions - Create completion
-  - GET /api/v1/habits/:habitId/completions - Get completions (with date filtering)
-  - DELETE /api/v1/habits/:habitId/completions/:date - Remove completion
-  - 17 passing tests for completions API
-  - Validates habit ownership and date formats
-  - Handles duplicate completions (409 Conflict)
-- 📋 **Implement JWT Authentication (TDD approach) - PLANNED**
-  - **Dependencies:** Install bcrypt, jsonwebtoken, express-validator
-  - **Backend Authentication Endpoints:**
-    - POST /api/v1/auth/register - User registration with password hashing (bcrypt)
-    - POST /api/v1/auth/login - Login with JWT generation (access + refresh tokens)
-    - POST /api/v1/auth/refresh - Refresh access token using refresh token
-    - GET /api/v1/auth/me - Get current user profile
-  - **Backend Middleware:**
-    - Replace mockAuth.js with jwtAuth.js middleware
-    - Add JWT validation and user extraction
-    - Update all protected routes to use JWT middleware
-  - **Security Features:**
-    - Password strength validation (min 8 chars, complexity requirements)
-    - Bcrypt password hashing (10 rounds)
-    - Short-lived access tokens (15 min)
-    - Long-lived refresh tokens (7 days)
-  - **Frontend Implementation:**
-    - Create React Context for auth state
-    - Custom hooks: useAuth(), useRequireAuth()
-    - Login and registration pages with forms
-    - Protected route wrapper component
-    - API client updates for JWT token handling and auto-refresh
-  - **TDD Approach:** Write tests for each endpoint/middleware first, then implement
-  - **Test Coverage:** Unit tests for auth endpoints, integration tests for protected routes
-- 📋 Continue following the TDD approach
-- **TODO:** Add acceptance/integration tests that test against real database
-  - Current tests use mocks for fast unit testing
-  - Need end-to-end tests to verify actual database integration
-  - Consider using a separate test database or test containers
+### Frontend (Next.js + React)
+- Habit management UI (create, update, delete)
+- Calendar week view with completion tracking
+- Week navigation (previous/next)
+- Optimistic UI updates
+- Fully connected to backend API
 
-**Path B: Next.js Frontend Integration** ✅ Connected to Backend!
+## What's Next
 
-- ✅ Connect frontend to backend API (COMPLETED - TDD approach)
-  - Created API client service (`frontends/nextjs/lib/api.ts`)
-  - 7 passing unit tests for API client
-  - Updated type definitions to match backend schema
-  - Updated useHabits hook to fetch from API instead of localStorage
-  - 6 passing unit tests for useHabits hook
-  - Environment variable configuration for API base URL
-- ✅ Display habits from database (COMPLETED)
-  - Shows frequency, status, target days, icons
-  - Read-only view of habits from backend
-- ✅ Implement habit creation in frontend (COMPLETED - TDD approach)
-  - Connected AddHabitForm to POST /api/v1/habits endpoint
-  - Implemented createHabit API function (`frontends/nextjs/lib/api.ts`)
-  - Updated useHabits hook to support creating habits
-  - 9 passing unit tests for useHabits hook (including 3 new createHabit tests)
-  - Habits immediately appear in UI after creation without refresh
-- ✅ Implement completions API client (COMPLETED - TDD approach)
-  - fetchCompletions, createCompletion, deleteCompletion functions
-  - Added Completion type definition
-  - 9 new passing tests for completions API
-  - Total: 16 API tests passing (7 habits + 9 completions)
-  - Supports date range filtering
-- ✅ Implement completion tracking in useHabits hook (COMPLETED - TDD approach)
-  - toggleCompletion and isHabitCompletedOnDate functions
-  - Fetches completions for all habits on mount
-  - Optimistic UI updates with local state management
-  - 6 new passing tests for completion tracking
-  - Total: 15 useHabits tests passing
-  - Fixed date comparison bug (stripped timestamps)
-- ✅ Restore full HabitCard UI with completion tracking (COMPLETED)
-  - Calendar week view (Sunday-Saturday)
-  - Week navigation with arrow buttons
-  - Displays current week or date range for other weeks
-  - Visual completion bubbles with checkmarks
-  - Color-coded completion indicators
-  - Click to toggle completion status
-  - Fully integrated with backend API
-  - Fixed timezone handling for date parsing
-- ✅ Implement habit deletion in frontend (COMPLETED - TDD approach)
-  - Implemented deleteHabit API function (`frontends/nextjs/lib/api.ts`)
-  - Added deleteHabit function to useHabits hook
-  - Wired delete button to UI in page.tsx
-  - Removes habit from local state
-  - Removes associated completions when habit is deleted
-  - 12 new passing tests (4 API + 4 hook + 4 page tests)
-  - Proper error handling for delete failures (400, 401, 404)
-  - Delete button integrated into HabitCard component
-- ✅ Implement calendar week navigation (COMPLETED - TDD approach)
-  - Created getCalendarWeek utility function with 7 tests
-  - Added week navigation controls to HabitCard with 6 tests
-  - Total: 85 frontend tests passing
-  - Displays Sunday-Saturday weeks with previous/next navigation
-- 📋 Add loading states and error handling to UI
-  - Show loading spinner while fetching
-  - Display user-friendly error messages
-
-**Path C: Start Another Backend**
-
-- Choose Python, Go, or Java
-- Follow the same API spec
-- Compare implementation approaches
-
-**Path D: Start Another Frontend**
-
-- Choose React or Vue
-- Implement the same features
-- Compare framework approaches
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete development roadmap, including:
+- JWT authentication implementation
+- Acceptance testing
+- Production deployment preparation
 
 ## Useful Commands
 
@@ -288,7 +161,7 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend (62 tests)
+# Node.js backend
 cd backends/node
 npm test
 
@@ -296,16 +169,13 @@ npm test
 npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
 
-# Next.js frontend (85 tests passing)
+# Next.js frontend
 cd frontends/nextjs
 npm test
 
 # Run specific test file
 npm test -- lib/api.test.ts
 npm test -- hooks/useHabits.test.ts
-npm test -- app/page.test.tsx
-npm test -- utils/dateUtils.test.ts
-npm test -- components/HabitCard.test.tsx
 ```
 
 ### API Documentation
@@ -315,35 +185,13 @@ The OpenAPI specification is available at:
 - File: `shared/api-spec/openapi.yaml`
 - View online: Use [Swagger Editor](https://editor.swagger.io/) and paste the file contents
 
-## Learning Resources
+## Documentation
 
-### Documentation
-
-- **[AUTHENTICATION.md](AUTHENTICATION.md)** - Complete JWT authentication implementation guide with TDD approach
-  - Authentication architecture and flow diagrams
-  - Endpoint specifications and examples
-  - Security best practices and considerations
-  - Testing strategy and test cases
-  - Frontend/backend integration details
-
-### Tech Stack READMEs
-
-Each backend/frontend directory has its own README with:
-
-- Tech stack details
-- Installation instructions
-- Development commands
-- Project structure
-
-Check these files:
-
-- `backends/node/README.md`
-- `backends/python/README.md`
-- `backends/golang/README.md`
-- `backends/java/README.md`
-- `frontends/nextjs/README.md`
-- `frontends/react/README.md`
-- `frontends/vue/README.md`
+- **[PROJECT_PLAN.md](PROJECT_PLAN.md)** - Complete development roadmap and task list
+- **[AUTHENTICATION.md](AUTHENTICATION.md)** - JWT authentication implementation guide
+- **[README.md](README.md)** - Project overview
+- **[backends/node/README.md](backends/node/README.md)** - Backend setup and API reference
+- **[shared/api-spec/openapi.yaml](shared/api-spec/openapi.yaml)** - OpenAPI specification
 
 ## Common Issues
 
@@ -411,23 +259,6 @@ curl -X POST http://localhost:3000/api/v1/habits \
   }'
 ```
 
-## Contributing to This Project
-
-As you implement features:
-
-1. ✅ Write tests first (TDD)
-2. ✅ Follow the OpenAPI spec
-3. ✅ Update relevant READMEs
-4. ✅ Keep type definitions in sync
-5. ✅ Document any new setup steps
-
-## Questions?
-
-- Check individual README files for specific tech stacks
-- Review the OpenAPI spec for API details
-- Look at the database schema for data structure
-- Refer to the shared types for data models
-
 ---
 
-Happy coding! 🚀
+For detailed development plans and roadmap, see [PROJECT_PLAN.md](PROJECT_PLAN.md).
