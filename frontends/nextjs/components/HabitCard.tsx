@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { Habit } from '@/types/habit';
-import { getLastNDays, getDayName, getMonthDay } from '@/utils/dateUtils';
+import { getCalendarWeek, getDayName, getMonthDay } from '@/utils/dateUtils';
 
 interface HabitCardProps {
   habit: Habit;
@@ -11,7 +12,8 @@ interface HabitCardProps {
 }
 
 export default function HabitCard({ habit, onToggleCompletion, onDelete, isCompletedOnDate }: HabitCardProps) {
-  const last7Days = getLastNDays(7);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const weekDays = getCalendarWeek(weekOffset);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 space-y-4">
@@ -62,9 +64,33 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, isCompl
       </div>
 
       <div className="border-t border-gray-700 pt-4">
-        <p className="text-xs text-gray-400 mb-3">Last 7 days:</p>
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setWeekOffset(weekOffset - 1)}
+            className="text-gray-400 hover:text-white transition-colors p-1"
+            aria-label="Previous week"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <p className="text-xs text-gray-400">
+            {weekOffset === 0 ? 'Current week' : `${getMonthDay(weekDays[0])} - ${getMonthDay(weekDays[6])}`}
+          </p>
+
+          <button
+            onClick={() => setWeekOffset(weekOffset + 1)}
+            className="text-gray-400 hover:text-white transition-colors p-1"
+            aria-label="Next week"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
         <div className="grid grid-cols-7 gap-2">
-          {last7Days.map((dateString) => {
+          {weekDays.map((dateString) => {
             // Parse date string as local date, not UTC
             const [year, month, day] = dateString.split('-').map(Number);
             const date = new Date(year, month - 1, day);

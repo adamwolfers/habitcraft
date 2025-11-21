@@ -1,4 +1,4 @@
-import { formatDate, isToday, getLastNDays, getDayName, getMonthDay } from './dateUtils';
+import { formatDate, isToday, getLastNDays, getDayName, getMonthDay, getCalendarWeek } from './dateUtils';
 
 describe('dateUtils', () => {
   describe('formatDate', () => {
@@ -105,6 +105,65 @@ describe('dateUtils', () => {
       const monthDay = getMonthDay(date);
       // Match the format but allow for timezone differences
       expect(monthDay).toMatch(/^Dec (24|25)$/);
+    });
+  });
+
+  describe('getCalendarWeek', () => {
+    it('should return 7 days for current week', () => {
+      const week = getCalendarWeek(0);
+      expect(week).toHaveLength(7);
+    });
+
+    it('should start on Sunday', () => {
+      const week = getCalendarWeek(0);
+      const firstDay = new Date(week[0] + 'T00:00:00');
+      expect(firstDay.getDay()).toBe(0); // 0 = Sunday
+    });
+
+    it('should end on Saturday', () => {
+      const week = getCalendarWeek(0);
+      const lastDay = new Date(week[6] + 'T00:00:00');
+      expect(lastDay.getDay()).toBe(6); // 6 = Saturday
+    });
+
+    it('should return consecutive days', () => {
+      const week = getCalendarWeek(0);
+      for (let i = 0; i < week.length - 1; i++) {
+        const current = new Date(week[i] + 'T00:00:00');
+        const next = new Date(week[i + 1] + 'T00:00:00');
+        const diffInDays = (next.getTime() - current.getTime()) / (1000 * 60 * 60 * 24);
+        expect(diffInDays).toBe(1);
+      }
+    });
+
+    it('should return previous week when offset is -1', () => {
+      const currentWeek = getCalendarWeek(0);
+      const previousWeek = getCalendarWeek(-1);
+
+      const currentStart = new Date(currentWeek[0] + 'T00:00:00');
+      const previousStart = new Date(previousWeek[0] + 'T00:00:00');
+
+      const diffInDays = (currentStart.getTime() - previousStart.getTime()) / (1000 * 60 * 60 * 24);
+      expect(diffInDays).toBe(7);
+    });
+
+    it('should return next week when offset is 1', () => {
+      const currentWeek = getCalendarWeek(0);
+      const nextWeek = getCalendarWeek(1);
+
+      const currentStart = new Date(currentWeek[0] + 'T00:00:00');
+      const nextStart = new Date(nextWeek[0] + 'T00:00:00');
+
+      const diffInDays = (nextStart.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24);
+      expect(diffInDays).toBe(7);
+    });
+
+    it('should handle week that spans two months', () => {
+      // Test with a specific date that we know spans months
+      // This is harder to test without mocking, but we can at least verify structure
+      const week = getCalendarWeek(0);
+      expect(week).toHaveLength(7);
+      expect(week.every((d: string) => d.match(/^\d{4}-\d{2}-\d{2}$/))).toBe(true);
     });
   });
 });

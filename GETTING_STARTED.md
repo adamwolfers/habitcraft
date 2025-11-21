@@ -208,7 +208,9 @@ psql -d habitcraft -f shared/database/schema.sql
   - Total: 15 useHabits tests passing
   - Fixed date comparison bug (stripped timestamps)
 - ✅ Restore full HabitCard UI with completion tracking (COMPLETED)
-  - Daily completion toggles (last 7 days)
+  - Calendar week view (Sunday-Saturday)
+  - Week navigation with arrow buttons
+  - Displays current week or date range for other weeks
   - Visual completion bubbles with checkmarks
   - Color-coded completion indicators
   - Click to toggle completion status
@@ -221,9 +223,13 @@ psql -d habitcraft -f shared/database/schema.sql
   - Removes habit from local state
   - Removes associated completions when habit is deleted
   - 12 new passing tests (4 API + 4 hook + 4 page tests)
-  - Total: 72 frontend tests passing
   - Proper error handling for delete failures (400, 401, 404)
   - Delete button integrated into HabitCard component
+- ✅ Implement calendar week navigation (COMPLETED - TDD approach)
+  - Created getCalendarWeek utility function with 7 tests
+  - Added week navigation controls to HabitCard with 6 tests
+  - Total: 85 frontend tests passing
+  - Displays Sunday-Saturday weeks with previous/next navigation
 - 📋 Add loading states and error handling to UI
   - Show loading spinner while fetching
   - Display user-friendly error messages
@@ -267,7 +273,7 @@ npm test
 npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
 
-# Next.js frontend (72 tests passing)
+# Next.js frontend (85 tests passing)
 cd frontends/nextjs
 npm test
 
@@ -275,6 +281,8 @@ npm test
 npm test -- lib/api.test.ts
 npm test -- hooks/useHabits.test.ts
 npm test -- app/page.test.tsx
+npm test -- utils/dateUtils.test.ts
+npm test -- components/HabitCard.test.tsx
 ```
 
 ### API Documentation
