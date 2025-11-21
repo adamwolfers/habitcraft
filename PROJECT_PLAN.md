@@ -70,12 +70,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Write tests (success with valid token, missing/invalid/expired token)
   - [x] Implement profile endpoint
   - [x] Return user data (id, email, name, createdAt)
-- [ ] **Update Protected Routes**
-  - [ ] Write tests for habit endpoints with JWT authentication
-  - [ ] Write tests for completion endpoints with JWT authentication
-  - [ ] Replace mockAuth with jwtAuth middleware
-  - [ ] Remove mockAuth.js file
-  - [ ] Verify user isolation and data access controls
+- [x] **Update Protected Routes**
+  - [x] Write tests for habit endpoints with JWT authentication
+  - [x] Write tests for completion endpoints with JWT authentication
+  - [x] Replace mockAuth with jwtAuth middleware
+  - [x] Remove mockAuth.js file
+  - [x] Verify user isolation and data access controls
 
 #### Habit Management
 - [x] **POST /api/v1/habits** - Create habit

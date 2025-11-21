@@ -1,12 +1,16 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../app');
 const pool = require('../db/pool');
 
 // Mock the database pool
 jest.mock('../db/pool');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+const mockToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
 describe('Completions API', () => {
-  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
   const mockHabitId = 'habit-123';
   const mockCompletionId = 'completion-123';
   const mockDate = '2025-01-15';
@@ -37,7 +41,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({
           date: mockDate,
           notes: 'Completed 30 minutes'
@@ -67,7 +71,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({ date: mockDate });
 
       expect(response.status).toBe(201);
@@ -77,7 +81,7 @@ describe('Completions API', () => {
     it('should return 400 if date is missing', async () => {
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({});
 
       expect(response.status).toBe(400);
@@ -87,7 +91,7 @@ describe('Completions API', () => {
     it('should return 400 if date format is invalid', async () => {
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({ date: 'invalid-date' });
 
       expect(response.status).toBe(400);
@@ -99,7 +103,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({ date: mockDate });
 
       expect(response.status).toBe(404);
@@ -113,7 +117,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({ date: mockDate });
 
       expect(response.status).toBe(403);
@@ -132,7 +136,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .post(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId)
+        .set('Authorization', `Bearer ${mockToken}`)
         .send({ date: mockDate });
 
       expect(response.status).toBe(409);
@@ -169,7 +173,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .get(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockCompletions);
@@ -187,7 +191,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .get(`/api/v1/habits/${mockHabitId}/completions?startDate=2025-01-15`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(pool.query).toHaveBeenCalledWith(
@@ -207,7 +211,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .get(`/api/v1/habits/${mockHabitId}/completions?endDate=2025-01-20`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(pool.query).toHaveBeenCalledWith(
@@ -227,7 +231,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .get(`/api/v1/habits/${mockHabitId}/completions?startDate=2025-01-10&endDate=2025-01-20`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(pool.query).toHaveBeenCalledWith(
@@ -247,7 +251,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .get(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
@@ -258,7 +262,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .get(`/api/v1/habits/${mockHabitId}/completions`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(404);
     });
@@ -276,7 +280,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .delete(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual({
@@ -301,7 +305,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .delete(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(404);
       expect(response.body.error).toContain('Completion not found');
@@ -312,7 +316,7 @@ describe('Completions API', () => {
 
       const response = await request(app)
         .delete(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(404);
     });
@@ -320,7 +324,7 @@ describe('Completions API', () => {
     it('should return 400 if date format is invalid', async () => {
       const response = await request(app)
         .delete(`/api/v1/habits/${mockHabitId}/completions/invalid-date`)
-        .set('X-User-Id', mockUserId);
+        .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('date');

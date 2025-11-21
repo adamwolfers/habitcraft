@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../db/pool');
-const { mockAuthMiddleware } = require('../middleware/mockAuth');
+const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
 
 const router = express.Router({ mergeParams: true });
 
@@ -32,7 +32,7 @@ async function verifyHabitOwnership(habitId, userId) {
 }
 
 // POST /api/v1/habits/:habitId/completions
-router.post('/', mockAuthMiddleware, async (req, res) => {
+router.post('/', jwtAuthMiddleware, async (req, res) => {
   try {
     const { habitId } = req.params;
     const { date, notes } = req.body;
@@ -87,7 +87,7 @@ router.post('/', mockAuthMiddleware, async (req, res) => {
 });
 
 // GET /api/v1/habits/:habitId/completions
-router.get('/', mockAuthMiddleware, async (req, res) => {
+router.get('/', jwtAuthMiddleware, async (req, res) => {
   try {
     const { habitId } = req.params;
     const { startDate, endDate } = req.query;
@@ -144,7 +144,7 @@ router.get('/', mockAuthMiddleware, async (req, res) => {
 });
 
 // DELETE /api/v1/habits/:habitId/completions/:date
-router.delete('/:date', mockAuthMiddleware, async (req, res) => {
+router.delete('/:date', jwtAuthMiddleware, async (req, res) => {
   try {
     const { habitId, date } = req.params;
     const userId = req.userId;

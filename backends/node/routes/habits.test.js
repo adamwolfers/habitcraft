@@ -1,4 +1,5 @@
 const request = require('supertest');
+const jwt = require('jsonwebtoken');
 const app = require('../app');
 
 // Mock the database pool module
@@ -9,8 +10,11 @@ jest.mock('../db/pool', () => ({
 
 const { query, closePool } = require('../db/pool');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
+const TEST_TOKEN = jwt.sign({ userId: TEST_USER_ID, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
 describe('POST /api/v1/habits', () => {
-  const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
   beforeEach(() => {
     // Clear all mocks before each test
@@ -45,7 +49,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect('Content-Type', /json/)
       .expect(201);
@@ -96,7 +100,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(201);
 
@@ -118,7 +122,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(400);
 
@@ -133,7 +137,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(400);
 
@@ -149,7 +153,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(400);
 
@@ -165,7 +169,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(400);
 
@@ -182,7 +186,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(400);
 
@@ -229,7 +233,7 @@ describe('POST /api/v1/habits', () => {
 
     const response = await request(app)
       .post('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(habitData)
       .expect(201);
 
@@ -255,7 +259,7 @@ describe('GET /api/v1/habits', () => {
 
     const response = await request(app)
       .get('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -301,7 +305,7 @@ describe('GET /api/v1/habits', () => {
 
     const response = await request(app)
       .get('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(200);
 
     expect(response.body).toHaveLength(2);
@@ -341,7 +345,7 @@ describe('GET /api/v1/habits', () => {
 
     const response = await request(app)
       .get('/api/v1/habits')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(200);
 
     expect(response.body).toHaveLength(1);
@@ -375,7 +379,7 @@ describe('GET /api/v1/habits', () => {
 
     const response = await request(app)
       .get('/api/v1/habits?status=active')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(200);
 
     expect(response.body).toHaveLength(1);
@@ -410,7 +414,7 @@ describe('GET /api/v1/habits', () => {
 
     const response = await request(app)
       .get('/api/v1/habits?status=archived')
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(200);
 
     expect(response.body).toHaveLength(1);
@@ -452,7 +456,7 @@ describe('DELETE /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .delete(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(204);
 
     expect(response.body).toEqual({});
@@ -469,7 +473,7 @@ describe('DELETE /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .delete(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(404);
 
     expect(response.body).toHaveProperty('error');
@@ -483,7 +487,7 @@ describe('DELETE /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .delete(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(404);
 
     expect(response.body).toHaveProperty('error');
@@ -507,7 +511,7 @@ describe('DELETE /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .delete(`/api/v1/habits/${invalidId}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(400);
 
     expect(response.body).toHaveProperty('error');
@@ -519,7 +523,7 @@ describe('DELETE /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .delete(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .expect(500);
 
     expect(response.body).toHaveProperty('error');
@@ -567,7 +571,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect('Content-Type', /json/)
       .expect(200);
@@ -613,7 +617,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(200);
 
@@ -645,7 +649,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(200);
 
@@ -662,7 +666,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(404);
 
@@ -680,7 +684,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(404);
 
@@ -719,7 +723,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${invalidId}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(400);
 
@@ -734,7 +738,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(400);
 
@@ -750,7 +754,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(400);
 
@@ -767,7 +771,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(400);
 
@@ -784,7 +788,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(400);
 
@@ -802,7 +806,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('X-User-Id', TEST_USER_ID)
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
       .send(updateData)
       .expect(500);
 
