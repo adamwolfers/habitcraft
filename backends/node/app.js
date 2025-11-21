@@ -1,12 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const { query } = require('./db/pool');
 const habitsRouter = require('./routes/habits');
 const authRouter = require('./routes/auth');
 const app = express();
 
 // Middleware
-app.use(cors()); // Enable CORS for all routes
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3100',
+  credentials: true // Allow cookies to be sent cross-origin
+}));
+app.use(cookieParser());
 app.use(express.json());
 
 app.get('/hello', (req, res) => {

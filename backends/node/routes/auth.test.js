@@ -21,7 +21,7 @@ describe('Auth API', () => {
       name: 'Test User'
     };
 
-    it('should register a new user and return tokens', async () => {
+    it('should register a new user and set HttpOnly cookies', async () => {
       const mockUser = {
         id: mockUserId,
         email: validUser.email,
@@ -44,9 +44,13 @@ describe('Auth API', () => {
         email: validUser.email,
         name: validUser.name
       });
-      expect(response.body.accessToken).toBeDefined();
-      expect(response.body.refreshToken).toBeDefined();
       expect(response.body.user.password).toBeUndefined();
+
+      // Check HttpOnly cookies are set
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some(c => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(true);
     });
 
     it('should return 409 if email already exists', async () => {
@@ -128,7 +132,7 @@ describe('Auth API', () => {
       password: 'SecurePass123!'
     };
 
-    it('should login with valid credentials and return tokens', async () => {
+    it('should login with valid credentials and set HttpOnly cookies', async () => {
       const hashedPassword = await bcrypt.hash(validCredentials.password, 10);
       const mockUser = {
         id: mockUserId,
@@ -149,9 +153,13 @@ describe('Auth API', () => {
         id: mockUserId,
         email: validCredentials.email
       });
-      expect(response.body.accessToken).toBeDefined();
-      expect(response.body.refreshToken).toBeDefined();
       expect(response.body.user.password).toBeUndefined();
+
+      // Check HttpOnly cookies are set
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some(c => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(true);
     });
 
     it('should return 401 for non-existent email', async () => {

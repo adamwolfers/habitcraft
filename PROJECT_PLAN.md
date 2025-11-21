@@ -77,6 +77,15 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Remove mockAuth.js file
   - [x] Verify user isolation and data access controls
   - [ ] Remove X-User-Id fallback once frontend JWT auth is complete
+- [ ] **Secure Token Storage (HttpOnly Cookies)**
+  - [x] Install cookie-parser middleware
+  - [x] Update CORS config to allow credentials
+  - [x] Update login/register to set HttpOnly cookies instead of returning tokens in body
+  - [x] Update JWT middleware to read tokens from cookies (with Authorization header fallback)
+  - [ ] Update refresh endpoint to use cookies
+  - [ ] Add logout endpoint to clear cookies
+  - [ ] Update frontend to use credentials: 'include' for API requests
+  - [ ] Remove localStorage token handling from frontend
 
 #### Habit Management
 - [x] **POST /api/v1/habits** - Create habit

@@ -9,6 +9,27 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const ACCESS_TOKEN_EXPIRES = '15m';
 const REFRESH_TOKEN_EXPIRES = '7d';
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
+
+// Cookie options
+const cookieOptions = {
+  httpOnly: true,
+  secure: IS_PRODUCTION, // Only send over HTTPS in production
+  sameSite: IS_PRODUCTION ? 'strict' : 'lax',
+  path: '/'
+};
+
+// Set auth cookies on response
+function setAuthCookies(res, accessToken, refreshToken) {
+  res.cookie('accessToken', accessToken, {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000 // 15 minutes
+  });
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  });
+}
 
 // Generate tokens
 function generateTokens(userId) {
@@ -75,14 +96,16 @@ router.post('/register', registerValidation, async (req, res) => {
     const user = result.rows[0];
     const tokens = generateTokens(user.id);
 
+    // Set HttpOnly cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
     res.status(201).json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         createdAt: user.createdAt
-      },
-      ...tokens
+      }
     });
   } catch (error) {
     console.error('Error registering user:', error);
@@ -120,14 +143,16 @@ router.post('/login', loginValidation, async (req, res) => {
 
     const tokens = generateTokens(user.id);
 
+    // Set HttpOnly cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
     res.json({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
         createdAt: user.createdAt
-      },
-      ...tokens
+      }
     });
   } catch (error) {
     console.error('Error logging in:', error);
