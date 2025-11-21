@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const { query } = require('./db/pool');
 const habitsRouter = require('./routes/habits');
+const authRouter = require('./routes/auth');
 const app = express();
 
 // Middleware
@@ -35,6 +36,7 @@ app.get('/health', async (req, res) => {
 });
 
 // API routes
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/habits', habitsRouter);
 
 module.exports = app;

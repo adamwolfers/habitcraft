@@ -46,17 +46,17 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Authentication & Authorization
 - [x] Mock authentication middleware (X-User-Id header for development)
-- [ ] Install dependencies (bcrypt, jsonwebtoken, express-validator)
-- [ ] **User Registration (POST /api/v1/auth/register)**
-  - [ ] Write tests (valid registration, duplicate email, validation, password hashing, JWT generation)
-  - [ ] Implement endpoint with input validation
-  - [ ] Hash passwords with bcrypt (10 salt rounds)
-  - [ ] Generate access token (15 min) and refresh token (7 days)
-- [ ] **User Login (POST /api/v1/auth/login)**
-  - [ ] Write tests (success, invalid email, wrong password, token generation)
-  - [ ] Implement endpoint with credential verification
-  - [ ] Generic error messages (prevent user enumeration)
-  - [ ] Generate JWT tokens
+- [x] Install dependencies (bcrypt, jsonwebtoken, express-validator)
+- [x] **User Registration (POST /api/v1/auth/register)**
+  - [x] Write tests (valid registration, duplicate email, validation, password hashing, JWT generation)
+  - [x] Implement endpoint with input validation
+  - [x] Hash passwords with bcrypt (10 salt rounds)
+  - [x] Generate access token (15 min) and refresh token (7 days)
+- [x] **User Login (POST /api/v1/auth/login)**
+  - [x] Write tests (success, invalid email, wrong password, token generation)
+  - [x] Implement endpoint with credential verification
+  - [x] Generic error messages (prevent user enumeration)
+  - [x] Generate JWT tokens
 - [ ] **JWT Authentication Middleware**
   - [ ] Write tests (valid token, missing/malformed/expired tokens, wrong token type)
   - [ ] Implement jwtAuth.js middleware
@@ -460,5 +460,5 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ---
 
 **Last Updated:** 2025-11-20
-**Current Status:** Infrastructure and base features complete, starting JWT authentication implementation
+**Current Status:** User registration and login complete, continuing JWT authentication
 **Next Milestone:** v1.0 Release
