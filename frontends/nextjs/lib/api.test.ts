@@ -62,6 +62,7 @@ describe('fetchHabits', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       `${API_BASE_URL}/api/v1/habits`,
       {
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': mockUserId
@@ -85,6 +86,7 @@ describe('fetchHabits', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       `${API_BASE_URL}/api/v1/habits?status=active`,
       {
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': mockUserId
@@ -191,6 +193,7 @@ describe('fetchCompletions', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
       {
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': mockUserId
@@ -280,6 +283,7 @@ describe('createCompletion', () => {
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
       {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': mockUserId
@@ -357,6 +361,7 @@ describe('deleteCompletion', () => {
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions/2025-01-15`,
       {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': mockUserId
@@ -404,6 +409,7 @@ describe('deleteHabit', () => {
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}`,
       {
         method: 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'X-User-Id': mockUserId

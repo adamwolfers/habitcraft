@@ -19,6 +19,7 @@ export async function fetchHabits(
   }
 
   const response = await fetch(url.toString(), {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId
@@ -44,6 +45,7 @@ export async function createHabit(
 ): Promise<Habit> {
   const response = await fetch(`${API_BASE_URL}/api/v1/habits`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId
@@ -82,6 +84,7 @@ export async function fetchCompletions(
   }
 
   const response = await fetch(url.toString(), {
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId
@@ -116,6 +119,7 @@ export async function createCompletion(
 
   const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}/completions`, {
     method: 'POST',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId
@@ -143,6 +147,7 @@ export async function deleteCompletion(
 ): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`, {
     method: 'DELETE',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId
@@ -165,6 +170,7 @@ export async function deleteHabit(
 ): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}`, {
     method: 'DELETE',
+    credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
       'X-User-Id': userId

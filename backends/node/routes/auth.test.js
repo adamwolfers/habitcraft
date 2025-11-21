@@ -251,6 +251,38 @@ describe('Auth API', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('should return new access token when refresh token is in cookie', async () => {
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
+
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', `refreshToken=${refreshToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.accessToken).toBeDefined();
+
+      // Should also set new accessToken cookie
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
+    });
+  });
+
+  describe('POST /api/v1/auth/logout', () => {
+    it('should clear auth cookies', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/logout');
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Logged out successfully');
+
+      // Check cookies are cleared (set to empty with past expiry)
+      const cookies = response.headers['set-cookie'];
+      expect(cookies).toBeDefined();
+      expect(cookies.some(c => c.startsWith('accessToken='))).toBe(true);
+      expect(cookies.some(c => c.startsWith('refreshToken='))).toBe(true);
+    });
   });
 
   describe('GET /api/v1/auth/me', () => {

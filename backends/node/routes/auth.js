@@ -58,9 +58,11 @@ const loginValidation = [
   body('password').notEmpty().withMessage('Password is required')
 ];
 
-const refreshValidation = [
-  body('refreshToken').notEmpty().withMessage('Refresh token is required')
-];
+// Clear auth cookies on response
+function clearAuthCookies(res) {
+  res.clearCookie('accessToken', cookieOptions);
+  res.clearCookie('refreshToken', cookieOptions);
+}
 
 // POST /api/v1/auth/register
 router.post('/register', registerValidation, async (req, res) => {
@@ -161,14 +163,14 @@ router.post('/login', loginValidation, async (req, res) => {
 });
 
 // POST /api/v1/auth/refresh
-router.post('/refresh', refreshValidation, async (req, res) => {
+router.post('/refresh', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    // Read refresh token from cookie (with body fallback for backwards compatibility)
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
-    const { refreshToken } = req.body;
+    if (!refreshToken) {
+      return res.status(400).json({ error: 'Refresh token is required' });
+    }
 
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
 
@@ -182,6 +184,12 @@ router.post('/refresh', refreshValidation, async (req, res) => {
       { expiresIn: ACCESS_TOKEN_EXPIRES }
     );
 
+    // Set new access token cookie
+    res.cookie('accessToken', accessToken, {
+      ...cookieOptions,
+      maxAge: 15 * 60 * 1000 // 15 minutes
+    });
+
     res.json({ accessToken });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
@@ -193,6 +201,12 @@ router.post('/refresh', refreshValidation, async (req, res) => {
     console.error('Error refreshing token:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// POST /api/v1/auth/logout
+router.post('/logout', (_req, res) => {
+  clearAuthCookies(res);
+  res.json({ message: 'Logged out successfully' });
 });
 
 // GET /api/v1/auth/me
