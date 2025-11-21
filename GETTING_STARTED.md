@@ -169,7 +169,30 @@ psql -d habitcraft -f shared/database/schema.sql
   - 17 passing tests for completions API
   - Validates habit ownership and date formats
   - Handles duplicate completions (409 Conflict)
-- 📋 Replace mock auth with real JWT authentication
+- 📋 **Implement JWT Authentication (TDD approach) - PLANNED**
+  - **Dependencies:** Install bcrypt, jsonwebtoken, express-validator
+  - **Backend Authentication Endpoints:**
+    - POST /api/v1/auth/register - User registration with password hashing (bcrypt)
+    - POST /api/v1/auth/login - Login with JWT generation (access + refresh tokens)
+    - POST /api/v1/auth/refresh - Refresh access token using refresh token
+    - GET /api/v1/auth/me - Get current user profile
+  - **Backend Middleware:**
+    - Replace mockAuth.js with jwtAuth.js middleware
+    - Add JWT validation and user extraction
+    - Update all protected routes to use JWT middleware
+  - **Security Features:**
+    - Password strength validation (min 8 chars, complexity requirements)
+    - Bcrypt password hashing (10 rounds)
+    - Short-lived access tokens (15 min)
+    - Long-lived refresh tokens (7 days)
+  - **Frontend Implementation:**
+    - Create React Context for auth state
+    - Custom hooks: useAuth(), useRequireAuth()
+    - Login and registration pages with forms
+    - Protected route wrapper component
+    - API client updates for JWT token handling and auto-refresh
+  - **TDD Approach:** Write tests for each endpoint/middleware first, then implement
+  - **Test Coverage:** Unit tests for auth endpoints, integration tests for protected routes
 - 📋 Continue following the TDD approach
 - **TODO:** Add acceptance/integration tests that test against real database
   - Current tests use mocks for fast unit testing
@@ -293,6 +316,17 @@ The OpenAPI specification is available at:
 - View online: Use [Swagger Editor](https://editor.swagger.io/) and paste the file contents
 
 ## Learning Resources
+
+### Documentation
+
+- **[AUTHENTICATION.md](AUTHENTICATION.md)** - Complete JWT authentication implementation guide with TDD approach
+  - Authentication architecture and flow diagrams
+  - Endpoint specifications and examples
+  - Security best practices and considerations
+  - Testing strategy and test cases
+  - Frontend/backend integration details
+
+### Tech Stack READMEs
 
 Each backend/frontend directory has its own README with:
 

@@ -77,12 +77,24 @@ Each backend and frontend has its own README with specific setup instructions:
 - [React Frontend](./frontends/react/README.md)
 - [Vue Frontend](./frontends/vue/README.md)
 
-## API Documentation
+## Documentation
+
+### API Documentation
 
 All backends implement the same REST API specification defined in [shared/api-spec/openapi.yaml](./shared/api-spec/openapi.yaml).
 
 Interactive API documentation is available when running any backend:
 - Swagger UI: `http://localhost:3000/api-docs`
+
+### Implementation Guides
+
+- **[AUTHENTICATION.md](AUTHENTICATION.md)** - Complete guide for JWT authentication implementation
+  - Architecture and authentication flows
+  - Endpoint specifications with request/response examples
+  - Security features and best practices
+  - TDD testing strategy and test cases
+  - Frontend/backend integration details
+- **[GETTING_STARTED.md](GETTING_STARTED.md)** - Quick start guide and setup instructions
 
 ## Database
 
@@ -145,16 +157,30 @@ MIT License - feel free to use this for your own learning!
 - [x] Mock authentication (X-User-Id header)
 - [x] Habit Create endpoint (POST /api/v1/habits)
 - [x] Habit Read endpoint (GET /api/v1/habits)
-- [ ] Habit Update endpoint (PUT /api/v1/habits/:id)
+- [x] Habit Update endpoint (PUT /api/v1/habits/:id)
 - [x] Habit Delete endpoint (DELETE /api/v1/habits/:id)
 - [x] Completions tracking (Create, Read, Delete)
-- [ ] JWT authentication
+- [ ] **JWT Authentication (TDD approach) - In Planning:**
+  - [ ] Install dependencies (bcrypt, jsonwebtoken, express-validator)
+  - [ ] User registration endpoint (POST /api/v1/auth/register)
+  - [ ] User login endpoint (POST /api/v1/auth/login)
+  - [ ] Token refresh endpoint (POST /api/v1/auth/refresh)
+  - [ ] User profile endpoint (GET /api/v1/auth/me)
+  - [ ] JWT authentication middleware (replace mockAuth)
+  - [ ] Update all protected routes to use JWT
 - [ ] Statistics endpoint
 
 ### Frontend - Next.js
 - [x] Full implementation with API integration
 - [x] Habit display and creation
 - [x] Completion tracking
+- [ ] **Authentication UI (TDD approach) - In Planning:**
+  - [ ] Auth context and hooks (useAuth, useRequireAuth)
+  - [ ] Login page with form validation
+  - [ ] Registration page with form validation
+  - [ ] Protected route wrapper component
+  - [ ] API client JWT handling and auto-refresh
+  - [ ] Logout functionality
 
 ### Other Backends
 - [ ] Python backend implementation

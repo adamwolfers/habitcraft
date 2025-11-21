@@ -22,8 +22,14 @@ Node.js + Express implementation of the HabitCraft API.
   - DELETE /api/v1/habits/:habitId/completions/:date
 
 ### In Progress / TODO
-- [ ] Real JWT authentication (currently using mock X-User-Id header)
-- [ ] Habit update endpoint (PUT /api/v1/habits/:id)
+- [ ] **Real JWT authentication (TDD approach) - IN PLANNING:**
+  - [ ] Install dependencies: bcrypt, jsonwebtoken, express-validator
+  - [ ] Write tests & implement registration endpoint (POST /api/v1/auth/register)
+  - [ ] Write tests & implement login endpoint (POST /api/v1/auth/login)
+  - [ ] Write tests & implement JWT middleware (replace mockAuth)
+  - [ ] Write tests & implement token refresh endpoint (POST /api/v1/auth/refresh)
+  - [ ] Write tests & implement user profile endpoint (GET /api/v1/auth/me)
+  - [ ] Write tests & update all protected routes to use JWT middleware
 - [ ] Habit get by ID endpoint (GET /api/v1/habits/:id)
 - [ ] Statistics calculation endpoint
 - [ ] Integration tests with real database
@@ -111,12 +117,22 @@ See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for full API
 
 ### Planned
 
+**Authentication (TDD approach):**
+- `POST /api/v1/auth/register` - User registration with password hashing (bcrypt)
+  - Validates email format and password strength (min 8 chars)
+  - Returns JWT access token (15 min) and refresh token (7 days)
+- `POST /api/v1/auth/login` - User login with JWT generation
+  - Validates credentials with bcrypt.compare()
+  - Returns JWT access token and refresh token
+- `POST /api/v1/auth/refresh` - Refresh access token using refresh token
+  - Validates refresh token and issues new access token
+- `GET /api/v1/auth/me` - Get current user profile
+  - Requires JWT authentication
+  - Returns user info (id, email, name)
+
+**Other Features:**
 - `GET /health` - Health check endpoint
-- `POST /auth/register` - User registration with JWT
-- `POST /auth/login` - User login with JWT
-- `GET /users/me` - Get current user profile
 - `GET /api/v1/habits/:id` - Get single habit by ID
-- `PUT /api/v1/habits/:id` - Update habit
 - `GET /api/v1/habits/:id/statistics` - Get habit statistics (streaks, completion rate, etc.)
 
 ## Project Structure
