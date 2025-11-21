@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js",
+    "dev": "nodemon server.js",
     "test": "jest",
     "test:watch": "jest --watch"
   },
@@ -15,6 +15,7 @@
   "type": "commonjs",
   "devDependencies": {
     "jest": "^30.2.0",
+    "nodemon": "^3.1.11",
     "supertest": "^7.1.4"
   },
   "dependencies": {
