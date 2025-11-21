@@ -85,7 +85,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Update refresh endpoint to use cookies
   - [x] Add logout endpoint to clear cookies
   - [x] Update frontend to use credentials: 'include' for API requests
-  - [ ] Remove localStorage token handling from frontend (N/A - frontend auth not yet implemented)
+  - [x] Remove localStorage token handling from frontend (using HttpOnly cookies instead)
 
 #### Habit Management
 - [x] **POST /api/v1/habits** - Create habit
@@ -128,11 +128,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Environment variable configuration
 
 #### Authentication & Authorization
-- [ ] **Auth Context (context/AuthContext.tsx)**
-  - [ ] Write tests (login, logout, register, token persistence, loading states)
-  - [ ] Implement AuthContext with user state management
-  - [ ] Token storage in localStorage
-  - [ ] isLoading and isAuthenticated flags
+- [x] **Auth Context (context/AuthContext.tsx)**
+  - [x] Write tests (login, logout, register, session persistence, loading states)
+  - [x] Implement AuthContext with user state management
+  - [x] Cookie-based authentication (HttpOnly cookies)
+  - [x] isLoading and isAuthenticated flags
 - [ ] **Custom Auth Hooks**
   - [ ] Write tests for useAuth() hook
   - [ ] Write tests for useRequireAuth() hook (redirect logic)

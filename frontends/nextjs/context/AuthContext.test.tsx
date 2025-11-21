@@ -6,17 +6,7 @@ import React from 'react';
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
-// Mock localStorage
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: jest.fn((key: string) => store[key] || null),
-    setItem: jest.fn((key: string, value: string) => { store[key] = value; }),
-    removeItem: jest.fn((key: string) => { delete store[key]; }),
-    clear: jest.fn(() => { store = {}; })
-  };
-})();
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
 describe('AuthContext', () => {
   const mockUser = {
@@ -26,14 +16,8 @@ describe('AuthContext', () => {
     createdAt: '2025-01-01T00:00:00.000Z'
   };
 
-  const mockTokens = {
-    accessToken: 'mock-access-token',
-    refreshToken: 'mock-refresh-token'
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
-    localStorageMock.clear();
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
@@ -58,13 +42,24 @@ describe('AuthContext', () => {
   });
 
   describe('login', () => {
-    it('should login successfully and store tokens', async () => {
+    it('should login successfully with credentials include', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock login
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser, ...mockTokens })
+        json: async () => ({ user: mockUser })
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       await act(async () => {
         await result.current.login('test@example.com', 'password123');
@@ -72,17 +67,35 @@ describe('AuthContext', () => {
 
       expect(result.current.user).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('accessToken', mockTokens.accessToken);
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('refreshToken', mockTokens.refreshToken);
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/auth/login`,
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@example.com', password: 'password123' })
+        })
+      );
     });
 
     it('should throw error on invalid credentials', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock failed login
       mockFetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Invalid credentials' })
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       await expect(
         act(async () => {
@@ -96,13 +109,24 @@ describe('AuthContext', () => {
   });
 
   describe('register', () => {
-    it('should register successfully and store tokens', async () => {
+    it('should register successfully with credentials include', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock register
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser, ...mockTokens })
+        json: async () => ({ user: mockUser })
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       await act(async () => {
         await result.current.register('test@example.com', 'password123', 'Test User');
@@ -110,10 +134,25 @@ describe('AuthContext', () => {
 
       expect(result.current.user).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
-      expect(localStorageMock.setItem).toHaveBeenCalledWith('accessToken', mockTokens.accessToken);
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/auth/register`,
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: 'test@example.com', password: 'password123', name: 'Test User' })
+        })
+      );
     });
 
     it('should throw error if email already exists', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock failed register
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 409,
@@ -121,6 +160,10 @@ describe('AuthContext', () => {
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       await expect(
         act(async () => {
@@ -131,14 +174,24 @@ describe('AuthContext', () => {
   });
 
   describe('logout', () => {
-    it('should clear user and tokens on logout', async () => {
-      // First login
+    it('should clear user and call logout endpoint', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock login
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser, ...mockTokens })
+        json: async () => ({ user: mockUser })
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
 
       await act(async () => {
         await result.current.login('test@example.com', 'password123');
@@ -146,26 +199,32 @@ describe('AuthContext', () => {
 
       expect(result.current.isAuthenticated).toBe(true);
 
+      // Mock logout endpoint
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Logged out successfully' })
+      } as Response);
+
       // Then logout
-      act(() => {
-        result.current.logout();
+      await act(async () => {
+        await result.current.logout();
       });
 
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('accessToken');
-      expect(localStorageMock.removeItem).toHaveBeenCalledWith('refreshToken');
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        `${API_BASE_URL}/api/v1/auth/logout`,
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include'
+        })
+      );
     });
   });
 
-  describe('token persistence', () => {
-    it('should restore session from localStorage on mount', async () => {
-      localStorageMock.getItem.mockImplementation((key: string) => {
-        if (key === 'accessToken') return mockTokens.accessToken;
-        if (key === 'refreshToken') return mockTokens.refreshToken;
-        return null;
-      });
-
+  describe('session persistence', () => {
+    it('should restore session from cookies on mount', async () => {
+      // Mock /auth/me returning user (cookie auth succeeds)
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockUser
@@ -179,9 +238,22 @@ describe('AuthContext', () => {
 
       expect(result.current.user).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/auth/me`,
+        expect.objectContaining({
+          credentials: 'include'
+        })
+      );
     });
 
-    it('should set isLoading to false when no tokens exist', async () => {
+    it('should set isLoading to false when no session exists', async () => {
+      // Mock /auth/me returning 401 (no valid cookie)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+
       const { result } = renderHook(() => useAuth(), { wrapper });
 
       await waitFor(() => {
