@@ -57,19 +57,19 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Implement endpoint with credential verification
   - [x] Generic error messages (prevent user enumeration)
   - [x] Generate JWT tokens
-- [ ] **JWT Authentication Middleware**
-  - [ ] Write tests (valid token, missing/malformed/expired tokens, wrong token type)
-  - [ ] Implement jwtAuth.js middleware
-  - [ ] Extract and verify token from Authorization header
-  - [ ] Attach userId to request object
-- [ ] **Token Refresh (POST /api/v1/auth/refresh)**
-  - [ ] Write tests (valid refresh, expired token, wrong type, invalid signature)
-  - [ ] Implement refresh endpoint
-  - [ ] Validate refresh token and generate new access token
-- [ ] **User Profile (GET /api/v1/auth/me)**
-  - [ ] Write tests (success with valid token, missing/invalid/expired token)
-  - [ ] Implement profile endpoint
-  - [ ] Return user data (id, email, name, createdAt)
+- [x] **JWT Authentication Middleware**
+  - [x] Write tests (valid token, missing/malformed/expired tokens, wrong token type)
+  - [x] Implement jwtAuth.js middleware
+  - [x] Extract and verify token from Authorization header
+  - [x] Attach userId to request object
+- [x] **Token Refresh (POST /api/v1/auth/refresh)**
+  - [x] Write tests (valid refresh, expired token, wrong type, invalid signature)
+  - [x] Implement refresh endpoint
+  - [x] Validate refresh token and generate new access token
+- [x] **User Profile (GET /api/v1/auth/me)**
+  - [x] Write tests (success with valid token, missing/invalid/expired token)
+  - [x] Implement profile endpoint
+  - [x] Return user data (id, email, name, createdAt)
 - [ ] **Update Protected Routes**
   - [ ] Write tests for habit endpoints with JWT authentication
   - [ ] Write tests for completion endpoints with JWT authentication

@@ -199,4 +199,103 @@ describe('Auth API', () => {
       expect(response.status).toBe(400);
     });
   });
+
+  describe('POST /api/v1/auth/refresh', () => {
+    const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+    it('should return new access token with valid refresh token', async () => {
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
+
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken });
+
+      expect(response.status).toBe(200);
+      expect(response.body.accessToken).toBeDefined();
+    });
+
+    it('should return 401 for expired refresh token', async () => {
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '-1s' });
+
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toContain('expired');
+    });
+
+    it('should return 401 for access token used as refresh', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({ refreshToken: accessToken });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toContain('Invalid token type');
+    });
+
+    it('should return 400 if refresh token is missing', async () => {
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .send({});
+
+      expect(response.status).toBe(400);
+    });
+  });
+
+  describe('GET /api/v1/auth/me', () => {
+    const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+    it('should return user profile with valid token', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: new Date().toISOString()
+      };
+
+      pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+      const response = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toMatchObject({
+        id: mockUserId,
+        email: 'test@example.com',
+        name: 'Test User'
+      });
+    });
+
+    it('should return 401 without token', async () => {
+      const response = await request(app)
+        .get('/api/v1/auth/me');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 401 with invalid token', async () => {
+      const response = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', 'Bearer invalid-token');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 404 if user not found', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      pool.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .get('/api/v1/auth/me')
+        .set('Authorization', `Bearer ${accessToken}`);
+
+      expect(response.status).toBe(404);
+    });
+  });
 });
