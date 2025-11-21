@@ -126,6 +126,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Tailwind CSS configuration
 - [x] Testing framework (Jest + React Testing Library)
 - [x] Environment variable configuration
+- [ ] Remove Vercel Analytics (@vercel/analytics)
 
 #### Authentication & Authorization
 - [x] **Auth Context (context/AuthContext.tsx)**
@@ -339,6 +340,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [ ] Logout clears authentication state
 
 ### Quality Checklist
+- [ ] Comprehensive review of all FE & BE unit tests
 - [ ] All backend tests passing
 - [ ] All frontend tests passing
 - [ ] All integration tests passing
