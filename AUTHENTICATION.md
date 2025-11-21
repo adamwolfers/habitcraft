@@ -4,12 +4,6 @@
 
 This document outlines the JWT-based authentication system for HabitCraft, implemented using Test-Driven Development (TDD) principles.
 
-## Current State
-
-**Status:** Planning Phase
-
-The application currently uses mock authentication via `X-User-Id` header for development purposes. This will be replaced with a production-ready JWT authentication system.
-
 ## Architecture
 
 ### Authentication Flow
@@ -281,111 +275,6 @@ CREATE TABLE users (
 );
 ```
 
-## Testing Strategy (TDD)
-
-### Backend Tests
-
-**Test Files:**
-- `routes/auth.test.js` - Authentication endpoint tests
-- `middleware/jwtAuth.test.js` - JWT middleware tests
-
-**Test Coverage:**
-
-1. **Registration Endpoint:**
-   - ✓ Successfully register with valid data
-   - ✓ Reject duplicate email
-   - ✓ Reject invalid email format
-   - ✓ Reject weak password
-   - ✓ Reject missing required fields
-   - ✓ Hash password before storing
-   - ✓ Return JWT tokens
-
-2. **Login Endpoint:**
-   - ✓ Successfully login with correct credentials
-   - ✓ Reject non-existent email
-   - ✓ Reject incorrect password
-   - ✓ Return JWT tokens
-   - ✓ Generic error messages (no user enumeration)
-
-3. **Token Refresh Endpoint:**
-   - ✓ Successfully refresh with valid token
-   - ✓ Reject expired refresh token
-   - ✓ Reject invalid token signature
-   - ✓ Reject access token (wrong type)
-   - ✓ Return new access token only
-
-4. **User Profile Endpoint:**
-   - ✓ Return user data with valid token
-   - ✓ Reject missing token
-   - ✓ Reject invalid token
-   - ✓ Reject expired token
-
-5. **JWT Middleware:**
-   - ✓ Extract and validate token
-   - ✓ Attach userId to request
-   - ✓ Reject missing Authorization header
-   - ✓ Reject malformed token
-   - ✓ Reject expired token
-   - ✓ Reject refresh token (wrong type)
-
-6. **Protected Routes:**
-   - ✓ All habit endpoints require valid JWT
-   - ✓ All completion endpoints require valid JWT
-   - ✓ User can only access their own data
-
-### Frontend Tests
-
-**Test Files:**
-- `context/AuthContext.test.tsx` - Auth context tests
-- `hooks/useAuth.test.ts` - Hook tests
-- `pages/login.test.tsx` - Login page tests
-- `pages/register.test.tsx` - Registration page tests
-- `lib/api.test.ts` - API client JWT handling tests
-
-**Test Coverage:**
-
-1. **Auth Context:**
-   - ✓ Login sets user and tokens
-   - ✓ Logout clears user and tokens
-   - ✓ Register creates user and logs in
-   - ✓ Persists tokens to localStorage
-   - ✓ Loads tokens from localStorage on mount
-
-2. **API Client:**
-   - ✓ Injects Authorization header
-   - ✓ Refreshes token on 401
-   - ✓ Retries request after refresh
-   - ✓ Redirects to login if refresh fails
-
-3. **UI Components:**
-   - ✓ Login form validation
-   - ✓ Registration form validation
-   - ✓ Protected route redirects
-   - ✓ Logout functionality
-
-## Implementation Timeline (TDD Approach)
-
-### Phase 1: Backend Authentication
-1. Install dependencies
-2. Write tests for registration endpoint → Implement
-3. Write tests for login endpoint → Implement
-4. Write tests for JWT middleware → Implement
-5. Write tests for token refresh → Implement
-6. Write tests for user profile → Implement
-7. Write tests for protected route updates → Update routes
-
-### Phase 2: Frontend Authentication
-8. Write tests for auth context → Implement
-9. Write tests for login page → Build UI
-10. Write tests for registration page → Build UI
-11. Write tests for API client JWT handling → Update client
-12. Write tests for protected routes → Add wrapper
-
-### Phase 3: Integration & Documentation
-13. End-to-end testing
-14. Update API documentation
-15. Update user guides
-
 ## Environment Variables
 
 ```env
@@ -424,22 +313,6 @@ PASSWORD_REQUIRE_NUMBER=true
 4. **XSS:** Sanitize inputs, CSP headers
 5. **CSRF:** SameSite cookies, CSRF tokens
 
-## Migration from Mock Auth
-
-### Step-by-Step Migration
-
-1. Implement JWT authentication alongside mock auth
-2. Test all endpoints with JWT auth
-3. Update frontend to use JWT tokens
-4. Remove X-User-Id header from API calls
-5. Delete `middleware/mockAuth.js`
-6. Update documentation
-7. Deploy to production
-
-### Backward Compatibility
-
-During migration, both mock auth and JWT auth will be supported. Once frontend is updated and tested, mock auth will be removed.
-
 ## Related Documentation
 
 - [Getting Started Guide](GETTING_STARTED.md)
@@ -464,8 +337,3 @@ A: The attacker can generate access tokens for 7 days. Future enhancement: token
 **Q: How do I test JWT authentication locally?**
 A: Use tools like Postman or curl with the Authorization header: `Authorization: Bearer <token>`
 
----
-
-**Last Updated:** 2025-11-20
-**Status:** Planning Phase
-**Next Steps:** Install dependencies and begin TDD implementation
