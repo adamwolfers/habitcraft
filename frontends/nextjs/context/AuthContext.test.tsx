@@ -32,19 +32,55 @@ describe('AuthContext', () => {
   );
 
   describe('initial state', () => {
-    it('should start with isLoading true', () => {
+    it('should start with isLoading true', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+
       const { result } = renderHook(() => useAuth(), { wrapper });
       expect(result.current.isLoading).toBe(true);
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
     });
 
-    it('should start with user as null', () => {
+    it('should start with user as null', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+
       const { result } = renderHook(() => useAuth(), { wrapper });
       expect(result.current.user).toBeNull();
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
     });
 
-    it('should start with isAuthenticated as false', () => {
+    it('should start with isAuthenticated as false', async () => {
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+
       const { result } = renderHook(() => useAuth(), { wrapper });
       expect(result.current.isAuthenticated).toBe(false);
+
+      // Wait for async state updates to complete
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
     });
   });
 
