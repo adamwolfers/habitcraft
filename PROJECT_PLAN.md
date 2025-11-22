@@ -134,10 +134,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Implement AuthContext with user state management
   - [x] Cookie-based authentication (HttpOnly cookies)
   - [x] isLoading and isAuthenticated flags
-- [ ] **Custom Auth Hooks**
-  - [ ] Write tests for useAuth() hook
-  - [ ] Write tests for useRequireAuth() hook (redirect logic)
-  - [ ] Implement hooks
+- [x] **Custom Auth Hooks**
+  - [x] Write tests for useAuth() hook
+  - [x] Write tests for useRequireAuth() hook (redirect logic)
+  - [x] Implement hooks
 - [ ] **API Client JWT Integration (lib/api.ts)**
   - [ ] Write tests (Authorization header, 401 interception, token refresh, retry logic)
   - [ ] Add Authorization header injection
