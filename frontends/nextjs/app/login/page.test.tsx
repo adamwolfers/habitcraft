@@ -279,6 +279,27 @@ describe('Login Page', () => {
 
       expect(mockPush).not.toHaveBeenCalled();
     });
+
+    it('should display generic error message when error is not an Error instance', async () => {
+      const user = userEvent.setup();
+      // Reject with a non-Error value (e.g., string)
+      mockLogin.mockRejectedValue('Network failure');
+
+      render(<LoginPage />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/password/i);
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /log in/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/login failed/i)).toBeInTheDocument();
+      });
+    });
   });
 
   describe('Auto-redirect for authenticated users', () => {
