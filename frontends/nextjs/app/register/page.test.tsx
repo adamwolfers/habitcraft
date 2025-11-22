@@ -150,3 +150,169 @@ describe('Registration Page - Step 1: Basic Form Structure', () => {
     });
   });
 });
+
+describe('Registration Page - Step 2: Form Validation', () => {
+  const mockRegister = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      login: jest.fn(),
+      register: mockRegister,
+      logout: jest.fn(),
+    });
+  });
+
+  describe('HTML5 Validation', () => {
+    it('should have required attribute on name field', () => {
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      expect(nameInput).toBeRequired();
+    });
+
+    it('should have required attribute on email field', () => {
+      render(<RegisterPage />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      expect(emailInput).toBeRequired();
+    });
+
+    it('should have email type on email field', () => {
+      render(<RegisterPage />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      expect(emailInput).toHaveAttribute('type', 'email');
+    });
+
+    it('should have required attribute on password field', () => {
+      render(<RegisterPage />);
+
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      expect(passwordInput).toBeRequired();
+    });
+
+    it('should have required attribute on confirm password field', () => {
+      render(<RegisterPage />);
+
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+      expect(confirmPasswordInput).toBeRequired();
+    });
+  });
+
+  describe('Password Matching Validation', () => {
+    it('should show error when passwords do not match on submit', async () => {
+      const user = userEvent.setup();
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password456');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText(/passwords do not match/i)).toBeInTheDocument();
+      expect(mockRegister).not.toHaveBeenCalled();
+    });
+
+    it('should not show error when passwords match', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockResolvedValue(undefined);
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(screen.queryByText(/passwords do not match/i)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Minimum Password Length Validation', () => {
+    it('should show error when password is less than 8 characters', async () => {
+      const user = userEvent.setup();
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'pass');
+      await user.type(confirmPasswordInput, 'pass');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument();
+      expect(mockRegister).not.toHaveBeenCalled();
+    });
+
+    it('should not show error when password is 8 characters or more', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockResolvedValue(undefined);
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password');
+      await user.type(confirmPasswordInput, 'password');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(screen.queryByText(/password must be at least 8 characters/i)).not.toBeInTheDocument();
+    });
+
+    it('should clear validation error when user types again', async () => {
+      const user = userEvent.setup();
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'pass');
+      await user.type(confirmPasswordInput, 'pass');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument();
+
+      // Type more characters
+      await user.type(passwordInput, 'word');
+
+      expect(screen.queryByText(/password must be at least 8 characters/i)).not.toBeInTheDocument();
+    });
+  });
+});

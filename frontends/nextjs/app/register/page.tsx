@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -13,6 +13,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -20,6 +21,40 @@ export default function RegisterPage() {
       router.push('/');
     }
   }, [isAuthenticated, router]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setValidationError('');
+
+    // Validate password length
+    if (password.length < 8) {
+      setValidationError('Password must be at least 8 characters');
+      return;
+    }
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setValidationError('Passwords do not match');
+      return;
+    }
+
+    // TODO: Call register API
+  };
+
+  const handleInputChange = (field: 'name' | 'email' | 'password' | 'confirmPassword', value: string) => {
+    if (field === 'name') {
+      setName(value);
+    } else if (field === 'email') {
+      setEmail(value);
+    } else if (field === 'password') {
+      setPassword(value);
+    } else {
+      setConfirmPassword(value);
+    }
+
+    // Clear validation error when user starts typing
+    setValidationError('');
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4">
@@ -31,7 +66,13 @@ export default function RegisterPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+          {validationError && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded">
+              {validationError}
+            </div>
+          )}
+
           <div className="space-y-4">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">
@@ -41,7 +82,8 @@ export default function RegisterPage() {
                 id="name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                required
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Your name"
               />
@@ -55,7 +97,8 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                required
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="you@example.com"
               />
@@ -69,7 +112,8 @@ export default function RegisterPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                required
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="••••••••"
               />
@@ -83,7 +127,8 @@ export default function RegisterPage() {
                 id="confirm-password"
                 type="password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                required
                 className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="••••••••"
               />

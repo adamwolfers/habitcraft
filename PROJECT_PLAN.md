@@ -172,11 +172,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Write tests for form rendering (name, email, password, confirm password fields, submit button, heading, link to login)
     - [x] Implement basic registration form UI
     - [x] Add auto-redirect for already authenticated users
-  - [ ] **Step 2: Form Validation**
-    - [ ] Write tests for HTML5 validation (required fields, email format)
-    - [ ] Write tests for password matching validation
-    - [ ] Write tests for minimum password length (8 characters)
-    - [ ] Implement client-side validation logic
+  - [x] **Step 2: Form Validation**
+    - [x] Write tests for HTML5 validation (required fields, email format)
+    - [x] Write tests for password matching validation
+    - [x] Write tests for minimum password length (8 characters)
+    - [x] Implement client-side validation logic
   - [ ] **Step 3: Password Strength Indicator**
     - [ ] Write tests for password strength calculation (weak/medium/strong)
     - [ ] Implement password strength indicator UI component
