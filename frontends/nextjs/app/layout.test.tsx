@@ -23,6 +23,13 @@ jest.mock('@vercel/analytics/next', () => ({
   Analytics: () => null,
 }));
 
+// Mock Header component
+jest.mock('@/components/Header', () => {
+  return function MockHeader() {
+    return <div data-testid="header">Header</div>;
+  };
+});
+
 describe('RootLayout', () => {
   describe('AuthProvider Integration', () => {
     it('should render children inside AuthProvider', () => {
@@ -69,6 +76,45 @@ describe('RootLayout', () => {
       expect(screen.getByTestId('child2')).toBeInTheDocument();
       expect(screen.getByTestId('child3')).toBeInTheDocument();
       expect(authProvider).toBeInTheDocument();
+    });
+  });
+
+  describe('Header Integration', () => {
+    it('should render Header component', () => {
+      render(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
+
+      expect(screen.getByTestId('header')).toBeInTheDocument();
+    });
+
+    it('should render Header inside AuthProvider', () => {
+      render(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
+
+      const authProvider = screen.getByTestId('auth-provider');
+      const header = screen.getByTestId('header');
+
+      expect(authProvider).toContainElement(header);
+    });
+
+    it('should render Header before children', () => {
+      render(
+        <RootLayout>
+          <div data-testid="test-child">Test Content</div>
+        </RootLayout>
+      );
+
+      const authProvider = screen.getByTestId('auth-provider');
+      const children = authProvider.children;
+
+      // Header should be the first child
+      expect(children[0]).toHaveAttribute('data-testid', 'header');
     });
   });
 });

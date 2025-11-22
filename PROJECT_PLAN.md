@@ -176,10 +176,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Write tests (loading state, redirect, authenticated access)
   - [ ] Implement ProtectedRoute wrapper component
   - [ ] Wrap main app pages
-- [ ] **Logout Functionality**
-  - [ ] Write tests (clear state, clear localStorage, redirect)
-  - [ ] Add logout button to UI (header/navigation)
-  - [ ] Implement logout flow
+- [x] **Logout Functionality**
+  - [x] Write tests (Header component with logout button, loading states, error handling)
+  - [x] Add logout button to UI (Header component in layout)
+  - [x] Implement logout flow (calls AuthContext.logout, redirects to /login)
 
 #### API Integration
 
