@@ -108,6 +108,11 @@ describe('fetchHabits', () => {
   });
 
   it('should throw error when API returns 401 unauthorized', async () => {
+    // Set up auth failure callback to prevent JSDOM navigation warnings
+    const { setOnAuthFailure } = require('./api');
+    const onAuthFailure = jest.fn();
+    setOnAuthFailure(onAuthFailure);
+
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 401,
@@ -115,6 +120,9 @@ describe('fetchHabits', () => {
     });
 
     await expect(fetchHabits(mockUserId)).rejects.toThrow('Failed to fetch habits: 401');
+
+    // Clean up callback
+    setOnAuthFailure(undefined);
   });
 
   it('should throw error when API returns 500 server error', async () => {
@@ -437,12 +445,20 @@ describe('deleteHabit', () => {
   });
 
   it('should throw error when deletion fails due to unauthorized', async () => {
+    // Set up auth failure callback to prevent JSDOM navigation warnings
+    const { setOnAuthFailure } = require('./api');
+    const onAuthFailure = jest.fn();
+    setOnAuthFailure(onAuthFailure);
+
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 401
     });
 
     await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 401');
+
+    // Clean up callback
+    setOnAuthFailure(undefined);
   });
 });
 
