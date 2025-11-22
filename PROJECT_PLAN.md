@@ -138,13 +138,16 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Write tests for useAuth() hook
   - [x] Write tests for useRequireAuth() hook (redirect logic)
   - [x] Implement hooks
-- [ ] **API Client JWT Integration (lib/api.ts)**
-  - [ ] Write tests (Authorization header, 401 interception, token refresh, retry logic)
-  - [ ] Add Authorization header injection
-  - [ ] Implement 401 interceptor
-  - [ ] Automatic token refresh on expired access token
-  - [ ] Request retry with new token
-  - [ ] Redirect to login on refresh failure
+- [x] **API Client JWT Integration (lib/api.ts)**
+  - [x] Write tests (401 interception, token refresh, retry logic)
+  - [x] Implement 401 interceptor
+  - [x] Automatic token refresh on expired access token
+  - [x] Request retry with new token
+  - [x] Configurable auth failure callback (setOnAuthFailure)
+  - [ ] Configure auth failure callback in app initialization
+  - [ ] Fix JSDOM navigation warnings in existing tests (lines 117, 445)
+  - [ ] Fix React act() warnings in AuthContext tests
+  - [ ] Fix React act() warnings in useHabits tests
 - [ ] **Login Page (app/login/page.tsx)**
   - [ ] Write tests (form rendering, validation, loading, errors, redirect, links)
   - [ ] Implement email/password form

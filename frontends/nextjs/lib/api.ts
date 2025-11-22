@@ -2,6 +2,102 @@ import { Habit, HabitFormData, Completion } from '@/types/habit';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
+// Track if a refresh is already in progress to avoid multiple concurrent refreshes
+let refreshPromise: Promise<boolean> | null = null;
+
+// Callback to handle authentication failures (e.g., redirect to login)
+let onAuthFailureCallback: (() => void) | null = null;
+
+/**
+ * Configure a callback to be called when authentication fails
+ * @param callback - Function to call on auth failure
+ */
+export function setOnAuthFailure(callback: (() => void) | null): void {
+  onAuthFailureCallback = callback;
+}
+
+/**
+ * Attempt to refresh the access token using the refresh token
+ * @returns Promise<boolean> - true if refresh succeeded, false otherwise
+ */
+async function refreshAccessToken(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      return true;
+    }
+
+    // If refresh fails with 401, redirect to login (refresh token expired/invalid)
+    if (response.status === 401) {
+      redirectToLogin();
+    }
+
+    return false;
+  } catch (error) {
+    // Network error during refresh - redirect to login
+    redirectToLogin();
+    return false;
+  }
+}
+
+/**
+ * Handle authentication failure
+ * Calls the configured callback or falls back to window.location redirect
+ */
+function redirectToLogin(): void {
+  if (onAuthFailureCallback) {
+    onAuthFailureCallback();
+  } else if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+    // Fallback to direct redirect if no callback configured
+    window.location.href = '/login';
+  }
+}
+
+/**
+ * Fetch wrapper that handles 401 responses by attempting token refresh
+ * @param url - The URL to fetch
+ * @param options - Fetch options
+ * @param isRetry - Internal flag to prevent infinite retry loops
+ * @returns Promise<Response>
+ */
+async function fetchWithAuth(
+  url: string,
+  options?: RequestInit,
+  isRetry: boolean = false
+): Promise<Response> {
+  const response = await fetch(url, options);
+
+  // If not a 401, or this is already a retry, or it's the refresh endpoint, just return
+  if (
+    response.status !== 401 ||
+    isRetry ||
+    url.includes('/auth/refresh')
+  ) {
+    return response;
+  }
+
+  // Wait for any in-progress refresh, or start a new one
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  const refreshSucceeded = await refreshPromise;
+
+  if (!refreshSucceeded) {
+    // Refresh failed, return the original 401 response
+    return response;
+  }
+
+  // Retry the original request with the new token
+  return fetchWithAuth(url, options, true);
+}
+
 /**
  * Fetch habits for a specific user
  * @param userId - The user ID to fetch habits for
@@ -18,7 +114,7 @@ export async function fetchHabits(
     url.searchParams.append('status', status);
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithAuth(url.toString(), {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
@@ -43,7 +139,7 @@ export async function createHabit(
   userId: string,
   habitData: HabitFormData
 ): Promise<Habit> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/habits`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -83,7 +179,7 @@ export async function fetchCompletions(
     url.searchParams.append('endDate', endDate);
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await fetchWithAuth(url.toString(), {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
@@ -117,7 +213,7 @@ export async function createCompletion(
     body.notes = notes;
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}/completions`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}/completions`, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -145,7 +241,7 @@ export async function deleteCompletion(
   habitId: string,
   date: string
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
@@ -168,7 +264,7 @@ export async function deleteHabit(
   userId: string,
   habitId: string
 ): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/v1/habits/${habitId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {

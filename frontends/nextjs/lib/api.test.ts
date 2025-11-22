@@ -1,4 +1,4 @@
-import { fetchHabits, fetchCompletions, createCompletion, deleteCompletion, deleteHabit } from './api';
+import { fetchHabits, createHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -444,4 +444,235 @@ describe('deleteHabit', () => {
 
     await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 401');
   });
+});
+
+describe('API Client - JWT Integration', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  describe('401 Response Interception', () => {
+    it('should intercept 401 response and attempt token refresh', async () => {
+      const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
+      const mockSuccessResponse = { ok: true, status: 200, json: async () => [] };
+
+      let callCount = 0;
+      global.fetch = jest.fn((url) => {
+        callCount++;
+        if (callCount === 1) {
+          // First call returns 401
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Unauthorized' }),
+          } as Response);
+        } else if (url.toString().includes('/auth/refresh')) {
+          // Refresh token call
+          return Promise.resolve(mockRefreshResponse as Response);
+        } else {
+          // Retry call succeeds
+          return Promise.resolve(mockSuccessResponse as Response);
+        }
+      }) as jest.Mock;
+
+      const result = await fetchHabits(mockUserId);
+
+      // Should have called fetch 3 times: original request, refresh, retry
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+      expect(result).toEqual([]);
+    });
+
+    it('should not intercept non-401 responses', async () => {
+      const mockResponse = { ok: false, status: 404, json: async () => ({}) };
+      global.fetch = jest.fn(() => Promise.resolve(mockResponse as Response)) as jest.Mock;
+
+      await expect(fetchHabits(mockUserId)).rejects.toThrow('Failed to fetch habits: 404');
+
+      // Should only call once (no retry on 404)
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+
+  });
+
+  describe('Token Refresh on 401', () => {
+    it('should call refresh endpoint when receiving 401', async () => {
+      const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
+      const mockSuccessResponse = { ok: true, status: 200, json: async () => [] };
+
+      let callCount = 0;
+      global.fetch = jest.fn((url) => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Unauthorized' }),
+          } as Response);
+        } else if (url.toString().includes('/auth/refresh')) {
+          return Promise.resolve(mockRefreshResponse as Response);
+        } else {
+          return Promise.resolve(mockSuccessResponse as Response);
+        }
+      }) as jest.Mock;
+
+      await fetchHabits(mockUserId);
+
+      // Find the refresh call
+      const refreshCall = (global.fetch as jest.Mock).mock.calls.find(
+        (call: any[]) => call[0].includes('/auth/refresh')
+      );
+
+      expect(refreshCall).toBeDefined();
+      expect(refreshCall[0]).toContain('/api/v1/auth/refresh');
+    });
+
+    it('should use correct method and credentials for refresh', async () => {
+      const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
+      const mockSuccessResponse = { ok: true, status: 200, json: async () => [] };
+
+      let callCount = 0;
+      global.fetch = jest.fn((url, options) => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Unauthorized' }),
+          } as Response);
+        } else if (url.toString().includes('/auth/refresh')) {
+          // Verify refresh request options
+          expect(options?.method).toBe('POST');
+          expect((options as RequestInit)?.credentials).toBe('include');
+          return Promise.resolve(mockRefreshResponse as Response);
+        } else {
+          return Promise.resolve(mockSuccessResponse as Response);
+        }
+      }) as jest.Mock;
+
+      await fetchHabits(mockUserId);
+    });
+  });
+
+  describe('Request Retry with New Token', () => {
+    it('should retry original request after successful token refresh', async () => {
+      const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
+      const mockSuccessResponse = { ok: true, status: 200, json: async () => [{ id: 1, name: 'Test Habit' }] };
+
+      let callCount = 0;
+      global.fetch = jest.fn((url, options) => {
+        callCount++;
+        if (callCount === 1) {
+          // First attempt fails with 401
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Unauthorized' }),
+          } as Response);
+        } else if (url.toString().includes('/auth/refresh')) {
+          // Refresh succeeds
+          return Promise.resolve(mockRefreshResponse as Response);
+        } else if (callCount === 3) {
+          // Retry with new token succeeds
+          return Promise.resolve(mockSuccessResponse as Response);
+        }
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: async () => ({}),
+        } as Response);
+      }) as jest.Mock;
+
+      const result = await fetchHabits(mockUserId);
+
+      expect(result).toEqual([{ id: 1, name: 'Test Habit' }]);
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it('should preserve original request method and body on retry', async () => {
+      const habitData = { name: 'New Habit', frequency: 'daily' as const };
+      const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
+      const mockSuccessResponse = { ok: true, status: 201, json: async () => ({ id: 1, ...habitData }) };
+
+      let callCount = 0;
+      let retryOptions: RequestInit | undefined;
+
+      global.fetch = jest.fn((url, options) => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            json: async () => ({ error: 'Unauthorized' }),
+          } as Response);
+        } else if (url.toString().includes('/auth/refresh')) {
+          return Promise.resolve(mockRefreshResponse as Response);
+        } else if (callCount === 3) {
+          retryOptions = options as RequestInit;
+          return Promise.resolve(mockSuccessResponse as Response);
+        }
+        return Promise.resolve({
+          ok: false,
+          status: 500,
+          json: async () => ({}),
+        } as Response);
+      }) as jest.Mock;
+
+      await createHabit(mockUserId, habitData);
+
+      expect(retryOptions?.method).toBe('POST');
+      expect(retryOptions?.body).toBe(JSON.stringify(habitData));
+    });
+
+    it('should only retry once per request', async () => {
+      const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
+
+      let callCount = 0;
+      global.fetch = jest.fn((url) => {
+        callCount++;
+        if (url.toString().includes('/auth/refresh')) {
+          return Promise.resolve(mockRefreshResponse as Response);
+        }
+        // Always return 401
+        return Promise.resolve({
+          ok: false,
+          status: 401,
+          json: async () => ({ error: 'Unauthorized' }),
+        } as Response);
+      }) as jest.Mock;
+
+      await expect(fetchHabits(mockUserId)).rejects.toThrow();
+
+      // Should be: original call (401), refresh, retry (401), but not another retry
+      expect(global.fetch).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('Auth Failure Callback', () => {
+    it('should call onAuthFailure callback when refresh returns 401', async () => {
+      const onAuthFailure = jest.fn();
+
+      // Import and configure the callback
+      const { setOnAuthFailure } = require('./api');
+      setOnAuthFailure(onAuthFailure);
+
+      const mock401Response = { ok: false, status: 401, json: async () => ({ error: 'Unauthorized' }) };
+      global.fetch = jest.fn(() => Promise.resolve(mock401Response as Response)) as jest.Mock;
+
+      await expect(fetchHabits(mockUserId)).rejects.toThrow();
+
+      expect(onAuthFailure).toHaveBeenCalled();
+    });
+  });
+
 });
