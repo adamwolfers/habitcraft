@@ -129,4 +129,46 @@ describe('Home Page - Delete Functionality', () => {
 
     expect(screen.getByText('No habits yet. Add your first habit to get started!')).toBeInTheDocument();
   });
+
+  it('should call createHabit when adding a new habit through the form', async () => {
+    const user = userEvent.setup();
+    mockCreateHabit.mockResolvedValue({
+      id: 'new-habit',
+      userId: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'New Habit',
+      description: 'Test description',
+      frequency: 'daily',
+      targetDays: [],
+      color: '#3b82f6',
+      icon: '⭐',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    render(<Home />);
+
+    // Open the add habit form
+    await user.click(screen.getByText('+ Add New Habit'));
+
+    // Fill in the form
+    const nameInput = screen.getByLabelText(/habit name/i);
+    await user.type(nameInput, 'New Habit');
+
+    const descriptionInput = screen.getByLabelText(/description/i);
+    await user.type(descriptionInput, 'Test description');
+
+    // Submit the form
+    await user.click(screen.getByText('Add Habit'));
+
+    // Verify createHabit was called with correct data
+    await waitFor(() => {
+      expect(mockCreateHabit).toHaveBeenCalledWith({
+        name: 'New Habit',
+        description: 'Test description',
+        color: '#3b82f6',
+        frequency: 'daily',
+      });
+    });
+  });
 });

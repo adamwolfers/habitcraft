@@ -182,4 +182,35 @@ describe('AddHabitForm', () => {
       frequency: 'daily',
     });
   });
+
+  it('should keep form open and log error when onAdd fails', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const user = userEvent.setup();
+
+    // Mock onAdd to throw an error
+    const mockOnAddWithError = jest.fn().mockRejectedValue(new Error('API Error'));
+    render(<AddHabitForm onAdd={mockOnAddWithError} />);
+
+    // Open form
+    await user.click(screen.getByText('+ Add New Habit'));
+
+    // Fill in form
+    const nameInput = screen.getByLabelText(/habit name/i);
+    await user.type(nameInput, 'Test Habit');
+
+    // Submit form
+    await user.click(screen.getByText('Add Habit'));
+
+    // Wait for async error handling
+    await screen.findByLabelText(/habit name/i);
+
+    // Verify error was logged
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error adding habit:', expect.any(Error));
+
+    // Form should stay open so user can retry
+    expect(screen.getByLabelText(/habit name/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Test Habit')).toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
+  });
 });
