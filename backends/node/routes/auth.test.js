@@ -138,7 +138,7 @@ describe('Auth API', () => {
         id: mockUserId,
         email: validCredentials.email,
         name: 'Test User',
-        password: hashedPassword,
+        password_hash: hashedPassword,
         created_at: new Date().toISOString()
       };
 
@@ -178,7 +178,7 @@ describe('Auth API', () => {
       const mockUser = {
         id: mockUserId,
         email: validCredentials.email,
-        password: hashedPassword
+        password_hash: hashedPassword
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
