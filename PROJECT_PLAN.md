@@ -144,7 +144,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Automatic token refresh on expired access token
   - [x] Request retry with new token
   - [x] Configurable auth failure callback (setOnAuthFailure)
-  - [ ] Configure auth failure callback in app initialization
+  - [x] Configure auth failure callback in app initialization
   - [ ] Fix JSDOM navigation warnings in existing tests (lines 117, 445)
   - [ ] Fix React act() warnings in AuthContext tests
   - [ ] Fix React act() warnings in useHabits tests

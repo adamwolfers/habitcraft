@@ -1,10 +1,17 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import React from 'react';
+import * as apiModule from '@/lib/api';
 
 // Mock fetch globally
 global.fetch = jest.fn();
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
+
+// Mock the setOnAuthFailure function
+jest.mock('@/lib/api', () => ({
+  ...jest.requireActual('@/lib/api'),
+  setOnAuthFailure: jest.fn(),
+}));
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -262,6 +269,78 @@ describe('AuthContext', () => {
 
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
+    });
+  });
+
+  describe('auth failure callback', () => {
+    it('should configure auth failure callback on mount', async () => {
+      const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<typeof apiModule.setOnAuthFailure>;
+
+      // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+
+      renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(mockSetOnAuthFailure).toHaveBeenCalledWith(expect.any(Function));
+      });
+    });
+
+    it('should logout and clear user when auth failure callback is triggered', async () => {
+      const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<typeof apiModule.setOnAuthFailure>;
+      let authFailureCallback: (() => void) | null = null;
+
+      // Capture the callback that's passed to setOnAuthFailure
+      mockSetOnAuthFailure.mockImplementation((callback) => {
+        authFailureCallback = callback;
+      });
+
+      // Mock session check (authenticated user)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUser
+      } as Response);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // User should be authenticated
+      expect(result.current.user).toEqual(mockUser);
+      expect(result.current.isAuthenticated).toBe(true);
+
+      // Mock the logout endpoint
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Logged out successfully' })
+      } as Response);
+
+      // Trigger the auth failure callback
+      expect(authFailureCallback).not.toBeNull();
+      await act(async () => {
+        authFailureCallback!();
+      });
+
+      // User should be cleared
+      await waitFor(() => {
+        expect(result.current.user).toBeNull();
+        expect(result.current.isAuthenticated).toBe(false);
+      });
+
+      // Logout endpoint should have been called
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/auth/logout`,
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include'
+        })
+      );
     });
   });
 });

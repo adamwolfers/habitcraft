@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { setOnAuthFailure } from '@/lib/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -92,6 +93,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(null);
   }, []);
+
+  // Configure auth failure callback to handle token refresh failures
+  useEffect(() => {
+    setOnAuthFailure(() => {
+      logout();
+    });
+
+    // Cleanup: remove the callback when component unmounts
+    return () => {
+      setOnAuthFailure(null);
+    };
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, register, logout }}>
