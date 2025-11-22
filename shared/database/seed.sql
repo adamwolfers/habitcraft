@@ -3,11 +3,12 @@
 -- It creates a demo user for testing the application
 
 -- Insert demo user (idempotent - won't fail if already exists)
+-- Password: demo123
 INSERT INTO users (id, email, password_hash, name)
 VALUES (
     '123e4567-e89b-12d3-a456-426614174000',
     'demo@example.com',
-    '$2b$10$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJK', -- placeholder password hash
+    '$2b$10$IJ4ca3n669/sra/2FBKA/e3945pf1gchoCH4pMLbt2B6lucwMMLlq',
     'Demo User'
 )
 ON CONFLICT (id) DO NOTHING;

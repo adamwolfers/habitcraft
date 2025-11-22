@@ -107,7 +107,8 @@ The database includes:
 - Adminer web UI at http://localhost:8080
   - Login: habituser / habitpass / habitcraft
   - Demo user ID: `123e4567-e89b-12d3-a456-426614174000`
-  - Demo email: demo@example.com
+  - Demo email: `demo@example.com`
+  - Demo password: `demo123`
 
 Manual setup:
 
@@ -241,8 +242,11 @@ docker-compose restart backend-node
 
 The database is automatically seeded with a demo user on first startup:
 - **User ID:** `123e4567-e89b-12d3-a456-426614174000`
-- **Email:** demo@example.com
+- **Email:** `demo@example.com`
+- **Password:** `demo123`
 - **Sample Habits:** 3 pre-created habits
+
+You can use these credentials to test the login page at http://localhost:3100/login
 
 All API requests in development use the `X-User-Id` header for authentication:
 

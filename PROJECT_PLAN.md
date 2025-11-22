@@ -15,6 +15,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ## Version 1.0 Goals
 
 **Core Features:**
+
 1. User registration and JWT authentication
 2. Full habit CRUD operations with UI support
 3. Completion tracking with calendar view
@@ -37,6 +38,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ### Backend - Node.js + Express
 
 #### Foundation
+
 - [x] Express app setup and configuration
 - [x] Testing framework (Jest + Supertest)
 - [x] Database connection pool
@@ -45,6 +47,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Hello World endpoint with tests
 
 #### Authentication & Authorization
+
 - [x] Mock authentication middleware (X-User-Id header for development)
 - [x] Install dependencies (bcrypt, jsonwebtoken, express-validator)
 - [x] **User Registration (POST /api/v1/auth/register)**
@@ -88,6 +91,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Remove localStorage token handling from frontend (using HttpOnly cookies instead)
 
 #### Habit Management
+
 - [x] **POST /api/v1/habits** - Create habit
   - [x] Input validation (name, frequency, color, icon)
   - [x] User isolation enforcement
@@ -105,6 +109,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Tests with mock auth
 
 #### Completion Tracking
+
 - [x] **POST /api/v1/habits/:habitId/completions** - Mark complete
   - [x] Habit ownership validation
   - [x] Duplicate prevention (409 Conflict)
@@ -122,6 +127,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ### Frontend - Next.js + React
 
 #### Foundation
+
 - [x] Next.js project setup with TypeScript
 - [x] Tailwind CSS configuration
 - [x] Testing framework (Jest + React Testing Library)
@@ -129,6 +135,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [ ] Remove Vercel Analytics (@vercel/analytics)
 
 #### Authentication & Authorization
+
 - [x] **Auth Context (context/AuthContext.tsx)**
   - [x] Write tests (login, logout, register, session persistence, loading states)
   - [x] Implement AuthContext with user state management
@@ -149,7 +156,6 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Fix React act() warnings in AuthContext tests
   - [x] Fix React act() warnings in useHabits tests
 - [x] **Login Page (app/login/page.tsx)**
-
   - [x] Write tests (form rendering, validation, loading, errors, redirect, links)
   - [x] Implement email/password form
   - [x] Form validation (browser HTML5 validation)
@@ -157,6 +163,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Add AuthProvider to app layout
     - [x] Write tests for layout with AuthProvider
     - [x] Wrap app with AuthProvider in layout.tsx
+  - [x] Update seed data with working demo password
+    - [x] Generate bcrypt hash for demo password (demo123)
+    - [x] Update seed.sql with valid password hash
+    - [x] Update documentation (GETTING_STARTED.md, database README)
 - [ ] **Registration Page (app/register/page.tsx)**
   - [ ] Write tests (form rendering, validation, password strength, loading, errors)
   - [ ] Implement email/password/name form
@@ -172,6 +182,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Implement logout flow
 
 #### API Integration
+
 - [x] API client service (lib/api.ts)
 - [x] Type definitions matching backend
 - [x] Error handling for API calls
@@ -186,6 +197,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] deleteCompletion()
 
 #### State Management
+
 - [x] useHabits hook
   - [x] Fetch habits from API
   - [x] Create habit
@@ -196,6 +208,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Optimistic UI updates
 
 #### UI Components
+
 - [x] **Home Page (app/page.tsx)**
   - [x] Display habits from database
   - [x] Create habit form integration
@@ -228,12 +241,14 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ### Acceptance Testing
 
 #### Test Infrastructure
+
 - [ ] Test database configuration (separate test DB or containers)
 - [ ] Automatic setup/teardown scripts
 - [ ] Test data fixtures
 - [ ] Environment variables for test environment
 
 #### Backend Integration Tests
+
 - [ ] **Authentication Flow Tests**
   - [ ] Register → Login → Access Protected Route
   - [ ] Login → Token Refresh → Continue Session
@@ -254,6 +269,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Habit ownership validation
 
 #### Frontend End-to-End Tests
+
 - [ ] Set up E2E testing framework (Playwright or Cypress)
 - [ ] **Authentication Flow E2E**
   - [ ] User registration flow
@@ -308,6 +324,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ### Security & Deployment
 
 #### Security Hardening
+
 - [ ] Rate limiting on auth endpoints (express-rate-limit)
 - [ ] Input sanitization (XSS prevention)
 - [ ] CORS configuration for specific origins (remove wildcard)
@@ -320,6 +337,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Test token expiration and refresh
 
 #### Production Configuration
+
 - [ ] Update Docker Compose for production
   - [ ] Environment variable management
   - [ ] PostgreSQL production config
@@ -336,6 +354,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ## v1.0 Success Criteria
 
 ### Functionality Checklist
+
 - [ ] User can register with email/password
 - [ ] User can login and receive JWT tokens
 - [ ] User can access protected routes with valid token
@@ -347,6 +366,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [ ] Logout clears authentication state
 
 ### Quality Checklist
+
 - [ ] Comprehensive review of all FE & BE unit tests
 - [ ] All backend tests passing
 - [ ] All frontend tests passing
@@ -357,6 +377,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [ ] Security hardening complete
 
 ### Deployment Checklist
+
 - [ ] Application runs in Docker with docker-compose
 - [ ] Environment variables properly configured
 - [ ] Database migrations work correctly
@@ -368,22 +389,23 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Additional Backend Implementations
 
-| Language | Framework | ORM/Database | Testing | Status |
-|----------|-----------|--------------|---------|--------|
-| Node.js  | Express   | pg (node-postgres) | Jest + Supertest | ✅ In Progress |
-| Python   | FastAPI   | SQLAlchemy   | Pytest | 🔜 Planned |
-| Go       | Gin       | GORM         | testing | 🔜 Planned |
-| Java     | Spring Boot | JPA/Hibernate | JUnit | 🔜 Planned |
+| Language | Framework   | ORM/Database       | Testing          | Status         |
+| -------- | ----------- | ------------------ | ---------------- | -------------- |
+| Node.js  | Express     | pg (node-postgres) | Jest + Supertest | ✅ In Progress |
+| Python   | FastAPI     | SQLAlchemy         | Pytest           | 🔜 Planned     |
+| Go       | Gin         | GORM               | testing          | 🔜 Planned     |
+| Java     | Spring Boot | JPA/Hibernate      | JUnit            | 🔜 Planned     |
 
 ### Additional Frontend Implementations
 
-| Framework | State Management | Styling | Testing | Status |
-|-----------|-----------------|---------|---------|--------|
-| Next.js   | React Hooks     | Tailwind CSS | Jest + RTL | ✅ In Progress |
-| React     | Redux/Zustand   | Styled Components | Jest + RTL | 🔜 Planned |
-| Vue       | Pinia           | Tailwind CSS | Vitest | 🔜 Planned |
+| Framework | State Management | Styling           | Testing    | Status         |
+| --------- | ---------------- | ----------------- | ---------- | -------------- |
+| Next.js   | React Hooks      | Tailwind CSS      | Jest + RTL | ✅ In Progress |
+| React     | Redux/Zustand    | Styled Components | Jest + RTL | 🔜 Planned     |
+| Vue       | Pinia            | Tailwind CSS      | Vitest     | 🔜 Planned     |
 
 ### Feature Enhancements
+
 - **Statistics & Analytics**
   - Streak tracking
   - Completion rate calculations
@@ -421,6 +443,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - Mobile-responsive improvements
 
 ### Infrastructure & DevOps
+
 - **CI/CD Pipelines**
   - GitHub Actions workflows
   - Automated testing on PR

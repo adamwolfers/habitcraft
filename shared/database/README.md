@@ -47,7 +47,7 @@ users (1) ──< (N) habits (1) ──< (N) completions
 - **seed.sql** - Development seed data (demo user and sample habits)
 
 The seed data is automatically loaded when using docker-compose and includes:
-- Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`, email: `demo@example.com`)
+- Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`, email: `demo@example.com`, password: `demo123`)
 - Sample habits for testing
 
 ## Usage
