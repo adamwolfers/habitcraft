@@ -149,10 +149,14 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Fix React act() warnings in AuthContext tests
   - [x] Fix React act() warnings in useHabits tests
 - [x] **Login Page (app/login/page.tsx)**
+
   - [x] Write tests (form rendering, validation, loading, errors, redirect, links)
   - [x] Implement email/password form
   - [x] Form validation (browser HTML5 validation)
   - [x] Error handling and loading states
+  - [x] Add AuthProvider to app layout
+    - [x] Write tests for layout with AuthProvider
+    - [x] Wrap app with AuthProvider in layout.tsx
 - [ ] **Registration Page (app/register/page.tsx)**
   - [ ] Write tests (form rendering, validation, password strength, loading, errors)
   - [ ] Implement email/password/name form
