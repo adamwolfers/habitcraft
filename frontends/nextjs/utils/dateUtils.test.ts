@@ -109,6 +109,17 @@ describe('dateUtils', () => {
   });
 
   describe('getCalendarWeek', () => {
+    it('should return 7 days for current week when called without arguments', () => {
+      const week = getCalendarWeek();
+      expect(week).toHaveLength(7);
+    });
+
+    it('should use default offset of 0 when no argument provided', () => {
+      const weekWithDefault = getCalendarWeek();
+      const weekWithZero = getCalendarWeek(0);
+      expect(weekWithDefault).toEqual(weekWithZero);
+    });
+
     it('should return 7 days for current week', () => {
       const week = getCalendarWeek(0);
       expect(week).toHaveLength(7);

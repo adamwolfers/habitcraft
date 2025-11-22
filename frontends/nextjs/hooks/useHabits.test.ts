@@ -288,6 +288,39 @@ describe('useHabits', () => {
       expect(mockFetchCompletions).toHaveBeenCalledWith(mockUserId, 'habit-2');
     });
 
+    it('should handle errors when fetching completions for a specific habit', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+
+      // Mock fetchCompletions to fail for habit-1 but succeed for habit-2
+      mockFetchCompletions.mockImplementation((userId, habitId) => {
+        if (habitId === 'habit-1') {
+          return Promise.reject(new Error('Failed to fetch completions'));
+        }
+        return Promise.resolve(mockCompletions);
+      });
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+
+      // Should have logged error for habit-1
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error fetching completions for habit habit-1:',
+        expect.any(Error)
+      );
+
+      // Should still work for habit-2 (completion data should be empty for habit-1)
+      expect(mockFetchCompletions).toHaveBeenCalledTimes(mockHabitsFromApi.length);
+
+      // habit-1 should return false for any date since completions failed to load
+      expect(result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'))).toBe(false);
+
+      consoleErrorSpy.mockRestore();
+    });
+
     it('should check if habit is completed on a specific date', async () => {
       mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
       mockFetchCompletions.mockResolvedValue(mockCompletions);
