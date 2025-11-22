@@ -168,10 +168,30 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Update seed.sql with valid password hash
     - [x] Update documentation (GETTING_STARTED.md, database README)
 - [ ] **Registration Page (app/register/page.tsx)**
-  - [ ] Write tests (form rendering, validation, password strength, loading, errors)
-  - [ ] Implement email/password/name form
-  - [ ] Client-side validation
-  - [ ] Password strength indicator
+  - [x] **Step 1: Basic Form Structure**
+    - [x] Write tests for form rendering (name, email, password, confirm password fields, submit button, heading, link to login)
+    - [x] Implement basic registration form UI
+    - [x] Add auto-redirect for already authenticated users
+  - [ ] **Step 2: Form Validation**
+    - [ ] Write tests for HTML5 validation (required fields, email format)
+    - [ ] Write tests for password matching validation
+    - [ ] Write tests for minimum password length (8 characters)
+    - [ ] Implement client-side validation logic
+  - [ ] **Step 3: Password Strength Indicator**
+    - [ ] Write tests for password strength calculation (weak/medium/strong)
+    - [ ] Implement password strength indicator UI component
+  - [ ] **Step 4: Form Submission**
+    - [ ] Write tests for successful registration flow
+    - [ ] Write tests for redirect to home page after registration
+    - [ ] Implement form submission logic
+  - [ ] **Step 5: Error Handling**
+    - [ ] Write tests for API error display
+    - [ ] Write tests for clearing errors on input change
+    - [ ] Implement error handling UI and logic
+  - [ ] **Step 6: Loading States**
+    - [ ] Write tests for loading state during submission
+    - [ ] Write tests for disabled fields during submission
+    - [ ] Implement loading states UI
 - [ ] **Protected Routes**
   - [ ] Write tests (loading state, redirect, authenticated access)
   - [ ] Implement ProtectedRoute wrapper component
