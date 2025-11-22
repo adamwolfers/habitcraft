@@ -50,9 +50,14 @@ describe('useHabits', () => {
     mockFetchHabits.mockResolvedValue([]);
   });
 
-  it('should initialize with empty habits array', () => {
+  it('should initialize with empty habits array', async () => {
     const { result } = renderHook(() => useHabits(mockUserId));
     expect(result.current.habits).toEqual([]);
+
+    // Wait for async state updates to complete
+    await waitFor(() => {
+      expect(result.current.habits).toEqual([]);
+    });
   });
 
   it('should fetch habits from API on mount', async () => {
@@ -107,11 +112,16 @@ describe('useHabits', () => {
     expect(result.current.habits.every(h => h.status === 'active')).toBe(true);
   });
 
-  it('should not fetch habits if userId is not provided', () => {
+  it('should not fetch habits if userId is not provided', async () => {
     const { result } = renderHook(() => useHabits(''));
 
     expect(result.current.habits).toEqual([]);
     expect(mockFetchHabits).not.toHaveBeenCalled();
+
+    // Wait a bit to ensure no async operations are triggered
+    await waitFor(() => {
+      expect(mockFetchHabits).not.toHaveBeenCalled();
+    });
   });
 
   describe('createHabit', () => {

@@ -147,7 +147,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Configure auth failure callback in app initialization
   - [x] Fix JSDOM navigation warnings in existing tests (lines 117, 445)
   - [x] Fix React act() warnings in AuthContext tests
-  - [ ] Fix React act() warnings in useHabits tests
+  - [x] Fix React act() warnings in useHabits tests
 - [ ] **Login Page (app/login/page.tsx)**
   - [ ] Write tests (form rendering, validation, loading, errors, redirect, links)
   - [ ] Implement email/password form
