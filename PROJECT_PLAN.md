@@ -189,10 +189,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [ ] Write tests for loading state during submission
     - [ ] Write tests for disabled fields during submission
     - [ ] Implement loading states UI
-- [ ] **Protected Routes**
-  - [ ] Write tests (loading state, redirect, authenticated access)
-  - [ ] Implement ProtectedRoute wrapper component
-  - [ ] Wrap main app pages
+- [x] **Protected Routes**
+  - [x] Write tests (loading state, redirect, authenticated access)
+  - [x] Implement ProtectedRoute wrapper component
+  - [x] Wrap main app pages
 - [x] **Logout Functionality**
   - [x] Write tests (Header component with logout button, loading states, error handling)
   - [x] Add logout button to UI (Header component in layout)

@@ -2,11 +2,29 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Home from './page';
 import * as useHabitsModule from '@/hooks/useHabits';
+import * as authContextModule from '@/context/AuthContext';
 import { Habit } from '@/types/habit';
+
+// Mock Next.js navigation
+const mockPush = jest.fn();
+const mockReplace = jest.fn();
+
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    replace: mockReplace,
+  }),
+}));
+
+// Mock the useAuth hook
+jest.mock('@/context/AuthContext', () => ({
+  useAuth: jest.fn(),
+}));
 
 // Mock the useHabits hook
 jest.mock('@/hooks/useHabits');
 
+const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
 const mockUseHabits = useHabitsModule.useHabits as jest.MockedFunction<typeof useHabitsModule.useHabits>;
 
 describe('Home Page - Delete Functionality', () => {
@@ -46,6 +64,22 @@ describe('Home Page - Delete Functionality', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock authenticated user
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2025-01-01T00:00:00.000Z',
+      },
+      isLoading: false,
+      isAuthenticated: true,
+      login: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+    });
+
     mockUseHabits.mockReturnValue({
       habits: mockHabits,
       createHabit: mockCreateHabit,
