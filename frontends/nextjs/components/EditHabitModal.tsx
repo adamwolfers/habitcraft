@@ -21,10 +21,41 @@ const PRESET_COLORS = [
   '#f97316', // orange
 ];
 
+const PRESET_ICONS = [
+  // Row 1: Fitness & Health
+  '🏃', // running/exercise
+  '📚', // reading/learning
+  '🧘', // meditation/yoga
+  '💧', // water/hydration
+  '🥗', // healthy eating
+  '💪', // strength/fitness
+  '🎯', // goals/targets
+  '✍️', // writing/journaling
+  // Row 2: Daily Activities
+  '😴', // sleep/rest
+  '🚶', // walking
+  '🎨', // creative/art
+  '🎵', // music practice
+  '🧹', // cleaning/organizing
+  '💻', // coding/work
+  '🌱', // gardening/plants
+  '🙏', // gratitude/prayer
+  // Row 3: Wellness & Routines
+  '☕', // morning routine
+  '🚫', // quit bad habit
+  '📱', // limit screen time
+  '🎮', // gaming/hobbies
+  '🧠', // learning/brain
+  '💊', // medication/vitamins
+  '🦷', // dental care
+  '🌙', // evening routine
+];
+
 export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: EditHabitModalProps) {
   const [name, setName] = useState(habit.name);
   const [description, setDescription] = useState(habit.description || '');
   const [color, setColor] = useState(habit.color);
+  const [icon, setIcon] = useState(habit.icon);
 
   if (!isOpen) {
     return null;
@@ -52,14 +83,16 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     const nameChanged = trimmedName !== habit.name;
     const descriptionChanged = trimmedDescription !== (habit.description || '');
     const colorChanged = color !== habit.color;
+    const iconChanged = icon !== habit.icon;
 
-    if (nameChanged || descriptionChanged || colorChanged) {
+    if (nameChanged || descriptionChanged || colorChanged || iconChanged) {
       // Send all required fields along with the updates
       await onUpdate(habit.id, {
         name: trimmedName,
         description: trimmedDescription || null, // Convert empty string to null
         frequency: habit.frequency,
         color: color,
+        icon: icon,
       });
     } else {
       // Just close the modal if nothing changed
@@ -137,6 +170,25 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                     }`}
                     style={{ backgroundColor: c }}
                   />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Icon</label>
+              <div className="flex flex-wrap gap-2">
+                {PRESET_ICONS.map((i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    data-testid={`icon-option-${i}`}
+                    onClick={() => setIcon(i)}
+                    className={`w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all text-xl flex items-center justify-center ${
+                      icon === i ? 'ring-2 ring-white scale-110' : ''
+                    }`}
+                  >
+                    {i}
+                  </button>
                 ))}
               </div>
             </div>

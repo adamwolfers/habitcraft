@@ -237,6 +237,7 @@ describe('EditHabitModal', () => {
         description: '30 minutes workout',
         frequency: 'daily',
         color: '#3b82f6',
+        icon: '🏃',
       });
     });
 
@@ -304,6 +305,7 @@ describe('EditHabitModal', () => {
         description: '30 minutes workout',
         frequency: 'daily',
         color: '#3b82f6',
+        icon: '🏃',
       });
     });
   });
@@ -437,6 +439,7 @@ describe('EditHabitModal', () => {
         description: 'Updated description',
         frequency: 'daily',
         color: '#3b82f6',
+        icon: '🏃',
       });
     });
 
@@ -578,6 +581,7 @@ describe('EditHabitModal', () => {
         description: '30 minutes workout',
         frequency: 'daily',
         color: '#10b981',
+        icon: '🏃',
       });
     });
 
@@ -630,6 +634,200 @@ describe('EditHabitModal', () => {
         description: '30 minutes workout',
         frequency: 'daily',
         color: '#10b981',
+        icon: '🏃',
+      });
+    });
+  });
+
+  describe('Icon Selector', () => {
+    it('should render icon selector label', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      expect(screen.getByText(/icon/i)).toBeInTheDocument();
+    });
+
+    it('should render 24 preset icon options', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const iconButtons = screen.getAllByTestId(/icon-option-/);
+      expect(iconButtons).toHaveLength(24);
+    });
+
+    it('should highlight the current habit icon', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const selectedIconButton = screen.getByTestId('icon-option-🏃');
+      expect(selectedIconButton).toHaveClass('ring-2');
+      expect(selectedIconButton).toHaveClass('scale-110');
+    });
+
+    it('should allow user to select a different icon', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const bookIconButton = screen.getByTestId('icon-option-📚');
+      await user.click(bookIconButton);
+
+      // Book icon should now be selected
+      expect(bookIconButton).toHaveClass('ring-2');
+      expect(bookIconButton).toHaveClass('scale-110');
+
+      // Original running icon should no longer be selected
+      const runningIconButton = screen.getByTestId('icon-option-🏃');
+      expect(runningIconButton).not.toHaveClass('ring-2');
+      expect(runningIconButton).not.toHaveClass('scale-110');
+    });
+
+    it('should display emoji icons as text content', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const runningIconButton = screen.getByTestId('icon-option-🏃');
+      expect(runningIconButton).toHaveTextContent('🏃');
+    });
+  });
+
+  describe('Icon Update Submission', () => {
+    it('should call onUpdate with new icon when save is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const bookIconButton = screen.getByTestId('icon-option-📚');
+      await user.click(bookIconButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1);
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Exercise',
+        description: '30 minutes workout',
+        frequency: 'daily',
+        color: '#3b82f6',
+        icon: '📚',
+      });
+    });
+
+    it('should not call onUpdate if icon is unchanged', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Click the same icon that's already selected
+      const runningIconButton = screen.getByTestId('icon-option-🏃');
+      await user.click(runningIconButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      // Should close modal without calling onUpdate since nothing changed
+      expect(mockOnUpdate).not.toHaveBeenCalled();
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update icon along with other fields', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'Reading Time');
+
+      const bookIconButton = screen.getByTestId('icon-option-📚');
+      await user.click(bookIconButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Reading Time',
+        description: '30 minutes workout',
+        frequency: 'daily',
+        color: '#3b82f6',
+        icon: '📚',
+      });
+    });
+
+    it('should update color and icon together', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const greenColorButton = screen.getByTestId('color-option-#10b981');
+      await user.click(greenColorButton);
+
+      const bookIconButton = screen.getByTestId('icon-option-📚');
+      await user.click(bookIconButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Exercise',
+        description: '30 minutes workout',
+        frequency: 'daily',
+        color: '#10b981',
+        icon: '📚',
       });
     });
   });
