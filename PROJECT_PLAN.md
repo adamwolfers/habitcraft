@@ -239,32 +239,32 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Delete button
   - [x] Timezone handling for dates
 - [ ] **EditHabitModal Component**
-  - [x] **Step 1: Modal Infrastructure**
+  - [x] **Modal Infrastructure**
     - [x] Write tests for modal open/close functionality
     - [x] Implement modal UI structure (open/close, cancel button)
     - [x] Write tests for edit button in HabitCard
     - [x] Add edit button to HabitCard component
-  - [x] **Step 2: Update Habit Title**
+  - [x] **Update Habit Title**
     - [x] Write tests for title field rendering and validation
     - [x] Implement title input field with validation
     - [x] Write tests for title update submission
     - [x] Connect title update to API
-  - [x] **Step 3: Update Habit Description**
+  - [x] **Update Habit Description**
     - [x] Write tests for description field rendering
     - [x] Implement description textarea field
     - [x] Write tests for description update submission
     - [x] Connect description update to API
-  - [x] **Step 4: Update Habit Color**
+  - [x] **Update Habit Color**
     - [x] Write tests for color picker rendering
     - [x] Implement color picker component
     - [x] Write tests for color update submission
     - [x] Connect color update to API
-  - [x] **Step 5: Update Habit Icon**
+  - [x] **Update Habit Icon**
     - [x] Write tests for icon selector rendering (24 icons)
     - [x] Implement icon selector component with 24 preset emojis
     - [x] Write tests for icon update submission
     - [x] Connect icon update to API
-  - [ ] **Step 6: Error Handling & Loading States**
+  - [ ] **Error Handling & Loading States**
     - [ ] Write tests for API error display
     - [ ] Implement error handling UI
     - [ ] Write tests for loading states during submission
