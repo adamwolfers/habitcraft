@@ -241,35 +241,35 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [ ] **EditHabitModal Component**
   - [ ] **Step 1: Modal Infrastructure**
     - [ ] Write tests for modal open/close functionality
-    - [ ] Write tests for edit button in HabitCard
     - [ ] Implement modal UI structure (open/close, cancel button)
+    - [ ] Write tests for edit button in HabitCard
     - [ ] Add edit button to HabitCard component
   - [ ] **Step 2: Update Habit Title**
     - [ ] Write tests for title field rendering and validation
-    - [ ] Write tests for title update submission
     - [ ] Implement title input field with validation
+    - [ ] Write tests for title update submission
     - [ ] Connect title update to API
   - [ ] **Step 3: Update Habit Description**
     - [ ] Write tests for description field rendering
-    - [ ] Write tests for description update submission
     - [ ] Implement description textarea field
+    - [ ] Write tests for description update submission
     - [ ] Connect description update to API
   - [ ] **Step 4: Update Habit Color**
     - [ ] Write tests for color picker rendering
-    - [ ] Write tests for color update submission
     - [ ] Implement color picker component
+    - [ ] Write tests for color update submission
     - [ ] Connect color update to API
   - [ ] **Step 5: Update Habit Icon**
     - [ ] Write tests for icon selector rendering
-    - [ ] Write tests for icon update submission
     - [ ] Implement icon selector component
+    - [ ] Write tests for icon update submission
     - [ ] Connect icon update to API
   - [ ] **Step 6: Error Handling & Loading States**
     - [ ] Write tests for API error display
-    - [ ] Write tests for loading states during submission
-    - [ ] Write tests for optimistic UI updates
     - [ ] Implement error handling UI
+    - [ ] Write tests for loading states during submission
     - [ ] Implement loading states (disabled fields, submit button)
+    - [ ] Write tests for optimistic UI updates
     - [ ] Implement optimistic UI updates
 - [x] **Date Utilities (utils/dateUtils.ts)**
   - [x] getCalendarWeek() function
