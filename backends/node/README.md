@@ -4,14 +4,13 @@ Node.js + Express implementation of the HabitCraft API.
 
 ## Status
 
-✅ **Core features complete** - Full habit CRUD and completion tracking implemented
-🚧 **Next:** JWT authentication
+✅ **Core features complete** - Full habit CRUD, completion tracking, and JWT authentication implemented
 
 ### Completed Features
 - Express app setup with comprehensive testing (Jest + Supertest)
 - PostgreSQL database connection with connection pooling
-- Mock authentication (X-User-Id header for development)
-- CORS support for frontend integration
+- JWT authentication with HttpOnly cookies and refresh tokens
+- CORS support with credentials for frontend integration
 - Full habit CRUD operations (Create, Read, Update, Delete)
 - Completion tracking (Create, Read, Delete with date filtering)
 - TDD approach with comprehensive test coverage
@@ -25,10 +24,10 @@ See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the v1.0 roadmap including JWT 
 - **Framework**: Express.js 5
 - **Language**: JavaScript (CommonJS)
 - **Database**: PostgreSQL with pg (node-postgres)
-- **Testing**: Jest + Supertest (50 tests passing)
-- **CORS**: cors middleware
+- **Testing**: Jest + Supertest
+- **CORS**: cors middleware with credentials support
 - **Environment**: dotenv
-- **Authentication**: Mock (X-User-Id header) - JWT planned
+- **Authentication**: JWT with HttpOnly cookies and refresh tokens
 
 ## Prerequisites
 
@@ -93,9 +92,12 @@ JWT_EXPIRES_IN=7d
 - `GET /api/v1/habits/:habitId/completions` - List completions (?startDate & ?endDate filters)
 - `DELETE /api/v1/habits/:habitId/completions/:date` - Remove completion
 
-### Authentication (Development)
-- Currently using X-User-Id header for mock authentication
-- JWT authentication coming in v1.0
+### Authentication
+- `POST /api/v1/auth/register` - Register new user
+- `POST /api/v1/auth/login` - Login and receive JWT tokens
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - Logout and clear tokens
+- `GET /api/v1/auth/me` - Get current user profile
 
 See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for complete API documentation.
 
@@ -118,7 +120,7 @@ backends/node/
 │   ├── completions.js           # Completion tracking endpoints
 │   └── completions.test.js      # Completion endpoint tests
 ├── middleware/                    # Express middleware
-│   └── auth.js                   # Mock authentication (X-User-Id header)
+│   └── jwtAuth.js                # JWT authentication middleware
 ├── package.json                   # Dependencies and scripts
 └── README.md                     # This file
 ```

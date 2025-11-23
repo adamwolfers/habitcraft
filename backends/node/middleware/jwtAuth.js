@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
 function jwtAuthMiddleware(req, res, next) {
-  // Try to get token from: 1) Cookie, 2) Authorization header, 3) X-User-Id (dev only)
+  // Try to get token from: 1) Cookie, 2) Authorization header
   let token = null;
 
   // 1. Check HttpOnly cookie first (most secure)
@@ -22,13 +22,6 @@ function jwtAuthMiddleware(req, res, next) {
         return res.status(401).json({ error: 'Invalid token format' });
       }
     }
-  }
-
-  // 3. Development fallback: accept X-User-Id header until frontend JWT is complete
-  // TODO: Remove this fallback once frontend authentication is implemented
-  if (!token && req.headers['x-user-id']) {
-    req.userId = req.headers['x-user-id'];
-    return next();
   }
 
   if (!token) {

@@ -78,7 +78,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Replace mockAuth with jwtAuth middleware (with X-User-Id fallback for development)
   - [x] Remove mockAuth.js file
   - [x] Verify user isolation and data access controls
-  - [ ] Remove X-User-Id fallback once frontend JWT auth is complete
+  - [x] Remove X-User-Id fallback once frontend JWT auth is complete
 - [x] **Secure Token Storage (HttpOnly Cookies)**
   - [x] Install cookie-parser middleware
   - [x] Update CORS config to allow credentials
