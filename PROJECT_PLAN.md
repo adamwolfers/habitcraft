@@ -518,9 +518,3 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - **Database Schema:** `/shared/database/schema.sql`
 - **Backend README:** `/backends/node/README.md`
 - **Frontend README:** `/frontends/nextjs/README.md`
-
----
-
-**Last Updated:** 2025-11-20
-**Current Status:** User registration and login complete, continuing JWT authentication
-**Next Milestone:** v1.0 Release
