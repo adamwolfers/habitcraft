@@ -131,7 +131,6 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Tailwind CSS configuration
 - [x] Testing framework (Jest + React Testing Library)
 - [x] Environment variable configuration
-- [x] Remove Vercel Analytics (@vercel/analytics)
 
 #### Authentication & Authorization
 
