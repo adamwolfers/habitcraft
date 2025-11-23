@@ -831,4 +831,241 @@ describe('EditHabitModal', () => {
       });
     });
   });
+
+  describe('Error Handling', () => {
+    it('should display error when onUpdate fails', async () => {
+      const user = userEvent.setup();
+      const errorMessage = 'Failed to update habit';
+      mockOnUpdate.mockRejectedValue(new Error(errorMessage));
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent(errorMessage);
+    });
+
+    it('should display generic error message for non-Error exceptions', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue('Something went wrong');
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(screen.getByRole('alert')).toHaveTextContent('Failed to update habit');
+    });
+
+    it('should clear error when user changes title', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Failed to update habit'));
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+      // Type in the title input to clear the error
+      await user.type(titleInput, 'X');
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('should clear error when user changes description', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Failed to update habit'));
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+      // Type in the description to clear the error
+      const descriptionTextarea = screen.getByLabelText(/description/i);
+      await user.type(descriptionTextarea, 'X');
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('should clear error when user changes color', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Failed to update habit'));
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+      // Click a different color to clear the error
+      const greenColorButton = screen.getByTestId('color-option-#10b981');
+      await user.click(greenColorButton);
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('should clear error when user changes icon', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Failed to update habit'));
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+      // Click a different icon to clear the error
+      const bookIconButton = screen.getByTestId('icon-option-📚');
+      await user.click(bookIconButton);
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('should not close modal when onUpdate fails', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Failed to update habit'));
+
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await screen.findByRole('alert');
+
+      expect(mockOnClose).not.toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('should clear error when closing and reopening modal', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Failed to update habit'));
+
+      const { rerender } = render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'New Habit Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+
+      // Close the modal
+      rerender(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={false}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Reopen the modal
+      rerender(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
 });

@@ -47,13 +47,8 @@ export default function Home() {
     habitId: string,
     updates: Partial<Habit>
   ) => {
-    try {
-      await updateHabit(habitId, updates);
-      setEditingHabit(null);
-    } catch (error) {
-      console.error("Failed to update habit:", error);
-      // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
-    }
+    await updateHabit(habitId, updates);
+    setEditingHabit(null);
   };
 
   const handleCloseModal = () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Habit } from '@/types/habit';
 
 interface EditHabitModalProps {
@@ -56,6 +56,14 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
   const [description, setDescription] = useState(habit.description || '');
   const [color, setColor] = useState(habit.color);
   const [icon, setIcon] = useState(habit.icon);
+  const [error, setError] = useState<string | null>(null);
+
+  // Clear error when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setError(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
@@ -86,14 +94,20 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     const iconChanged = icon !== habit.icon;
 
     if (nameChanged || descriptionChanged || colorChanged || iconChanged) {
-      // Send all required fields along with the updates
-      await onUpdate(habit.id, {
-        name: trimmedName,
-        description: trimmedDescription || null, // Convert empty string to null
-        frequency: habit.frequency,
-        color: color,
-        icon: icon,
-      });
+      try {
+        // Send all required fields along with the updates
+        await onUpdate(habit.id, {
+          name: trimmedName,
+          description: trimmedDescription || null, // Convert empty string to null
+          frequency: habit.frequency,
+          color: color,
+          icon: icon,
+        });
+      } catch (err) {
+        // Handle error - extract message from Error object or use generic message
+        const errorMessage = err instanceof Error ? err.message : 'Failed to update habit';
+        setError(errorMessage);
+      }
     } else {
       // Just close the modal if nothing changed
       onClose();
@@ -136,7 +150,10 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                 id="habit-name"
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setError(null);
+                }}
                 required
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -149,7 +166,10 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
               <textarea
                 id="habit-description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setError(null);
+                }}
                 rows={3}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 placeholder="Optional description"
@@ -164,7 +184,10 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                     key={c}
                     type="button"
                     data-testid={`color-option-${c}`}
-                    onClick={() => setColor(c)}
+                    onClick={() => {
+                      setColor(c);
+                      setError(null);
+                    }}
                     className={`w-8 h-8 rounded-full transition-transform ${
                       color === c ? 'ring-2 ring-white scale-110' : ''
                     }`}
@@ -182,7 +205,10 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                     key={i}
                     type="button"
                     data-testid={`icon-option-${i}`}
-                    onClick={() => setIcon(i)}
+                    onClick={() => {
+                      setIcon(i);
+                      setError(null);
+                    }}
                     className={`w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all text-xl flex items-center justify-center ${
                       icon === i ? 'ring-2 ring-white scale-110' : ''
                     }`}
@@ -193,6 +219,15 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
               </div>
             </div>
           </div>
+
+          {error && (
+            <div
+              role="alert"
+              className="mt-4 p-3 bg-red-500/10 border border-red-500 text-red-500 rounded-lg text-sm"
+            >
+              {error}
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 mt-6">
             <button
