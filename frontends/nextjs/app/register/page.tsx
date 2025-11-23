@@ -38,7 +38,13 @@ export default function RegisterPage() {
       return;
     }
 
-    // TODO: Call register API
+    // Call register API
+    try {
+      await register(email, password, name);
+      router.push('/');
+    } catch (error) {
+      // Error handling will be implemented in Step 5
+    }
   };
 
   const handleInputChange = (field: 'name' | 'email' | 'password' | 'confirmPassword', value: string) => {

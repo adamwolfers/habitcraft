@@ -180,10 +180,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] **Step 3: Password Strength Indicator**
     - [ ] Write tests for password strength calculation (weak/medium/strong)
     - [ ] Implement password strength indicator UI component
-  - [ ] **Step 4: Form Submission**
-    - [ ] Write tests for successful registration flow
-    - [ ] Write tests for redirect to home page after registration
-    - [ ] Implement form submission logic
+  - [x] **Step 4: Form Submission**
+    - [x] Write tests for successful registration flow
+    - [x] Write tests for redirect to home page after registration
+    - [x] Implement form submission logic
   - [ ] **Step 5: Error Handling**
     - [ ] Write tests for API error display
     - [ ] Write tests for clearing errors on input change

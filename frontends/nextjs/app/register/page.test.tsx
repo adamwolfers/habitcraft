@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RegisterPage from './page';
 import * as authContextModule from '@/context/AuthContext';
@@ -313,6 +313,101 @@ describe('Registration Page - Step 2: Form Validation', () => {
       await user.type(passwordInput, 'word');
 
       expect(screen.queryByText(/password must be at least 8 characters/i)).not.toBeInTheDocument();
+    });
+  });
+});
+
+describe('Registration Page - Step 4: Form Submission', () => {
+  const mockRegister = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      login: jest.fn(),
+      register: mockRegister,
+      logout: jest.fn(),
+    });
+  });
+
+  describe('Successful Registration', () => {
+    it('should call register with correct data on valid submission', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockResolvedValue(undefined);
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockRegister).toHaveBeenCalledWith('test@example.com', 'password123', 'Test User');
+      });
+    });
+
+    it('should redirect to home page on successful registration', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockResolvedValue(undefined);
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/');
+      });
+    });
+
+    it('should not call register when validation fails', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockResolvedValue(undefined);
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'different');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      // Should show validation error
+      expect(await screen.findByText(/passwords do not match/i)).toBeInTheDocument();
+
+      // Should not call register
+      expect(mockRegister).not.toHaveBeenCalled();
+
+      // Should not redirect
+      expect(mockPush).not.toHaveBeenCalled();
     });
   });
 });
