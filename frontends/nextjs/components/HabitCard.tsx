@@ -8,10 +8,11 @@ interface HabitCardProps {
   habit: Habit;
   onToggleCompletion: (habitId: string, date: Date) => void;
   onDelete: (habitId: string) => void;
+  onEdit?: (habitId: string) => void;
   isCompletedOnDate: (habitId: string, date: Date) => boolean;
 }
 
-export default function HabitCard({ habit, onToggleCompletion, onDelete, isCompletedOnDate }: HabitCardProps) {
+export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit, isCompletedOnDate }: HabitCardProps) {
   const [weekOffset, setWeekOffset] = useState(0);
   const weekDays = getCalendarWeek(weekOffset);
 
@@ -32,6 +33,17 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, isCompl
             className="w-4 h-4 rounded-full flex-shrink-0"
             style={{ backgroundColor: habit.color }}
           />
+          {onEdit && (
+            <button
+              onClick={() => onEdit(habit.id)}
+              className="text-gray-400 hover:text-blue-500 transition-colors"
+              aria-label="Edit habit"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+            </button>
+          )}
           <button
             onClick={() => onDelete(habit.id)}
             className="text-gray-400 hover:text-red-500 transition-colors"

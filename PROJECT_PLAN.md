@@ -239,11 +239,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Delete button
   - [x] Timezone handling for dates
 - [ ] **EditHabitModal Component**
-  - [ ] **Step 1: Modal Infrastructure**
-    - [ ] Write tests for modal open/close functionality
-    - [ ] Implement modal UI structure (open/close, cancel button)
-    - [ ] Write tests for edit button in HabitCard
-    - [ ] Add edit button to HabitCard component
+  - [x] **Step 1: Modal Infrastructure**
+    - [x] Write tests for modal open/close functionality
+    - [x] Implement modal UI structure (open/close, cancel button)
+    - [x] Write tests for edit button in HabitCard
+    - [x] Add edit button to HabitCard component
   - [ ] **Step 2: Update Habit Title**
     - [ ] Write tests for title field rendering and validation
     - [ ] Implement title input field with validation

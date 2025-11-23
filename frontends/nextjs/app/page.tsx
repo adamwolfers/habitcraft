@@ -1,17 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { useHabits } from '@/hooks/useHabits';
 import AddHabitForm from '@/components/AddHabitForm';
 import HabitCard from '@/components/HabitCard';
+import EditHabitModal from '@/components/EditHabitModal';
 import Footer from '@/components/Footer';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { HabitFormData } from '@/types/habit';
+import { Habit, HabitFormData } from '@/types/habit';
 
 // TODO: Replace with real authentication
 const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export default function Home() {
   const { habits, createHabit, toggleCompletion, isHabitCompletedOnDate, deleteHabit } = useHabits(MOCK_USER_ID);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
     await createHabit(habitData);
@@ -24,6 +27,23 @@ export default function Home() {
       console.error('Failed to delete habit:', error);
       // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
     }
+  };
+
+  const handleEditHabit = (habitId: string) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (habit) {
+      setEditingHabit(habit);
+    }
+  };
+
+  const handleUpdateHabit = async (habitId: string, updates: Partial<Habit>) => {
+    // TODO: Implement updateHabit in useHabits hook (Step 2)
+    console.log('Update habit:', habitId, updates);
+    setEditingHabit(null);
+  };
+
+  const handleCloseModal = () => {
+    setEditingHabit(null);
   };
 
   return (
@@ -65,6 +85,7 @@ export default function Home() {
                     habit={habit}
                     onToggleCompletion={toggleCompletion}
                     onDelete={handleDeleteHabit}
+                    onEdit={handleEditHabit}
                     isCompletedOnDate={isHabitCompletedOnDate}
                   />
                 ))}
@@ -74,6 +95,14 @@ export default function Home() {
         </div>
         <Footer />
       </div>
+      {editingHabit && (
+        <EditHabitModal
+          habit={editingHabit}
+          isOpen={!!editingHabit}
+          onClose={handleCloseModal}
+          onUpdate={handleUpdateHabit}
+        />
+      )}
     </ProtectedRoute>
   );
 }

@@ -280,4 +280,46 @@ describe('HabitCard', () => {
       expect(dayButtons.length).toBe(7);
     });
   });
+
+  describe('Edit Button', () => {
+    const mockOnEdit = jest.fn();
+
+    beforeEach(() => {
+      mockOnEdit.mockClear();
+    });
+
+    it('should render edit button', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          onEdit={mockOnEdit}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      const editButton = screen.getByLabelText(/edit habit/i);
+      expect(editButton).toBeInTheDocument();
+    });
+
+    it('should call onEdit when edit button is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          onEdit={mockOnEdit}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      const editButton = screen.getByLabelText(/edit habit/i);
+      await user.click(editButton);
+
+      expect(mockOnEdit).toHaveBeenCalledTimes(1);
+      expect(mockOnEdit).toHaveBeenCalledWith(mockHabit.id);
+    });
+  });
 });

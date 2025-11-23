@@ -206,3 +206,154 @@ describe('Home Page - Delete Functionality', () => {
     });
   });
 });
+
+describe('Home Page - Edit Functionality', () => {
+  const mockHabits: Habit[] = [
+    {
+      id: 'habit-1',
+      userId: '123e4567-e89b-12d3-a456-426614174000',
+      name: 'Morning Exercise',
+      description: '30 minutes of cardio',
+      frequency: 'daily',
+      targetDays: [],
+      color: '#3B82F6',
+      icon: '🏃',
+      status: 'active',
+      createdAt: '2025-01-01T00:00:00.000Z',
+      updatedAt: '2025-01-01T00:00:00.000Z'
+    }
+  ];
+
+  const mockCreateHabit = jest.fn();
+  const mockToggleCompletion = jest.fn();
+  const mockIsHabitCompletedOnDate = jest.fn();
+  const mockDeleteHabit = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: '123e4567-e89b-12d3-a456-426614174000',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2025-01-01T00:00:00.000Z',
+      },
+      isLoading: false,
+      isAuthenticated: true,
+      login: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+    });
+
+    mockUseHabits.mockReturnValue({
+      habits: mockHabits,
+      createHabit: mockCreateHabit,
+      toggleCompletion: mockToggleCompletion,
+      isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
+      deleteHabit: mockDeleteHabit,
+    });
+  });
+
+  it('should render edit button for each habit', async () => {
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    const editButton = screen.getByLabelText('Edit habit');
+    expect(editButton).toBeInTheDocument();
+  });
+
+  it('should open edit modal when edit button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Modal should not be visible initially
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    // Click edit button
+    const editButton = screen.getByLabelText('Edit habit');
+    await user.click(editButton);
+
+    // Modal should now be visible
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Edit Habit')).toBeInTheDocument();
+  });
+
+  it('should display the correct habit in the modal', async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    const editButton = screen.getByLabelText('Edit habit');
+    await user.click(editButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Should display habit name in modal
+    expect(screen.getByText('Editing: Morning Exercise')).toBeInTheDocument();
+  });
+
+  it('should close modal when cancel button is clicked', async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Open modal
+    const editButton = screen.getByLabelText('Edit habit');
+    await user.click(editButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Close modal
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    await user.click(cancelButton);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('should close modal when close button (X) is clicked', async () => {
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Open modal
+    const editButton = screen.getByLabelText('Edit habit');
+    await user.click(editButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Close modal using X button
+    const closeButton = screen.getByLabelText(/close/i);
+    await user.click(closeButton);
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+});
