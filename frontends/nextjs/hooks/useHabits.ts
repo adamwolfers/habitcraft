@@ -5,6 +5,7 @@ import { Habit, HabitFormData, Completion } from '@/types/habit';
 import {
   fetchHabits,
   createHabit as apiCreateHabit,
+  updateHabit as apiUpdateHabit,
   fetchCompletions as apiFetchCompletions,
   createCompletion as apiCreateCompletion,
   deleteCompletion as apiDeleteCompletion,
@@ -102,6 +103,20 @@ export const useHabits = (userId: string) => {
     }
   };
 
+  const updateHabit = async (habitId: string, updates: Partial<Habit>): Promise<Habit> => {
+    try {
+      const updatedHabit = await apiUpdateHabit(userId, habitId, updates);
+
+      // Update habit in local state
+      setHabits(habits.map(h => h.id === habitId ? updatedHabit : h));
+
+      return updatedHabit;
+    } catch (error) {
+      console.error('Error updating habit:', error);
+      throw error;
+    }
+  };
+
   const deleteHabit = async (habitId: string): Promise<void> => {
     try {
       await apiDeleteHabit(userId, habitId);
@@ -122,6 +137,7 @@ export const useHabits = (userId: string) => {
   return {
     habits,
     createHabit,
+    updateHabit,
     toggleCompletion,
     isHabitCompletedOnDate,
     deleteHabit,

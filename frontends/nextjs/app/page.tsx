@@ -13,7 +13,7 @@ import { Habit, HabitFormData } from '@/types/habit';
 const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
 
 export default function Home() {
-  const { habits, createHabit, toggleCompletion, isHabitCompletedOnDate, deleteHabit } = useHabits(MOCK_USER_ID);
+  const { habits, createHabit, updateHabit, toggleCompletion, isHabitCompletedOnDate, deleteHabit } = useHabits(MOCK_USER_ID);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
@@ -37,9 +37,13 @@ export default function Home() {
   };
 
   const handleUpdateHabit = async (habitId: string, updates: Partial<Habit>) => {
-    // TODO: Implement updateHabit in useHabits hook (Step 2)
-    console.log('Update habit:', habitId, updates);
-    setEditingHabit(null);
+    try {
+      await updateHabit(habitId, updates);
+      setEditingHabit(null);
+    } catch (error) {
+      console.error('Failed to update habit:', error);
+      // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
+    }
   };
 
   const handleCloseModal = () => {

@@ -1,4 +1,4 @@
-import { fetchHabits, createHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit } from './api';
+import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -688,6 +688,109 @@ describe('API Client - JWT Integration', () => {
       await expect(fetchHabits(mockUserId)).rejects.toThrow();
 
       expect(onAuthFailure).toHaveBeenCalled();
+    });
+  });
+
+  describe('updateHabit', () => {
+    const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+    const mockHabitId = 'habit-123';
+    const API_BASE_URL = 'http://localhost:3000';
+
+    const updatedHabit: Habit = {
+      id: mockHabitId,
+      userId: mockUserId,
+      name: 'Morning Run',
+      description: 'Updated description',
+      frequency: 'daily',
+      targetDays: [],
+      color: '#3B82F6',
+      icon: '🏃',
+      status: 'active',
+      createdAt: '2025-01-01T00:00:00.000Z',
+      updatedAt: '2025-01-02T00:00:00.000Z'
+    };
+
+    beforeAll(() => {
+      process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+    });
+
+    beforeEach(() => {
+      global.fetch = jest.fn();
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should update habit name successfully', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => updatedHabit
+      });
+
+      const result = await updateHabit(mockUserId, mockHabitId, { name: 'Morning Run' });
+
+      expect(result).toEqual(updatedHabit);
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/habits/${mockHabitId}`,
+        {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Id': mockUserId
+          },
+          body: JSON.stringify({ name: 'Morning Run' })
+        }
+      );
+    });
+
+    it('should update multiple fields successfully', async () => {
+      const updates = {
+        name: 'Morning Run',
+        description: 'Updated description',
+        color: '#FF5733'
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ ...updatedHabit, ...updates })
+      });
+
+      const result = await updateHabit(mockUserId, mockHabitId, updates);
+
+      expect(result.name).toBe('Morning Run');
+      expect(result.description).toBe('Updated description');
+      expect(result.color).toBe('#FF5733');
+    });
+
+    it('should throw error when update fails due to not found', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 404
+      });
+
+      await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow('Failed to update habit: 404');
+    });
+
+    it('should throw error when update fails due to unauthorized', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 401
+      });
+
+      await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow('Failed to update habit: 401');
+    });
+
+    it('should throw error when update fails due to validation error', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400
+      });
+
+      await expect(updateHabit(mockUserId, mockHabitId, { name: '' })).rejects.toThrow('Failed to update habit: 400');
     });
   });
 

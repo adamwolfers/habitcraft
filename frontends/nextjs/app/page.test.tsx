@@ -303,8 +303,9 @@ describe('Home Page - Edit Functionality', () => {
       expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    // Should display habit name in modal
-    expect(screen.getByText('Editing: Morning Exercise')).toBeInTheDocument();
+    // Should display habit name in the input field
+    const titleInput = screen.getByLabelText(/habit name/i) as HTMLInputElement;
+    expect(titleInput.value).toBe('Morning Exercise');
   });
 
   it('should close modal when cancel button is clicked', async () => {

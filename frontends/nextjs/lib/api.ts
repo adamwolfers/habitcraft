@@ -260,6 +260,28 @@ export async function deleteCompletion(
  * @param userId - The user ID
  * @param habitId - The habit ID to delete
  */
+export async function updateHabit(
+  userId: string,
+  habitId: string,
+  updates: Partial<Habit>
+): Promise<Habit> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId
+    },
+    body: JSON.stringify(updates)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update habit: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 export async function deleteHabit(
   userId: string,
   habitId: string

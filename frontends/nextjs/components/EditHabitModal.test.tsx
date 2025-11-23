@@ -117,4 +117,192 @@ describe('EditHabitModal', () => {
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('Title Field', () => {
+    it('should render title input field', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      expect(titleInput).toBeInTheDocument();
+    });
+
+    it('should populate title input with current habit name', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i) as HTMLInputElement;
+      expect(titleInput.value).toBe('Exercise');
+    });
+
+    it('should allow user to edit the title', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'Morning Run');
+
+      expect(titleInput).toHaveValue('Morning Run');
+    });
+
+    it('should mark title field as required', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      expect(titleInput).toBeRequired();
+    });
+
+    it('should not allow empty title', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+
+      expect(titleInput).toHaveValue('');
+      expect(titleInput).toBeInvalid();
+    });
+  });
+
+  describe('Title Update Submission', () => {
+    it('should render save button', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      expect(saveButton).toBeInTheDocument();
+    });
+
+    it('should call onUpdate with new title when save is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'Morning Run');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1);
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Morning Run',
+        frequency: 'daily',
+        color: '#3b82f6',
+      });
+    });
+
+    it('should not call onUpdate if title is unchanged', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      // Should close modal without calling onUpdate since nothing changed
+      expect(mockOnUpdate).not.toHaveBeenCalled();
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not submit when title is empty', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      // Should not call onUpdate or onClose
+      expect(mockOnUpdate).not.toHaveBeenCalled();
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
+    it('should trim whitespace from title before submitting', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, '  Morning Run  ');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Morning Run',
+        frequency: 'daily',
+        color: '#3b82f6',
+      });
+    });
+  });
 });

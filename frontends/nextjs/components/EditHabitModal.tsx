@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Habit } from '@/types/habit';
 
 interface EditHabitModalProps {
@@ -10,6 +11,8 @@ interface EditHabitModalProps {
 }
 
 export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: EditHabitModalProps) {
+  const [name, setName] = useState(habit.name);
+
   if (!isOpen) {
     return null;
   }
@@ -17,6 +20,30 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only close if clicking the backdrop itself, not its children
     if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const trimmedName = name.trim();
+
+    // Don't submit if empty (though HTML5 validation should prevent this)
+    if (!trimmedName) {
+      return;
+    }
+
+    // Only call onUpdate if the name has actually changed
+    if (trimmedName !== habit.name) {
+      // Send all required fields along with the update
+      await onUpdate(habit.id, {
+        name: trimmedName,
+        frequency: habit.frequency,
+        color: habit.color,
+      });
+    } else {
+      // Just close the modal if nothing changed
       onClose();
     }
   };
@@ -47,19 +74,39 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
           </button>
         </div>
 
-        <div className="space-y-4">
-          {/* Form content will be added in next steps */}
-          <p className="text-gray-400 text-sm">Editing: {habit.name}</p>
-        </div>
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="habit-name" className="block text-sm font-medium mb-2">
+                Habit Name
+              </label>
+              <input
+                id="habit-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
 
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Save
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

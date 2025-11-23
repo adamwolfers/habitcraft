@@ -244,11 +244,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Implement modal UI structure (open/close, cancel button)
     - [x] Write tests for edit button in HabitCard
     - [x] Add edit button to HabitCard component
-  - [ ] **Step 2: Update Habit Title**
-    - [ ] Write tests for title field rendering and validation
-    - [ ] Implement title input field with validation
-    - [ ] Write tests for title update submission
-    - [ ] Connect title update to API
+  - [x] **Step 2: Update Habit Title**
+    - [x] Write tests for title field rendering and validation
+    - [x] Implement title input field with validation
+    - [x] Write tests for title update submission
+    - [x] Connect title update to API
   - [ ] **Step 3: Update Habit Description**
     - [ ] Write tests for description field rendering
     - [ ] Implement description textarea field
