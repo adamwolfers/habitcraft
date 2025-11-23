@@ -139,13 +139,20 @@ describe('HabitCard', () => {
   });
 
   it('should style completed days differently', () => {
-    // Mock to return true for exactly one specific date
+    // Get the current week's Sunday (the first day shown in the calendar)
     const today = new Date();
-    const todayString = today.toISOString().split('T')[0];
+    const currentDay = today.getDay(); // 0 = Sunday, 6 = Saturday
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - currentDay);
+
+    // Use Monday of the current week as the completed day
+    const monday = new Date(sunday);
+    monday.setDate(sunday.getDate() + 1);
+    const mondayString = monday.toISOString().split('T')[0];
 
     const mockIsCompleted = jest.fn((_habitId: string, date: Date) => {
       const dateString = date.toISOString().split('T')[0];
-      return dateString === todayString;
+      return dateString === mondayString;
     });
 
     const { container } = render(
@@ -161,10 +168,12 @@ describe('HabitCard', () => {
     expect(mockIsCompleted).toHaveBeenCalled();
 
     // Check that at least one day button has a filled background (completed state)
-    const dayCircles = container.querySelectorAll('.w-8.h-8.rounded-full');
+    const dayCircles = container.querySelectorAll('div.w-8');
     const hasColoredBackground = Array.from(dayCircles).some(circle => {
-      const style = (circle as HTMLElement).style.backgroundColor;
-      return style && style !== 'transparent' && style !== '';
+      const element = circle as HTMLElement;
+      const bgColor = element.style.backgroundColor;
+      // Check if background color is set and not transparent
+      return bgColor && bgColor !== '' && bgColor !== 'transparent';
     });
 
     expect(hasColoredBackground).toBe(true);
