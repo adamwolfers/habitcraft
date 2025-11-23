@@ -238,7 +238,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Toggle completion on click
   - [x] Delete button
   - [x] Timezone handling for dates
-- [ ] **EditHabitModal Component**
+- [x] **EditHabitModal Component**
   - [x] **Modal Infrastructure**
     - [x] Write tests for modal open/close functionality
     - [x] Implement modal UI structure (open/close, cancel button)
@@ -267,26 +267,47 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] **Error Handling**
     - [x] Write tests for API error display
     - [x] Implement error handling UI
-  - [ ] **Loading States**
-    - [ ] Write tests for loading states during submission
-    - [ ] Implement loading states (disabled fields, submit button)
-  - [ ] **Optimistic UI Updates**
-    - [ ] Write tests for optimistic UI updates
-    - [ ] Implement optimistic UI updates
 - [x] **Date Utilities (utils/dateUtils.ts)**
   - [x] getCalendarWeek() function
   - [x] Week calculation logic
 - [ ] **UI Polish**
-  - [ ] Loading spinners for data fetches
-  - [ ] Disabled states during submission
-    - [ ] Login form loading states (disabled fields, submit button)
-    - [ ] Registration form loading states (disabled fields, submit button)
-    - [ ] Add habit form loading states
-    - [ ] Update habit form loading states
+  - [ ] Loading states (disabled fields, submit button)
+    - [ ] Login form
+      - [ ] Write tests and run tests (red phase)
+      - [ ] Implementation and run tests (green phase)
+      - [ ] Evaluate refactoring opportunities (refactor phase)
+    - [ ] Registration form
+      - [ ] Write tests and run tests (red phase)
+      - [ ] Implementation and run tests (green phase)
+      - [ ] Evaluate refactoring opportunities (refactor phase)
+    - [ ] Add habit form
+      - [ ] Write tests and run tests (red phase)
+      - [ ] Implementation and run tests (green phase)
+      - [ ] Evaluate refactoring opportunities (refactor phase)
+    - [ ] Update habit form
+      - [ ] Write tests and run tests (red phase)
+      - [ ] Implementation and run tests (green phase)
+      - [ ] Evaluate refactoring opportunities (refactor phase)
   - [ ] Loading skeletons for habit list
+    - [ ] Write tests and run tests (red phase)
+    - [ ] Implementation and run tests (green phase)
+    - [ ] Evaluate refactoring opportunities (refactor phase)
   - [ ] Toast notifications for errors
+    - [ ] Write tests and run tests (red phase)
+    - [ ] Implementation and run tests (green phase)
+    - [ ] Evaluate refactoring opportunities (refactor phase)
   - [ ] Inline validation error messages
+    - [ ] Write tests and run tests (red phase)
+    - [ ] Implementation and run tests (green phase)
+    - [ ] Evaluate refactoring opportunities (refactor phase)
   - [ ] Network error recovery UI
+    - [ ] Write tests and run tests (red phase)
+    - [ ] Implementation and run tests (green phase)
+    - [ ] Evaluate refactoring opportunities (refactor phase)
+  - [ ] Optimistic UI Updates
+    - [ ] Write tests and run tests (red phase)
+    - [ ] Implementation and run tests (green phase)
+    - [ ] Evaluate refactoring opportunities (refactor phase)
 
 ### Acceptance Testing
 
