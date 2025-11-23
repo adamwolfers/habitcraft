@@ -18,11 +18,6 @@ jest.mock('next/font/google', () => ({
   }),
 }));
 
-// Mock Vercel Analytics
-jest.mock('@vercel/analytics/next', () => ({
-  Analytics: () => null,
-}));
-
 // Mock Header component
 jest.mock('@/components/Header', () => {
   return function MockHeader() {
