@@ -48,7 +48,6 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Authentication & Authorization
 
-- [x] Mock authentication middleware (X-User-Id header for development)
 - [x] Install dependencies (bcrypt, jsonwebtoken, express-validator)
 - [x] **User Registration (POST /api/v1/auth/register)**
   - [x] Write tests (valid registration, duplicate email, validation, password hashing, JWT generation)
@@ -93,36 +92,36 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 #### Habit Management
 
 - [x] **POST /api/v1/habits** - Create habit
+  - [x] Tests
   - [x] Input validation (name, frequency, color, icon)
   - [x] User isolation enforcement
-  - [x] Tests with mock auth
 - [x] **GET /api/v1/habits** - List habits
+  - [x] Tests
   - [x] Optional status filter (active/archived)
   - [x] User isolation
-  - [x] Tests with mock auth
 - [x] **PUT /api/v1/habits/:id** - Update habit
+  - [x] Tests
   - [x] Field updates (name, description, frequency, targetDays, color, icon, status)
   - [x] User ownership enforcement
-  - [x] Tests with mock auth
 - [x] **DELETE /api/v1/habits/:id** - Delete habit
+  - [x] Tests
   - [x] User ownership enforcement
-  - [x] Tests with mock auth
 
 #### Completion Tracking
 
 - [x] **POST /api/v1/habits/:habitId/completions** - Mark complete
+  - [x] Tests
   - [x] Habit ownership validation
   - [x] Duplicate prevention (409 Conflict)
   - [x] Date format validation
-  - [x] Tests with mock auth
 - [x] **GET /api/v1/habits/:habitId/completions** - List completions
+  - [x] Tests
   - [x] Date range filtering (startDate, endDate)
   - [x] Habit ownership validation
-  - [x] Tests with mock auth
 - [x] **DELETE /api/v1/habits/:habitId/completions/:date** - Remove completion
+  - [x] Tests
   - [x] Habit ownership validation
   - [x] Date format validation
-  - [x] Tests with mock auth
 
 ### Frontend - Next.js + React
 
@@ -167,7 +166,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Generate bcrypt hash for demo password (demo123)
     - [x] Update seed.sql with valid password hash
     - [x] Update documentation (GETTING_STARTED.md, database README)
-- [ ] **Registration Page (app/register/page.tsx)**
+- [x] **Registration Page (app/register/page.tsx)**
   - [x] **Step 1: Basic Form Structure**
     - [x] Write tests for form rendering (name, email, password, confirm password fields, submit button, heading, link to login)
     - [x] Implement basic registration form UI
@@ -185,10 +184,6 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Write tests for API error display
     - [x] Write tests for clearing errors on input change
     - [x] Implement error handling UI and logic
-  - [ ] **Step 5: Loading States**
-    - [ ] Write tests for loading state during submission
-    - [ ] Write tests for disabled fields during submission
-    - [ ] Implement loading states UI
 - [x] **Protected Routes**
   - [x] Write tests (loading state, redirect, authenticated access)
   - [x] Implement ProtectedRoute wrapper component
@@ -229,7 +224,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **Home Page (app/page.tsx)**
   - [x] Display habits from database
   - [x] Create habit form integration
-  - [x] Update habit functionality
+  - [ ] Update habit functionality (see EditHabitModal component below)
   - [x] Delete habit button
   - [x] Loading and empty states
 - [x] **AddHabitForm Component**
@@ -244,12 +239,49 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Toggle completion on click
   - [x] Delete button
   - [x] Timezone handling for dates
+- [ ] **EditHabitModal Component**
+  - [ ] **Step 1: Modal Infrastructure**
+    - [ ] Write tests for modal open/close functionality
+    - [ ] Write tests for edit button in HabitCard
+    - [ ] Implement modal UI structure (open/close, cancel button)
+    - [ ] Add edit button to HabitCard component
+  - [ ] **Step 2: Update Habit Title**
+    - [ ] Write tests for title field rendering and validation
+    - [ ] Write tests for title update submission
+    - [ ] Implement title input field with validation
+    - [ ] Connect title update to API
+  - [ ] **Step 3: Update Habit Description**
+    - [ ] Write tests for description field rendering
+    - [ ] Write tests for description update submission
+    - [ ] Implement description textarea field
+    - [ ] Connect description update to API
+  - [ ] **Step 4: Update Habit Color**
+    - [ ] Write tests for color picker rendering
+    - [ ] Write tests for color update submission
+    - [ ] Implement color picker component
+    - [ ] Connect color update to API
+  - [ ] **Step 5: Update Habit Icon**
+    - [ ] Write tests for icon selector rendering
+    - [ ] Write tests for icon update submission
+    - [ ] Implement icon selector component
+    - [ ] Connect icon update to API
+  - [ ] **Step 6: Error Handling & Loading States**
+    - [ ] Write tests for API error display
+    - [ ] Write tests for loading states during submission
+    - [ ] Write tests for optimistic UI updates
+    - [ ] Implement error handling UI
+    - [ ] Implement loading states (disabled fields, submit button)
+    - [ ] Implement optimistic UI updates
 - [x] **Date Utilities (utils/dateUtils.ts)**
   - [x] getCalendarWeek() function
   - [x] Week calculation logic
 - [ ] **UI Polish**
   - [ ] Loading spinners for data fetches
   - [ ] Disabled states during submission
+    - [ ] Login form loading states (disabled fields, submit button)
+    - [ ] Registration form loading states (disabled fields, submit button)
+    - [ ] Add habit form loading states
+    - [ ] Update habit form loading states
   - [ ] Loading skeletons for habit list
   - [ ] Toast notifications for errors
   - [ ] Inline validation error messages
@@ -342,7 +374,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Security Hardening
 
-- [ ] Rate limiting on auth endpoints (express-rate-limit)
+- [ ] Rate limiting on auth endpoints (express-rate-limit implementation)
 - [ ] Input sanitization (XSS prevention)
 - [ ] CORS configuration for specific origins (remove wildcard)
 - [ ] Security headers (helmet.js - CSP, HSTS, etc.)
@@ -364,7 +396,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Secure JWT_SECRET generation
   - [ ] HTTPS enforcement
   - [ ] CORS whitelist for production domains
-  - [ ] Rate limiting configuration
+  - [ ] Rate limiting configuration (production limits and thresholds)
 
 ---
 
@@ -384,7 +416,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Quality Checklist
 
-- [ ] Comprehensive review of all FE & BE unit tests
+- [ ] Comprehensive review of all FE & BE unit tests (evaluate for redundancies, gaps, and refactoring opportunities)
 - [ ] All backend tests passing
 - [ ] All frontend tests passing
 - [ ] All integration tests passing
