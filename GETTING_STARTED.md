@@ -102,13 +102,17 @@ docker-compose up -d postgres
 ```
 
 The database includes:
+
 - Schema with users, habits, and completions tables
 - Seed data with a demo user and sample habits
 - Adminer web UI at http://localhost:8080
   - Login: habituser / habitpass / habitcraft
-  - Demo user ID: `123e4567-e89b-12d3-a456-426614174000`
-  - Demo email: `demo@example.com`
-  - Demo password: `demo123`
+  - Demo User 1 ID: `123e4567-e89b-12d3-a456-426614174000`
+  - Demo User 1 Email: `demo@example.com`
+  - Demo User 1 Password: `demo123`
+  - Demo User 2 ID: `8353071d-5c46-4414-a6a2-19d2f398e5a3`
+  - Demo User 2 Email: `demo2@example.com`
+  - Demo User 2 Password: `demo1234`
 
 Manual setup:
 
@@ -123,6 +127,7 @@ psql -d habitcraft -f shared/database/schema.sql
 ## Current Features
 
 ### Backend (Node.js + Express)
+
 - Full habit CRUD operations (Create, Read, Update, Delete)
 - Completion tracking (mark complete, view history, remove)
 - Mock authentication (X-User-Id header for development)
@@ -130,6 +135,7 @@ psql -d habitcraft -f shared/database/schema.sql
 - PostgreSQL database with connection pooling
 
 ### Frontend (Next.js + React)
+
 - Habit management UI (create, update, delete)
 - Calendar week view with completion tracking
 - Week navigation (previous/next)
@@ -139,6 +145,7 @@ psql -d habitcraft -f shared/database/schema.sql
 ## What's Next
 
 See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete development roadmap, including:
+
 - JWT authentication implementation
 - Acceptance testing
 - Production deployment preparation
@@ -241,6 +248,7 @@ docker-compose restart backend-node
 ### Working with the Demo User
 
 The database is automatically seeded with a demo user on first startup:
+
 - **User ID:** `123e4567-e89b-12d3-a456-426614174000`
 - **Email:** `demo@example.com`
 - **Password:** `demo123`
