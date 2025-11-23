@@ -181,10 +181,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Write tests for successful registration flow
     - [x] Write tests for redirect to home page after registration
     - [x] Implement form submission logic
-  - [ ] **Step 4: Error Handling**
-    - [ ] Write tests for API error display
-    - [ ] Write tests for clearing errors on input change
-    - [ ] Implement error handling UI and logic
+  - [x] **Step 4: Error Handling**
+    - [x] Write tests for API error display
+    - [x] Write tests for clearing errors on input change
+    - [x] Implement error handling UI and logic
   - [ ] **Step 5: Loading States**
     - [ ] Write tests for loading state during submission
     - [ ] Write tests for disabled fields during submission

@@ -19,7 +19,7 @@ jest.mock('@/context/AuthContext', () => ({
 
 const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
 
-describe('Registration Page - Step 1: Basic Form Structure', () => {
+describe('Registration Page - Basic Form Structure', () => {
   const mockRegister = jest.fn();
 
   beforeEach(() => {
@@ -151,7 +151,7 @@ describe('Registration Page - Step 1: Basic Form Structure', () => {
   });
 });
 
-describe('Registration Page - Step 2: Form Validation', () => {
+describe('Registration Page - Form Validation', () => {
   const mockRegister = jest.fn();
 
   beforeEach(() => {
@@ -317,7 +317,7 @@ describe('Registration Page - Step 2: Form Validation', () => {
   });
 });
 
-describe('Registration Page - Step 4: Form Submission', () => {
+describe('Registration Page - Form Submission', () => {
   const mockRegister = jest.fn();
 
   beforeEach(() => {
@@ -408,6 +408,221 @@ describe('Registration Page - Step 4: Form Submission', () => {
 
       // Should not redirect
       expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+});
+
+describe('Registration Page - Error Handling', () => {
+  const mockRegister = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      login: jest.fn(),
+      register: mockRegister,
+      logout: jest.fn(),
+    });
+  });
+
+  describe('API Error Display', () => {
+    it('should display error message when registration fails with a message', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error('Email already exists'));
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Email already exists')).toBeInTheDocument();
+    });
+
+    it('should display generic error message when registration fails without a message', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error());
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Registration failed. Please try again.')).toBeInTheDocument();
+    });
+
+    it('should display generic error message when registration fails with non-Error object', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue('Unknown error');
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Registration failed. Please try again.')).toBeInTheDocument();
+    });
+
+    it('should not redirect to home page when registration fails', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error('Email already exists'));
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      await screen.findByText('Email already exists');
+
+      expect(mockPush).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Clearing Errors on Input Change', () => {
+    it('should clear API error when user types in name field', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error('Email already exists'));
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Email already exists')).toBeInTheDocument();
+
+      await user.type(nameInput, ' 2');
+
+      expect(screen.queryByText('Email already exists')).not.toBeInTheDocument();
+    });
+
+    it('should clear API error when user types in email field', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error('Email already exists'));
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Email already exists')).toBeInTheDocument();
+
+      await user.clear(emailInput);
+      await user.type(emailInput, 'newemail@example.com');
+
+      expect(screen.queryByText('Email already exists')).not.toBeInTheDocument();
+    });
+
+    it('should clear API error when user types in password field', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error('Email already exists'));
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Email already exists')).toBeInTheDocument();
+
+      await user.type(passwordInput, '4');
+
+      expect(screen.queryByText('Email already exists')).not.toBeInTheDocument();
+    });
+
+    it('should clear API error when user types in confirm password field', async () => {
+      const user = userEvent.setup();
+      mockRegister.mockRejectedValue(new Error('Email already exists'));
+
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText('Email already exists')).toBeInTheDocument();
+
+      await user.type(confirmPasswordInput, '4');
+
+      expect(screen.queryByText('Email already exists')).not.toBeInTheDocument();
     });
   });
 });

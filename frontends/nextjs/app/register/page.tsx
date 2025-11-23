@@ -14,6 +14,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [validationError, setValidationError] = useState('');
+  const [apiError, setApiError] = useState('');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -25,6 +26,7 @@ export default function RegisterPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setValidationError('');
+    setApiError('');
 
     // Validate password length
     if (password.length < 8) {
@@ -43,7 +45,11 @@ export default function RegisterPage() {
       await register(email, password, name);
       router.push('/');
     } catch (error) {
-      // Error handling will be implemented in Step 5
+      if (error instanceof Error && error.message) {
+        setApiError(error.message);
+      } else {
+        setApiError('Registration failed. Please try again.');
+      }
     }
   };
 
@@ -58,8 +64,9 @@ export default function RegisterPage() {
       setConfirmPassword(value);
     }
 
-    // Clear validation error when user starts typing
+    // Clear errors when user starts typing
     setValidationError('');
+    setApiError('');
   };
 
   return (
@@ -76,6 +83,11 @@ export default function RegisterPage() {
           {validationError && (
             <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded">
               {validationError}
+            </div>
+          )}
+          {apiError && (
+            <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded">
+              {apiError}
             </div>
           )}
 
