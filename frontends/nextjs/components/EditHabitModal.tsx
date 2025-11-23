@@ -10,9 +10,21 @@ interface EditHabitModalProps {
   onUpdate: (habitId: string, updates: Partial<Habit>) => Promise<void>;
 }
 
+const PRESET_COLORS = [
+  '#3b82f6', // blue
+  '#10b981', // green
+  '#f59e0b', // amber
+  '#ef4444', // red
+  '#8b5cf6', // purple
+  '#ec4899', // pink
+  '#06b6d4', // cyan
+  '#f97316', // orange
+];
+
 export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: EditHabitModalProps) {
   const [name, setName] = useState(habit.name);
   const [description, setDescription] = useState(habit.description || '');
+  const [color, setColor] = useState(habit.color);
 
   if (!isOpen) {
     return null;
@@ -39,14 +51,15 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     // Check if anything has changed
     const nameChanged = trimmedName !== habit.name;
     const descriptionChanged = trimmedDescription !== (habit.description || '');
+    const colorChanged = color !== habit.color;
 
-    if (nameChanged || descriptionChanged) {
+    if (nameChanged || descriptionChanged || colorChanged) {
       // Send all required fields along with the updates
       await onUpdate(habit.id, {
         name: trimmedName,
         description: trimmedDescription || null, // Convert empty string to null
         frequency: habit.frequency,
-        color: habit.color,
+        color: color,
       });
     } else {
       // Just close the modal if nothing changed
@@ -108,6 +121,24 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 placeholder="Optional description"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Color</label>
+              <div className="flex gap-2">
+                {PRESET_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    data-testid={`color-option-${c}`}
+                    onClick={() => setColor(c)}
+                    className={`w-8 h-8 rounded-full transition-transform ${
+                      color === c ? 'ring-2 ring-white scale-110' : ''
+                    }`}
+                    style={{ backgroundColor: c }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
 

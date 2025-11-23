@@ -254,11 +254,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Implement description textarea field
     - [x] Write tests for description update submission
     - [x] Connect description update to API
-  - [ ] **Step 4: Update Habit Color**
-    - [ ] Write tests for color picker rendering
-    - [ ] Implement color picker component
-    - [ ] Write tests for color update submission
-    - [ ] Connect color update to API
+  - [x] **Step 4: Update Habit Color**
+    - [x] Write tests for color picker rendering
+    - [x] Implement color picker component
+    - [x] Write tests for color update submission
+    - [x] Connect color update to API
   - [ ] **Step 5: Update Habit Icon**
     - [ ] Write tests for icon selector rendering
     - [ ] Implement icon selector component

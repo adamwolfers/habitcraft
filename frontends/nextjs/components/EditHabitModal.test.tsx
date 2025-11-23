@@ -485,4 +485,152 @@ describe('EditHabitModal', () => {
       }));
     });
   });
+
+  describe('Color Picker', () => {
+    it('should render color picker label', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      expect(screen.getByText(/color/i)).toBeInTheDocument();
+    });
+
+    it('should render 8 preset color options', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const colorButtons = screen.getAllByTestId(/color-option-/);
+      expect(colorButtons).toHaveLength(8);
+    });
+
+    it('should highlight the current habit color', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const selectedColorButton = screen.getByTestId('color-option-#3b82f6');
+      expect(selectedColorButton).toHaveClass('ring-2');
+      expect(selectedColorButton).toHaveClass('scale-110');
+    });
+
+    it('should allow user to select a different color', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const greenColorButton = screen.getByTestId('color-option-#10b981');
+      await user.click(greenColorButton);
+
+      // Green should now be selected
+      expect(greenColorButton).toHaveClass('ring-2');
+      expect(greenColorButton).toHaveClass('scale-110');
+
+      // Original blue should no longer be selected
+      const blueColorButton = screen.getByTestId('color-option-#3b82f6');
+      expect(blueColorButton).not.toHaveClass('ring-2');
+      expect(blueColorButton).not.toHaveClass('scale-110');
+    });
+  });
+
+  describe('Color Update Submission', () => {
+    it('should call onUpdate with new color when save is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const greenColorButton = screen.getByTestId('color-option-#10b981');
+      await user.click(greenColorButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledTimes(1);
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Exercise',
+        description: '30 minutes workout',
+        frequency: 'daily',
+        color: '#10b981',
+      });
+    });
+
+    it('should not call onUpdate if color is unchanged', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Click the same color that's already selected
+      const blueColorButton = screen.getByTestId('color-option-#3b82f6');
+      await user.click(blueColorButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      // Should close modal without calling onUpdate since nothing changed
+      expect(mockOnUpdate).not.toHaveBeenCalled();
+      expect(mockOnClose).toHaveBeenCalledTimes(1);
+    });
+
+    it('should update color along with other fields', async () => {
+      const user = userEvent.setup();
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const titleInput = screen.getByLabelText(/habit name/i);
+      await user.clear(titleInput);
+      await user.type(titleInput, 'Morning Run');
+
+      const greenColorButton = screen.getByTestId('color-option-#10b981');
+      await user.click(greenColorButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith('1', {
+        name: 'Morning Run',
+        description: '30 minutes workout',
+        frequency: 'daily',
+        color: '#10b981',
+      });
+    });
+  });
 });
