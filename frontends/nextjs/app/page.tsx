@@ -1,19 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useHabits } from '@/hooks/useHabits';
-import AddHabitForm from '@/components/AddHabitForm';
-import HabitCard from '@/components/HabitCard';
-import EditHabitModal from '@/components/EditHabitModal';
-import Footer from '@/components/Footer';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { Habit, HabitFormData } from '@/types/habit';
+import { useState } from "react";
+import { useHabits } from "@/hooks/useHabits";
+import AddHabitForm from "@/components/AddHabitForm";
+import HabitCard from "@/components/HabitCard";
+import EditHabitModal from "@/components/EditHabitModal";
+import Footer from "@/components/Footer";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { Habit, HabitFormData } from "@/types/habit";
 
 // TODO: Replace with real authentication
-const MOCK_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
+const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
 
 export default function Home() {
-  const { habits, createHabit, updateHabit, toggleCompletion, isHabitCompletedOnDate, deleteHabit } = useHabits(MOCK_USER_ID);
+  const {
+    habits,
+    createHabit,
+    updateHabit,
+    toggleCompletion,
+    isHabitCompletedOnDate,
+    deleteHabit,
+  } = useHabits(MOCK_USER_ID);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
@@ -24,24 +31,27 @@ export default function Home() {
     try {
       await deleteHabit(habitId);
     } catch (error) {
-      console.error('Failed to delete habit:', error);
+      console.error("Failed to delete habit:", error);
       // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
     }
   };
 
   const handleEditHabit = (habitId: string) => {
-    const habit = habits.find(h => h.id === habitId);
+    const habit = habits.find((h) => h.id === habitId);
     if (habit) {
       setEditingHabit(habit);
     }
   };
 
-  const handleUpdateHabit = async (habitId: string, updates: Partial<Habit>) => {
+  const handleUpdateHabit = async (
+    habitId: string,
+    updates: Partial<Habit>
+  ) => {
     try {
       await updateHabit(habitId, updates);
       setEditingHabit(null);
     } catch (error) {
-      console.error('Failed to update habit:', error);
+      console.error("Failed to update habit:", error);
       // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
     }
   };
@@ -54,16 +64,8 @@ export default function Home() {
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-900 text-white flex flex-col">
         <div className="max-w-7xl mx-auto px-4 py-8 flex-1">
-          <header className="mb-8">
-            <h1 className="text-4xl font-bold mb-2">HabitCraft</h1>
-            <p className="text-gray-400">
-              Connected to Backend API - Viewing habits from database
-            </p>
-          </header>
-
           <div className="space-y-6">
             <AddHabitForm onAdd={handleAddHabit} />
-
             {habits.length === 0 ? (
               <div className="text-center py-16 text-gray-400">
                 <svg
@@ -79,7 +81,9 @@ export default function Home() {
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                   />
                 </svg>
-                <p className="text-lg">No habits yet. Add your first habit to get started!</p>
+                <p className="text-lg">
+                  No habits yet. Add your first habit to get started!
+                </p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
