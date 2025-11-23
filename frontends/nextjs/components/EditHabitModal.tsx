@@ -12,6 +12,7 @@ interface EditHabitModalProps {
 
 export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: EditHabitModalProps) {
   const [name, setName] = useState(habit.name);
+  const [description, setDescription] = useState(habit.description || '');
 
   if (!isOpen) {
     return null;
@@ -28,17 +29,22 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     e.preventDefault();
 
     const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
 
-    // Don't submit if empty (though HTML5 validation should prevent this)
+    // Don't submit if name is empty (though HTML5 validation should prevent this)
     if (!trimmedName) {
       return;
     }
 
-    // Only call onUpdate if the name has actually changed
-    if (trimmedName !== habit.name) {
-      // Send all required fields along with the update
+    // Check if anything has changed
+    const nameChanged = trimmedName !== habit.name;
+    const descriptionChanged = trimmedDescription !== (habit.description || '');
+
+    if (nameChanged || descriptionChanged) {
+      // Send all required fields along with the updates
       await onUpdate(habit.id, {
         name: trimmedName,
+        description: trimmedDescription || null, // Convert empty string to null
         frequency: habit.frequency,
         color: habit.color,
       });
@@ -87,6 +93,20 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                 onChange={(e) => setName(e.target.value)}
                 required
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="habit-description" className="block text-sm font-medium mb-2">
+                Description
+              </label>
+              <textarea
+                id="habit-description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                placeholder="Optional description"
               />
             </div>
           </div>

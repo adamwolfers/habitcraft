@@ -249,11 +249,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Implement title input field with validation
     - [x] Write tests for title update submission
     - [x] Connect title update to API
-  - [ ] **Step 3: Update Habit Description**
-    - [ ] Write tests for description field rendering
-    - [ ] Implement description textarea field
-    - [ ] Write tests for description update submission
-    - [ ] Connect description update to API
+  - [x] **Step 3: Update Habit Description**
+    - [x] Write tests for description field rendering
+    - [x] Implement description textarea field
+    - [x] Write tests for description update submission
+    - [x] Connect description update to API
   - [ ] **Step 4: Update Habit Color**
     - [ ] Write tests for color picker rendering
     - [ ] Implement color picker component
