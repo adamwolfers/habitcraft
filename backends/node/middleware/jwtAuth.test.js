@@ -10,7 +10,8 @@ describe('JWT Auth Middleware', () => {
 
   beforeEach(() => {
     mockReq = {
-      headers: {}
+      headers: {},
+      cookies: {}
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
@@ -19,7 +20,7 @@ describe('JWT Auth Middleware', () => {
     nextFn = jest.fn();
   });
 
-  it('should call next() with valid access token', () => {
+  it('should call next() with valid access token from Authorization header', () => {
     const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
     mockReq.headers.authorization = `Bearer ${token}`;
 
@@ -27,6 +28,29 @@ describe('JWT Auth Middleware', () => {
 
     expect(nextFn).toHaveBeenCalled();
     expect(mockReq.userId).toBe('user-123');
+  });
+
+  it('should call next() with valid access token from cookie', () => {
+    const token = jwt.sign({ userId: 'user-456', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+    mockReq.cookies.accessToken = token;
+
+    jwtAuthMiddleware(mockReq, mockRes, nextFn);
+
+    expect(nextFn).toHaveBeenCalled();
+    expect(mockReq.userId).toBe('user-456');
+  });
+
+  it('should prefer cookie over Authorization header', () => {
+    const cookieToken = jwt.sign({ userId: 'cookie-user', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+    const headerToken = jwt.sign({ userId: 'header-user', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+    mockReq.cookies.accessToken = cookieToken;
+    mockReq.headers.authorization = `Bearer ${headerToken}`;
+
+    jwtAuthMiddleware(mockReq, mockRes, nextFn);
+
+    expect(nextFn).toHaveBeenCalled();
+    expect(mockReq.userId).toBe('cookie-user');
   });
 
   it('should return 401 if no authorization header', () => {

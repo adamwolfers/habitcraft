@@ -1,9 +1,13 @@
 const { getPool, query, closePool } = require('./pool');
 
 describe('Database Pool', () => {
+  const originalEnv = process.env.NODE_ENV;
+
   afterAll(async () => {
     // Clean up: close the pool after all tests
     await closePool();
+    // Restore original environment
+    process.env.NODE_ENV = originalEnv;
   });
 
   describe('getPool', () => {
@@ -35,6 +39,26 @@ describe('Database Pool', () => {
 
     it('should throw error for invalid SQL', async () => {
       await expect(query('INVALID SQL')).rejects.toThrow();
+    });
+
+    it('should log query details in development mode', async () => {
+      // Set NODE_ENV to development
+      process.env.NODE_ENV = 'development';
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      await query('SELECT 1 AS test');
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Executed query',
+        expect.objectContaining({
+          text: 'SELECT 1 AS test',
+          rows: 1
+        })
+      );
+
+      consoleSpy.mockRestore();
+      // Reset to test environment
+      process.env.NODE_ENV = 'test';
     });
   });
 
