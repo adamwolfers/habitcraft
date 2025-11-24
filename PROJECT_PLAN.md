@@ -381,10 +381,15 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Habit management guide
   - [ ] Completion tracking guide
   - [ ] Troubleshooting section
-- [ ] **Update Backend README**
-  - [ ] Remove mock auth references
-  - [ ] Document JWT configuration
-  - [ ] Update endpoint list
+- [x] **Update Backend README**
+  - [x] Remove mock auth references
+  - [x] Document JWT configuration
+  - [x] Update endpoint list
+- [x] **Update Frontend README**
+  - [x] Update status and completed features list
+  - [x] Update project structure with all components
+  - [x] Update test examples
+  - [x] Fix port configuration
 - [ ] **Create DEPLOYMENT.md**
   - [ ] Environment setup checklist
   - [ ] Database migration steps
