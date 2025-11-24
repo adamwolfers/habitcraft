@@ -15,8 +15,7 @@ Node.js + Express implementation of the HabitCraft API.
 - Completion tracking (Create, Read, Delete with date filtering)
 - TDD approach with comprehensive test coverage
 
-### Upcoming
-See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the v1.0 roadmap including JWT authentication, integration tests, and production deployment.
+See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
 
 ## Tech Stack
 
@@ -43,9 +42,7 @@ npm install
 
 # Set up environment variables
 cp .env.example .env
-
-# Run database migrations (when implemented)
-npm run migrate
+# Edit .env with your database credentials
 
 # Start development server
 npm start
@@ -62,9 +59,6 @@ npm test
 
 # Run tests in watch mode
 npm run test:watch
-
-# Run linter
-npm run lint
 ```
 
 ## Environment Variables
@@ -75,9 +69,11 @@ Create a `.env` file in this directory:
 NODE_ENV=development
 PORT=3000
 DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habitcraft
+FRONTEND_URL=http://localhost:3100
 JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=7d
 ```
+
+**Note:** Token expiration times are hardcoded (access token: 15 minutes, refresh token: 7 days) in `routes/auth.js`.
 
 ## API Endpoints
 
