@@ -4,26 +4,29 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 
 ## Status
 
-✅ **Core features complete** - Full habit management UI with calendar view
-🚧 **Next:** Authentication UI (login, registration, protected routes)
+✅ **Core features complete** - Full habit management UI with authentication and calendar view
 
 ### Completed Features
 - Next.js app with TypeScript and Tailwind CSS
 - Comprehensive testing (Jest + React Testing Library)
 - API client with full backend integration
+- JWT authentication with HttpOnly cookies
+- User registration and login pages
+- Protected routes with authentication guards
+- Logout functionality with session management
 - Habit management UI (create, update, delete)
+- Edit habit modal with validation
 - Calendar week view with completion tracking
 - Week navigation (previous/next)
 - Optimistic UI updates
-- Custom hooks for state management
+- Custom hooks for state management (useHabits, useRequireAuth)
 - TDD approach with comprehensive test coverage
 
-### Upcoming
-See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the v1.0 roadmap including authentication UI, protected routes, and production deployment.
+See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
 
 ## Tech Stack
 
-- **Framework:** Next.js 14+ (App Router)
+- **Framework:** Next.js 16+ (App Router)
 - **Language:** TypeScript
 - **Styling:** Tailwind CSS
 - **Testing:** Jest + React Testing Library
@@ -47,9 +50,9 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser.
+Open [http://localhost:3100](http://localhost:3100) with your browser.
 
-**Note:** Make sure the backend is running on port 3000 or update the `NEXT_PUBLIC_API_BASE_URL` in `.env.local`.
+**Note:** The frontend runs on port 3100, and the backend runs on port 3000. Make sure the backend is running or update the `NEXT_PUBLIC_API_BASE_URL` in `.env.local`.
 
 ## Development
 
@@ -74,19 +77,44 @@ npm start
 
 ```
 frontends/nextjs/
-├── app/                    # Next.js app directory
-│   ├── page.tsx           # Main habits page
-│   └── layout.tsx         # Root layout
-├── components/            # React components
-│   ├── AddHabitForm.tsx  # Habit creation form
-│   └── HabitCard.tsx     # Habit card with calendar
-├── hooks/                 # Custom React hooks
-│   └── useHabits.ts      # Habit state management
-├── lib/                   # Utility libraries
-│   └── api.ts            # API client
-├── utils/                 # Helper utilities
-│   └── dateUtils.ts      # Date manipulation
-└── __tests__/            # Test files
+├── app/                           # Next.js app directory
+│   ├── page.tsx                  # Main habits page
+│   ├── page.test.tsx            # Habits page tests
+│   ├── layout.tsx               # Root layout with AuthProvider
+│   ├── layout.test.tsx          # Layout tests
+│   ├── login/
+│   │   ├── page.tsx            # Login page
+│   │   └── page.test.tsx       # Login tests
+│   └── register/
+│       ├── page.tsx            # Registration page
+│       └── page.test.tsx       # Registration tests
+├── components/                   # React components
+│   ├── AddHabitForm.tsx         # Habit creation form
+│   ├── AddHabitForm.test.tsx    # Form tests
+│   ├── EditHabitModal.tsx       # Edit habit modal
+│   ├── EditHabitModal.test.tsx  # Modal tests
+│   ├── HabitCard.tsx            # Habit card with calendar
+│   ├── HabitCard.test.tsx       # Card tests
+│   ├── Header.tsx               # Header with logout
+│   ├── Header.test.tsx          # Header tests
+│   ├── ProtectedRoute.tsx       # Auth guard wrapper
+│   ├── ProtectedRoute.test.tsx  # Guard tests
+│   └── Footer.tsx               # Footer component
+├── context/                      # React context
+│   ├── AuthContext.tsx          # Authentication context
+│   └── AuthContext.test.tsx     # Context tests
+├── hooks/                        # Custom React hooks
+│   ├── useHabits.ts             # Habit state management
+│   ├── useHabits.test.ts        # Hook tests
+│   ├── useRequireAuth.ts        # Auth redirect hook
+│   └── useRequireAuth.test.ts   # Auth hook tests
+├── lib/                          # Utility libraries
+│   ├── api.ts                   # API client
+│   └── api.test.ts              # API tests
+├── utils/                        # Helper utilities
+│   ├── dateUtils.ts             # Date manipulation
+│   └── dateUtils.test.ts        # Date utils tests
+└── package.json                  # Dependencies and scripts
 ```
 
 ## Testing
@@ -95,11 +123,24 @@ frontends/nextjs/
 # Run all tests
 npm test
 
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
+
 # Run specific test file
 npm test -- lib/api.test.ts
+npm test -- context/AuthContext.test.tsx
 npm test -- hooks/useHabits.test.ts
+npm test -- hooks/useRequireAuth.test.ts
 npm test -- app/page.test.tsx
+npm test -- app/login/page.test.tsx
+npm test -- app/register/page.test.tsx
+npm test -- components/EditHabitModal.test.tsx
 ```
+
+Comprehensive test coverage includes authentication flow, API integration, state management, UI components, and user interactions.
 
 ## Environment Variables
 
