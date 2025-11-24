@@ -115,14 +115,20 @@ backends/node/
 │   ├── config.test.js            # Config tests
 │   └── README.md                 # Database documentation
 ├── routes/                        # API route handlers
+│   ├── auth.js                   # Authentication endpoints
+│   ├── auth.test.js              # Authentication tests
 │   ├── habits.js                 # Habit CRUD endpoints
-│   ├── habits.test.js           # Habit endpoint tests
-│   ├── completions.js           # Completion tracking endpoints
-│   └── completions.test.js      # Completion endpoint tests
+│   ├── habits.test.js            # Habit endpoint tests
+│   ├── completions.js            # Completion tracking endpoints
+│   └── completions.test.js       # Completion endpoint tests
 ├── middleware/                    # Express middleware
-│   └── jwtAuth.js                # JWT authentication middleware
+│   ├── jwtAuth.js                # JWT authentication middleware
+│   └── jwtAuth.test.js           # JWT middleware tests
+├── validators/                    # Input validation
+│   ├── habitValidator.js         # Habit input validation
+│   └── habitValidator.test.js    # Validation tests
 ├── package.json                   # Dependencies and scripts
-└── README.md                     # This file
+└── README.md                      # This file
 ```
 
 ## Testing
@@ -133,16 +139,24 @@ This project follows Test-Driven Development (TDD):
 # Run all tests
 npm test
 
+# Run tests with coverage
+npm test -- --coverage
+
 # Run tests in watch mode
 npm run test:watch
 
 # Run specific test file
+npm test -- routes/auth.test.js
 npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
-npm test -- db/pool.test.js
+npm test -- middleware/jwtAuth.test.js
+npm test -- validators/habitValidator.test.js
 ```
 
 Comprehensive test coverage includes app configuration, database layer, all API endpoints, and error handling.
+
+**Note on `server.js` coverage:**
+The `server.js` file (entry point) has 0% coverage by design. This file only contains server startup code (`app.listen()`) and is intentionally separated from the application logic in `app.js`. Tests import `app.js` directly and use Supertest to test routes without starting a real HTTP server. This is a common pattern in Express applications and allows for faster, more isolated unit tests.
 
 ## Docker
 
