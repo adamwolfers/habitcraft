@@ -271,44 +271,6 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **Date Utilities (utils/dateUtils.ts)**
   - [x] getCalendarWeek() function
   - [x] Week calculation logic
-- [ ] **UI Polish**
-  - [ ] Loading states (disabled fields, submit button)
-    - [ ] Login form
-      - [ ] Write tests and run tests (red phase)
-      - [ ] Implementation and run tests (green phase)
-      - [ ] Evaluate refactoring opportunities (refactor phase)
-    - [ ] Registration form
-      - [ ] Write tests and run tests (red phase)
-      - [ ] Implementation and run tests (green phase)
-      - [ ] Evaluate refactoring opportunities (refactor phase)
-    - [ ] Add habit form
-      - [ ] Write tests and run tests (red phase)
-      - [ ] Implementation and run tests (green phase)
-      - [ ] Evaluate refactoring opportunities (refactor phase)
-    - [ ] Update habit form
-      - [ ] Write tests and run tests (red phase)
-      - [ ] Implementation and run tests (green phase)
-      - [ ] Evaluate refactoring opportunities (refactor phase)
-  - [ ] Loading skeletons for habit list
-    - [ ] Write tests and run tests (red phase)
-    - [ ] Implementation and run tests (green phase)
-    - [ ] Evaluate refactoring opportunities (refactor phase)
-  - [ ] Toast notifications for errors
-    - [ ] Write tests and run tests (red phase)
-    - [ ] Implementation and run tests (green phase)
-    - [ ] Evaluate refactoring opportunities (refactor phase)
-  - [ ] Inline validation error messages
-    - [ ] Write tests and run tests (red phase)
-    - [ ] Implementation and run tests (green phase)
-    - [ ] Evaluate refactoring opportunities (refactor phase)
-  - [ ] Network error recovery UI
-    - [ ] Write tests and run tests (red phase)
-    - [ ] Implementation and run tests (green phase)
-    - [ ] Evaluate refactoring opportunities (refactor phase)
-  - [ ] Optimistic UI Updates
-    - [ ] Write tests and run tests (red phase)
-    - [ ] Implementation and run tests (green phase)
-    - [ ] Evaluate refactoring opportunities (refactor phase)
 
 ### Acceptance Testing
 
@@ -521,6 +483,44 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - Accessibility improvements (WCAG AA compliance)
   - Internationalization (i18n)
   - Mobile-responsive improvements
+- **UI Polish**
+  - Loading states (disabled fields, submit button)
+    - Login form
+      - Write tests and run tests (red phase)
+      - Implementation and run tests (green phase)
+      - Evaluate refactoring opportunities (refactor phase)
+    - Registration form
+      - Write tests and run tests (red phase)
+      - Implementation and run tests (green phase)
+      - Evaluate refactoring opportunities (refactor phase)
+    - Add habit form
+      - Write tests and run tests (red phase)
+      - Implementation and run tests (green phase)
+      - Evaluate refactoring opportunities (refactor phase)
+    - Update habit form
+      - Write tests and run tests (red phase)
+      - Implementation and run tests (green phase)
+      - Evaluate refactoring opportunities (refactor phase)
+  - Loading skeletons for habit list
+    - Write tests and run tests (red phase)
+    - Implementation and run tests (green phase)
+    - Evaluate refactoring opportunities (refactor phase)
+  - Toast notifications for errors
+    - Write tests and run tests (red phase)
+    - Implementation and run tests (green phase)
+    - Evaluate refactoring opportunities (refactor phase)
+  - Inline validation error messages
+    - Write tests and run tests (red phase)
+    - Implementation and run tests (green phase)
+    - Evaluate refactoring opportunities (refactor phase)
+  - Network error recovery UI
+    - Write tests and run tests (red phase)
+    - Implementation and run tests (green phase)
+    - Evaluate refactoring opportunities (refactor phase)
+  - Optimistic UI Updates
+    - Write tests and run tests (red phase)
+    - Implementation and run tests (green phase)
+    - Evaluate refactoring opportunities (refactor phase)
 
 ### Infrastructure & DevOps
 
