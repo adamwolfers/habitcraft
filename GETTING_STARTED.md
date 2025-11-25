@@ -2,66 +2,35 @@
 
 Quick start guide for running HabitCraft locally.
 
-## Quick Start Options
+## Quick Start
 
-### Option 1: Node.js Backend
+### Running with Docker (Recommended)
 
-The Node.js backend provides full habit tracking API with CRUD operations.
-
-```bash
-# 1. Navigate to the Node.js backend
-cd backends/node
-
-# 2. Install dependencies
-npm install
-
-# 3. Run tests to verify everything works
-npm test
-
-# 4. Start the server
-npm start
-
-# 5. Test the endpoint
-curl http://localhost:3000/hello
-# Should return: {"message":"Hello World!"}
-```
-
-### Option 2: Next.js Frontend (Connected to Backend API)
-
-The Next.js frontend is connected to the Node.js backend API.
-
-```bash
-# 1. Navigate to the Next.js frontend
-cd frontends/nextjs
-
-# 2. Install dependencies (if not already done)
-npm install
-
-# 3. Copy environment variables
-cp .env.example .env.local
-
-# 4. Start the development server
-npm run dev
-
-# 5. Open browser to http://localhost:3000
-# Note: Make sure the backend is running on port 3000
-```
-
-### Option 3: Full Stack with Docker
-
-Run everything together with Docker Compose:
+The easiest way to run HabitCraft is with Docker Compose, which starts all required services:
 
 ```bash
 # From the project root
-
-# 1. Start database + Node.js backend + Next.js frontend
 docker-compose up postgres backend-node frontend-nextjs
 
-# 2. Access services:
+# Access the application:
 # - Frontend: http://localhost:3100
 # - Backend API: http://localhost:3000
 # - Database Admin (Adminer): http://localhost:8080
 ```
+
+**Demo User Credentials:**
+- Email: `demo@example.com`
+- Password: `demo123`
+
+Login at http://localhost:3100/login to start tracking habits!
+
+### Manual Development Setup
+
+For local development without Docker, see the individual setup guides:
+- **[Backend Setup](backends/node/README.md)** - Node.js + Express backend
+- **[Frontend Setup](frontends/nextjs/README.md)** - Next.js frontend
+
+Note: You'll need to run PostgreSQL, backend, and frontend simultaneously for the application to work.
 
 ## Project Structure
 
@@ -75,6 +44,8 @@ habittracker_fullstack/
 │   └── types/            # Shared type definitions
 ├── docker-compose.yml    # Docker orchestration
 ├── PROJECT_PLAN.md       # Detailed development roadmap
+├── GETTING_STARTED.md    # Quick start guide (this file)
+├── AUTHENTICATION.md     # JWT authentication guide
 └── README.md             # Project overview
 ```
 
@@ -104,15 +75,11 @@ docker-compose up -d postgres
 The database includes:
 
 - Schema with users, habits, and completions tables
-- Seed data with a demo user and sample habits
+- Seed data with demo users and sample habits
 - Adminer web UI at http://localhost:8080
-  - Login: habituser / habitpass / habitcraft
-  - Demo User 1 ID: `123e4567-e89b-12d3-a456-426614174000`
-  - Demo User 1 Email: `demo@example.com`
-  - Demo User 1 Password: `demo123`
-  - Demo User 2 ID: `8353071d-5c46-4414-a6a2-19d2f398e5a3`
-  - Demo User 2 Email: `demo2@example.com`
-  - Demo User 2 Password: `demo1234`
+  - System login: habituser / habitpass / habitcraft
+  - Demo User 1: `demo@example.com` / `demo123` (ID: `123e4567-e89b-12d3-a456-426614174000`)
+  - Demo User 2: `demo2@example.com` / `demo1234` (ID: `8353071d-5c46-4414-a6a2-19d2f398e5a3`)
 
 Manual setup:
 
@@ -128,14 +95,19 @@ psql -d habitcraft -f shared/database/schema.sql
 
 ### Backend (Node.js + Express)
 
+- User registration and login with JWT authentication
+- Secure token management (access + refresh tokens via HttpOnly cookies)
 - Full habit CRUD operations (Create, Read, Update, Delete)
 - Completion tracking (mark complete, view history, remove)
-- Mock authentication (X-User-Id header for development)
-- CORS support for frontend integration
+- User data isolation and authorization
+- CORS support with credentials
 - PostgreSQL database with connection pooling
 
 ### Frontend (Next.js + React)
 
+- User registration and login pages
+- JWT-based authentication with automatic token refresh
+- Protected routes requiring authentication
 - Habit management UI (create, update, delete)
 - Calendar week view with completion tracking
 - Week navigation (previous/next)
@@ -144,11 +116,7 @@ psql -d habitcraft -f shared/database/schema.sql
 
 ## What's Next
 
-See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete development roadmap, including:
-
-- JWT authentication implementation
-- Acceptance testing
-- Production deployment preparation
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete development roadmap and current status.
 
 ## Useful Commands
 
@@ -174,6 +142,7 @@ cd backends/node
 npm test
 
 # Run specific test file
+npm test -- routes/auth.test.js
 npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
 
@@ -227,49 +196,47 @@ psql postgresql://habituser:habitpass@localhost:5432/habitcraft -c "SELECT 1"
 
 ### CORS Issues (Frontend Can't Access Backend)
 
-If the frontend shows "No habits found" but the backend has data:
+If the frontend shows connection issues or CORS errors:
 
 ```bash
-# 1. Verify backend has CORS enabled
+# 1. Verify backend has CORS enabled with credentials
 curl -i http://localhost:3000/hello | grep "Access-Control"
-# Should show: Access-Control-Allow-Origin: *
+# Should show CORS headers
 
 # 2. Check browser console for CORS errors
 # Open DevTools (F12) → Console tab
+# Look for "CORS policy" or "credentials" errors
 
 # 3. Verify backend is accessible
-curl -H "X-User-Id: 123e4567-e89b-12d3-a456-426614174000" \
-  http://localhost:3000/api/v1/habits
+curl http://localhost:3000/hello
+# Should return: {"message":"Hello World!"}
 
-# 4. If CORS header is missing, restart backend
+# 4. If CORS issues persist, restart backend
 docker-compose restart backend-node
 ```
 
-### Working with the Demo User
+### Working with Demo Users
 
-The database is automatically seeded with a demo user on first startup:
+The database is automatically seeded with two demo users on first startup:
 
-- **User ID:** `123e4567-e89b-12d3-a456-426614174000`
-- **Email:** `demo@example.com`
-- **Password:** `demo123`
-- **Sample Habits:** 3 pre-created habits
+**Demo User 1:**
+- Email: `demo@example.com`
+- Password: `demo123`
+- Sample Habits: 3 pre-created habits
 
-You can use these credentials to test the login page at http://localhost:3100/login
+**Demo User 2:**
+- Email: `demo2@example.com`
+- Password: `demo1234`
+- Sample Habits: None (once seed data is updated)
 
-All API requests in development use the `X-User-Id` header for authentication:
+To test the application:
 
-```bash
-# Create additional test habits via API
-curl -X POST http://localhost:3000/api/v1/habits \
-  -H "Content-Type: application/json" \
-  -H "X-User-Id: 123e4567-e89b-12d3-a456-426614174000" \
-  -d '{
-    "name": "Morning Exercise",
-    "frequency": "daily",
-    "color": "#3B82F6",
-    "icon": "🏃"
-  }'
-```
+1. Start the services with Docker: `docker-compose up postgres backend-node frontend-nextjs`
+2. Open http://localhost:3100/login
+3. Login with either demo user credentials
+4. Start tracking your habits!
+
+The application uses JWT authentication with HttpOnly cookies for secure token management.
 
 ---
 

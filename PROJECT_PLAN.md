@@ -32,6 +32,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] PostgreSQL database setup
 - [x] Database schema (users, habits, completions tables)
 - [x] Seed data (demo user + sample habits)
+- [ ] Update seed data to include second demo user (demo2@example.com / demo1234)
 - [x] Environment variables configured
 - [x] Adminer database admin UI
 
@@ -367,10 +368,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Remove polyglot/multi-backend references
   - [x] Update roadmap with completed work
   - [x] Current technology stack
-- [ ] **Update GETTING_STARTED.md**
-  - [ ] Remove mock auth references
-  - [ ] Add JWT authentication setup steps
-  - [ ] Update quick start instructions
+- [x] **Update GETTING_STARTED.md**
+  - [x] Remove mock auth references
+  - [x] Add JWT authentication setup steps
+  - [x] Update quick start instructions
 - [ ] **Update OpenAPI Specification**
   - [ ] Add authentication endpoints
   - [ ] Add Bearer token security scheme
