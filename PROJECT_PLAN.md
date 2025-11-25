@@ -115,6 +115,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Habit ownership validation
   - [x] Duplicate prevention (409 Conflict)
   - [x] Date format validation
+- [ ] **Prevent future date completions**
+  - [ ] Write tests (reject dates after today, allow today and past dates)
+  - [ ] Add validation to POST completions endpoint
+  - [ ] Return 400 Bad Request with clear error message
 - [x] **GET /api/v1/habits/:habitId/completions** - List completions
   - [x] Tests
   - [x] Date range filtering (startDate, endDate)
@@ -250,6 +254,8 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Toggle completion on click
   - [x] Delete button
   - [x] Timezone handling for dates
+  - [ ] Remove color dot next to edit button
+  - [ ] Add "Today" button to jump to current week
 - [x] **EditHabitModal Component**
   - [x] **Modal Infrastructure**
     - [x] Write tests for modal open/close functionality
