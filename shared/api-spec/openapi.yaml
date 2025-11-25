@@ -21,14 +21,10 @@ tags:
     description: Health check endpoints
   - name: Auth
     description: Authentication and authorization
-  - name: Users
-    description: User management
   - name: Habits
     description: Habit CRUD operations
   - name: Completions
     description: Habit completion tracking
-  - name: Statistics
-    description: Statistics and analytics
 
 paths:
   /health:
@@ -80,7 +76,10 @@ paths:
       tags:
         - Auth
       summary: Register new user
-      description: Create a new user account
+      description: |
+        Create a new user account. On success, sets HttpOnly cookies for authentication:
+        - accessToken (15 min expiry)
+        - refreshToken (7 day expiry)
       operationId: register
       requestBody:
         required: true
@@ -126,7 +125,10 @@ paths:
       tags:
         - Auth
       summary: Login user
-      description: Authenticate user and return JWT token
+      description: |
+        Authenticate user with email and password. On success, sets HttpOnly cookies:
+        - accessToken (15 min expiry)
+        - refreshToken (7 day expiry)
       operationId: login
       requestBody:
         required: true
@@ -156,12 +158,71 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
-  /users/me:
+  /auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: Refresh access token
+      description: |
+        Get a new access token using the refresh token from cookies.
+        Sets a new accessToken cookie on success.
+      operationId: refreshToken
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+                    description: New access token (also set as HttpOnly cookie)
+              example:
+                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '400':
+          description: Refresh token missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Refresh token is required"
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Refresh token expired"
+
+  /auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout user
+      description: Clear authentication cookies to log out the user.
+      operationId: logout
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Logged out successfully"
+
+  /auth/me:
     get:
       tags:
-        - Users
-      summary: Get current user
-      description: Get the authenticated user's profile
+        - Auth
+      summary: Get current user profile
+      description: Get the authenticated user's profile. Requires valid access token in cookie.
       operationId: getCurrentUser
       security:
         - bearerAuth: []
@@ -230,28 +291,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
 
   /habits/{habitId}:
-    get:
-      tags:
-        - Habits
-      summary: Get habit
-      description: Get a specific habit by ID
-      operationId: getHabit
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/HabitId'
-      responses:
-        '200':
-          description: Habit details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Habit'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
     put:
       tags:
         - Habits
@@ -334,6 +373,8 @@ paths:
                   $ref: '#/components/schemas/Completion'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -374,6 +415,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           description: Already completed for this date
           content:
@@ -400,33 +445,28 @@ paths:
             type: string
             format: date
       responses:
-        '204':
-          description: Completion removed
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /habits/{habitId}/statistics:
-    get:
-      tags:
-        - Statistics
-      summary: Get habit statistics
-      description: Get statistics and analytics for a habit
-      operationId: getHabitStatistics
-      security:
-        - bearerAuth: []
-      parameters:
-        - $ref: '#/components/parameters/HabitId'
-      responses:
         '200':
-          description: Habit statistics
+          description: Completion removed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Statistics'
+                type: object
+                properties:
+                  message:
+                    type: string
+                  habitId:
+                    type: string
+                  date:
+                    type: string
+                    format: date
+              example:
+                message: "Completion deleted successfully"
+                habitId: "abc123"
+                date: "2024-01-15"
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -471,12 +511,19 @@ components:
 
     AuthResponse:
       type: object
+      description: |
+        Authentication response. Tokens are set as HttpOnly cookies, not returned in body.
+        - accessToken cookie: 15 minute expiry
+        - refreshToken cookie: 7 day expiry
       properties:
         user:
           $ref: '#/components/schemas/User'
-        token:
-          type: string
-          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+      example:
+        user:
+          id: "123e4567-e89b-12d3-a456-426614174000"
+          email: "user@example.com"
+          name: "John Doe"
+          createdAt: "2024-01-15T10:30:00Z"
 
     HabitInput:
       type: object
@@ -554,34 +601,12 @@ components:
         createdAt:
           type: string
           format: date-time
-
-    Statistics:
-      type: object
-      properties:
-        habitId:
-          type: string
-          format: uuid
-        currentStreak:
-          type: integer
-          description: Current consecutive days/weeks completed
-          example: 7
-        longestStreak:
-          type: integer
-          description: Longest streak ever achieved
-          example: 21
-        totalCompletions:
-          type: integer
-          description: Total number of completions
-          example: 45
-        completionRate:
-          type: number
-          format: float
-          description: Percentage of target days completed
-          example: 85.5
-        lastCompletedDate:
-          type: string
-          format: date
-          example: "2024-01-15"
+      example:
+        id: "abc123"
+        habitId: "habit-456"
+        date: "2024-01-15"
+        notes: "Went for a 30-minute run"
+        createdAt: "2024-01-15T08:30:00Z"
 
     Error:
       type: object
@@ -610,6 +635,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
+    Forbidden:
+      description: Forbidden - access denied to this resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Access denied"
 
     NotFound:
       description: Resource not found

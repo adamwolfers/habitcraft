@@ -124,6 +124,17 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Habit ownership validation
   - [x] Date format validation
 
+#### User Management (API Refactor)
+
+- [ ] **Refactor user profile to RESTful /users endpoint**
+  - [ ] Create users router (routes/users.js)
+  - [ ] **GET /api/v1/users/me** - Get current user profile
+    - [ ] Write tests (move/adapt from auth/me tests)
+    - [ ] Implement endpoint
+    - [ ] Deprecate /auth/me (optional: keep as alias during transition)
+  - [ ] Update frontend API client to use /users/me
+  - [ ] Update OpenAPI specification
+
 ### Frontend - Next.js + React
 
 #### Foundation
@@ -334,11 +345,13 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Remove mock auth references
   - [x] Add JWT authentication setup steps
   - [x] Update quick start instructions
-- [ ] **Update OpenAPI Specification**
-  - [ ] Add authentication endpoints
-  - [ ] Add Bearer token security scheme
-  - [ ] Update all endpoints with auth requirements
-  - [ ] Add request/response examples
+- [x] **Update OpenAPI Specification**
+  - [x] Add authentication endpoints (/auth/refresh, /auth/logout)
+  - [x] Update auth responses for HttpOnly cookies
+  - [x] Add 403 Forbidden response for completions
+  - [x] Remove unimplemented endpoints (GET /habits/{id}, statistics)
+  - [x] Fix DELETE completion response (200 with body)
+  - [x] Add request/response examples
 - [ ] **User Guide**
   - [ ] Registration and login instructions
   - [ ] Habit management guide
@@ -453,6 +466,9 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - Completion rate calculations
   - Habit performance charts
   - Weekly/monthly reports
+- **API Enhancements**
+  - GET /api/v1/habits/{habitId} - Get single habit by ID
+  - GET /api/v1/habits/{habitId}/statistics - Get habit statistics
 - **Habit Organization**
   - Categories and tags
   - Habit grouping
