@@ -32,7 +32,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] PostgreSQL database setup
 - [x] Database schema (users, habits, completions tables)
 - [x] Seed data (demo user + sample habits)
-- [ ] Update seed data to include second demo user (demo2@example.com / demo1234)
+- [x] Update seed data to include second demo user (demo2@example.com / demo1234)
 - [x] Environment variables configured
 - [x] Adminer database admin UI
 

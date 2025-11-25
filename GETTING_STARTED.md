@@ -79,7 +79,7 @@ The database includes:
 - Adminer web UI at http://localhost:8080
   - System login: habituser / habitpass / habitcraft
   - Demo User 1: `demo@example.com` / `demo123` (ID: `123e4567-e89b-12d3-a456-426614174000`)
-  - Demo User 2: `demo2@example.com` / `demo1234` (ID: `8353071d-5c46-4414-a6a2-19d2f398e5a3`)
+  - Demo User 2: `demo2@example.com` / `demo1234` (ID: `223e4567-e89b-12d3-a456-426614174001`)
 
 Manual setup:
 
@@ -227,7 +227,7 @@ The database is automatically seeded with two demo users on first startup:
 **Demo User 2:**
 - Email: `demo2@example.com`
 - Password: `demo1234`
-- Sample Habits: None (once seed data is updated)
+- Sample Habits: 3 pre-created habits (Learn Spanish, Drink Water, Journal Writing)
 
 To test the application:
 
