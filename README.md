@@ -26,18 +26,35 @@ habittracker_fullstack/
 │   └── types/            # Shared type definitions
 ├── docker-compose.yml    # Docker orchestration
 ├── PROJECT_PLAN.md       # Development roadmap
-└── GETTING_STARTED.md    # Quick start guide
+├── GETTING_STARTED.md    # Quick start guide
+└── AUTHENTICATION.md     # JWT authentication guide
 ```
 
-## Current Features
+## Features (v1.0)
 
-- **Habit Management:** Full CRUD operations (create, read, update, delete)
-- **Completion Tracking:** Mark habits complete for any date
-- **Calendar View:** Week-based calendar with visual completion indicators
-- **Week Navigation:** Navigate through weeks to view history
-- **User Isolation:** Mock authentication with user-based data separation
-- **RESTful API:** Clean API design following OpenAPI specification
-- **Comprehensive Testing:** TDD approach with full test coverage
+**Authentication & Security:**
+- User registration and login
+- JWT-based authentication with secure token management
+- Protected routes and API endpoints
+- Automatic token refresh
+- User data isolation
+
+**Habit Management:**
+- Create, read, update, and delete habits
+- Customize habit properties (name, description, color, icon)
+- Filter habits by status (active/archived)
+
+**Completion Tracking:**
+- Mark habits complete for any date
+- Track completion history
+- Week-based calendar view with visual indicators
+- Navigate through weeks to view history
+
+**Architecture & Quality:**
+- RESTful API following OpenAPI specification
+- Test-Driven Development (TDD) approach
+- Comprehensive test coverage
+- Docker-based deployment
 
 ## Quick Start
 
@@ -58,6 +75,10 @@ docker-compose up postgres backend-node frontend-nextjs
 # - Database Admin: http://localhost:8080
 ```
 
+**Demo User:**
+- Email: `demo@example.com`
+- Password: `demo123`
+
 ### Manual Setup
 
 See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
@@ -71,6 +92,13 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[Database Schema](./shared/database/schema.sql)** - PostgreSQL schema and migrations
 
 ## API Endpoints
+
+### Authentication
+- `POST /api/v1/auth/register` - Register a new user
+- `POST /api/v1/auth/login` - Login and receive JWT tokens
+- `POST /api/v1/auth/refresh` - Refresh access token
+- `POST /api/v1/auth/logout` - Logout and clear tokens
+- `GET /api/v1/auth/me` - Get current user profile
 
 ### Habits
 - `POST /api/v1/habits` - Create a new habit
@@ -107,16 +135,15 @@ This project follows:
 - **RESTful API Design** - Consistent, predictable endpoints
 - **OpenAPI Compliance** - API specification as the source of truth
 
-## Roadmap
+## Version 1.0 Scope
 
-**Version 1.0 Goals:**
-- JWT authentication (user registration, login, token refresh)
-- Full habit CRUD with authentication
-- Completion tracking
+- User authentication and authorization
+- Habit management with full CRUD operations
+- Completion tracking with calendar interface
 - Acceptance test coverage
-- Production deployment
+- Production-ready deployment
 
-See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for the complete roadmap.
+See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for detailed development status and roadmap.
 
 ## License
 
