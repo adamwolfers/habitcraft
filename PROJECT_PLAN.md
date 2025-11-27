@@ -336,12 +336,13 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Backend Integration Tests
 
-- [ ] **Authentication Flow Tests**
-  - [ ] Register → Login → Access Protected Route
-  - [ ] Login → Token Refresh → Continue Session
-  - [ ] Invalid Credentials → Proper Error Response
-  - [ ] Token expiration and refresh handling
-  - [ ] User isolation verification
+- [x] **Authentication Flow Tests** (integration/auth.test.js)
+  - [x] Register → Login → Access Protected Route
+  - [x] Login → Token Refresh → Continue Session
+  - [x] Invalid Credentials → Proper Error Response
+  - [x] User isolation verification
+  - [x] Logout and session invalidation
+  - [ ] Token expiration handling (requires time manipulation)
 - [ ] **Habit CRUD Integration Tests**
   - [ ] Full CRUD cycle with real database
   - [ ] User isolation (can't access other users' data)
