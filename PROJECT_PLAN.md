@@ -328,10 +328,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **Environment Variables for Test Environment**
   - [x] backends/node/.env.test - Test database connection, test JWT secret
   - [x] frontends/nextjs/.env.test - Test API URL
-- [ ] **E2E Testing Framework**
-  - [ ] Install and configure Playwright
-  - [ ] Playwright configuration for test environment
-  - [ ] Global setup/teardown for test database
+- [x] **E2E Testing Framework**
+  - [x] Install and configure Playwright (@playwright/test)
+  - [x] Playwright configuration (playwright.config.ts)
+  - [x] Global setup/teardown for test database (e2e/global-setup.ts, e2e/global-teardown.ts)
+  - [x] npm scripts: test:e2e, test:e2e:ui, test:e2e:headed, test:e2e:report
 
 #### Backend Integration Tests
 
@@ -356,12 +357,13 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Frontend End-to-End Tests (Playwright)
 
-- [ ] Set up Playwright E2E testing framework
-- [ ] **Authentication Flow E2E**
-  - [ ] User registration flow
-  - [ ] Login flow
-  - [ ] Protected route access
-  - [ ] Logout flow
+- [x] Set up Playwright E2E testing framework
+- [x] **Authentication Flow E2E** (e2e/auth.spec.ts)
+  - [x] User registration flow
+  - [x] Login flow
+  - [x] Protected route access
+  - [x] Logout flow
+  - [x] User isolation verification
   - [ ] Token refresh during active session
 - [ ] **Habit Management E2E**
   - [ ] Create habit → Appears in list

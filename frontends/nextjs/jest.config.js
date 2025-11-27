@@ -12,6 +12,11 @@ const customJestConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  // Exclude Playwright E2E tests from Jest
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/e2e/',
+  ],
   collectCoverage: true,
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',

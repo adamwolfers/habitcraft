@@ -35,6 +35,11 @@ coverage/
 *.coverage
 .pytest_cache/
 
+# Playwright
+playwright-results/
+playwright-report/
+test-results/
+
 # Next.js
 .next/
 next-env.d.ts
