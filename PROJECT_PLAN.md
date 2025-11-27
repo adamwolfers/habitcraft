@@ -10,7 +10,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - **Backend:** Node.js with Express, JavaScript
 - **Database:** PostgreSQL 14+
 - **Testing:** Jest + Supertest (Backend), Jest + React Testing Library (Frontend)
-- **Deployment:** Docker Compose
+- **Deployment:** Docker Compose (dev), k3s + Terraform on AWS (prod)
 
 ## Version 1.0 Goals
 
@@ -372,12 +372,14 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Update project structure with all components
   - [x] Update test examples
   - [x] Fix port configuration
-- [ ] **Create DEPLOYMENT.md**
-  - [ ] Environment setup checklist
-  - [ ] Database migration steps
-  - [ ] SSL/TLS configuration
-  - [ ] Monitoring recommendations
-  - [ ] Backup procedures
+- [x] **AWS Architecture Documentation** (docs/AWS_ARCHITECTURE.md)
+  - [x] k3s + Terraform infrastructure as code
+  - [x] Environment setup and deployment guide
+  - [x] Database migration steps
+  - [x] SSL/TLS via Traefik + Let's Encrypt
+  - [x] CloudWatch monitoring setup
+  - [x] Security checklist
+  - [x] Backup and disaster recovery procedures
 
 ### Security & Deployment
 
@@ -552,13 +554,13 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - Automated deployment
   - Code quality checks (linting, coverage)
 - **Cloud Deployment**
-  - AWS deployment (ECS, RDS, S3)
+  - [x] AWS deployment (k3s on EC2, RDS PostgreSQL)
   - Google Cloud Platform
   - Azure deployment
 - **Infrastructure as Code**
-  - Terraform configurations
+  - [x] Terraform configurations (VPC, EC2, RDS, Secrets Manager)
   - CloudFormation templates
-  - Kubernetes manifests
+  - [x] Kubernetes manifests (deployments, services, ingress)
 - **Monitoring & Observability**
   - Application monitoring (Datadog, New Relic)
   - Error tracking (Sentry)
@@ -594,6 +596,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - **Project Plan:** `/PROJECT_PLAN.md` (this file)
 - **Getting Started:** `/GETTING_STARTED.md`
 - **Authentication Guide:** `/AUTHENTICATION.md`
+- **AWS Architecture:** `/docs/AWS_ARCHITECTURE.md`
 - **Main README:** `/README.md`
 - **API Specification:** `/shared/api-spec/openapi.yaml`
 - **Database Schema:** `/shared/database/schema.sql`
