@@ -21,6 +21,8 @@ tags:
     description: Health check endpoints
   - name: Auth
     description: Authentication and authorization
+  - name: Users
+    description: User profile management
   - name: Habits
     description: Habit CRUD operations
   - name: Completions
@@ -217,10 +219,10 @@ paths:
               example:
                 message: "Logged out successfully"
 
-  /auth/me:
+  /users/me:
     get:
       tags:
-        - Auth
+        - Users
       summary: Get current user profile
       description: Get the authenticated user's profile. Requires valid access token in cookie.
       operationId: getCurrentUser
@@ -235,6 +237,12 @@ paths:
                 $ref: '#/components/schemas/User'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /habits:
     get:

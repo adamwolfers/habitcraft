@@ -93,7 +93,9 @@ JWT_SECRET=your-secret-key-change-in-production
 - `POST /api/v1/auth/login` - Login and receive JWT tokens
 - `POST /api/v1/auth/refresh` - Refresh access token
 - `POST /api/v1/auth/logout` - Logout and clear tokens
-- `GET /api/v1/auth/me` - Get current user profile
+
+### Users
+- `GET /api/v1/users/me` - Get current user profile
 
 See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for complete API documentation.
 

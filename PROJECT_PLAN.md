@@ -131,14 +131,31 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### User Management (API Refactor)
 
-- [ ] **Refactor user profile to RESTful /users endpoint**
-  - [ ] Create users router (routes/users.js)
-  - [ ] **GET /api/v1/users/me** - Get current user profile
-    - [ ] Write tests (move/adapt from auth/me tests)
-    - [ ] Implement endpoint
-    - [ ] Deprecate /auth/me (optional: keep as alias during transition)
-  - [ ] Update frontend API client to use /users/me
-  - [ ] Update OpenAPI specification
+- [x] **Refactor user profile to RESTful /users endpoint**
+  - [x] **Backend: Write tests for GET /api/v1/users/me (Red phase)**
+    - [x] Create routes/users.test.js
+    - [x] Write test: returns user profile with valid token (200)
+    - [x] Write test: returns 401 without token
+    - [x] Write test: returns 401 with invalid token
+    - [x] Write test: returns 404 if user not found
+    - [x] Run tests and confirm they fail
+  - [x] **Backend: Implement users router (Green phase)**
+    - [x] Create routes/users.js with GET /me endpoint
+    - [x] Register router in app.js at /api/v1/users
+    - [x] Run tests and confirm they pass
+  - [x] **Frontend: Update AuthContext tests (Red phase)**
+    - [x] Update AuthContext.test.tsx mocks to use /users/me
+    - [x] Run tests and confirm they fail
+  - [x] **Frontend: Update AuthContext implementation (Green phase)**
+    - [x] Change /auth/me to /users/me in AuthContext.tsx
+    - [x] Run tests and confirm they pass
+  - [x] **Clean-up: Remove deprecated /auth/me endpoint**
+    - [x] Verify /users/me works end-to-end (frontend to backend)
+    - [x] Remove GET /me route from routes/auth.js
+    - [x] Remove /auth/me tests from routes/auth.test.js
+    - [x] Run full test suite to confirm nothing breaks
+  - [x] **Documentation: Update OpenAPI specification**
+    - [x] Add GET /api/v1/users/me endpoint
 
 ### Frontend - Next.js + React
 

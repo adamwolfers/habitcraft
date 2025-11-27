@@ -209,25 +209,4 @@ router.post('/logout', (_req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
-// GET /api/v1/auth/me
-const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
-
-router.get('/me', jwtAuthMiddleware, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, email, name, created_at AS "createdAt" FROM users WHERE id = $1',
-      [req.userId]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error fetching user profile:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
 module.exports = router;

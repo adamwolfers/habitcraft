@@ -267,7 +267,7 @@ describe('AuthContext', () => {
 
   describe('session persistence', () => {
     it('should restore session from cookies on mount', async () => {
-      // Mock /auth/me returning user (cookie auth succeeds)
+      // Mock /users/me returning user (cookie auth succeeds)
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockUser
@@ -282,7 +282,7 @@ describe('AuthContext', () => {
       expect(result.current.user).toEqual(mockUser);
       expect(result.current.isAuthenticated).toBe(true);
       expect(mockFetch).toHaveBeenCalledWith(
-        `${API_BASE_URL}/api/v1/auth/me`,
+        `${API_BASE_URL}/api/v1/users/me`,
         expect.objectContaining({
           credentials: 'include'
         })
@@ -290,7 +290,7 @@ describe('AuthContext', () => {
     });
 
     it('should set isLoading to false when no session exists', async () => {
-      // Mock /auth/me returning 401 (no valid cookie)
+      // Mock /users/me returning 401 (no valid cookie)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,

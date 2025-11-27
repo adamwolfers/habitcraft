@@ -151,7 +151,7 @@ User → Expired Access Token → POST /api/v1/auth/refresh
   ```
 
 #### 4. User Profile
-- **Endpoint:** `GET /api/v1/auth/me`
+- **Endpoint:** `GET /api/v1/users/me`
 - **Headers:** `Authorization: Bearer <accessToken>`
 - **Response (200):**
   ```json
