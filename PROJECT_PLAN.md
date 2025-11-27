@@ -311,10 +311,27 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Test Infrastructure
 
-- [ ] Test database configuration (separate test DB or containers)
-- [ ] Automatic setup/teardown scripts
-- [ ] Test data fixtures
-- [ ] Environment variables for test environment
+- [x] **Test Database Configuration**
+  - [x] Separate Docker container for test database (docker-compose.test.yml)
+  - [x] Test database: habitcraft_test on port 5433 (avoids conflict with dev on 5432)
+  - [x] Same schema as production (shared/database/schema.sql)
+- [x] **Automatic Setup/Teardown Scripts** (scripts/)
+  - [x] test-db-start.sh - Start test database container
+  - [x] test-db-stop.sh - Stop test database container
+  - [x] test-db-reset.sh - Reset to clean state with fixtures
+  - [x] test-db-fresh.sh - Remove all data and start fresh
+- [x] **Test Data Fixtures** (shared/database/test-fixtures.sql)
+  - [x] Test User 1: test@example.com / Test1234! (UUID: 11111111-...)
+  - [x] Test User 2: test2@example.com / Test1234! (UUID: 22222222-...)
+  - [x] Sample habits with predictable UUIDs for both users
+  - [x] Sample completions for integration testing
+- [x] **Environment Variables for Test Environment**
+  - [x] backends/node/.env.test - Test database connection, test JWT secret
+  - [x] frontends/nextjs/.env.test - Test API URL
+- [ ] **E2E Testing Framework**
+  - [ ] Install and configure Playwright
+  - [ ] Playwright configuration for test environment
+  - [ ] Global setup/teardown for test database
 
 #### Backend Integration Tests
 
@@ -337,9 +354,9 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [ ] Duplicate prevention
   - [ ] Habit ownership validation
 
-#### Frontend End-to-End Tests
+#### Frontend End-to-End Tests (Playwright)
 
-- [ ] Set up E2E testing framework (Playwright or Cypress)
+- [ ] Set up Playwright E2E testing framework
 - [ ] **Authentication Flow E2E**
   - [ ] User registration flow
   - [ ] Login flow

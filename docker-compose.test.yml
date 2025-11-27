@@ -1,0 +1,81 @@
+# Docker Compose for Test Environment
+# Usage: docker compose -f docker-compose.test.yml up -d
+# This creates an isolated test database on port 5433
+
+services:
+  # Test PostgreSQL Database
+  postgres-test:
+    image: postgres:14-alpine
+    container_name: habitcraft-db-test
+    environment:
+      POSTGRES_DB: habitcraft_test
+      POSTGRES_USER: habituser
+      POSTGRES_PASSWORD: habitpass
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./shared/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./shared/database/test-fixtures.sql:/docker-entrypoint-initdb.d/02-test-fixtures.sql
+    networks:
+      - habitcraft-test-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U habituser -d habitcraft_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Node.js Backend for Integration Tests
+  backend-node-test:
+    build:
+      context: ./backends/node
+      dockerfile: Dockerfile
+    container_name: habitcraft-backend-node-test
+    environment:
+      NODE_ENV: test
+      PORT: 3010
+      DATABASE_URL: postgresql://habituser:habitpass@postgres-test:5432/habitcraft_test
+      DB_HOST: postgres-test
+      DB_PORT: 5432
+      DB_NAME: habitcraft_test
+      DB_USER: habituser
+      DB_PASSWORD: habitpass
+      JWT_SECRET: test-jwt-secret-key-for-testing-only
+      FRONTEND_URL: http://localhost:3110
+    ports:
+      - "3010:3010"
+    volumes:
+      - ./backends/node:/app
+      - backend_node_test_modules:/app/node_modules
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - habitcraft-test-network
+    command: npm run dev
+
+  # Next.js Frontend for E2E Tests
+  frontend-nextjs-test:
+    build:
+      context: ./frontends/nextjs
+      dockerfile: Dockerfile
+    container_name: habitcraft-frontend-nextjs-test
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3010
+    ports:
+      - "3110:3100"
+    volumes:
+      - ./frontends/nextjs:/app
+      - /app/node_modules
+      - /app/.next
+    networks:
+      - habitcraft-test-network
+    command: npm run dev
+
+networks:
+  habitcraft-test-network:
+    driver: bridge
+
+volumes:
+  postgres_test_data:
+  backend_node_test_modules:
