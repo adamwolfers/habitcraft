@@ -1,334 +1,550 @@
-# HabitCraft AWS Architecture (EKS)
+# HabitCraft AWS Architecture (k3s + Terraform)
 
-This document outlines the AWS architecture for deploying HabitCraft on Amazon Elastic Kubernetes Service (EKS).
+Lightweight Kubernetes deployment using k3s, Terraform for IaC, and AWS Secrets Manager.
 
-## Table of Contents
+## Overview
 
-1. [Application Overview](#application-overview)
-2. [Architecture Diagram](#architecture-diagram)
-3. [Component Details](#component-details)
-4. [Kubernetes Manifests](#kubernetes-manifests)
-5. [Cost Estimates](#cost-estimates)
-6. [Implementation Guide](#implementation-guide)
-
----
-
-## Application Overview
-
-| Component | Technology | Container Port |
-|-----------|------------|----------------|
-| Frontend | Next.js 16, React 19, TypeScript | 3100 |
-| Backend | Node.js 20, Express 5 | 3000 |
-| Database | PostgreSQL 14 | 5432 |
-| Auth | JWT (HttpOnly cookies) | - |
+| Component | Technology |
+|-----------|------------|
+| Orchestration | k3s (lightweight Kubernetes) |
+| Infrastructure | Terraform |
+| Secrets | AWS Secrets Manager |
+| Database | RDS PostgreSQL |
+| Ingress | Traefik (included with k3s) |
+| SSL | Let's Encrypt (via Traefik) |
 
 ---
 
 ## Architecture Diagram
 
-### Production Architecture (EKS)
-
 ```
-                                    ┌─────────────────────────────────────────────────────────────────┐
-                                    │                           AWS Cloud                             │
-                                    │                                                                 │
-    ┌──────────┐                    │  ┌─────────────┐                                               │
-    │          │                    │  │             │                                               │
-    │  Users   │─────HTTPS──────────┼─▶│  CloudFront │                                               │
-    │          │                    │  │    (CDN)    │                                               │
-    └──────────┘                    │  │             │                                               │
-                                    │  └──────┬──────┘                                               │
-                                    │         │                                                       │
-    ┌──────────┐                    │         │         ┌───────────────────────────────────────────┐│
-    │ Route 53 │◀───DNS─────────────┼─────────┘         │              VPC (10.0.0.0/16)            ││
-    │   (DNS)  │                    │                   │                                           ││
-    └──────────┘                    │                   │  ┌─────────────────────────────────────┐  ││
-                                    │                   │  │        Public Subnets (x3 AZs)      │  ││
-                                    │                   │  │                                     │  ││
-                                    │                   │  │  ┌───────────────────────────────┐  │  ││
-                                    │                   │  │  │  AWS Load Balancer Controller │  │  ││
-                                    │                   │  │  │         (ALB Ingress)         │  │  ││
-                                    │                   │  │  │          :443 HTTPS           │  │  ││
-                                    │                   │  │  └───────────────┬───────────────┘  │  ││
-                                    │                   │  │                  │                  │  ││
-                                    │                   │  └──────────────────┼──────────────────┘  ││
-                                    │                   │                     │                     ││
-                                    │                   │  ┌──────────────────┼──────────────────┐  ││
-                                    │                   │  │       Private Subnets (x3 AZs)      │  ││
-                                    │                   │  │                  │                  │  ││
-                                    │                   │  │  ┌───────────────────────────────┐  │  ││
-                                    │                   │  │  │         EKS Cluster           │  │  ││
-                                    │                   │  │  │                               │  │  ││
-                                    │                   │  │  │  ┌─────────┐    ┌─────────┐   │  │  ││
-                                    │                   │  │  │  │Frontend │    │ Backend │   │  │  ││
-                                    │                   │  │  │  │  Pods   │    │  Pods   │   │  │  ││
-                                    │                   │  │  │  │ (HPA)   │    │  (HPA)  │   │  │  ││
-                                    │                   │  │  │  └─────────┘    └────┬────┘   │  │  ││
-                                    │                   │  │  │                      │        │  │  ││
-                                    │                   │  │  └──────────────────────┼────────┘  │  ││
-                                    │                   │  │                         │           │  ││
-                                    │                   │  │                         ▼           │  ││
-                                    │                   │  │                  ┌────────────┐     │  ││
-                                    │  ┌──────────┐     │  │                  │    RDS     │     │  ││
-                                    │  │   ECR    │     │  │                  │ PostgreSQL │     │  ││
-                                    │  │(registry)│     │  │                  │ (Multi-AZ) │     │  ││
-                                    │  └──────────┘     │  │                  └────────────┘     │  ││
-                                    │                   │  │                                     │  ││
-                                    │  ┌──────────┐     │  └─────────────────────────────────────┘  ││
-                                    │  │ Secrets  │     │                                           ││
-                                    │  │ Manager  │     └───────────────────────────────────────────┘│
-                                    │  └──────────┘                                                  │
-                                    │                                                                │
-                                    └────────────────────────────────────────────────────────────────┘
-```
-
-### Kubernetes Cluster Architecture
-
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                    EKS Cluster                                         │
-│                                                                                        │
-│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                              Control Plane (AWS Managed)                          │  │
-│  │    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐      │  │
-│  │    │ API Server  │    │  Scheduler  │    │ Controller  │    │    etcd     │      │  │
-│  │    │             │    │             │    │   Manager   │    │             │      │  │
-│  │    └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘      │  │
-│  └──────────────────────────────────────────────────────────────────────────────────┘  │
-│                                                                                        │
-│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                           Worker Nodes (Managed Node Group)                       │  │
-│  │                                                                                   │  │
-│  │   Node 1 (us-east-1a)        Node 2 (us-east-1b)        Node 3 (us-east-1c)      │  │
-│  │   ┌─────────────────┐        ┌─────────────────┐        ┌─────────────────┐      │  │
-│  │   │ ┌─────────────┐ │        │ ┌─────────────┐ │        │ ┌─────────────┐ │      │  │
-│  │   │ │  frontend   │ │        │ │  frontend   │ │        │ │  backend    │ │      │  │
-│  │   │ │    pod      │ │        │ │    pod      │ │        │ │    pod      │ │      │  │
-│  │   │ └─────────────┘ │        │ └─────────────┘ │        │ └─────────────┘ │      │  │
-│  │   │ ┌─────────────┐ │        │ ┌─────────────┐ │        │ ┌─────────────┐ │      │  │
-│  │   │ │  backend    │ │        │ │  backend    │ │        │ │  frontend   │ │      │  │
-│  │   │ │    pod      │ │        │ │    pod      │ │        │ │    pod      │ │      │  │
-│  │   │ └─────────────┘ │        │ └─────────────┘ │        │ └─────────────┘ │      │  │
-│  │   └─────────────────┘        └─────────────────┘        └─────────────────┘      │  │
-│  │                                                                                   │  │
-│  └──────────────────────────────────────────────────────────────────────────────────┘  │
-│                                                                                        │
-│  ┌──────────────────────────────────────────────────────────────────────────────────┐  │
-│  │                                  Namespaces                                       │  │
-│  │                                                                                   │  │
-│  │   habitcraft (app)          kube-system              monitoring                   │  │
-│  │   ┌─────────────────┐       ┌─────────────────┐      ┌─────────────────┐         │  │
-│  │   │ - Deployments   │       │ - CoreDNS       │      │ - Prometheus    │         │  │
-│  │   │ - Services      │       │ - AWS LB Ctrl   │      │ - Grafana       │         │  │
-│  │   │ - ConfigMaps    │       │ - EBS CSI       │      │ - AlertManager  │         │  │
-│  │   │ - Secrets       │       │ - Secrets CSI   │      │                 │         │  │
-│  │   │ - HPA           │       │                 │      │                 │         │  │
-│  │   └─────────────────┘       └─────────────────┘      └─────────────────┘         │  │
-│  │                                                                                   │  │
-│  └──────────────────────────────────────────────────────────────────────────────────┘  │
-│                                                                                        │
-└────────────────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Request Flow
-
-```
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│                                    Request Flow                                       │
-└──────────────────────────────────────────────────────────────────────────────────────┘
-
-  User Request (habitcraft.example.com)
-       │
-       ▼
-  ┌─────────┐
-  │ Route53 │──── DNS Resolution
-  │         │
-  └────┬────┘
-       │
-       ▼
-  ┌─────────────┐
-  │ CloudFront  │──── Edge caching for static assets (/_next/static/*)
-  │    (CDN)    │──── SSL termination
-  └──────┬──────┘
-         │
-         ▼
-  ┌─────────────┐
-  │     ALB     │──── Created by AWS Load Balancer Controller
-  │  (Ingress)  │──── Path-based routing
-  └──────┬──────┘
-         │
-         ├──────────────────────────────────────┐
-         │                                      │
-         ▼                                      ▼
-  ┌─────────────┐                        ┌─────────────┐
-  │  Frontend   │   /api/* requests      │   Backend   │
-  │   Service   │ ─────────────────────▶ │   Service   │
-  │  (ClusterIP)│   (internal routing)   │ (ClusterIP) │
-  └──────┬──────┘                        └──────┬──────┘
-         │                                      │
-         ▼                                      ▼
-  ┌─────────────┐                        ┌─────────────┐
-  │  Frontend   │                        │   Backend   │
-  │    Pods     │                        │    Pods     │
-  │  (Next.js)  │                        │  (Express)  │
-  └─────────────┘                        └──────┬──────┘
-                                                │
-                                                ▼
-                                         ┌─────────────┐
-                                         │     RDS     │
-                                         │ PostgreSQL  │
-                                         └─────────────┘
+                                    ┌──────────────────────────────────────────────────┐
+                                    │                    AWS Cloud                      │
+                                    │                                                   │
+    ┌──────────┐                    │  ┌─────────────────────────────────────────────┐ │
+    │          │                    │  │              VPC (10.0.0.0/16)              │ │
+    │  Users   │────HTTPS───────────┼─▶│                                             │ │
+    │          │                    │  │  ┌───────────────────────────────────────┐  │ │
+    └──────────┘                    │  │  │         Public Subnet (10.0.1.0/24)   │  │ │
+                                    │  │  │                                       │  │ │
+                                    │  │  │  ┌─────────────────────────────────┐  │  │ │
+                                    │  │  │  │      EC2 Instance (t3.small)    │  │  │ │
+                                    │  │  │  │                                 │  │  │ │
+                                    │  │  │  │  ┌───────────────────────────┐  │  │  │ │
+                                    │  │  │  │  │          k3s              │  │  │  │ │
+                                    │  │  │  │  │                           │  │  │  │ │
+                                    │  │  │  │  │  ┌─────────────────────┐  │  │  │  │ │
+                                    │  │  │  │  │  │ Traefik Ingress     │  │  │  │  │ │
+                                    │  │  │  │  │  │ :80 :443            │  │  │  │  │ │
+                                    │  │  │  │  │  └──────────┬──────────┘  │  │  │  │ │
+                                    │  │  │  │  │             │             │  │  │  │ │
+                                    │  │  │  │  │  ┌──────────┴──────────┐  │  │  │  │ │
+                                    │  │  │  │  │  │                     │  │  │  │  │ │
+                                    │  │  │  │  │  ▼                     ▼  │  │  │  │ │
+                                    │  │  │  │  │ ┌────────┐    ┌────────┐  │  │  │  │ │
+                                    │  │  │  │  │ │Frontend│    │Backend │  │  │  │  │ │
+                                    │  │  │  │  │ │  Pod   │    │  Pod   │  │  │  │  │ │
+                                    │  │  │  │  │ │ :3100  │    │ :3000  │──┼──┼──┼──┼─┼─┐
+                                    │  │  │  │  │ └────────┘    └────────┘  │  │  │  │ │ │
+                                    │  │  │  │  │                           │  │  │  │ │ │
+                                    │  │  │  │  └───────────────────────────┘  │  │  │ │ │
+                                    │  │  │  │                                 │  │  │ │ │
+                                    │  │  │  └─────────────────────────────────┘  │  │ │ │
+                                    │  │  │                                       │  │ │ │
+                                    │  │  └───────────────────────────────────────┘  │ │ │
+                                    │  │                                             │ │ │
+                                    │  │  ┌───────────────────────────────────────┐  │ │ │
+                                    │  │  │       Private Subnet (10.0.2.0/24)    │  │ │ │
+                                    │  │  │                                       │  │ │ │
+                                    │  │  │        ┌─────────────────────┐        │  │ │ │
+                                    │  │  │        │   RDS PostgreSQL    │◀───────┼──┼─┘ │
+                                    │  │  │        │   (db.t4g.micro)    │        │  │   │
+                                    │  │  │        └─────────────────────┘        │  │   │
+                                    │  │  │                                       │  │   │
+                                    │  │  └───────────────────────────────────────┘  │   │
+                                    │  │                                             │   │
+                                    │  └─────────────────────────────────────────────┘   │
+                                    │                                                    │
+                                    │  ┌──────────────────┐                              │
+                                    │  │  Secrets Manager │ ◀── JWT_SECRET, DB creds     │
+                                    │  └──────────────────┘                              │
+                                    │                                                    │
+                                    └────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Component Details
+## Cost Estimate (Monthly)
 
-### 1. EKS Cluster
+| Service | Configuration | Cost |
+|---------|---------------|------|
+| EC2 | t3.small (2 vCPU, 2GB) | ~$15 |
+| RDS | db.t4g.micro, 20GB | ~$13 |
+| Secrets Manager | 2 secrets | ~$1 |
+| EBS | 30GB gp3 | ~$3 |
+| Data Transfer | ~10GB | ~$1 |
+| **Total** | | **~$33/month** |
 
-```yaml
-Cluster:
-  Name: habitcraft-cluster
-  Version: 1.29
-  Endpoint Access: Private + Public (restricted)
+---
 
-  Add-ons:
-    - CoreDNS
-    - kube-proxy
-    - vpc-cni
-    - aws-ebs-csi-driver
-    - secrets-store-csi-driver
+## Project Structure
 
-  Logging:
-    - api
-    - audit
-    - authenticator
-    - controllerManager
-    - scheduler
+```
+infrastructure/
+├── terraform/
+│   ├── main.tf
+│   ├── variables.tf
+│   ├── outputs.tf
+│   ├── vpc.tf
+│   ├── ec2.tf
+│   ├── rds.tf
+│   ├── secrets.tf
+│   └── terraform.tfvars.example
+└── k8s/
+    ├── namespace.yaml
+    ├── secrets.yaml
+    ├── backend/
+    │   ├── deployment.yaml
+    │   └── service.yaml
+    ├── frontend/
+    │   ├── deployment.yaml
+    │   └── service.yaml
+    └── ingress.yaml
 ```
 
-### 2. Node Groups
+---
 
-```yaml
-Managed Node Group:
-  Name: habitcraft-workers
-  Instance Types:
-    - t3.medium (2 vCPU, 4GB) - default
-    - t3.large (2 vCPU, 8GB) - scaling
+## Terraform Configuration
 
-  Scaling:
-    Min: 2
-    Desired: 3
-    Max: 10
+### main.tf
 
-  Labels:
-    role: worker
-    environment: production
+```hcl
+terraform {
+  required_version = ">= 1.0"
 
-  Taints: []
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
 
-  AMI: Amazon Linux 2 (EKS optimized)
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = {
+      Project     = "habitcraft"
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
 ```
 
-### 3. Networking
+### variables.tf
 
-```yaml
-VPC:
-  CIDR: 10.0.0.0/16
+```hcl
+variable "aws_region" {
+  description = "AWS region"
+  type        = string
+  default     = "us-east-1"
+}
 
-  Subnets:
-    Public (3 AZs):
-      - 10.0.1.0/24 (us-east-1a) - ALB, NAT Gateway
-      - 10.0.2.0/24 (us-east-1b) - ALB
-      - 10.0.3.0/24 (us-east-1c) - ALB
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "production"
+}
 
-    Private (3 AZs):
-      - 10.0.10.0/24 (us-east-1a) - EKS nodes, RDS
-      - 10.0.20.0/24 (us-east-1b) - EKS nodes, RDS
-      - 10.0.30.0/24 (us-east-1c) - EKS nodes
+variable "domain_name" {
+  description = "Domain name for the application"
+  type        = string
+}
 
-  VPC Endpoints:
-    - com.amazonaws.region.ecr.api (Interface)
-    - com.amazonaws.region.ecr.dkr (Interface)
-    - com.amazonaws.region.s3 (Gateway)
-    - com.amazonaws.region.secretsmanager (Interface)
-    - com.amazonaws.region.sts (Interface)
+variable "db_password" {
+  description = "Database password"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT signing secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "ssh_allowed_ip" {
+  description = "IP address allowed to SSH (your IP)"
+  type        = string
+}
 ```
 
-### 4. Database (RDS)
+### vpc.tf
 
-```yaml
-RDS Instance:
-  Identifier: habitcraft-db
-  Engine: PostgreSQL 14.10
-  Instance Class: db.t3.medium
-  Storage: 100GB gp3
-  Multi-AZ: true
+```hcl
+# VPC
+resource "aws_vpc" "main" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
 
-  Network:
-    Subnet Group: habitcraft-db-subnets (private)
-    Security Group: Allow 5432 from EKS node SG
+  tags = { Name = "habitcraft-vpc" }
+}
 
-  Backup:
-    Retention: 7 days
-    Window: 03:00-04:00 UTC
-    Snapshot on delete: true
+# Internet Gateway
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
 
-  Encryption: AWS KMS (aws/rds)
+  tags = { Name = "habitcraft-igw" }
+}
 
-  Parameters:
-    max_connections: 200
-    shared_buffers: 256MB
-    log_statement: ddl
+# Public Subnet
+resource "aws_subnet" "public" {
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "${var.aws_region}a"
+  map_public_ip_on_launch = true
+
+  tags = { Name = "habitcraft-public" }
+}
+
+# Private Subnet
+resource "aws_subnet" "private" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "${var.aws_region}a"
+
+  tags = { Name = "habitcraft-private" }
+}
+
+# Private Subnet 2 (required for RDS subnet group)
+resource "aws_subnet" "private_2" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.3.0/24"
+  availability_zone = "${var.aws_region}b"
+
+  tags = { Name = "habitcraft-private-2" }
+}
+
+# Route Table
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+
+  tags = { Name = "habitcraft-public-rt" }
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
 ```
 
-### 5. Load Balancer Controller
+### ec2.tf
 
-```yaml
-AWS Load Balancer Controller:
-  Version: 2.7.x
-  Installation: Helm chart
+```hcl
+# Security Group for EC2
+resource "aws_security_group" "k3s" {
+  name        = "habitcraft-k3s"
+  description = "Security group for k3s server"
+  vpc_id      = aws_vpc.main.id
 
-  Service Account:
-    Name: aws-load-balancer-controller
-    IAM Role: AmazonEKSLoadBalancerControllerRole
+  # SSH
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["${var.ssh_allowed_ip}/32"]
+  }
 
-  Features:
-    - ALB Ingress provisioning
-    - NLB Service provisioning
-    - Target Group binding
-    - WAF integration
+  # HTTP
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # HTTPS
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Kubernetes API (optional, for remote kubectl)
+  ingress {
+    from_port   = 6443
+    to_port     = 6443
+    protocol    = "tcp"
+    cidr_blocks = ["${var.ssh_allowed_ip}/32"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = { Name = "habitcraft-k3s-sg" }
+}
+
+# IAM Role for EC2 (to access Secrets Manager)
+resource "aws_iam_role" "k3s" {
+  name = "habitcraft-k3s-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action = "sts:AssumeRole"
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+    }]
+  })
+}
+
+resource "aws_iam_role_policy" "secrets_access" {
+  name = "secrets-access"
+  role = aws_iam_role.k3s.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "secretsmanager:GetSecretValue"
+      ]
+      Resource = [
+        aws_secretsmanager_secret.db_credentials.arn,
+        aws_secretsmanager_secret.jwt_secret.arn
+      ]
+    }]
+  })
+}
+
+resource "aws_iam_instance_profile" "k3s" {
+  name = "habitcraft-k3s-profile"
+  role = aws_iam_role.k3s.name
+}
+
+# Key Pair
+resource "aws_key_pair" "k3s" {
+  key_name   = "habitcraft-k3s"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+# EC2 Instance
+resource "aws_instance" "k3s" {
+  ami                    = data.aws_ami.amazon_linux.id
+  instance_type          = "t3.small"
+  key_name               = aws_key_pair.k3s.key_name
+  subnet_id              = aws_subnet.public.id
+  vpc_security_group_ids = [aws_security_group.k3s.id]
+  iam_instance_profile   = aws_iam_instance_profile.k3s.name
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
+
+  user_data = <<-EOF
+    #!/bin/bash
+    set -e
+
+    # Install k3s
+    curl -sfL https://get.k3s.io | sh -s - \
+      --write-kubeconfig-mode 644 \
+      --tls-san ${var.domain_name}
+
+    # Wait for k3s to be ready
+    until kubectl get nodes; do sleep 5; done
+
+    # Install AWS CLI
+    yum install -y awscli jq
+
+    echo "k3s installation complete"
+  EOF
+
+  tags = { Name = "habitcraft-k3s" }
+}
+
+# Latest Amazon Linux 2023 AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+}
+```
+
+### rds.tf
+
+```hcl
+# Security Group for RDS
+resource "aws_security_group" "rds" {
+  name        = "habitcraft-rds"
+  description = "Security group for RDS"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.k3s.id]
+  }
+
+  tags = { Name = "habitcraft-rds-sg" }
+}
+
+# DB Subnet Group
+resource "aws_db_subnet_group" "main" {
+  name       = "habitcraft-db-subnets"
+  subnet_ids = [aws_subnet.private.id, aws_subnet.private_2.id]
+
+  tags = { Name = "habitcraft-db-subnet-group" }
+}
+
+# RDS Instance
+resource "aws_db_instance" "main" {
+  identifier = "habitcraft-db"
+
+  engine         = "postgres"
+  engine_version = "14"
+  instance_class = "db.t4g.micro"
+
+  allocated_storage = 20
+  storage_type      = "gp3"
+
+  db_name  = "habitcraft"
+  username = "habituser"
+  password = var.db_password
+
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  vpc_security_group_ids = [aws_security_group.rds.id]
+
+  backup_retention_period = 7
+  skip_final_snapshot     = false
+  final_snapshot_identifier = "habitcraft-final-snapshot"
+
+  multi_az               = false
+  publicly_accessible    = false
+  storage_encrypted      = true
+
+  tags = { Name = "habitcraft-db" }
+}
+```
+
+### secrets.tf
+
+```hcl
+# Database Credentials
+resource "aws_secretsmanager_secret" "db_credentials" {
+  name = "habitcraft/db-credentials"
+}
+
+resource "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = aws_secretsmanager_secret.db_credentials.id
+  secret_string = jsonencode({
+    host     = aws_db_instance.main.address
+    port     = 5432
+    database = "habitcraft"
+    username = "habituser"
+    password = var.db_password
+  })
+}
+
+# JWT Secret
+resource "aws_secretsmanager_secret" "jwt_secret" {
+  name = "habitcraft/jwt-secret"
+}
+
+resource "aws_secretsmanager_secret_version" "jwt_secret" {
+  secret_id     = aws_secretsmanager_secret.jwt_secret.id
+  secret_string = jsonencode({
+    secret = var.jwt_secret
+  })
+}
+```
+
+### outputs.tf
+
+```hcl
+output "k3s_public_ip" {
+  description = "Public IP of k3s server"
+  value       = aws_instance.k3s.public_ip
+}
+
+output "rds_endpoint" {
+  description = "RDS endpoint"
+  value       = aws_db_instance.main.address
+}
+
+output "ssh_command" {
+  description = "SSH command to connect"
+  value       = "ssh -i ~/.ssh/id_rsa ec2-user@${aws_instance.k3s.public_ip}"
+}
+
+output "kubeconfig_command" {
+  description = "Command to get kubeconfig"
+  value       = "scp ec2-user@${aws_instance.k3s.public_ip}:/etc/rancher/k3s/k3s.yaml ./kubeconfig && sed -i '' 's/127.0.0.1/${aws_instance.k3s.public_ip}/g' ./kubeconfig"
+}
 ```
 
 ---
 
 ## Kubernetes Manifests
 
-### Namespace
+### k8s/namespace.yaml
 
 ```yaml
-# k8s/namespace.yaml
 apiVersion: v1
 kind: Namespace
 metadata:
   name: habitcraft
-  labels:
-    app.kubernetes.io/name: habitcraft
 ```
 
-### Backend Deployment
+### k8s/secrets.yaml
 
 ```yaml
-# k8s/backend/deployment.yaml
+# This secret is populated by a setup script that pulls from AWS Secrets Manager
+apiVersion: v1
+kind: Secret
+metadata:
+  name: habitcraft-secrets
+  namespace: habitcraft
+type: Opaque
+stringData:
+  DB_HOST: "PLACEHOLDER"
+  DB_PORT: "5432"
+  DB_NAME: "habitcraft"
+  DB_USER: "habituser"
+  DB_PASSWORD: "PLACEHOLDER"
+  JWT_SECRET: "PLACEHOLDER"
+```
+
+### k8s/backend/deployment.yaml
+
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend
   namespace: habitcraft
-  labels:
-    app: backend
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -337,10 +553,9 @@ spec:
       labels:
         app: backend
     spec:
-      serviceAccountName: habitcraft-backend
       containers:
         - name: backend
-          image: <account-id>.dkr.ecr.us-east-1.amazonaws.com/habitcraft-backend:latest
+          image: ghcr.io/your-org/habitcraft-backend:latest
           ports:
             - containerPort: 3000
           env:
@@ -351,34 +566,40 @@ spec:
             - name: DB_HOST
               valueFrom:
                 secretKeyRef:
-                  name: db-credentials
-                  key: host
+                  name: habitcraft-secrets
+                  key: DB_HOST
             - name: DB_PORT
-              value: "5432"
+              valueFrom:
+                secretKeyRef:
+                  name: habitcraft-secrets
+                  key: DB_PORT
             - name: DB_NAME
-              value: "habitcraft"
+              valueFrom:
+                secretKeyRef:
+                  name: habitcraft-secrets
+                  key: DB_NAME
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
-                  name: db-credentials
-                  key: username
+                  name: habitcraft-secrets
+                  key: DB_USER
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: db-credentials
-                  key: password
+                  name: habitcraft-secrets
+                  key: DB_PASSWORD
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: jwt-secret
-                  key: secret
+                  name: habitcraft-secrets
+                  key: JWT_SECRET
           resources:
             requests:
-              cpu: 250m
-              memory: 512Mi
+              cpu: 100m
+              memory: 256Mi
             limits:
               cpu: 500m
-              memory: 1Gi
+              memory: 512Mi
           livenessProbe:
             httpGet:
               path: /health
@@ -391,47 +612,34 @@ spec:
               port: 3000
             initialDelaySeconds: 5
             periodSeconds: 5
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              app: backend
 ```
 
-### Backend Service
+### k8s/backend/service.yaml
 
 ```yaml
-# k8s/backend/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
   namespace: habitcraft
 spec:
-  type: ClusterIP
   selector:
     app: backend
   ports:
     - port: 3000
       targetPort: 3000
-      protocol: TCP
 ```
 
-### Frontend Deployment
+### k8s/frontend/deployment.yaml
 
 ```yaml
-# k8s/frontend/deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: frontend
   namespace: habitcraft
-  labels:
-    app: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: frontend
@@ -442,15 +650,15 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: <account-id>.dkr.ecr.us-east-1.amazonaws.com/habitcraft-frontend:latest
+          image: ghcr.io/your-org/habitcraft-frontend:latest
           ports:
             - containerPort: 3100
           env:
             - name: NEXT_PUBLIC_API_URL
-              value: "https://habitcraft.example.com/api/v1"
+              value: "https://your-domain.com/api/v1"
           resources:
             requests:
-              cpu: 200m
+              cpu: 100m
               memory: 256Mi
             limits:
               cpu: 500m
@@ -467,58 +675,39 @@ spec:
               port: 3100
             initialDelaySeconds: 5
             periodSeconds: 5
-      topologySpreadConstraints:
-        - maxSkew: 1
-          topologyKey: topology.kubernetes.io/zone
-          whenUnsatisfiable: ScheduleAnyway
-          labelSelector:
-            matchLabels:
-              app: frontend
 ```
 
-### Frontend Service
+### k8s/frontend/service.yaml
 
 ```yaml
-# k8s/frontend/service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend
   namespace: habitcraft
 spec:
-  type: ClusterIP
   selector:
     app: frontend
   ports:
     - port: 3100
       targetPort: 3100
-      protocol: TCP
 ```
 
-### Ingress (ALB)
+### k8s/ingress.yaml
 
 ```yaml
-# k8s/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: habitcraft-ingress
   namespace: habitcraft
   annotations:
-    kubernetes.io/ingress.class: alb
-    alb.ingress.kubernetes.io/scheme: internet-facing
-    alb.ingress.kubernetes.io/target-type: ip
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
-    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:us-east-1:<account>:certificate/<cert-id>
-    alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-1-2-2021-06
-    alb.ingress.kubernetes.io/healthcheck-path: /health
-    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
-    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
-    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
-    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsencrypt
 spec:
   rules:
-    - host: habitcraft.example.com
+    - host: your-domain.com
       http:
         paths:
           - path: /api
@@ -537,264 +726,190 @@ spec:
                   number: 3100
 ```
 
-### Horizontal Pod Autoscaler
-
-```yaml
-# k8s/backend/hpa.yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: backend-hpa
-  namespace: habitcraft
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: backend
-  minReplicas: 3
-  maxReplicas: 20
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
-    - type: Resource
-      resource:
-        name: memory
-        target:
-          type: Utilization
-          averageUtilization: 80
-  behavior:
-    scaleDown:
-      stabilizationWindowSeconds: 300
-      policies:
-        - type: Percent
-          value: 10
-          periodSeconds: 60
-    scaleUp:
-      stabilizationWindowSeconds: 0
-      policies:
-        - type: Percent
-          value: 100
-          periodSeconds: 15
 ---
-# k8s/frontend/hpa.yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: frontend-hpa
-  namespace: habitcraft
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: frontend
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-    - type: Resource
-      resource:
-        name: cpu
-        target:
-          type: Utilization
-          averageUtilization: 70
+
+## Deployment Guide
+
+### 1. Initialize Terraform
+
+```bash
+cd infrastructure/terraform
+
+# Create tfvars file
+cat > terraform.tfvars << EOF
+aws_region     = "us-east-1"
+environment    = "production"
+domain_name    = "habitcraft.example.com"
+db_password    = "$(openssl rand -base64 24)"
+jwt_secret     = "$(openssl rand -base64 64)"
+ssh_allowed_ip = "YOUR_IP_ADDRESS"
+EOF
+
+# Initialize and apply
+terraform init
+terraform plan
+terraform apply
 ```
 
-### Secrets (External Secrets Operator)
+### 2. Configure kubectl
 
-```yaml
-# k8s/secrets/external-secret.yaml
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
+```bash
+# Get kubeconfig from server
+scp ec2-user@$(terraform output -raw k3s_public_ip):/etc/rancher/k3s/k3s.yaml ./kubeconfig
+
+# Update server address
+sed -i '' "s/127.0.0.1/$(terraform output -raw k3s_public_ip)/g" ./kubeconfig
+
+export KUBECONFIG=./kubeconfig
+kubectl get nodes
+```
+
+### 3. Configure Traefik for Let's Encrypt
+
+```bash
+# SSH into server
+ssh ec2-user@$(terraform output -raw k3s_public_ip)
+
+# Create Traefik config
+sudo tee /var/lib/rancher/k3s/server/manifests/traefik-config.yaml << EOF
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
 metadata:
-  name: db-credentials
-  namespace: habitcraft
+  name: traefik
+  namespace: kube-system
 spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: aws-secrets-manager
-    kind: ClusterSecretStore
-  target:
-    name: db-credentials
-  data:
-    - secretKey: host
-      remoteRef:
-        key: habitcraft/db-credentials
-        property: host
-    - secretKey: username
-      remoteRef:
-        key: habitcraft/db-credentials
-        property: username
-    - secretKey: password
-      remoteRef:
-        key: habitcraft/db-credentials
-        property: password
----
-apiVersion: external-secrets.io/v1beta1
-kind: ExternalSecret
-metadata:
-  name: jwt-secret
-  namespace: habitcraft
-spec:
-  refreshInterval: 1h
-  secretStoreRef:
-    name: aws-secrets-manager
-    kind: ClusterSecretStore
-  target:
-    name: jwt-secret
-  data:
-    - secretKey: secret
-      remoteRef:
-        key: habitcraft/jwt-secret
-        property: secret
+  valuesContent: |-
+    additionalArguments:
+      - "--certificatesresolvers.letsencrypt.acme.email=your-email@example.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/data/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+EOF
+```
+
+### 4. Sync Secrets from AWS
+
+```bash
+# SSH into server and run:
+#!/bin/bash
+
+# Fetch secrets from AWS Secrets Manager
+DB_CREDS=$(aws secretsmanager get-secret-value --secret-id habitcraft/db-credentials --query SecretString --output text)
+JWT_CREDS=$(aws secretsmanager get-secret-value --secret-id habitcraft/jwt-secret --query SecretString --output text)
+
+# Create Kubernetes secret
+kubectl create namespace habitcraft --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create secret generic habitcraft-secrets \
+  --namespace=habitcraft \
+  --from-literal=DB_HOST=$(echo $DB_CREDS | jq -r .host) \
+  --from-literal=DB_PORT=$(echo $DB_CREDS | jq -r .port) \
+  --from-literal=DB_NAME=$(echo $DB_CREDS | jq -r .database) \
+  --from-literal=DB_USER=$(echo $DB_CREDS | jq -r .username) \
+  --from-literal=DB_PASSWORD=$(echo $DB_CREDS | jq -r .password) \
+  --from-literal=JWT_SECRET=$(echo $JWT_CREDS | jq -r .secret) \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+### 5. Deploy Application
+
+```bash
+# Apply manifests
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/backend/
+kubectl apply -f k8s/frontend/
+kubectl apply -f k8s/ingress.yaml
+
+# Verify
+kubectl get pods -n habitcraft
+kubectl get ingress -n habitcraft
+```
+
+### 6. Run Database Migrations
+
+```bash
+# Port-forward to run migrations
+kubectl run psql-client --rm -it --image=postgres:14 -n habitcraft -- \
+  psql "postgresql://habituser:PASSWORD@RDS_ENDPOINT:5432/habitcraft"
+
+# Or run from local with SSH tunnel
+ssh -L 5432:RDS_ENDPOINT:5432 ec2-user@EC2_IP
+psql -h localhost -U habituser -d habitcraft -f shared/database/init.sql
 ```
 
 ---
 
-## Cost Estimates
+## Operations
 
-### EKS Architecture (Monthly)
-
-| Service | Configuration | Monthly Cost |
-|---------|--------------|--------------|
-| EKS Control Plane | 1 cluster | $73 |
-| EC2 (Node Group) | 3× t3.medium On-Demand | ~$100 |
-| RDS PostgreSQL | db.t3.medium, Multi-AZ | ~$65 |
-| ALB | 1 ALB + LCUs | ~$25 |
-| CloudFront | 100GB transfer + 10M requests | ~$15 |
-| NAT Gateway | 2× (hourly + data) | ~$65 |
-| ECR | 10GB images | ~$1 |
-| Secrets Manager | 3 secrets | ~$1.50 |
-| Route 53 | 1 hosted zone | ~$0.50 |
-| CloudWatch | Logs + Metrics | ~$20 |
-| **Total** | | **~$365/month** |
-
-### Cost Optimization
-
-| Strategy | Savings | Implementation |
-|----------|---------|----------------|
-| Spot Instances | ~70% on EC2 | Use Karpenter with spot |
-| Reserved Instances | ~30% on EC2 | 1-year commitment |
-| Savings Plans | ~20% compute | Flexible commitment |
-| Single NAT Gateway | ~$32/month | Non-prod only |
-| Graviton (ARM) | ~20% on EC2 | Use t4g instances |
-
----
-
-## Implementation Guide
-
-### Prerequisites
+### View Logs
 
 ```bash
-# Install tools
-brew install awscli kubectl eksctl helm terraform
-
-# Configure AWS
-aws configure
-aws sts get-caller-identity
+kubectl logs -f deployment/backend -n habitcraft
+kubectl logs -f deployment/frontend -n habitcraft
 ```
 
-### Step 1: Create EKS Cluster
+### Update Deployment
 
 ```bash
-# Using eksctl
-eksctl create cluster \
-  --name habitcraft-cluster \
-  --version 1.29 \
-  --region us-east-1 \
-  --nodegroup-name workers \
-  --node-type t3.medium \
-  --nodes 3 \
-  --nodes-min 2 \
-  --nodes-max 10 \
-  --managed \
-  --with-oidc \
-  --alb-ingress-access \
-  --external-dns-access
-
-# Update kubeconfig
-aws eks update-kubeconfig --name habitcraft-cluster --region us-east-1
+# Build and push new image, then:
+kubectl rollout restart deployment/backend -n habitcraft
+kubectl rollout restart deployment/frontend -n habitcraft
 ```
 
-### Step 2: Install AWS Load Balancer Controller
+### Scale (if needed)
 
 ```bash
-# Create IAM policy
-curl -o iam_policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json
-
-aws iam create-policy \
-  --policy-name AWSLoadBalancerControllerIAMPolicy \
-  --policy-document file://iam_policy.json
-
-# Create service account
-eksctl create iamserviceaccount \
-  --cluster=habitcraft-cluster \
-  --namespace=kube-system \
-  --name=aws-load-balancer-controller \
-  --attach-policy-arn=arn:aws:iam::<account-id>:policy/AWSLoadBalancerControllerIAMPolicy \
-  --approve
-
-# Install via Helm
-helm repo add eks https://aws.github.io/eks-charts
-helm repo update
-
-helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-  -n kube-system \
-  --set clusterName=habitcraft-cluster \
-  --set serviceAccount.create=false \
-  --set serviceAccount.name=aws-load-balancer-controller
+kubectl scale deployment/backend --replicas=2 -n habitcraft
 ```
 
-### Step 3: Create RDS Database
+### Backup Database
 
 ```bash
-# Create DB subnet group
-aws rds create-db-subnet-group \
-  --db-subnet-group-name habitcraft-db-subnets \
-  --db-subnet-group-description "Subnets for HabitCraft RDS" \
-  --subnet-ids subnet-xxx subnet-yyy
-
-# Create RDS instance
-aws rds create-db-instance \
+aws rds create-db-snapshot \
   --db-instance-identifier habitcraft-db \
-  --db-instance-class db.t3.medium \
-  --engine postgres \
-  --engine-version 14 \
-  --master-username habituser \
-  --master-user-password <strong-password> \
-  --allocated-storage 100 \
-  --storage-type gp3 \
-  --multi-az \
-  --db-subnet-group-name habitcraft-db-subnets \
-  --vpc-security-group-ids sg-xxx \
-  --db-name habitcraft \
-  --backup-retention-period 7 \
-  --storage-encrypted
+  --db-snapshot-identifier habitcraft-$(date +%Y%m%d)
 ```
 
-### Step 4: Create Secrets in AWS Secrets Manager
+---
+
+## Scaling Path
+
+When you outgrow this setup:
+
+1. **Upgrade EC2** - t3.medium or t3.large for more pods
+2. **Add worker nodes** - k3s supports multi-node clusters
+3. **Enable RDS Multi-AZ** - For database reliability
+4. **Migrate to EKS** - When you need managed control plane
+   - K8s manifests will work with minimal changes
+   - Terraform can be extended for EKS
+
+---
+
+## Container Build & Push
+
+### Option A: Amazon ECR
 
 ```bash
-# JWT Secret
-aws secretsmanager create-secret \
-  --name habitcraft/jwt-secret \
-  --secret-string '{"secret":"'$(openssl rand -base64 64)'"}'
+# Add to terraform/ecr.tf
+resource "aws_ecr_repository" "backend" {
+  name                 = "habitcraft-backend"
+  image_tag_mutability = "MUTABLE"
 
-# Database credentials
-aws secretsmanager create-secret \
-  --name habitcraft/db-credentials \
-  --secret-string '{"host":"habitcraft-db.xxx.us-east-1.rds.amazonaws.com","username":"habituser","password":"<password>"}'
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
+resource "aws_ecr_repository" "frontend" {
+  name                 = "habitcraft-frontend"
+  image_tag_mutability = "MUTABLE"
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
 ```
 
-### Step 5: Build and Push Container Images
-
 ```bash
-# Create ECR repositories
-aws ecr create-repository --repository-name habitcraft-frontend
-aws ecr create-repository --repository-name habitcraft-backend
-
 # Login to ECR
 aws ecr get-login-password --region us-east-1 | \
   docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
@@ -812,158 +927,391 @@ docker tag habitcraft-frontend:latest <account-id>.dkr.ecr.us-east-1.amazonaws.c
 docker push <account-id>.dkr.ecr.us-east-1.amazonaws.com/habitcraft-frontend:latest
 ```
 
-### Step 6: Deploy to Kubernetes
+### Option B: GitHub Container Registry (ghcr.io)
 
 ```bash
-# Create namespace
-kubectl apply -f k8s/namespace.yaml
+# Login to GHCR
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 
-# Install External Secrets Operator
-helm repo add external-secrets https://charts.external-secrets.io
-helm install external-secrets external-secrets/external-secrets \
-  -n external-secrets --create-namespace
+# Build and push
+docker build -t ghcr.io/your-org/habitcraft-backend:latest ./backends/node
+docker push ghcr.io/your-org/habitcraft-backend:latest
 
-# Apply secrets
-kubectl apply -f k8s/secrets/
-
-# Deploy applications
-kubectl apply -f k8s/backend/
-kubectl apply -f k8s/frontend/
-kubectl apply -f k8s/ingress.yaml
-
-# Verify deployment
-kubectl get pods -n habitcraft
-kubectl get ingress -n habitcraft
+docker build -t ghcr.io/your-org/habitcraft-frontend:latest ./frontends/nextjs
+docker push ghcr.io/your-org/habitcraft-frontend:latest
 ```
 
-### Step 7: Run Database Migrations
+### Dockerfiles
 
-```bash
-# Port-forward to RDS or use a bastion/jump host
-kubectl run psql-client --rm -it --image=postgres:14 -- \
-  psql "postgresql://habituser:<password>@habitcraft-db.xxx.rds.amazonaws.com:5432/habitcraft" \
-  -f /path/to/init.sql
+**backends/node/Dockerfile**
+
+```dockerfile
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "src/index.js"]
 ```
 
-### Step 8: Configure CloudFront
+**frontends/nextjs/Dockerfile**
 
-```bash
-# Create CloudFront distribution pointing to ALB
-aws cloudfront create-distribution \
-  --distribution-config file://cloudfront-config.json
-```
+```dockerfile
+FROM node:20-alpine AS builder
 
----
+WORKDIR /app
 
-## GitOps with ArgoCD (Optional)
+COPY package*.json ./
+RUN npm ci
 
-```yaml
-# argocd/application.yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: habitcraft
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/your-org/habitcraft-k8s
-    targetRevision: main
-    path: k8s
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: habitcraft
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
+COPY . .
+RUN npm run build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/next.config.* ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3100
+
+ENV PORT=3100
+
+CMD ["node", "server.js"]
 ```
 
 ---
 
 ## Monitoring & Observability
 
-### Prometheus + Grafana Stack
+### CloudWatch Agent (Lightweight)
+
+Install CloudWatch agent on EC2 for basic metrics and logs:
 
 ```bash
-# Install kube-prometheus-stack
-helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  -n monitoring --create-namespace
+# SSH into EC2 instance
+ssh ec2-user@$(terraform output -raw k3s_public_ip)
+
+# Install CloudWatch agent
+sudo yum install -y amazon-cloudwatch-agent
+
+# Create config
+sudo tee /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'EOF'
+{
+  "metrics": {
+    "namespace": "HabitCraft",
+    "metrics_collected": {
+      "cpu": { "measurement": ["cpu_usage_active"] },
+      "mem": { "measurement": ["mem_used_percent"] },
+      "disk": { "measurement": ["disk_used_percent"] }
+    }
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/var/log/containers/*.log",
+            "log_group_name": "habitcraft-k3s",
+            "log_stream_name": "{instance_id}/containers"
+          }
+        ]
+      }
+    }
+  }
+}
+EOF
+
+# Start agent
+sudo systemctl enable amazon-cloudwatch-agent
+sudo systemctl start amazon-cloudwatch-agent
 ```
 
-### Key Metrics
+### Add IAM Policy for CloudWatch
 
-| Component | Metrics |
-|-----------|---------|
-| Pods | CPU, Memory, Restarts |
-| Services | Request rate, Latency, Error rate |
-| Ingress | Request count, 4xx/5xx errors |
-| RDS | Connections, CPU, Storage |
+```hcl
+# Add to ec2.tf
+resource "aws_iam_role_policy" "cloudwatch_access" {
+  name = "cloudwatch-access"
+  role = aws_iam_role.k3s.id
 
-### Alerts
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogStreams"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+```
 
-```yaml
-# alerts.yaml
-apiVersion: monitoring.coreos.com/v1
-kind: PrometheusRule
-metadata:
-  name: habitcraft-alerts
-  namespace: habitcraft
-spec:
-  groups:
-    - name: habitcraft
-      rules:
-        - alert: HighErrorRate
-          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
-          for: 5m
-          labels:
-            severity: critical
-          annotations:
-            summary: High error rate detected
+### Key Metrics to Monitor
 
-        - alert: PodCrashLooping
-          expr: increase(kube_pod_container_status_restarts_total{namespace="habitcraft"}[1h]) > 3
-          for: 5m
-          labels:
-            severity: warning
+| Metric | Source | Alert Threshold |
+|--------|--------|-----------------|
+| CPU Usage | EC2 / CloudWatch | > 80% for 5 min |
+| Memory Usage | CloudWatch Agent | > 85% for 5 min |
+| Disk Usage | CloudWatch Agent | > 80% |
+| RDS CPU | RDS / CloudWatch | > 80% for 5 min |
+| RDS Connections | RDS / CloudWatch | > 80% of max |
+| RDS Storage | RDS / CloudWatch | < 20% free |
+
+### CloudWatch Alarms (Terraform)
+
+```hcl
+# Add to terraform/monitoring.tf
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu" {
+  alarm_name          = "habitcraft-ec2-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "EC2 CPU utilization is high"
+
+  dimensions = {
+    InstanceId = aws_instance.k3s.id
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "rds_cpu" {
+  alarm_name          = "habitcraft-rds-cpu-high"
+  comparison_operator = "GreaterThanThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 80
+  alarm_description   = "RDS CPU utilization is high"
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.main.identifier
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "rds_storage" {
+  alarm_name          = "habitcraft-rds-storage-low"
+  comparison_operator = "LessThanThreshold"
+  evaluation_periods  = 1
+  metric_name         = "FreeStorageSpace"
+  namespace           = "AWS/RDS"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 4000000000  # 4GB
+  alarm_description   = "RDS free storage is low"
+
+  dimensions = {
+    DBInstanceIdentifier = aws_db_instance.main.identifier
+  }
+}
+```
+
+### View Logs
+
+```bash
+# Kubernetes pod logs
+kubectl logs -f deployment/backend -n habitcraft
+kubectl logs -f deployment/frontend -n habitcraft
+
+# CloudWatch logs (via AWS CLI)
+aws logs tail habitcraft-k3s --follow
 ```
 
 ---
 
 ## Security Checklist
 
-- [ ] Enable EKS cluster encryption (secrets at rest)
-- [ ] Configure Pod Security Standards (restricted)
-- [ ] Use AWS WAF with ALB
-- [ ] Enable VPC Flow Logs
-- [ ] Configure Network Policies
-- [ ] Enable RDS encryption at rest
-- [ ] Use IRSA for pod IAM permissions
-- [ ] Enable CloudTrail for audit logging
-- [ ] Scan container images with ECR scanning
-- [ ] Rotate secrets automatically
+### Infrastructure Security
+
+- [ ] SSH key pair secured (400 permissions, not shared)
+- [ ] SSH access restricted to specific IP (`ssh_allowed_ip` variable)
+- [ ] RDS not publicly accessible
+- [ ] RDS in private subnet
+- [ ] RDS storage encryption enabled
+- [ ] Security groups follow least-privilege principle
+- [ ] VPC flow logs enabled (optional, adds cost)
+
+### Application Security
+
+- [ ] JWT secret is strong (64+ random bytes)
+- [ ] Database password is strong (24+ random characters)
+- [ ] Secrets stored in AWS Secrets Manager (not in code/env files)
+- [ ] HTTPS enforced via Traefik
+- [ ] HttpOnly cookies for JWT tokens
+- [ ] CORS configured for specific origins (not wildcard in production)
+
+### Kubernetes Security
+
+- [ ] k3s kubeconfig secured (not publicly accessible)
+- [ ] Kubernetes API (6443) restricted to admin IP
+- [ ] Resource limits set on all pods
+- [ ] Liveness/readiness probes configured
+- [ ] Container images scanned for vulnerabilities (ECR scan or Trivy)
+
+### Secrets Management
+
+- [ ] No secrets in git repository
+- [ ] No secrets in Terraform state (use remote backend with encryption)
+- [ ] Secrets Manager configured with least-privilege IAM
+- [ ] terraform.tfvars in .gitignore
+
+### Terraform State Security
+
+```hcl
+# Recommended: Use S3 backend with encryption
+terraform {
+  backend "s3" {
+    bucket         = "habitcraft-terraform-state"
+    key            = "production/terraform.tfstate"
+    region         = "us-east-1"
+    encrypt        = true
+    dynamodb_table = "habitcraft-terraform-locks"
+  }
+}
+```
+
+### Regular Maintenance
+
+- [ ] Keep k3s updated (`curl -sfL https://get.k3s.io | sh -`)
+- [ ] Keep container base images updated
+- [ ] Review CloudWatch alarms weekly
+- [ ] Test backup restoration quarterly
+- [ ] Rotate secrets annually (or on suspected compromise)
 
 ---
 
 ## Disaster Recovery
 
+### Recovery Objectives
+
 | Component | RTO | RPO | Strategy |
 |-----------|-----|-----|----------|
-| Database | 1 hour | 5 minutes | Multi-AZ + PITR |
-| Application | 5 minutes | 0 | Multi-AZ pods |
-| Cluster | 4 hours | 0 | Infrastructure as Code |
+| Application | 15 min | 0 | Re-deploy from container registry |
+| Database | 1 hour | 5 min | RDS automated backups + PITR |
+| Infrastructure | 30 min | 0 | Terraform (re-apply) |
+| Secrets | 5 min | 0 | AWS Secrets Manager (multi-AZ) |
 
-### Backup Commands
+### Backup Strategy
+
+**Database (RDS)**
+- Automated daily backups (7-day retention)
+- Point-in-time recovery (PITR) enabled
+- Manual snapshots before major changes
 
 ```bash
-# Manual RDS snapshot
+# Manual snapshot
 aws rds create-db-snapshot \
   --db-instance-identifier habitcraft-db \
-  --db-snapshot-identifier habitcraft-$(date +%Y%m%d)
+  --db-snapshot-identifier habitcraft-manual-$(date +%Y%m%d-%H%M)
 
-# Export Kubernetes resources
-kubectl get all -n habitcraft -o yaml > backup-$(date +%Y%m%d).yaml
+# List snapshots
+aws rds describe-db-snapshots \
+  --db-instance-identifier habitcraft-db \
+  --query 'DBSnapshots[*].[DBSnapshotIdentifier,SnapshotCreateTime,Status]' \
+  --output table
 ```
+
+**Kubernetes Resources**
+```bash
+# Export all resources
+kubectl get all -n habitcraft -o yaml > backup-k8s-$(date +%Y%m%d).yaml
+
+# Export secrets (careful with storage!)
+kubectl get secrets -n habitcraft -o yaml > backup-secrets-$(date +%Y%m%d).yaml
+```
+
+**Terraform State**
+- Use S3 backend with versioning enabled
+- State automatically backed up on each apply
+
+### Recovery Procedures
+
+**Scenario 1: Pod Crash / Application Issue**
+```bash
+# Check pod status
+kubectl get pods -n habitcraft
+kubectl describe pod <pod-name> -n habitcraft
+
+# Restart deployment
+kubectl rollout restart deployment/backend -n habitcraft
+
+# Roll back to previous version
+kubectl rollout undo deployment/backend -n habitcraft
+```
+
+**Scenario 2: EC2 Instance Failure**
+```bash
+# Terraform will recreate the instance
+terraform apply
+
+# Re-sync secrets from AWS Secrets Manager
+# (run sync script from Step 4 in Deployment Guide)
+
+# Re-apply Kubernetes manifests
+kubectl apply -f k8s/
+```
+
+**Scenario 3: Database Corruption**
+```bash
+# Restore from snapshot
+aws rds restore-db-instance-from-db-snapshot \
+  --db-instance-identifier habitcraft-db-restored \
+  --db-snapshot-identifier habitcraft-manual-20240101 \
+  --db-instance-class db.t4g.micro \
+  --db-subnet-group-name habitcraft-db-subnets \
+  --vpc-security-group-ids <rds-sg-id>
+
+# Or use point-in-time recovery
+aws rds restore-db-instance-to-point-in-time \
+  --source-db-instance-identifier habitcraft-db \
+  --target-db-instance-identifier habitcraft-db-restored \
+  --restore-time 2024-01-15T10:00:00Z
+```
+
+**Scenario 4: Complete Environment Rebuild**
+```bash
+# 1. Ensure Terraform state is available
+# 2. Re-apply all infrastructure
+terraform init
+terraform apply
+
+# 3. Wait for RDS to be available (~10 min)
+# 4. Configure k3s (may need to SSH and verify)
+# 5. Sync secrets
+# 6. Deploy application
+kubectl apply -f k8s/
+
+# 7. Restore database from snapshot if needed
+```
+
+### Testing Recovery
+
+Schedule quarterly recovery tests:
+
+1. **Backup verification**: Restore RDS snapshot to test instance
+2. **Application recovery**: Terminate EC2, verify Terraform recreates it
+3. **Deployment rollback**: Practice `kubectl rollout undo`
+4. **Full DR drill**: Rebuild entire environment from scratch
