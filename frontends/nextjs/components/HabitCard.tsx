@@ -29,10 +29,6 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <div
-            className="w-4 h-4 rounded-full flex-shrink-0"
-            style={{ backgroundColor: habit.color }}
-          />
           {onEdit && (
             <button
               onClick={() => onEdit(habit.id)}
@@ -68,9 +64,17 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             </svg>
           </button>
 
-          <p className="text-xs text-gray-400">
+          <button
+            onClick={() => setWeekOffset(0)}
+            className={`text-xs px-2 py-1 rounded transition-colors ${
+              weekOffset === 0
+                ? 'text-gray-400'
+                : 'text-blue-400 hover:text-blue-300 hover:bg-gray-700'
+            }`}
+            aria-label="Go to current week"
+          >
             {weekOffset === 0 ? 'Current week' : `${getMonthDay(weekDays[0])} - ${getMonthDay(weekDays[6])}`}
-          </p>
+          </button>
 
           <button
             onClick={() => setWeekOffset(weekOffset + 1)}

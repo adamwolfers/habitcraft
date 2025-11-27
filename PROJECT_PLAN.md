@@ -255,8 +255,8 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Toggle completion on click
   - [x] Delete button
   - [x] Timezone handling for dates
-  - [ ] Remove color dot next to edit button
-  - [ ] Add "Today" button to jump to current week
+  - [x] Remove color dot next to edit button
+  - [x] Add "Today" button to jump to current week
 - [x] **EditHabitModal Component**
   - [x] **Modal Infrastructure**
     - [x] Write tests for modal open/close functionality

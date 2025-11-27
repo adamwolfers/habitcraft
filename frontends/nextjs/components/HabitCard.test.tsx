@@ -258,6 +258,47 @@ describe('HabitCard', () => {
       expect(screen.getByText(/current week/i)).toBeInTheDocument();
     });
 
+    it('should render Today button', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      const todayButton = screen.getByLabelText(/go to current week/i);
+      expect(todayButton).toBeInTheDocument();
+    });
+
+    it('should return to current week when Today button is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Navigate away from current week
+      const prevButton = screen.getByLabelText(/previous week/i);
+      await user.click(prevButton);
+      await user.click(prevButton);
+
+      // Should no longer show "Current week"
+      expect(screen.queryByText(/current week/i)).not.toBeInTheDocument();
+
+      // Click Today button
+      const todayButton = screen.getByLabelText(/go to current week/i);
+      await user.click(todayButton);
+
+      // Should be back to current week
+      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+    });
+
     it('should show week date range', () => {
       render(
         <HabitCard
