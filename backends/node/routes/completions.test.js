@@ -142,6 +142,73 @@ describe('Completions API', () => {
       expect(response.status).toBe(409);
       expect(response.body.error).toContain('already completed');
     });
+
+    it('should return 400 if date is in the future', async () => {
+      // Create a date that is definitely in the future
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const futureDate = tomorrow.toISOString().split('T')[0];
+
+      const response = await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ date: futureDate });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toMatch(/future/i);
+    });
+
+    it('should allow completion for today', async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const mockCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: today,
+        notes: null,
+        createdAt: new Date().toISOString()
+      };
+
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: [mockCompletion]
+      });
+
+      const response = await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ date: today });
+
+      expect(response.status).toBe(201);
+    });
+
+    it('should allow completion for past dates', async () => {
+      const pastDate = '2024-01-15';
+      const mockCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: pastDate,
+        notes: null,
+        createdAt: new Date().toISOString()
+      };
+
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: [mockCompletion]
+      });
+
+      const response = await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ date: pastDate });
+
+      expect(response.status).toBe(201);
+    });
   });
 
   describe('GET /api/v1/habits/:habitId/completions', () => {

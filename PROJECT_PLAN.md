@@ -115,10 +115,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Habit ownership validation
   - [x] Duplicate prevention (409 Conflict)
   - [x] Date format validation
-- [ ] **Prevent future date completions**
-  - [ ] Write tests (reject dates after today, allow today and past dates)
-  - [ ] Add validation to POST completions endpoint
-  - [ ] Return 400 Bad Request with clear error message
+- [x] **Prevent future date completions**
+  - [x] Write tests (reject dates after today, allow today and past dates)
+  - [x] Add validation to POST completions endpoint
+  - [x] Return 400 Bad Request with clear error message
+  - [x] Disable future date bubbles in HabitCard UI
 - [x] **GET /api/v1/habits/:habitId/completions** - List completions
   - [x] Tests
   - [x] Date range filtering (startDate, endDate)

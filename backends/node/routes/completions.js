@@ -14,6 +14,12 @@ function isValidDate(dateString) {
   return date instanceof Date && !isNaN(date) && dateString === date.toISOString().split('T')[0];
 }
 
+// Helper function to check if a date is in the future
+function isFutureDate(dateString) {
+  const today = new Date().toISOString().split('T')[0];
+  return dateString > today;
+}
+
 // Helper function to verify habit ownership
 async function verifyHabitOwnership(habitId, userId) {
   const result = await pool.query(
@@ -45,6 +51,11 @@ router.post('/', jwtAuthMiddleware, async (req, res) => {
 
     if (!isValidDate(date)) {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    // Check if date is in the future
+    if (isFutureDate(date)) {
+      return res.status(400).json({ error: 'Cannot mark completions for future dates' });
     }
 
     // Verify habit exists and belongs to user

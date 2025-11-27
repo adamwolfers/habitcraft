@@ -89,11 +89,21 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             const date = new Date(year, month - 1, day);
             const isCompleted = isCompletedOnDate(habit.id, date);
 
+            // Check if date is in the future
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isFuture = date > today;
+
             return (
               <button
                 key={dateString}
-                onClick={() => onToggleCompletion(habit.id, date)}
-                className="flex flex-col items-center gap-1 p-2 rounded-lg transition-all hover:bg-gray-700"
+                onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
+                disabled={isFuture}
+                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                  isFuture
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-gray-700'
+                }`}
               >
                 <span className="text-xs text-gray-400">{getDayName(dateString)}</span>
                 <span className="text-xs text-gray-500">{getMonthDay(dateString).split(' ')[1]}</span>

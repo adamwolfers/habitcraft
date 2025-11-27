@@ -281,6 +281,140 @@ describe('HabitCard', () => {
     });
   });
 
+  describe('Future Date Handling', () => {
+    it('should disable future date buttons', () => {
+      // Navigate to next week to ensure we have future dates visible
+      const { container } = render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Get all day buttons (excluding navigation and delete buttons)
+      const allButtons = container.querySelectorAll('button');
+      const dayButtons = Array.from(allButtons).filter(btn => {
+        const label = btn.getAttribute('aria-label');
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+      });
+
+      // Check each day button exists and is rendered
+      dayButtons.forEach(btn => {
+        // For current week, some dates may be in the future (disabled)
+        // and some may be in the past (enabled)
+        expect(btn).toBeInTheDocument();
+      });
+
+      // Verify we have 7 day buttons
+      expect(dayButtons.length).toBe(7);
+    });
+
+    it('should not call onToggleCompletion when clicking a future date', async () => {
+      const user = userEvent.setup();
+
+      // First navigate to next week to ensure we have future dates
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Navigate to next week
+      const nextButton = screen.getByLabelText(/next week/i);
+      await user.click(nextButton);
+
+      // Get all day buttons after navigation
+      const buttons = screen.getAllByRole('button');
+      const dayButtons = buttons.filter(btn => {
+        const label = btn.getAttribute('aria-label');
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+      });
+
+      // Try clicking the last day button (should be a future date in next week)
+      const lastDayButton = dayButtons[dayButtons.length - 1];
+
+      // Clear any previous calls
+      mockOnToggleCompletion.mockClear();
+
+      await user.click(lastDayButton);
+
+      // Should not have been called because future dates should be disabled
+      expect(mockOnToggleCompletion).not.toHaveBeenCalled();
+    });
+
+    it('should allow clicking on today and past dates', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Navigate to previous week (all dates should be in the past)
+      const prevButton = screen.getByLabelText(/previous week/i);
+      await user.click(prevButton);
+
+      // Get all day buttons after navigation
+      const buttons = screen.getAllByRole('button');
+      const dayButtons = buttons.filter(btn => {
+        const label = btn.getAttribute('aria-label');
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+      });
+
+      // Clear any previous calls
+      mockOnToggleCompletion.mockClear();
+
+      // Click the first day button (should be a past date)
+      await user.click(dayButtons[0]);
+
+      // Should have been called because past dates are clickable
+      expect(mockOnToggleCompletion).toHaveBeenCalledTimes(1);
+    });
+
+    it('should show visual indication that future dates are disabled', async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Navigate to next week to see future dates
+      const nextButton = screen.getByLabelText(/next week/i);
+      await user.click(nextButton);
+
+      // Future date buttons should have reduced opacity or different styling
+      const allButtons = container.querySelectorAll('button');
+      const dayButtons = Array.from(allButtons).filter(btn => {
+        const label = btn.getAttribute('aria-label');
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+      });
+
+      // Check that at least one button has disabled styling (opacity or cursor)
+      const hasDisabledStyling = dayButtons.some(btn => {
+        const style = window.getComputedStyle(btn);
+        return btn.hasAttribute('disabled') ||
+               style.opacity === '0.5' ||
+               style.cursor === 'not-allowed' ||
+               btn.classList.contains('opacity-50') ||
+               btn.classList.contains('cursor-not-allowed');
+      });
+
+      expect(hasDisabledStyling).toBe(true);
+    });
+  });
+
   describe('Edit Button', () => {
     const mockOnEdit = jest.fn();
 

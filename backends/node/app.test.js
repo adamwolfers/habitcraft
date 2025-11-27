@@ -38,6 +38,9 @@ describe('GET /health', () => {
   });
 
   it('should return healthy status when database is connected', async () => {
+    // Mock successful database query
+    pool.query.mockResolvedValueOnce({ rows: [{ result: 1 }] });
+
     const response = await request(app)
       .get('/health')
       .expect('Content-Type', /json/)
@@ -49,6 +52,9 @@ describe('GET /health', () => {
   });
 
   it('should include service information', async () => {
+    // Mock successful database query
+    pool.query.mockResolvedValueOnce({ rows: [{ result: 1 }] });
+
     const response = await request(app)
       .get('/health')
       .expect(200);
