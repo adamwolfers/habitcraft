@@ -49,3 +49,6 @@ docker-compose.override.yml
 
 # OS
 Thumbs.db
+
+# Agent Config
+agents.md
