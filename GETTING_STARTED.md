@@ -18,6 +18,19 @@ docker-compose up postgres backend-node frontend-nextjs
 # - Database Admin (Adminer): http://localhost:8080
 ```
 
+**Stopping the services:**
+
+```bash
+# Stop and remove containers
+docker-compose down
+
+# Or stop without removing (can restart with docker-compose start)
+docker-compose stop
+
+# Stop and remove volumes (resets database data)
+docker-compose down -v
+```
+
 **Demo User Credentials:**
 - Email: `demo@example.com`
 - Password: `demo123`
