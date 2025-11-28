@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const pool = require('../db/pool');
+const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
@@ -65,7 +66,7 @@ function clearAuthCookies(res) {
 }
 
 // POST /api/v1/auth/register
-router.post('/register', registerValidation, async (req, res) => {
+router.post('/register', registerLimiter, registerValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -116,7 +117,7 @@ router.post('/register', registerValidation, async (req, res) => {
 });
 
 // POST /api/v1/auth/login
-router.post('/login', loginValidation, async (req, res) => {
+router.post('/login', loginLimiter, loginValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -163,7 +164,7 @@ router.post('/login', loginValidation, async (req, res) => {
 });
 
 // POST /api/v1/auth/refresh
-router.post('/refresh', async (req, res) => {
+router.post('/refresh', refreshLimiter, async (req, res) => {
   try {
     // Read refresh token from cookie (with body fallback for backwards compatibility)
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;

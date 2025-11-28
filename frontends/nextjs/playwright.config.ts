@@ -20,8 +20,8 @@ export default defineConfig({
   // Directory containing E2E tests
   testDir: './e2e',
 
-  // Run tests in files in parallel
-  fullyParallel: true,
+  // Run tests serially - E2E tests share database state and can interfere
+  fullyParallel: false,
 
   // Fail the build on CI if you accidentally left test.only in the source code
   forbidOnly: !!process.env.CI,
@@ -29,8 +29,8 @@ export default defineConfig({
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
 
-  // Opt out of parallel tests on CI
-  workers: process.env.CI ? 1 : undefined,
+  // Single worker - E2E tests share database state and must run serially
+  workers: 1,
 
   // Reporter to use
   reporter: [

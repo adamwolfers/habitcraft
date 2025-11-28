@@ -42,6 +42,7 @@ services:
       DB_PASSWORD: habitpass
       JWT_SECRET: test-jwt-secret-key-for-testing-only
       FRONTEND_URL: http://localhost:3110
+      SKIP_RATE_LIMIT: "true"
     ports:
       - "3010:3010"
     volumes:

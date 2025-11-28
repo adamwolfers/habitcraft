@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Run all tests sequentially to avoid database conflicts
+# Run all tests sequentially
 # Usage: ./scripts/test-all.sh
 
 set -e
@@ -17,6 +17,67 @@ BACKEND_UNIT=0
 FRONTEND_UNIT=0
 INTEGRATION=0
 E2E=0
+
+# Helper function to wait for a service
+wait_for_service() {
+    local url=$1
+    local name=$2
+    local retries=${3:-30}
+
+    until curl -s "$url" > /dev/null 2>&1; do
+        retries=$((retries - 1))
+        if [ $retries -le 0 ]; then
+            echo "❌ Timeout waiting for $name"
+            return 1
+        fi
+        echo "  Waiting for $name... ($retries retries left)"
+        sleep 2
+    done
+    return 0
+}
+
+# Start all test services up front
+echo "🐳 Starting test services..."
+echo "----------------------------------------------"
+cd "$PROJECT_ROOT"
+
+# Check if services are already running
+if curl -s http://localhost:3010/health > /dev/null 2>&1; then
+    echo "✅ Test services already running"
+else
+    echo "Starting Docker containers..."
+    docker compose -f docker-compose.test.yml up -d
+
+    # Wait for database to be healthy first
+    echo "Waiting for database..."
+    RETRIES=30
+    until docker compose -f docker-compose.test.yml ps postgres-test 2>/dev/null | grep -q "healthy"; do
+        RETRIES=$((RETRIES - 1))
+        if [ $RETRIES -le 0 ]; then
+            echo "❌ Timeout waiting for database"
+            echo "Check logs: docker compose -f docker-compose.test.yml logs postgres-test"
+            exit 1
+        fi
+        echo "  Waiting for database... ($RETRIES retries left)"
+        sleep 2
+    done
+    echo "✅ Database is ready"
+
+    # Wait for backend
+    if ! wait_for_service "http://localhost:3010/health" "backend"; then
+        echo "Check logs: docker compose -f docker-compose.test.yml logs backend-node-test"
+        exit 1
+    fi
+    echo "✅ Backend is ready"
+
+    # Wait for frontend
+    if ! wait_for_service "http://localhost:3110" "frontend"; then
+        echo "Check logs: docker compose -f docker-compose.test.yml logs frontend-nextjs-test"
+        exit 1
+    fi
+    echo "✅ Frontend is ready"
+fi
+echo ""
 
 # 1. Backend Unit Tests
 echo "📦 [1/4] Backend Unit Tests"
@@ -75,6 +136,13 @@ echo ""
 [ $FRONTEND_UNIT -eq 1 ] && echo "✅ Frontend Unit Tests" || echo "❌ Frontend Unit Tests"
 [ $INTEGRATION -eq 1 ] && echo "✅ Integration Tests" || echo "❌ Integration Tests"
 [ $E2E -eq 1 ] && echo "✅ E2E Tests" || echo "❌ E2E Tests"
+echo ""
+
+# Note about services
+echo "----------------------------------------------"
+echo "Note: Test services are still running."
+echo "To stop: docker compose -f docker-compose.test.yml down"
+echo "----------------------------------------------"
 echo ""
 
 # Exit with error if any tests failed
