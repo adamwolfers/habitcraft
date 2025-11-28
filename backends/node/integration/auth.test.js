@@ -378,4 +378,99 @@ describe('Authentication Integration Tests', () => {
       expect(logoutCookies.some(c => c.includes('refreshToken=;'))).toBe(true);
     });
   });
+
+  describe('Token Expiration Handling', () => {
+    const jwt = require('jsonwebtoken');
+    const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+    it('should reject expired access token with 401', async () => {
+      // Create an already-expired access token
+      const expiredAccessToken = jwt.sign(
+        { userId: testUsers.user1.id, type: 'access' },
+        JWT_SECRET,
+        { expiresIn: '-1s' }
+      );
+
+      // Try to access protected route with expired token
+      const response = await request(app)
+        .get('/api/v1/habits')
+        .set('Cookie', `accessToken=${expiredAccessToken}`);
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should reject expired refresh token with 401', async () => {
+      // Create an already-expired refresh token
+      const expiredRefreshToken = jwt.sign(
+        { userId: testUsers.user1.id, type: 'refresh' },
+        JWT_SECRET,
+        { expiresIn: '-1s' }
+      );
+
+      // Try to refresh with expired token
+      const response = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', `refreshToken=${expiredRefreshToken}`);
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should allow refresh when access token expired but refresh token valid', async () => {
+      // Create an expired access token
+      const expiredAccessToken = jwt.sign(
+        { userId: testUsers.user1.id, type: 'access' },
+        JWT_SECRET,
+        { expiresIn: '-1s' }
+      );
+
+      // Create a valid refresh token
+      const validRefreshToken = jwt.sign(
+        { userId: testUsers.user1.id, type: 'refresh' },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      // Verify access token is rejected
+      const accessResponse = await request(app)
+        .get('/api/v1/habits')
+        .set('Cookie', `accessToken=${expiredAccessToken}`);
+      expect(accessResponse.status).toBe(401);
+
+      // Refresh should work with valid refresh token
+      const refreshResponse = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', `refreshToken=${validRefreshToken}`);
+
+      expect(refreshResponse.status).toBe(200);
+      expect(refreshResponse.body.accessToken).toBeDefined();
+
+      // New access token should work
+      const newCookies = refreshResponse.headers['set-cookie'];
+      const newCookieString = newCookies.map(c => c.split(';')[0]).join('; ');
+
+      const habitsResponse = await request(app)
+        .get('/api/v1/habits')
+        .set('Cookie', newCookieString);
+
+      expect(habitsResponse.status).toBe(200);
+      expect(Array.isArray(habitsResponse.body)).toBe(true);
+    });
+
+    it('should reject access token signed with wrong secret', async () => {
+      // Create token with wrong secret
+      const wrongSecretToken = jwt.sign(
+        { userId: testUsers.user1.id, type: 'access' },
+        'wrong-secret-key',
+        { expiresIn: '15m' }
+      );
+
+      const response = await request(app)
+        .get('/api/v1/habits')
+        .set('Cookie', `accessToken=${wrongSecretToken}`);
+
+      expect(response.status).toBe(401);
+    });
+  });
 });

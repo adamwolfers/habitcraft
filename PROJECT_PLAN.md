@@ -342,7 +342,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Invalid Credentials → Proper Error Response
   - [x] User isolation verification
   - [x] Logout and session invalidation
-  - [ ] Token expiration handling (requires time manipulation)
+  - [x] Token expiration handling
 - [x] **Habit CRUD Integration Tests** (integration/habits.test.js)
   - [x] Full CRUD cycle with real database
   - [x] User isolation (can't access other users' data)
