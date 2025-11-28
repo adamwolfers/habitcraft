@@ -126,7 +126,7 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /sign up/i }).click();
 
       // Should show error about duplicate email
-      await expect(page.getByText(/already|exists|registered/i)).toBeVisible();
+      await expect(page.getByText(/email already exists/i)).toBeVisible();
     });
   });
 
