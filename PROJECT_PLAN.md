@@ -366,11 +366,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Logout flow
   - [x] User isolation verification
   - [x] Token refresh during active session
-- [ ] **Habit Management E2E**
-  - [ ] Create habit → Appears in list
-  - [ ] Update habit → Changes persist
-  - [ ] Delete habit → Removed from list
-  - [ ] Filter habits by status
+- [x] **Habit Management E2E** (e2e/habits.spec.ts)
+  - [x] Create habit → Appears in list
+  - [x] Update habit → Changes persist
+  - [x] Delete habit → Removed from list
 - [ ] **Completion Tracking E2E**
   - [ ] Toggle completion → Visual update
   - [ ] Navigate week → Loads completions

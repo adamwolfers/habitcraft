@@ -103,6 +103,11 @@ frontends/nextjs/
 ├── context/                      # React context
 │   ├── AuthContext.tsx          # Authentication context
 │   └── AuthContext.test.tsx     # Context tests
+├── e2e/                          # Playwright E2E tests
+│   ├── auth.spec.ts             # Authentication flow tests
+│   ├── habits.spec.ts           # Habit management tests
+│   ├── global-setup.ts          # Test database setup
+│   └── global-teardown.ts       # Test cleanup
 ├── hooks/                        # Custom React hooks
 │   ├── useHabits.ts             # Habit state management
 │   ├── useHabits.test.ts        # Hook tests
@@ -114,13 +119,16 @@ frontends/nextjs/
 ├── utils/                        # Helper utilities
 │   ├── dateUtils.ts             # Date manipulation
 │   └── dateUtils.test.ts        # Date utils tests
+├── playwright.config.ts          # Playwright configuration
 └── package.json                  # Dependencies and scripts
 ```
 
 ## Testing
 
+### Unit Tests (Jest + React Testing Library)
+
 ```bash
-# Run all tests
+# Run all unit tests
 npm test
 
 # Run tests with coverage
@@ -139,6 +147,36 @@ npm test -- app/login/page.test.tsx
 npm test -- app/register/page.test.tsx
 npm test -- components/EditHabitModal.test.tsx
 ```
+
+### End-to-End Tests (Playwright)
+
+E2E tests run against the full stack using a test database.
+
+```bash
+# Prerequisites: Start test environment
+../../scripts/test-db-start.sh
+docker compose -f ../../docker-compose.test.yml up -d
+
+# Run E2E tests
+npm run test:e2e
+
+# Run E2E tests with UI
+npm run test:e2e:ui
+
+# Run E2E tests in headed mode (see browser)
+npm run test:e2e:headed
+
+# View test report
+npm run test:e2e:report
+
+# Stop test environment
+docker compose -f ../../docker-compose.test.yml down
+../../scripts/test-db-stop.sh
+```
+
+E2E test coverage includes:
+- **Authentication:** Login, registration, logout, token refresh, user isolation
+- **Habit Management:** Create, update, delete habits with persistence verification
 
 Comprehensive test coverage includes authentication flow, API integration, state management, UI components, and user interactions.
 

@@ -120,6 +120,9 @@ See the [OpenAPI specification](./shared/api-spec/openapi.yaml) for complete API
 ### Running Tests
 
 ```bash
+# Run all tests sequentially (recommended)
+./scripts/test-all.sh
+
 # Backend unit tests
 cd backends/node
 npm test
@@ -129,9 +132,16 @@ npm test
 cd backends/node && npm run test:integration
 ./scripts/test-db-stop.sh
 
-# Frontend tests
+# Frontend unit tests
 cd frontends/nextjs
 npm test
+
+# Frontend E2E tests (requires test environment)
+./scripts/test-db-start.sh
+docker compose -f docker-compose.test.yml up -d
+cd frontends/nextjs && npm run test:e2e
+docker compose -f docker-compose.test.yml down
+./scripts/test-db-stop.sh
 ```
 
 ### Development Approach
