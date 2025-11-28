@@ -33,9 +33,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+        let response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
           credentials: 'include'
         });
+
+        // If 401, try to refresh the token and retry
+        if (response.status === 401) {
+          const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+            method: 'POST',
+            credentials: 'include'
+          });
+
+          if (refreshResponse.ok) {
+            // Retry the original request with new token
+            response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+              credentials: 'include'
+            });
+          }
+        }
 
         if (response.ok) {
           const userData = await response.json();

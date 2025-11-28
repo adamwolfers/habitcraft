@@ -365,7 +365,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Protected route access
   - [x] Logout flow
   - [x] User isolation verification
-  - [ ] Token refresh during active session
+  - [x] Token refresh during active session
 - [ ] **Habit Management E2E**
   - [ ] Create habit → Appears in list
   - [ ] Update habit → Changes persist

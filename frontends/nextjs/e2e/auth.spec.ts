@@ -148,4 +148,59 @@ test.describe('Authentication', () => {
       await expect(page.getByText('User 2 Habit')).not.toBeVisible();
     });
   });
+
+  test.describe('Token Refresh', () => {
+    test('should refresh token automatically when access token expires', async ({ page, context }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page with habits
+      await expect(page).toHaveURL('/');
+      await expect(page.getByText('Morning Exercise')).toBeVisible();
+
+      // Simulate access token expiration by clearing only the access token cookie
+      // The refresh token remains intact
+      const cookies = await context.cookies();
+      const refreshToken = cookies.find(c => c.name === 'refreshToken');
+
+      // Clear all cookies and restore only the refresh token
+      await context.clearCookies();
+      if (refreshToken) {
+        await context.addCookies([refreshToken]);
+      }
+
+      // Trigger an API request by reloading the page
+      // This should: 1) Get 401, 2) Refresh token, 3) Retry and succeed
+      await page.reload();
+
+      // User should still be logged in and see their habits
+      // (If refresh failed, they would be redirected to /login)
+      await expect(page).toHaveURL('/');
+      await expect(page.getByText('Morning Exercise')).toBeVisible();
+    });
+
+    test('should redirect to login when refresh token is also expired', async ({ page, context }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page
+      await expect(page).toHaveURL('/');
+      await expect(page.getByText('Morning Exercise')).toBeVisible();
+
+      // Clear ALL cookies (both access and refresh tokens)
+      await context.clearCookies();
+
+      // Try to reload - should redirect to login since no valid tokens
+      await page.reload();
+
+      // Should be redirected to login page
+      await expect(page).toHaveURL('/login');
+    });
+  });
 });

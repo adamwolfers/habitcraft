@@ -238,11 +238,18 @@ interface AuthContextType {
 
 **Location:** `frontends/nextjs/lib/api.ts`
 
-- Inject `Authorization: Bearer <token>` header on all requests
-- Intercept 401 responses
+- Uses HttpOnly cookies for authentication (credentials: 'include')
+- Intercept 401 responses on API calls
 - Attempt token refresh automatically
 - Retry failed request with new token
 - Redirect to login if refresh fails
+
+**Session Recovery:** `frontends/nextjs/context/AuthContext.tsx`
+
+- On page load, checks session via `/api/v1/users/me`
+- If access token expired (401), automatically attempts refresh
+- On successful refresh, retries session check
+- User stays logged in without interruption
 
 ### Protected Routes
 

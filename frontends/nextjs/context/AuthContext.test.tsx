@@ -39,6 +39,12 @@ describe('AuthContext', () => {
         status: 401,
         json: async () => ({ error: 'Unauthorized' })
       } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
       expect(result.current.isLoading).toBe(true);
@@ -51,6 +57,12 @@ describe('AuthContext', () => {
 
     it('should start with user as null', async () => {
       // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -73,6 +85,12 @@ describe('AuthContext', () => {
         status: 401,
         json: async () => ({ error: 'Unauthorized' })
       } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
       expect(result.current.isAuthenticated).toBe(false);
@@ -87,6 +105,12 @@ describe('AuthContext', () => {
   describe('login', () => {
     it('should login successfully with credentials include', async () => {
       // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -128,6 +152,12 @@ describe('AuthContext', () => {
         status: 401,
         json: async () => ({ error: 'Unauthorized' })
       } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
       // Mock failed login
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -154,6 +184,12 @@ describe('AuthContext', () => {
   describe('register', () => {
     it('should register successfully with credentials include', async () => {
       // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -195,6 +231,12 @@ describe('AuthContext', () => {
         status: 401,
         json: async () => ({ error: 'Unauthorized' })
       } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
       // Mock failed register
       mockFetch.mockResolvedValueOnce({
         ok: false,
@@ -219,6 +261,12 @@ describe('AuthContext', () => {
   describe('logout', () => {
     it('should clear user and call logout endpoint', async () => {
       // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -289,8 +337,52 @@ describe('AuthContext', () => {
       );
     });
 
+    it('should refresh token and restore session when access token expired', async () => {
+      // Mock /users/me returning 401 (access token expired)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock successful refresh
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Token refreshed' })
+      } as Response);
+      // Mock retry of /users/me succeeds with new token
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUser
+      } as Response);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // User should be authenticated after token refresh
+      expect(result.current.user).toEqual(mockUser);
+      expect(result.current.isAuthenticated).toBe(true);
+
+      // Should have called refresh endpoint
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/auth/refresh`,
+        expect.objectContaining({
+          method: 'POST',
+          credentials: 'include'
+        })
+      );
+    });
+
     it('should set isLoading to false when no session exists', async () => {
       // Mock /users/me returning 401 (no valid cookie)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -313,6 +405,12 @@ describe('AuthContext', () => {
       const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<typeof apiModule.setOnAuthFailure>;
 
       // Mock session check (no session)
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' })
+      } as Response);
+      // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
