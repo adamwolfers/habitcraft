@@ -370,12 +370,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Create habit → Appears in list
   - [x] Update habit → Changes persist
   - [x] Delete habit → Removed from list
-- [ ] **Completion Tracking E2E**
-  - [ ] Toggle completion → Visual update
-  - [ ] Navigate week → Loads completions
-  - [ ] Remove completion → Visual update
-  - [ ] Multiple habits completion tracking
-  - [ ] Calendar navigation
+- [x] **Completion Tracking E2E** (e2e/completions.spec.ts)
+  - [x] Toggle completion → Visual update
+  - [x] Navigate week → Loads completions
+  - [x] Remove completion → Visual update
+  - [x] Multiple habits completion tracking
+  - [x] Calendar navigation
 
 ### Documentation
 
