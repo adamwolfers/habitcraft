@@ -137,7 +137,7 @@ docker-compose up adminer
 ### Running Tests
 
 ```bash
-# Node.js backend
+# Node.js backend unit tests
 cd backends/node
 npm test
 
@@ -153,6 +153,22 @@ npm test
 # Run specific test file
 npm test -- lib/api.test.ts
 npm test -- hooks/useHabits.test.ts
+```
+
+### Running Integration Tests
+
+Integration tests run against a real test database:
+
+```bash
+# Start the test database (from project root)
+./scripts/test-db-start.sh
+
+# Run backend integration tests
+cd backends/node
+npm run test:integration
+
+# Stop the test database when done
+./scripts/test-db-stop.sh
 ```
 
 ### API Documentation

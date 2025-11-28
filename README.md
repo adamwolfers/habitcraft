@@ -120,9 +120,14 @@ See the [OpenAPI specification](./shared/api-spec/openapi.yaml) for complete API
 ### Running Tests
 
 ```bash
-# Backend tests
+# Backend unit tests
 cd backends/node
 npm test
+
+# Backend integration tests (requires test database)
+./scripts/test-db-start.sh
+cd backends/node && npm run test:integration
+./scripts/test-db-stop.sh
 
 # Frontend tests
 cd frontends/nextjs

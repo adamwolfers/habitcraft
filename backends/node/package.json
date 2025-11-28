@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "test": "jest --testPathIgnorePatterns=integration",
     "test:watch": "jest --watch --testPathIgnorePatterns=integration",
-    "test:integration": "jest --config jest.integration.config.js --forceExit"
+    "test:integration": "jest --config jest.integration.config.js"
   },
   "keywords": [],
   "author": "",

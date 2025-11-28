@@ -125,6 +125,10 @@ backends/node/
 ├── validators/                    # Input validation
 │   ├── habitValidator.js         # Habit input validation
 │   └── habitValidator.test.js    # Validation tests
+├── integration/                   # Integration tests (real database)
+│   ├── setup.js                  # Test database setup utilities
+│   ├── auth.test.js              # Authentication flow tests
+│   └── habits.test.js            # Habit CRUD integration tests
 ├── package.json                   # Dependencies and scripts
 └── README.md                      # This file
 ```
@@ -134,7 +138,7 @@ backends/node/
 This project follows Test-Driven Development (TDD):
 
 ```bash
-# Run all tests
+# Run unit tests (mocked database)
 npm test
 
 # Run tests with coverage
@@ -150,6 +154,25 @@ npm test -- routes/completions.test.js
 npm test -- middleware/jwtAuth.test.js
 npm test -- validators/habitValidator.test.js
 ```
+
+### Integration Tests
+
+Integration tests run against a real test database:
+
+```bash
+# Start the test database (from project root)
+./scripts/test-db-start.sh
+
+# Run integration tests
+npm run test:integration
+
+# Stop the test database when done
+./scripts/test-db-stop.sh
+```
+
+Integration tests cover:
+- **Authentication flows** (14 tests): Registration, login, token refresh, logout, user isolation
+- **Habit CRUD operations** (28 tests): Full CRUD cycle, user isolation, cascading deletes, validation
 
 Comprehensive test coverage includes app configuration, database layer, all API endpoints, and error handling.
 

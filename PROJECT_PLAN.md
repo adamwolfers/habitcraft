@@ -343,12 +343,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] User isolation verification
   - [x] Logout and session invalidation
   - [ ] Token expiration handling (requires time manipulation)
-- [ ] **Habit CRUD Integration Tests**
-  - [ ] Full CRUD cycle with real database
-  - [ ] User isolation (can't access other users' data)
-  - [ ] Cascading deletes (habits → completions)
-  - [ ] Status filtering with real data
-  - [ ] Update validations with database constraints
+- [x] **Habit CRUD Integration Tests** (integration/habits.test.js)
+  - [x] Full CRUD cycle with real database
+  - [x] User isolation (can't access other users' data)
+  - [x] Cascading deletes (habits → completions)
+  - [x] Status filtering with real data
+  - [x] Update validations with database constraints
 - [ ] **Completion Tracking Integration Tests**
   - [ ] Create completion → Verify in database
   - [ ] Date filtering with real data

@@ -12,6 +12,7 @@ process.env.NODE_ENV = 'test';
 
 // Import setup utilities
 const { closeTestPool, resetTestDatabase } = require('./integration/setup');
+const { closePool: closeAppPool } = require('./db/pool');
 
 // Reset database before all tests
 beforeAll(async () => {
@@ -23,4 +24,5 @@ beforeAll(async () => {
 // Clean up after all tests
 afterAll(async () => {
   await closeTestPool();
+  await closeAppPool();
 });
