@@ -117,7 +117,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must be one of: daily, weekly, custom')
+          message: expect.stringContaining('must be one of: daily, weekly')
         })
       );
       expect(nextFn).not.toHaveBeenCalled();

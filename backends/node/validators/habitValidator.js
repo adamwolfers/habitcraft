@@ -3,7 +3,7 @@
  * Validates habit creation and update requests according to the OpenAPI spec
  */
 
-const VALID_FREQUENCIES = ['daily', 'weekly', 'custom'];
+const VALID_FREQUENCIES = ['daily', 'weekly'];
 const VALID_STATUSES = ['active', 'archived'];
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 const MAX_NAME_LENGTH = 100;
