@@ -77,7 +77,7 @@ router.post('/', jwtAuthMiddleware, async (req, res) => {
          RETURNING
            id,
            habit_id AS "habitId",
-           date,
+           TO_CHAR(date, 'YYYY-MM-DD') AS date,
            notes,
            created_at AS "createdAt"`,
         [habitId, date, notes || null]
@@ -120,7 +120,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
       SELECT
         id,
         habit_id AS "habitId",
-        date,
+        TO_CHAR(date, 'YYYY-MM-DD') AS date,
         notes,
         created_at AS "createdAt"
       FROM completions

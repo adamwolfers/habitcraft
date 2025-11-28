@@ -50,6 +50,9 @@ describe('Completions API', () => {
       expect(response.status).toBe(201);
       expect(response.body).toEqual(mockCompletion);
       expect(pool.query).toHaveBeenCalledTimes(2);
+      // Verify SQL formats date as YYYY-MM-DD string (not raw DATE type)
+      const insertQuery = pool.query.mock.calls[1][0];
+      expect(insertQuery).toContain("TO_CHAR(date, 'YYYY-MM-DD')");
     });
 
     it('should create a completion without notes', async () => {
@@ -245,6 +248,9 @@ describe('Completions API', () => {
       expect(response.status).toBe(200);
       expect(response.body).toEqual(mockCompletions);
       expect(response.body).toHaveLength(2);
+      // Verify SQL formats date as YYYY-MM-DD string (not raw DATE type)
+      const selectQuery = pool.query.mock.calls[1][0];
+      expect(selectQuery).toContain("TO_CHAR(date, 'YYYY-MM-DD')");
     });
 
     it('should filter completions by start date', async () => {

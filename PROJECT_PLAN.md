@@ -349,12 +349,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Cascading deletes (habits → completions)
   - [x] Status filtering with real data
   - [x] Update validations with database constraints
-- [ ] **Completion Tracking Integration Tests**
-  - [ ] Create completion → Verify in database
-  - [ ] Date filtering with real data
-  - [ ] Delete completion → Verify removal
-  - [ ] Duplicate prevention
-  - [ ] Habit ownership validation
+- [x] **Completion Tracking Integration Tests** (integration/completions.test.js)
+  - [x] Create completion → Verify in database
+  - [x] Date filtering with real data
+  - [x] Delete completion → Verify removal
+  - [x] Duplicate prevention
+  - [x] Habit ownership validation
 
 #### Frontend End-to-End Tests (Playwright)
 
