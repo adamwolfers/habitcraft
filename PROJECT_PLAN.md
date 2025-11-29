@@ -257,7 +257,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **Home Page (app/page.tsx)**
   - [x] Display habits from database
   - [x] Create habit form integration
-  - [ ] Update habit functionality (see EditHabitModal component below)
+  - [x] Update habit functionality (see EditHabitModal component below)
   - [x] Delete habit button
   - [x] Loading and empty states
 - [x] **AddHabitForm Component**

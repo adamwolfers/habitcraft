@@ -25,7 +25,7 @@ User → Registration Form → POST /api/v1/auth/register
                                     ↓
                          Return access + refresh tokens
                                     ↓
-                         Store in localStorage/cookies
+                         Set HttpOnly cookies (server-side)
 
 ┌─────────────────────────────────────────────────────────────────┐
 │                           Login Flow                             │
@@ -41,7 +41,7 @@ User → Login Form → POST /api/v1/auth/login
                               ↓
                    Return access + refresh tokens
                               ↓
-                   Store in localStorage/cookies
+                   Set HttpOnly cookies (server-side)
 
 ┌─────────────────────────────────────────────────────────────────┐
 │                      Authenticated Request                       │
@@ -179,7 +179,7 @@ User → Expired Access Token → POST /api/v1/auth/refresh
 
 #### JWT Authentication Middleware (`jwtAuth.js`)
 
-Replaces the current `mockAuth.js` middleware.
+Handles JWT authentication for protected routes.
 
 ```javascript
 // Pseudo-code structure
@@ -301,16 +301,10 @@ PASSWORD_REQUIRE_NUMBER=true
 
 ### Production Checklist
 
-- [ ] Use strong JWT_SECRET (min 32 random characters)
-- [ ] Store JWT_SECRET in secure environment (not in code)
-- [ ] Enforce HTTPS only in production
-- [ ] Use httpOnly cookies for tokens (alternative to localStorage)
-- [ ] Implement rate limiting on auth endpoints
-- [ ] Add CORS configuration for allowed origins
-- [ ] Log authentication failures for security monitoring
-- [ ] Consider adding email verification
-- [ ] Consider adding password reset flow
-- [ ] Consider adding 2FA for enhanced security
+See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete security and deployment checklist:
+- **Security Hardening** - Rate limiting, input sanitization, CORS, security headers
+- **Production Configuration** - JWT secrets, HTTPS, environment variables
+- **Advanced Authentication** (Beyond v1.0) - Email verification, password reset, 2FA
 
 ### Common Attacks & Mitigations
 
