@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../db/pool');
 const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
+const { sanitizeBody } = require('../middleware/sanitize');
 
 const router = express.Router({ mergeParams: true });
 
@@ -38,7 +39,7 @@ async function verifyHabitOwnership(habitId, userId) {
 }
 
 // POST /api/v1/habits/:habitId/completions
-router.post('/', jwtAuthMiddleware, async (req, res) => {
+router.post('/', jwtAuthMiddleware, sanitizeBody, async (req, res) => {
   try {
     const { habitId } = req.params;
     const { date, notes } = req.body;

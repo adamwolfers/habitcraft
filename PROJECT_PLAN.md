@@ -423,7 +423,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 #### Security Hardening
 
 - [x] Rate limiting on auth endpoints (express-rate-limit implementation)
-- [ ] Input sanitization (XSS prevention)
+- [x] Input sanitization (XSS prevention with xss library)
 - [ ] CORS configuration for specific origins (remove wildcard)
 - [ ] Security headers (helmet.js - CSP, HSTS, etc.)
 - [ ] Security event logging (failed logins, token refresh, auth failures)

@@ -2,6 +2,7 @@ const express = require('express');
 const { query } = require('../db/pool');
 const { validateHabitInput } = require('../validators/habitValidator');
 const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
+const { sanitizeBody } = require('../middleware/sanitize');
 const completionsRouter = require('./completions');
 
 const router = express.Router();
@@ -58,7 +59,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
  * POST /api/v1/habits
  * Create a new habit
  */
-router.post('/', jwtAuthMiddleware, validateHabitInput, async (req, res) => {
+router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req, res) => {
   try {
     const { name, description, frequency, targetDays, color, icon } = req.body;
     const userId = req.userId; // Set by jwtAuthMiddleware
@@ -107,7 +108,7 @@ router.post('/', jwtAuthMiddleware, validateHabitInput, async (req, res) => {
  * PUT /api/v1/habits/:id
  * Update a habit by ID
  */
-router.put('/:id', jwtAuthMiddleware, validateHabitInput, async (req, res) => {
+router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.userId;

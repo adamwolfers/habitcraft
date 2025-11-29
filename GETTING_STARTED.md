@@ -147,6 +147,49 @@ docker-compose up adminer
 # Then visit http://localhost:8080
 ```
 
+### Managing npm Dependencies with Docker
+
+When adding new npm packages while using Docker, the containers need to be updated to pick up the changes. Follow these steps:
+
+**Option 1: Rebuild containers (recommended for new dependencies)**
+
+```bash
+# 1. Stop the running containers
+docker-compose down
+
+# 2. Install the package locally (updates package.json and package-lock.json)
+cd backends/node
+npm install <package-name>
+
+# 3. Rebuild and restart containers
+cd ../..
+docker-compose up --build postgres backend-node frontend-nextjs
+```
+
+**Option 2: Install directly in container (quick testing)**
+
+```bash
+# Install package inside the running container
+docker-compose exec backend-node npm install <package-name>
+
+# Note: This is temporary - package.json on host won't be updated
+# For permanent changes, use Option 1
+```
+
+**Troubleshooting unhealthy containers:**
+
+```bash
+# Check container health status
+docker-compose ps
+
+# View container logs for errors
+docker-compose logs backend-node
+
+# Force rebuild without cache
+docker-compose build --no-cache backend-node
+docker-compose up -d backend-node
+```
+
 ### Running Tests
 
 ```bash

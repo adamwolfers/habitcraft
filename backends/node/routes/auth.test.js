@@ -284,4 +284,110 @@ describe('Auth API', () => {
       expect(cookies.some(c => c.startsWith('refreshToken='))).toBe(true);
     });
   });
+
+  describe('Input sanitization', () => {
+    describe('POST /api/v1/auth/register', () => {
+      it('should sanitize XSS from name field', async () => {
+        const mockUser = {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          created_at: new Date().toISOString()
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [] });
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            email: 'test@example.com',
+            password: 'SecurePass123!',
+            name: '<script>alert("xss")</script>Test User'
+          });
+
+        // Check that the INSERT query was called with sanitized name
+        const insertCall = pool.query.mock.calls[1];
+        const insertedName = insertCall[1][2]; // third param is name (email, password, name)
+        expect(insertedName).toBe('Test User');
+        expect(insertedName).not.toContain('<script>');
+      });
+
+      it('should trim whitespace from name field', async () => {
+        const mockUser = {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          created_at: new Date().toISOString()
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [] });
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            email: 'test@example.com',
+            password: 'SecurePass123!',
+            name: '  Test User  '
+          });
+
+        const insertCall = pool.query.mock.calls[1];
+        const insertedName = insertCall[1][2];
+        expect(insertedName).toBe('Test User');
+      });
+
+      it('should normalize email to lowercase', async () => {
+        const mockUser = {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          created_at: new Date().toISOString()
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [] });
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            email: '  TEST@EXAMPLE.COM  ',
+            password: 'SecurePass123!',
+            name: 'Test User'
+          });
+
+        // Check both queries use normalized email
+        const checkCall = pool.query.mock.calls[0];
+        const insertCall = pool.query.mock.calls[1];
+        expect(checkCall[1][0]).toBe('test@example.com');
+        expect(insertCall[1][0]).toBe('test@example.com');
+      });
+    });
+
+    describe('POST /api/v1/auth/login', () => {
+      it('should normalize email to lowercase for login', async () => {
+        const hashedPassword = await bcrypt.hash('SecurePass123!', 10);
+        const mockUser = {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          password_hash: hashedPassword,
+          created_at: new Date().toISOString()
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({
+            email: '  TEST@EXAMPLE.COM  ',
+            password: 'SecurePass123!'
+          });
+
+        // Check query uses normalized email
+        const queryCall = pool.query.mock.calls[0];
+        expect(queryCall[1][0]).toBe('test@example.com');
+      });
+    });
+  });
 });

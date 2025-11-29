@@ -403,4 +403,70 @@ describe('Completions API', () => {
       expect(response.body.error).toContain('date');
     });
   });
+
+  describe('Input sanitization', () => {
+    it('should sanitize XSS from notes field', async () => {
+      const mockCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: mockDate,
+        notes: 'My notes',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      };
+
+      // Mock habit exists check
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      // Mock completion insert
+      pool.query.mockResolvedValueOnce({
+        rows: [mockCompletion]
+      });
+
+      await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({
+          date: mockDate,
+          notes: '<script>alert("xss")</script>My notes'
+        });
+
+      // Check that the INSERT query was called with sanitized notes
+      const insertCall = pool.query.mock.calls[1]; // second call is INSERT
+      const insertedNotes = insertCall[1][2]; // third param is notes (habitId, date, notes)
+      expect(insertedNotes).toBe('My notes');
+      expect(insertedNotes).not.toContain('<script>');
+    });
+
+    it('should trim whitespace from notes field', async () => {
+      const mockCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: mockDate,
+        notes: 'Trimmed notes',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      };
+
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: [mockCompletion]
+      });
+
+      await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({
+          date: mockDate,
+          notes: '  Trimmed notes  '
+        });
+
+      const insertCall = pool.query.mock.calls[1];
+      const insertedNotes = insertCall[1][2];
+      expect(insertedNotes).toBe('Trimmed notes');
+    });
+  });
 });

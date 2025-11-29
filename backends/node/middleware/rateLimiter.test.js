@@ -1,14 +1,30 @@
 const request = require('supertest');
-const app = require('../app');
-const pool = require('../db/pool');
 
-// Mock the database pool
+// Mock the database pool - must be before requiring app
 jest.mock('../db/pool');
 
 // Note: These tests verify rate limiting behavior on auth endpoints.
-// They will fail until rate limiting middleware is implemented and applied.
+// We must disable SKIP_RATE_LIMIT to actually test rate limiting.
 
 describe('Rate Limiting', () => {
+  let app;
+  let pool;
+
+  beforeAll(() => {
+    // Disable skip for rate limiter tests - must be set before requiring app
+    process.env.SKIP_RATE_LIMIT = 'false';
+    // Clear require cache to reload app with new env
+    jest.resetModules();
+    // Re-require after reset to get the mocked versions
+    pool = require('../db/pool');
+    app = require('../app');
+  });
+
+  afterAll(() => {
+    // Restore skip for other tests
+    process.env.SKIP_RATE_LIMIT = 'true';
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Mock database to return empty results (user not found = 401)

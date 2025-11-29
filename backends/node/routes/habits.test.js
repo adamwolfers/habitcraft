@@ -814,3 +814,174 @@ describe('PUT /api/v1/habits/:id', () => {
     expect(response.body.error).toBe('Internal server error');
   });
 });
+
+describe('Input sanitization', () => {
+  const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
+  const HABIT_ID = 'habit-123';
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('POST /api/v1/habits', () => {
+    it('should sanitize XSS from name field', async () => {
+      const mockHabit = {
+        id: 'habit-123',
+        userId: TEST_USER_ID,
+        name: 'Exercise',
+        description: null,
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      query.mockResolvedValue({ rows: [mockHabit] });
+
+      await request(app)
+        .post('/api/v1/habits')
+        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        .send({
+          name: '<script>alert("xss")</script>Exercise',
+          frequency: 'daily'
+        });
+
+      // Check that the INSERT query was called with sanitized name
+      const insertCall = query.mock.calls[0];
+      const insertedName = insertCall[1][1]; // second param is name (userId, name, description, ...)
+      expect(insertedName).toBe('Exercise');
+      expect(insertedName).not.toContain('<script>');
+    });
+
+    it('should sanitize XSS from description field', async () => {
+      const mockHabit = {
+        id: 'habit-123',
+        userId: TEST_USER_ID,
+        name: 'Exercise',
+        description: 'My workout routine',
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      query.mockResolvedValue({ rows: [mockHabit] });
+
+      await request(app)
+        .post('/api/v1/habits')
+        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        .send({
+          name: 'Exercise',
+          description: '<img src=x onerror="alert(1)">My workout routine',
+          frequency: 'daily'
+        });
+
+      const insertCall = query.mock.calls[0];
+      const insertedDescription = insertCall[1][2]; // third param is description
+      expect(insertedDescription).not.toContain('onerror');
+      expect(insertedDescription).toContain('My workout routine');
+    });
+
+    it('should trim whitespace from name field', async () => {
+      const mockHabit = {
+        id: 'habit-123',
+        userId: TEST_USER_ID,
+        name: 'Exercise',
+        description: null,
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      query.mockResolvedValue({ rows: [mockHabit] });
+
+      await request(app)
+        .post('/api/v1/habits')
+        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        .send({
+          name: '  Exercise  ',
+          frequency: 'daily'
+        });
+
+      const insertCall = query.mock.calls[0];
+      const insertedName = insertCall[1][1];
+      expect(insertedName).toBe('Exercise');
+    });
+  });
+
+  describe('PUT /api/v1/habits/:id', () => {
+    it('should sanitize XSS from name field on update', async () => {
+      const updatedHabit = {
+        id: HABIT_ID,
+        userId: TEST_USER_ID,
+        name: 'Updated Exercise',
+        description: null,
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
+
+      await request(app)
+        .put(`/api/v1/habits/${HABIT_ID}`)
+        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        .send({
+          name: '<script>evil()</script>Updated Exercise',
+          frequency: 'daily'
+        });
+
+      const updateCall = query.mock.calls[0];
+      const queryParams = updateCall[1];
+      // Find the name in query params (it's one of the SET values)
+      const nameInQuery = queryParams.find(p => typeof p === 'string' && p.includes('Updated Exercise'));
+      expect(nameInQuery).toBe('Updated Exercise');
+    });
+
+    it('should trim whitespace from description on update', async () => {
+      const updatedHabit = {
+        id: HABIT_ID,
+        userId: TEST_USER_ID,
+        name: 'Exercise',
+        description: 'Trimmed description',
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
+
+      await request(app)
+        .put(`/api/v1/habits/${HABIT_ID}`)
+        .set('Authorization', `Bearer ${TEST_TOKEN}`)
+        .send({
+          name: 'Exercise',
+          description: '  Trimmed description  ',
+          frequency: 'daily'
+        });
+
+      const updateCall = query.mock.calls[0];
+      const queryParams = updateCall[1];
+      const descInQuery = queryParams.find(p => typeof p === 'string' && p.includes('Trimmed description'));
+      expect(descInQuery).toBe('Trimmed description');
+    });
+  });
+});

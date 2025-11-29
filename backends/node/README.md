@@ -13,6 +13,8 @@ Node.js + Express implementation of the HabitCraft API.
 - CORS support with credentials for frontend integration
 - Full habit CRUD operations (Create, Read, Update, Delete)
 - Completion tracking (Create, Read, Delete with date filtering)
+- Rate limiting on authentication endpoints (express-rate-limit)
+- Input sanitization for XSS prevention (xss library)
 - TDD approach with comprehensive test coverage
 
 See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
@@ -115,13 +117,19 @@ backends/node/
 ├── routes/                        # API route handlers
 │   ├── auth.js                   # Authentication endpoints
 │   ├── auth.test.js              # Authentication tests
+│   ├── users.js                  # User profile endpoints
+│   ├── users.test.js             # User endpoint tests
 │   ├── habits.js                 # Habit CRUD endpoints
 │   ├── habits.test.js            # Habit endpoint tests
 │   ├── completions.js            # Completion tracking endpoints
 │   └── completions.test.js       # Completion endpoint tests
 ├── middleware/                    # Express middleware
 │   ├── jwtAuth.js                # JWT authentication middleware
-│   └── jwtAuth.test.js           # JWT middleware tests
+│   ├── jwtAuth.test.js           # JWT middleware tests
+│   ├── rateLimiter.js            # Rate limiting for auth endpoints
+│   ├── rateLimiter.test.js       # Rate limiter tests
+│   ├── sanitize.js               # Input sanitization (XSS prevention)
+│   └── sanitize.test.js          # Sanitization tests
 ├── validators/                    # Input validation
 │   ├── habitValidator.js         # Habit input validation
 │   └── habitValidator.test.js    # Validation tests

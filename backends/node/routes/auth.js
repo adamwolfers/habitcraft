@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const pool = require('../db/pool');
 const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware/rateLimiter');
+const { sanitizeBody, sanitizeEmail } = require('../middleware/sanitize');
 
 const router = express.Router();
 
@@ -66,7 +67,7 @@ function clearAuthCookies(res) {
 }
 
 // POST /api/v1/auth/register
-router.post('/register', registerLimiter, registerValidation, async (req, res) => {
+router.post('/register', registerLimiter, sanitizeBody, sanitizeEmail, registerValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -117,7 +118,7 @@ router.post('/register', registerLimiter, registerValidation, async (req, res) =
 });
 
 // POST /api/v1/auth/login
-router.post('/login', loginLimiter, loginValidation, async (req, res) => {
+router.post('/login', loginLimiter, sanitizeBody, sanitizeEmail, loginValidation, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

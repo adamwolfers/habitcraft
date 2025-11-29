@@ -44,7 +44,16 @@ cd "$PROJECT_ROOT"
 # Check if services are already running
 if curl -s http://localhost:3010/health > /dev/null 2>&1; then
     echo "✅ Test services already running"
+    echo "   (To force rebuild, run: docker compose -f docker-compose.test.yml down)"
 else
+    echo "Stopping any existing test containers..."
+    docker compose -f docker-compose.test.yml down 2>/dev/null || true
+    echo "Removing old test images..."
+    docker rmi habittracker_fullstack-backend-node-test habittracker_fullstack-frontend-nextjs-test 2>/dev/null || true
+    echo "Removing node_modules volumes (ensures fresh dependencies)..."
+    docker volume rm habittracker_fullstack_backend_node_test_modules 2>/dev/null || true
+    echo "Building Docker containers (--no-cache for fresh dependencies)..."
+    docker compose -f docker-compose.test.yml build --no-cache
     echo "Starting Docker containers..."
     docker compose -f docker-compose.test.yml up -d
 
