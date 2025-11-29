@@ -424,14 +424,18 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 - [x] Rate limiting on auth endpoints (express-rate-limit implementation)
 - [x] Input sanitization (XSS prevention with xss library)
-- [ ] CORS configuration for specific origins (remove wildcard)
+- [x] CORS configuration for specific origins (uses FRONTEND_URL env var, not wildcard)
+- [x] Production secret enforcement (fail startup if JWT_SECRET not set in production)
 - [ ] Security headers (helmet.js - CSP, HSTS, etc.)
 - [ ] Security event logging (failed logins, token refresh, auth failures)
-- [ ] Security audit
-  - [ ] Review authentication code
-  - [ ] Check OWASP Top 10 vulnerabilities
-  - [ ] Verify environment variable security
-  - [ ] Test token expiration and refresh
+- [x] Security audit
+  - [x] Review authentication code (bcrypt, JWT, HttpOnly cookies, rate limiting)
+  - [x] Check OWASP Top 10 vulnerabilities (parameterized queries, no injection vectors)
+  - [x] Verify environment variable security (.env files gitignored, secrets from env)
+  - [x] Test token expiration and refresh (15m access, 7d refresh, proper rejection)
+- [ ] Token security enhancements (future)
+  - [ ] Refresh token rotation on use
+  - [ ] Token revocation/blacklist for logout
 
 #### Production Configuration
 

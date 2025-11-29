@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+const { JWT_SECRET } = require('../config/jwt');
 
 function jwtAuthMiddleware(req, res, next) {
   // Try to get token from: 1) Cookie, 2) Authorization header

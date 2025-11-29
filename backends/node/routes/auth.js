@@ -5,13 +5,16 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../db/pool');
 const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware/rateLimiter');
 const { sanitizeBody, sanitizeEmail } = require('../middleware/sanitize');
+const {
+  JWT_SECRET,
+  ACCESS_TOKEN_EXPIRES,
+  REFRESH_TOKEN_EXPIRES,
+  ACCESS_TOKEN_MAX_AGE,
+  REFRESH_TOKEN_MAX_AGE,
+  IS_PRODUCTION
+} = require('../config/jwt');
 
 const router = express.Router();
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
-const ACCESS_TOKEN_EXPIRES = '15m';
-const REFRESH_TOKEN_EXPIRES = '7d';
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // Cookie options
 const cookieOptions = {
@@ -25,11 +28,11 @@ const cookieOptions = {
 function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('accessToken', accessToken, {
     ...cookieOptions,
-    maxAge: 15 * 60 * 1000 // 15 minutes
+    maxAge: ACCESS_TOKEN_MAX_AGE
   });
   res.cookie('refreshToken', refreshToken, {
     ...cookieOptions,
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    maxAge: REFRESH_TOKEN_MAX_AGE
   });
 }
 
@@ -189,7 +192,7 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
     // Set new access token cookie
     res.cookie('accessToken', accessToken, {
       ...cookieOptions,
-      maxAge: 15 * 60 * 1000 // 15 minutes
+      maxAge: ACCESS_TOKEN_MAX_AGE
     });
 
     res.json({ accessToken });
