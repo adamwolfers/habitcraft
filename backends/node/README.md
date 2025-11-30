@@ -15,6 +15,7 @@ Node.js + Express implementation of the HabitCraft API.
 - Completion tracking (Create, Read, Delete with date filtering)
 - Rate limiting on authentication endpoints (express-rate-limit)
 - Input sanitization for XSS prevention (xss library)
+- Security headers via helmet (CSP, HSTS, X-Frame-Options, etc.)
 - TDD approach with comprehensive test coverage
 
 See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
@@ -129,7 +130,8 @@ backends/node/
 │   ├── rateLimiter.js            # Rate limiting for auth endpoints
 │   ├── rateLimiter.test.js       # Rate limiter tests
 │   ├── sanitize.js               # Input sanitization (XSS prevention)
-│   └── sanitize.test.js          # Sanitization tests
+│   ├── sanitize.test.js          # Sanitization tests
+│   └── securityHeaders.test.js   # Security headers tests (helmet)
 ├── validators/                    # Input validation
 │   ├── habitValidator.js         # Habit input validation
 │   └── habitValidator.test.js    # Validation tests

@@ -426,7 +426,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Input sanitization (XSS prevention with xss library)
 - [x] CORS configuration for specific origins (uses FRONTEND_URL env var, not wildcard)
 - [x] Production secret enforcement (fail startup if JWT_SECRET not set in production)
-- [ ] Security headers (helmet.js - CSP, HSTS, etc.)
+- [x] Security headers (helmet.js - CSP, HSTS, etc.)
 - [ ] Security event logging (failed logins, token refresh, auth failures)
 - [x] Security audit
   - [x] Review authentication code (bcrypt, JWT, HttpOnly cookies, rate limiting)

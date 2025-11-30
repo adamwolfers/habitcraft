@@ -1,11 +1,28 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const { query } = require('./db/pool');
 const habitsRouter = require('./routes/habits');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const app = express();
+
+// Security headers (helmet)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'"],
+      objectSrc: ["'none'"],
+      frameAncestors: ["'none'"]
+    }
+  }
+}));
 
 // Middleware
 app.use(cors({
