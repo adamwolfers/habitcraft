@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/jwt');
+const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 
 function jwtAuthMiddleware(req, res, next) {
   // Try to get token from: 1) Cookie, 2) Authorization header
@@ -18,12 +19,18 @@ function jwtAuthMiddleware(req, res, next) {
       if (parts.length === 2 && parts[0] === 'Bearer') {
         token = parts[1];
       } else {
+        logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, req, {
+          reason: 'invalid_format'
+        });
         return res.status(401).json({ error: 'Invalid token format' });
       }
     }
   }
 
   if (!token) {
+    logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, req, {
+      reason: 'no_token'
+    });
     return res.status(401).json({ error: 'No token provided' });
   }
 
@@ -31,6 +38,9 @@ function jwtAuthMiddleware(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET);
 
     if (decoded.type !== 'access') {
+      logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, req, {
+        reason: 'invalid_token_type'
+      });
       return res.status(401).json({ error: 'Invalid token type' });
     }
 
@@ -38,8 +48,14 @@ function jwtAuthMiddleware(req, res, next) {
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
+      logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, req, {
+        reason: 'token_expired'
+      });
       return res.status(401).json({ error: 'Token expired' });
     }
+    logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, req, {
+      reason: 'invalid_token'
+    });
     return res.status(401).json({ error: 'Invalid token' });
   }
 }

@@ -206,6 +206,7 @@ function jwtAuthMiddleware(req, res, next) {
 4. **Input Validation:** express-validator for all inputs
 5. **Error Handling:** Generic error messages to prevent user enumeration
 6. **HTTPS Only:** Tokens should only be transmitted over HTTPS in production
+7. **Security Event Logging:** All auth events logged (logins, failures, token refresh)
 
 ## Frontend Implementation (Next.js)
 

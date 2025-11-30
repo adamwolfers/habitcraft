@@ -16,6 +16,7 @@ Node.js + Express implementation of the HabitCraft API.
 - Rate limiting on authentication endpoints (express-rate-limit)
 - Input sanitization for XSS prevention (xss library)
 - Security headers via helmet (CSP, HSTS, X-Frame-Options, etc.)
+- Security event logging (failed logins, auth failures, token refresh)
 - TDD approach with comprehensive test coverage
 
 See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
@@ -135,6 +136,9 @@ backends/node/
 ├── validators/                    # Input validation
 │   ├── habitValidator.js         # Habit input validation
 │   └── habitValidator.test.js    # Validation tests
+├── utils/                         # Utility modules
+│   ├── securityLogger.js         # Security event logging
+│   └── securityLogger.test.js    # Security logger tests
 ├── integration/                   # Integration tests (real database)
 │   ├── setup.js                  # Test database setup utilities
 │   ├── auth.test.js              # Authentication flow tests

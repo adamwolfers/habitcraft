@@ -5,6 +5,7 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../db/pool');
 const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware/rateLimiter');
 const { sanitizeBody, sanitizeEmail } = require('../middleware/sanitize');
+const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 const {
   JWT_SECRET,
   ACCESS_TOKEN_EXPIRES,
@@ -106,6 +107,11 @@ router.post('/register', registerLimiter, sanitizeBody, sanitizeEmail, registerV
     // Set HttpOnly cookies
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
+    logSecurityEvent(SECURITY_EVENTS.REGISTER_SUCCESS, req, {
+      email: user.email,
+      userId: user.id
+    });
+
     res.status(201).json({
       user: {
         id: user.id,
@@ -137,6 +143,10 @@ router.post('/login', loginLimiter, sanitizeBody, sanitizeEmail, loginValidation
     );
 
     if (result.rows.length === 0) {
+      logSecurityEvent(SECURITY_EVENTS.LOGIN_FAILURE, req, {
+        email,
+        reason: 'user_not_found'
+      });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -145,6 +155,10 @@ router.post('/login', loginLimiter, sanitizeBody, sanitizeEmail, loginValidation
     // Verify password
     const validPassword = await bcrypt.compare(password, user.password_hash);
     if (!validPassword) {
+      logSecurityEvent(SECURITY_EVENTS.LOGIN_FAILURE, req, {
+        email,
+        reason: 'invalid_password'
+      });
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -152,6 +166,11 @@ router.post('/login', loginLimiter, sanitizeBody, sanitizeEmail, loginValidation
 
     // Set HttpOnly cookies
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+
+    logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, req, {
+      email: user.email,
+      userId: user.id
+    });
 
     res.json({
       user: {
@@ -180,6 +199,9 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
 
     if (decoded.type !== 'refresh') {
+      logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {
+        reason: 'invalid_token_type'
+      });
       return res.status(401).json({ error: 'Invalid token type' });
     }
 
@@ -195,12 +217,22 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       maxAge: ACCESS_TOKEN_MAX_AGE
     });
 
+    logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_SUCCESS, req, {
+      userId: decoded.userId
+    });
+
     res.json({ accessToken });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
+      logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {
+        reason: 'token_expired'
+      });
       return res.status(401).json({ error: 'Refresh token expired' });
     }
     if (error.name === 'JsonWebTokenError') {
+      logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {
+        reason: 'invalid_token'
+      });
       return res.status(401).json({ error: 'Invalid refresh token' });
     }
     console.error('Error refreshing token:', error);
@@ -209,8 +241,9 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
 });
 
 // POST /api/v1/auth/logout
-router.post('/logout', (_req, res) => {
+router.post('/logout', (req, res) => {
   clearAuthCookies(res);
+  logSecurityEvent(SECURITY_EVENTS.LOGOUT, req, {});
   res.json({ message: 'Logged out successfully' });
 });
 

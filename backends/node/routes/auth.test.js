@@ -3,9 +3,24 @@ const app = require('../app');
 const pool = require('../db/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 
 // Mock the database pool
 jest.mock('../db/pool');
+
+// Mock the security logger
+jest.mock('../utils/securityLogger', () => ({
+  logSecurityEvent: jest.fn(),
+  SECURITY_EVENTS: {
+    LOGIN_SUCCESS: 'LOGIN_SUCCESS',
+    LOGIN_FAILURE: 'LOGIN_FAILURE',
+    REGISTER_SUCCESS: 'REGISTER_SUCCESS',
+    TOKEN_REFRESH_SUCCESS: 'TOKEN_REFRESH_SUCCESS',
+    TOKEN_REFRESH_FAILURE: 'TOKEN_REFRESH_FAILURE',
+    LOGOUT: 'LOGOUT',
+    AUTH_FAILURE: 'AUTH_FAILURE'
+  }
+}));
 
 describe('Auth API', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -387,6 +402,189 @@ describe('Auth API', () => {
         // Check query uses normalized email
         const queryCall = pool.query.mock.calls[0];
         expect(queryCall[1][0]).toBe('test@example.com');
+      });
+    });
+  });
+
+  describe('Security Event Logging', () => {
+    beforeEach(() => {
+      logSecurityEvent.mockClear();
+    });
+
+    describe('Login events', () => {
+      it('should log LOGIN_SUCCESS on successful login', async () => {
+        const hashedPassword = await bcrypt.hash('SecurePass123!', 10);
+        const mockUser = {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          password_hash: hashedPassword,
+          created_at: new Date().toISOString()
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({ email: 'test@example.com', password: 'SecurePass123!' });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.LOGIN_SUCCESS,
+          expect.any(Object),
+          expect.objectContaining({
+            email: 'test@example.com',
+            userId: mockUserId
+          })
+        );
+      });
+
+      it('should log LOGIN_FAILURE when user not found', async () => {
+        pool.query.mockResolvedValueOnce({ rows: [] });
+
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({ email: 'nonexistent@example.com', password: 'SecurePass123!' });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.LOGIN_FAILURE,
+          expect.any(Object),
+          expect.objectContaining({
+            email: 'nonexistent@example.com',
+            reason: 'user_not_found'
+          })
+        );
+      });
+
+      it('should log LOGIN_FAILURE when password is wrong', async () => {
+        const hashedPassword = await bcrypt.hash('DifferentPassword!', 10);
+        const mockUser = {
+          id: mockUserId,
+          email: 'test@example.com',
+          password_hash: hashedPassword
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/login')
+          .send({ email: 'test@example.com', password: 'WrongPassword123!' });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.LOGIN_FAILURE,
+          expect.any(Object),
+          expect.objectContaining({
+            email: 'test@example.com',
+            reason: 'invalid_password'
+          })
+        );
+      });
+    });
+
+    describe('Registration events', () => {
+      it('should log REGISTER_SUCCESS on successful registration', async () => {
+        const mockUser = {
+          id: mockUserId,
+          email: 'newuser@example.com',
+          name: 'New User',
+          created_at: new Date().toISOString()
+        };
+
+        pool.query.mockResolvedValueOnce({ rows: [] });
+        pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+
+        await request(app)
+          .post('/api/v1/auth/register')
+          .send({
+            email: 'newuser@example.com',
+            password: 'SecurePass123!',
+            name: 'New User'
+          });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.REGISTER_SUCCESS,
+          expect.any(Object),
+          expect.objectContaining({
+            email: 'newuser@example.com',
+            userId: mockUserId
+          })
+        );
+      });
+    });
+
+    describe('Token refresh events', () => {
+      const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
+
+      it('should log TOKEN_REFRESH_SUCCESS on successful refresh', async () => {
+        const refreshToken = jwt.sign(
+          { userId: mockUserId, type: 'refresh' },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+
+        await request(app)
+          .post('/api/v1/auth/refresh')
+          .send({ refreshToken });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.TOKEN_REFRESH_SUCCESS,
+          expect.any(Object),
+          expect.objectContaining({
+            userId: mockUserId
+          })
+        );
+      });
+
+      it('should log TOKEN_REFRESH_FAILURE on expired token', async () => {
+        const refreshToken = jwt.sign(
+          { userId: mockUserId, type: 'refresh' },
+          JWT_SECRET,
+          { expiresIn: '-1s' }
+        );
+
+        await request(app)
+          .post('/api/v1/auth/refresh')
+          .send({ refreshToken });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.TOKEN_REFRESH_FAILURE,
+          expect.any(Object),
+          expect.objectContaining({
+            reason: 'token_expired'
+          })
+        );
+      });
+
+      it('should log TOKEN_REFRESH_FAILURE on invalid token type', async () => {
+        const accessToken = jwt.sign(
+          { userId: mockUserId, type: 'access' },
+          JWT_SECRET,
+          { expiresIn: '15m' }
+        );
+
+        await request(app)
+          .post('/api/v1/auth/refresh')
+          .send({ refreshToken: accessToken });
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.TOKEN_REFRESH_FAILURE,
+          expect.any(Object),
+          expect.objectContaining({
+            reason: 'invalid_token_type'
+          })
+        );
+      });
+    });
+
+    describe('Logout events', () => {
+      it('should log LOGOUT event', async () => {
+        await request(app)
+          .post('/api/v1/auth/logout');
+
+        expect(logSecurityEvent).toHaveBeenCalledWith(
+          SECURITY_EVENTS.LOGOUT,
+          expect.any(Object),
+          expect.any(Object)
+        );
       });
     });
   });
