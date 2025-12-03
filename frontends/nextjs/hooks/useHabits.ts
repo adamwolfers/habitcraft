@@ -11,6 +11,7 @@ import {
   deleteCompletion as apiDeleteCompletion,
   deleteHabit as apiDeleteHabit
 } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 
 // Helper to format date as YYYY-MM-DD
 function formatDate(date: Date): string {
@@ -20,10 +21,12 @@ function formatDate(date: Date): string {
 export const useHabits = (userId: string) => {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [completions, setCompletions] = useState<Map<string, Completion[]>>(new Map());
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
   // Fetch habits and their completions from API on mount
   useEffect(() => {
-    if (!userId) {
+    // Don't fetch if no userId, still loading auth, or not authenticated
+    if (!userId || isAuthLoading || !isAuthenticated) {
       return;
     }
 
@@ -52,7 +55,7 @@ export const useHabits = (userId: string) => {
     };
 
     loadHabitsAndCompletions();
-  }, [userId]);
+  }, [userId, isAuthLoading, isAuthenticated]);
 
   const createHabit = async (habitData: HabitFormData): Promise<Habit> => {
     try {
@@ -141,5 +144,6 @@ export const useHabits = (userId: string) => {
     toggleCompletion,
     isHabitCompletedOnDate,
     deleteHabit,
+    isAuthLoading,
   };
 };

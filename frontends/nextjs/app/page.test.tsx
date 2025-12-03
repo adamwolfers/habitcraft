@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import Home from './page';
 import * as useHabitsModule from '@/hooks/useHabits';
 import * as authContextModule from '@/context/AuthContext';
+import * as habitUtilsModule from '@/utils/habitUtils';
 import { Habit } from '@/types/habit';
 
 // Mock Next.js navigation
@@ -23,6 +24,13 @@ jest.mock('@/context/AuthContext', () => ({
 
 // Mock the useHabits hook
 jest.mock('@/hooks/useHabits');
+
+// Mock the habitUtils module
+jest.mock('@/utils/habitUtils', () => ({
+  findHabitById: jest.fn(),
+}));
+
+const mockFindHabitById = habitUtilsModule.findHabitById as jest.MockedFunction<typeof habitUtilsModule.findHabitById>;
 
 const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
 const mockUseHabits = useHabitsModule.useHabits as jest.MockedFunction<typeof useHabitsModule.useHabits>;
@@ -65,6 +73,11 @@ describe('Home Page - Delete Functionality', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Default: findHabitById returns the habit that matches
+    mockFindHabitById.mockImplementation((habits, id) =>
+      habits.find(h => h.id === id)
+    );
+
     // Mock authenticated user
     mockUseAuth.mockReturnValue({
       user: {
@@ -86,7 +99,118 @@ describe('Home Page - Delete Functionality', () => {
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      isAuthLoading: false,
     });
+  });
+
+  it('should pass authenticated user ID to useHabits', () => {
+    // Use a different user ID to verify page uses auth context, not hardcoded value
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: 'real-authenticated-user-id',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2025-01-01T00:00:00.000Z',
+      },
+      isLoading: false,
+      isAuthenticated: true,
+      login: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+    });
+
+    render(<Home />);
+
+    expect(mockUseHabits).toHaveBeenCalledWith('real-authenticated-user-id');
+  });
+
+  it('should pass empty string to useHabits when user is null', () => {
+    mockUseAuth.mockReturnValue({
+      user: null,
+      isLoading: false,
+      isAuthenticated: false,
+      login: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+    });
+
+    render(<Home />);
+
+    expect(mockUseHabits).toHaveBeenCalledWith('');
+  });
+
+  it('should not open edit modal when editing non-existent habit', async () => {
+    // Mock useHabits to track calls to internal functions
+    const mockHabitsWithFind: Habit[] = [
+      {
+        id: 'habit-1',
+        userId: '123e4567-e89b-12d3-a456-426614174000',
+        name: 'Morning Exercise',
+        description: '30 minutes of cardio',
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '🏃',
+        status: 'active',
+        createdAt: '2025-01-01T00:00:00.000Z',
+        updatedAt: '2025-01-01T00:00:00.000Z'
+      }
+    ];
+
+    mockUseHabits.mockReturnValue({
+      habits: mockHabitsWithFind,
+      createHabit: mockCreateHabit,
+      updateHabit: jest.fn(),
+      toggleCompletion: mockToggleCompletion,
+      isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
+      deleteHabit: mockDeleteHabit,
+      isAuthLoading: false,
+    });
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Modal should not be visible - no habit is being edited
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('should not render edit modal when editingHabit is null', () => {
+    render(<Home />);
+
+    // The modal should not be in the document when no habit is being edited
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(screen.queryByText('Edit Habit')).not.toBeInTheDocument();
+  });
+
+  it('should log error and not open modal when habit is not found', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const user = userEvent.setup();
+
+    // Mock findHabitById to return undefined (habit not found)
+    mockFindHabitById.mockReturnValue(undefined);
+
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Click edit button - findHabitById will return undefined
+    const editButton = screen.getAllByLabelText('Edit habit')[0];
+    await user.click(editButton);
+
+    // Should log error
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Attempted to edit non-existent habit')
+    );
+
+    // Modal should NOT be open
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
   });
 
   it('should call deleteHabit when delete button is clicked', async () => {
@@ -157,6 +281,7 @@ describe('Home Page - Delete Functionality', () => {
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      isAuthLoading: false,
     });
 
     render(<Home />);
@@ -225,12 +350,18 @@ describe('Home Page - Edit Functionality', () => {
   ];
 
   const mockCreateHabit = jest.fn();
+  const mockUpdateHabit = jest.fn();
   const mockToggleCompletion = jest.fn();
   const mockIsHabitCompletedOnDate = jest.fn();
   const mockDeleteHabit = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Default: findHabitById returns the habit that matches
+    mockFindHabitById.mockImplementation((habits, id) =>
+      habits.find(h => h.id === id)
+    );
 
     mockUseAuth.mockReturnValue({
       user: {
@@ -249,9 +380,11 @@ describe('Home Page - Edit Functionality', () => {
     mockUseHabits.mockReturnValue({
       habits: mockHabits,
       createHabit: mockCreateHabit,
+      updateHabit: mockUpdateHabit,
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      isAuthLoading: false,
     });
   });
 
@@ -353,6 +486,85 @@ describe('Home Page - Edit Functionality', () => {
     const closeButton = screen.getByLabelText(/close/i);
     await user.click(closeButton);
 
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('should call updateHabit when saving edits in modal', async () => {
+    mockUpdateHabit.mockResolvedValue({
+      ...mockHabits[0],
+      name: 'Updated Exercise Name',
+    });
+
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Open the edit modal
+    const editButton = screen.getByLabelText('Edit habit');
+    await user.click(editButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Clear and update the habit name
+    const nameInput = screen.getByLabelText(/habit name/i);
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Updated Exercise Name');
+
+    // Submit the form
+    const saveButton = screen.getByRole('button', { name: /save/i });
+    await user.click(saveButton);
+
+    // Verify updateHabit was called with correct arguments
+    await waitFor(() => {
+      expect(mockUpdateHabit).toHaveBeenCalledWith('habit-1', expect.objectContaining({
+        name: 'Updated Exercise Name',
+      }));
+    });
+
+    // Modal should close after successful update
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
+  });
+
+  it('should close modal after successful update', async () => {
+    mockUpdateHabit.mockResolvedValue({
+      ...mockHabits[0],
+      description: 'New description',
+    });
+
+    const user = userEvent.setup();
+    render(<Home />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
+    });
+
+    // Open the edit modal
+    const editButton = screen.getByLabelText('Edit habit');
+    await user.click(editButton);
+
+    await waitFor(() => {
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    // Update description
+    const descriptionInput = screen.getByLabelText(/description/i);
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, 'New description');
+
+    // Submit the form
+    const saveButton = screen.getByRole('button', { name: /save/i });
+    await user.click(saveButton);
+
+    // Modal should close
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     });

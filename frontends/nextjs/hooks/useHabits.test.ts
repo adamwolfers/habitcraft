@@ -2,9 +2,17 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { useHabits } from './useHabits';
 import { HabitFormData, Habit, Completion } from '@/types/habit';
 import * as api from '@/lib/api';
+import * as authContextModule from '@/context/AuthContext';
 
 // Mock the API module
 jest.mock('@/lib/api');
+
+// Mock the useAuth hook
+jest.mock('@/context/AuthContext', () => ({
+  useAuth: jest.fn(),
+}));
+
+const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
 
 const mockFetchHabits = api.fetchHabits as jest.MockedFunction<typeof api.fetchHabits>;
 const mockCreateHabit = api.createHabit as jest.MockedFunction<typeof api.createHabit>;
@@ -12,6 +20,7 @@ const mockFetchCompletions = api.fetchCompletions as jest.MockedFunction<typeof 
 const mockCreateCompletion = api.createCompletion as jest.MockedFunction<typeof api.createCompletion>;
 const mockDeleteCompletion = api.deleteCompletion as jest.MockedFunction<typeof api.deleteCompletion>;
 const mockDeleteHabit = api.deleteHabit as jest.MockedFunction<typeof api.deleteHabit>;
+const mockUpdateHabit = api.updateHabit as jest.MockedFunction<typeof api.updateHabit>;
 
 describe('useHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -48,6 +57,15 @@ describe('useHabits', () => {
     jest.clearAllMocks();
     // Default mock returns empty array
     mockFetchHabits.mockResolvedValue([]);
+    // Default: user is authenticated
+    mockUseAuth.mockReturnValue({
+      user: { id: mockUserId, email: 'test@example.com', name: 'Test User', createdAt: '2025-01-01' },
+      isLoading: false,
+      isAuthenticated: true,
+      login: jest.fn(),
+      register: jest.fn(),
+      logout: jest.fn(),
+    });
   });
 
   it('should initialize with empty habits array', async () => {
@@ -121,6 +139,103 @@ describe('useHabits', () => {
     // Wait a bit to ensure no async operations are triggered
     await waitFor(() => {
       expect(mockFetchHabits).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('authentication awareness', () => {
+    it('should not fetch habits when user is not authenticated', async () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait to ensure no async operations are triggered
+      await waitFor(() => {
+        expect(result.current.habits).toEqual([]);
+      });
+
+      expect(mockFetchHabits).not.toHaveBeenCalled();
+    });
+
+    it('should not fetch habits while authentication is loading', async () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isLoading: true,
+        isAuthenticated: false,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait to ensure no async operations are triggered
+      await waitFor(() => {
+        expect(result.current.habits).toEqual([]);
+      });
+
+      expect(mockFetchHabits).not.toHaveBeenCalled();
+    });
+
+    it('should fetch habits when user becomes authenticated', async () => {
+      // Start with loading state
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isLoading: true,
+        isAuthenticated: false,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+
+      const { result, rerender } = renderHook(() => useHabits(mockUserId));
+
+      // Should not fetch while loading
+      expect(mockFetchHabits).not.toHaveBeenCalled();
+
+      // Simulate auth completing
+      mockUseAuth.mockReturnValue({
+        user: { id: mockUserId, email: 'test@example.com', name: 'Test User', createdAt: '2025-01-01' },
+        isLoading: false,
+        isAuthenticated: true,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      rerender();
+
+      // Now it should fetch
+      await waitFor(() => {
+        expect(mockFetchHabits).toHaveBeenCalledWith(mockUserId);
+      });
+
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+    });
+
+    it('should return isLoading state from hook', async () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isLoading: true,
+        isAuthenticated: false,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      expect(result.current.isAuthLoading).toBe(true);
     });
   });
 
@@ -437,6 +552,104 @@ describe('useHabits', () => {
 
       const isCompleted = result.current.isHabitCompletedOnDate('non-existent', new Date('2025-01-15'));
       expect(isCompleted).toBe(false);
+    });
+  });
+
+  describe('updateHabit', () => {
+    it('should update a habit via API and update local state', async () => {
+      const updatedHabit: Habit = {
+        ...mockHabitsFromApi[0],
+        name: 'Updated Exercise',
+        description: 'New description',
+      };
+
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockUpdateHabit.mockResolvedValue(updatedHabit);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait for initial fetch to complete
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+
+      // Update the habit
+      let returnedHabit: Habit | undefined;
+      await act(async () => {
+        returnedHabit = await result.current.updateHabit('habit-1', {
+          name: 'Updated Exercise',
+          description: 'New description',
+        });
+      });
+
+      // Verify API was called with correct data
+      expect(mockUpdateHabit).toHaveBeenCalledWith(mockUserId, 'habit-1', {
+        name: 'Updated Exercise',
+        description: 'New description',
+      });
+
+      // Verify returned habit matches updated data
+      expect(returnedHabit).toEqual(updatedHabit);
+
+      // Verify local state was updated
+      expect(result.current.habits[0].name).toBe('Updated Exercise');
+      expect(result.current.habits[0].description).toBe('New description');
+      // Other habit should be unchanged
+      expect(result.current.habits[1]).toEqual(mockHabitsFromApi[1]);
+    });
+
+    it('should handle update errors gracefully', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockUpdateHabit.mockRejectedValue(new Error('API Error'));
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      // Wait for initial fetch to complete
+      await waitFor(() => {
+        expect(result.current.habits).toEqual(mockHabitsFromApi);
+      });
+
+      // Try to update a habit (should throw)
+      await act(async () => {
+        try {
+          await result.current.updateHabit('habit-1', { name: 'New Name' });
+        } catch (error) {
+          // Expected to throw
+        }
+      });
+
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error updating habit:', expect.any(Error));
+
+      // Verify habits array wasn't modified
+      expect(result.current.habits).toEqual(mockHabitsFromApi);
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should return the updated habit from updateHabit', async () => {
+      const updatedHabit: Habit = {
+        ...mockHabitsFromApi[0],
+        color: '#FF0000',
+      };
+
+      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockUpdateHabit.mockResolvedValue(updatedHabit);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(2);
+      });
+
+      let returnedHabit: Habit | undefined;
+      await act(async () => {
+        returnedHabit = await result.current.updateHabit('habit-1', { color: '#FF0000' });
+      });
+
+      expect(returnedHabit).toEqual(updatedHabit);
+      expect(returnedHabit?.color).toBe('#FF0000');
     });
   });
 

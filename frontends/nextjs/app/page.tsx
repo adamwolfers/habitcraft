@@ -2,17 +2,17 @@
 
 import { useState } from "react";
 import { useHabits } from "@/hooks/useHabits";
+import { useAuth } from "@/context/AuthContext";
 import AddHabitForm from "@/components/AddHabitForm";
 import HabitCard from "@/components/HabitCard";
 import EditHabitModal from "@/components/EditHabitModal";
 import Footer from "@/components/Footer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Habit, HabitFormData } from "@/types/habit";
-
-// TODO: Replace with real authentication
-const MOCK_USER_ID = "123e4567-e89b-12d3-a456-426614174000";
+import { findHabitById } from "@/utils/habitUtils";
 
 export default function Home() {
+  const { user } = useAuth();
   const {
     habits,
     createHabit,
@@ -20,7 +20,7 @@ export default function Home() {
     toggleCompletion,
     isHabitCompletedOnDate,
     deleteHabit,
-  } = useHabits(MOCK_USER_ID);
+  } = useHabits(user?.id ?? "");
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
@@ -37,10 +37,12 @@ export default function Home() {
   };
 
   const handleEditHabit = (habitId: string) => {
-    const habit = habits.find((h) => h.id === habitId);
-    if (habit) {
-      setEditingHabit(habit);
+    const habit = findHabitById(habits, habitId);
+    if (!habit) {
+      console.error(`Attempted to edit non-existent habit: ${habitId}`);
+      return;
     }
+    setEditingHabit(habit);
   };
 
   const handleUpdateHabit = async (
