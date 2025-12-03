@@ -418,27 +418,35 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should allow refresh when access token expired but refresh token valid', async () => {
-      // Create an expired access token
+      // Login to get a valid refresh token stored in database
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password
+        });
+
+      expect(loginResponse.status).toBe(200);
+
+      // Extract the refresh token from cookies
+      const loginCookies = loginResponse.headers['set-cookie'];
+      const refreshCookie = loginCookies.find(c => c.startsWith('refreshToken='));
+      const validRefreshToken = refreshCookie.match(/refreshToken=([^;]+)/)[1];
+
+      // Create an expired access token (simulating token expiry)
       const expiredAccessToken = jwt.sign(
         { userId: testUsers.user1.id, type: 'access' },
         JWT_SECRET,
         { expiresIn: '-1s' }
       );
 
-      // Create a valid refresh token
-      const validRefreshToken = jwt.sign(
-        { userId: testUsers.user1.id, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      // Verify access token is rejected
+      // Verify expired access token is rejected
       const accessResponse = await request(app)
         .get('/api/v1/habits')
         .set('Cookie', `accessToken=${expiredAccessToken}`);
       expect(accessResponse.status).toBe(401);
 
-      // Refresh should work with valid refresh token
+      // Refresh should work with valid refresh token from login
       const refreshResponse = await request(app)
         .post('/api/v1/auth/refresh')
         .set('Cookie', `refreshToken=${validRefreshToken}`);

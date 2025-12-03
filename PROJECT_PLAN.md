@@ -433,9 +433,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Check OWASP Top 10 vulnerabilities (parameterized queries, no injection vectors)
   - [x] Verify environment variable security (.env files gitignored, secrets from env)
   - [x] Test token expiration and refresh (15m access, 7d refresh, proper rejection)
-- [ ] Token security enhancements
-  - [ ] Refresh token rotation on use
-  - [ ] Token revocation/blacklist for logout
+- [x] Token security enhancements
+  - [x] Refresh token rotation on use
+  - [x] Token revocation/blacklist for logout
+  - [x] Unique token identifiers (jti claim)
+  - [x] Database storage for refresh tokens
 
 #### Production Configuration
 

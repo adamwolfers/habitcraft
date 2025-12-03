@@ -1,11 +1,13 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const pool = require('../db/pool');
 const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware/rateLimiter');
 const { sanitizeBody, sanitizeEmail } = require('../middleware/sanitize');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
+const tokenService = require('../services/tokenService');
 const {
   JWT_SECRET,
   ACCESS_TOKEN_EXPIRES,
@@ -37,15 +39,15 @@ function setAuthCookies(res, accessToken, refreshToken) {
   });
 }
 
-// Generate tokens
+// Generate tokens with unique jti claims
 function generateTokens(userId) {
   const accessToken = jwt.sign(
-    { userId, type: 'access' },
+    { userId, type: 'access', jti: crypto.randomUUID() },
     JWT_SECRET,
     { expiresIn: ACCESS_TOKEN_EXPIRES }
   );
   const refreshToken = jwt.sign(
-    { userId, type: 'refresh' },
+    { userId, type: 'refresh', jti: crypto.randomUUID() },
     JWT_SECRET,
     { expiresIn: REFRESH_TOKEN_EXPIRES }
   );
@@ -103,6 +105,10 @@ router.post('/register', registerLimiter, sanitizeBody, sanitizeEmail, registerV
 
     const user = result.rows[0];
     const tokens = generateTokens(user.id);
+
+    // Store refresh token in database for rotation/revocation
+    const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
+    await tokenService.storeRefreshToken(user.id, tokens.refreshToken, refreshTokenExpiry);
 
     // Set HttpOnly cookies
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
@@ -164,6 +170,10 @@ router.post('/login', loginLimiter, sanitizeBody, sanitizeEmail, loginValidation
 
     const tokens = generateTokens(user.id);
 
+    // Store refresh token in database for rotation/revocation
+    const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
+    await tokenService.storeRefreshToken(user.id, tokens.refreshToken, refreshTokenExpiry);
+
     // Set HttpOnly cookies
     setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
@@ -205,23 +215,36 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       return res.status(401).json({ error: 'Invalid token type' });
     }
 
-    const accessToken = jwt.sign(
-      { userId: decoded.userId, type: 'access' },
-      JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRES }
-    );
+    // Validate token in database (check if revoked or not found)
+    const tokenValidation = await tokenService.validateRefreshToken(refreshToken);
+    if (!tokenValidation.valid) {
+      logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {
+        reason: tokenValidation.reason
+      });
+      if (tokenValidation.reason === 'token_revoked') {
+        return res.status(401).json({ error: 'Token has been revoked' });
+      }
+      return res.status(401).json({ error: 'Invalid refresh token' });
+    }
 
-    // Set new access token cookie
-    res.cookie('accessToken', accessToken, {
-      ...cookieOptions,
-      maxAge: ACCESS_TOKEN_MAX_AGE
-    });
+    // Revoke the old refresh token
+    await tokenService.revokeRefreshToken(refreshToken);
+
+    // Generate new tokens (rotation)
+    const tokens = generateTokens(decoded.userId);
+
+    // Store new refresh token in database
+    const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
+    await tokenService.storeRefreshToken(decoded.userId, tokens.refreshToken, refreshTokenExpiry);
+
+    // Set new cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
     logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_SUCCESS, req, {
       userId: decoded.userId
     });
 
-    res.json({ accessToken });
+    res.json({ accessToken: tokens.accessToken });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {
@@ -241,7 +264,13 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
 });
 
 // POST /api/v1/auth/logout
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
+  // Revoke the refresh token if present
+  const refreshToken = req.cookies?.refreshToken;
+  if (refreshToken) {
+    await tokenService.revokeRefreshToken(refreshToken);
+  }
+
   clearAuthCookies(res);
   logSecurityEvent(SECURITY_EVENTS.LOGOUT, req, {});
   res.json({ message: 'Logged out successfully' });

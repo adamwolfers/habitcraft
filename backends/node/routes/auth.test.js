@@ -8,6 +8,15 @@ const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger')
 // Mock the database pool
 jest.mock('../db/pool');
 
+// Mock the token service
+jest.mock('../services/tokenService', () => ({
+  storeRefreshToken: jest.fn().mockResolvedValue(),
+  validateRefreshToken: jest.fn().mockResolvedValue({ valid: true, userId: '123e4567-e89b-12d3-a456-426614174000', tokenId: 'token-id' }),
+  revokeRefreshToken: jest.fn().mockResolvedValue(),
+  revokeAllUserTokens: jest.fn().mockResolvedValue(1),
+  hashToken: jest.fn(token => `hashed_${token}`)
+}));
+
 // Mock the security logger
 jest.mock('../utils/securityLogger', () => ({
   logSecurityEvent: jest.fn(),
@@ -589,3 +598,4 @@ describe('Auth API', () => {
     });
   });
 });
+// Token Security Enhancement tests are in auth.tokenSecurity.test.js
