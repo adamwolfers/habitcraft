@@ -12,7 +12,7 @@ HabitCraft helps users build and track daily habits with an intuitive calendar-b
 - **Frontend:** Next.js (React) + TypeScript + Tailwind CSS
 - **Database:** PostgreSQL 14+
 - **Testing:** Jest + Supertest (Backend), Jest + React Testing Library (Frontend)
-- **Deployment:** Docker Compose
+- **Deployment:** Docker Compose (dev), AWS Lightsail Containers + RDS (prod)
 
 ## Project Structure
 
@@ -88,6 +88,7 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Quick start and setup guide
 - **[PROJECT_PLAN.md](./PROJECT_PLAN.md)** - Complete development roadmap and task list
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - JWT authentication implementation guide
+- **[AWS Architecture](./docs/AWS_ARCHITECTURE.md)** - Production deployment guide (Lightsail + RDS)
 - **[API Specification](./shared/api-spec/openapi.yaml)** - OpenAPI/Swagger specification
 - **[Database Schema](./shared/database/schema.sql)** - PostgreSQL schema and migrations
 

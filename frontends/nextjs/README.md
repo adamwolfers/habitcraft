@@ -117,8 +117,12 @@ frontends/nextjs/
 │   ├── api.ts                   # API client
 │   └── api.test.ts              # API tests
 ├── utils/                        # Helper utilities
+│   ├── authUtils.ts             # Registration form validation
+│   ├── authUtils.test.ts        # Auth utils tests
 │   ├── dateUtils.ts             # Date manipulation
-│   └── dateUtils.test.ts        # Date utils tests
+│   ├── dateUtils.test.ts        # Date utils tests
+│   ├── habitUtils.ts            # Habit lookup utilities
+│   └── habitUtils.test.ts       # Habit utils tests
 ├── playwright.config.ts          # Playwright configuration
 └── package.json                  # Dependencies and scripts
 ```
@@ -142,6 +146,8 @@ npm test -- lib/api.test.ts
 npm test -- context/AuthContext.test.tsx
 npm test -- hooks/useHabits.test.ts
 npm test -- hooks/useRequireAuth.test.ts
+npm test -- utils/authUtils.test.ts
+npm test -- utils/habitUtils.test.ts
 npm test -- app/page.test.tsx
 npm test -- app/login/page.test.tsx
 npm test -- app/register/page.test.tsx
