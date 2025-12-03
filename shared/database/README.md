@@ -35,16 +35,27 @@ This directory contains the shared database schema used by all backend implement
    - notes
    - created_at
 
+4. **refresh_tokens** - JWT refresh token storage
+   - id (UUID, primary key)
+   - user_id (foreign key to users)
+   - token_hash (SHA256 hash, unique)
+   - expires_at
+   - revoked (boolean)
+   - created_at
+
 ### Relationships
 
 ```
 users (1) ──< (N) habits (1) ──< (N) completions
+users (1) ──< (N) refresh_tokens
 ```
 
 ## Files
 
 - **schema.sql** - Database schema definition (tables, indexes, triggers, views)
 - **seed.sql** - Development seed data (demo user and sample habits)
+- **migrations/** - SQL migration scripts for schema changes
+  - `001_add_refresh_tokens.sql` - Adds refresh_tokens table for token rotation
 
 The seed data is automatically loaded when using docker-compose and includes:
 - Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`, email: `demo@example.com`, password: `demo123`)
@@ -126,6 +137,7 @@ DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habitcraft
 erDiagram
     USERS ||--o{ HABITS : creates
     HABITS ||--o{ COMPLETIONS : tracks
+    USERS ||--o{ REFRESH_TOKENS : has
 
     USERS {
         uuid id PK
@@ -157,6 +169,15 @@ erDiagram
         text notes
         timestamp created_at
     }
+
+    REFRESH_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        varchar token_hash UK
+        timestamp expires_at
+        boolean revoked
+        timestamp created_at
+    }
 ```
 
 ## Indexes
@@ -167,6 +188,9 @@ The schema includes indexes on:
 - `habits.status` - for filtering active/archived
 - `completions.habit_id` - for habit completions
 - `completions.date` - for date range queries
+- `refresh_tokens.user_id` - for user's tokens lookup
+- `refresh_tokens.token_hash` - for token validation
+- `refresh_tokens.expires_at` - for cleanup of expired tokens
 
 ## Notes
 

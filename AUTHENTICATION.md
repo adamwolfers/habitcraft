@@ -65,11 +65,15 @@ User → Request + JWT → JWT Middleware
 
 User → Expired Access Token → POST /api/v1/auth/refresh
                                        ↓
-                            Validate refresh token
+                            Validate refresh token (signature + DB)
                                        ↓
-                            Generate new access token
+                            Revoke old refresh token in database
                                        ↓
-                            Return new access token
+                            Generate new access + refresh tokens
+                                       ↓
+                            Store new refresh token hash in database
+                                       ↓
+                            Set new HttpOnly cookies
 ```
 
 ## Backend Implementation (Node.js/Express)
@@ -137,18 +141,20 @@ User → Expired Access Token → POST /api/v1/auth/refresh
 
 #### 3. Token Refresh
 - **Endpoint:** `POST /api/v1/auth/refresh`
-- **Request Body:**
-  ```json
-  {
-    "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
-  }
-  ```
+- **Request:** Refresh token read from HttpOnly cookie (or body for backwards compatibility)
+- **Behavior:**
+  - Validates refresh token signature and checks database
+  - Revokes the old refresh token (token rotation)
+  - Generates new access AND refresh tokens
+  - Stores new refresh token hash in database
+  - Sets new HttpOnly cookies
 - **Response (200):**
   ```json
   {
     "accessToken": "eyJhbGciOiJIUzI1NiIs..."
   }
   ```
+  (New refreshToken is set via HttpOnly cookie)
 
 #### 4. User Profile
 - **Endpoint:** `GET /api/v1/users/me`
@@ -167,13 +173,14 @@ User → Expired Access Token → POST /api/v1/auth/refresh
 
 **Access Token:**
 - Expiration: 15 minutes
-- Payload: `{ userId, email, type: 'access' }`
+- Payload: `{ userId, type: 'access', jti: '<unique-id>' }`
 - Used for: API authentication
 
 **Refresh Token:**
 - Expiration: 7 days
-- Payload: `{ userId, type: 'refresh' }`
+- Payload: `{ userId, type: 'refresh', jti: '<unique-id>' }`
 - Used for: Generating new access tokens
+- Storage: Hash stored in database for validation/revocation
 
 ### Middleware
 
@@ -203,10 +210,13 @@ function jwtAuthMiddleware(req, res, next) {
 1. **Password Hashing:** bcrypt with 10 salt rounds
 2. **Token Signing:** HMAC-SHA256 (HS256) algorithm
 3. **Token Expiration:** Short-lived access tokens, long-lived refresh tokens
-4. **Input Validation:** express-validator for all inputs
-5. **Error Handling:** Generic error messages to prevent user enumeration
-6. **HTTPS Only:** Tokens should only be transmitted over HTTPS in production
-7. **Security Event Logging:** All auth events logged (logins, failures, token refresh)
+4. **Token Uniqueness:** Each token has a unique `jti` (JWT ID) claim
+5. **Refresh Token Rotation:** Old refresh tokens are revoked on each refresh
+6. **Token Revocation:** Refresh tokens are stored in database and can be revoked (e.g., on logout)
+7. **Input Validation:** express-validator for all inputs
+8. **Error Handling:** Generic error messages to prevent user enumeration
+9. **HTTPS Only:** Tokens should only be transmitted over HTTPS in production
+10. **Security Event Logging:** All auth events logged (logins, failures, token refresh)
 
 ## Frontend Implementation (Next.js)
 
@@ -281,6 +291,16 @@ CREATE TABLE users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Refresh tokens for rotation and revocation
+CREATE TABLE refresh_tokens (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL UNIQUE,  -- SHA256 hash
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    revoked BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
 ## Environment Variables
@@ -334,7 +354,7 @@ A: Short-lived access tokens minimize the risk if a token is stolen. Refresh tok
 A: Cookies (httpOnly, secure, SameSite) are more secure against XSS. localStorage is simpler but more vulnerable.
 
 **Q: What if a user's refresh token is stolen?**
-A: The attacker can generate access tokens for 7 days. Future enhancement: token rotation and blacklisting.
+A: Token rotation limits the damage - each refresh invalidates the previous token. If a stolen token is used after the legitimate user refreshes, it will be rejected. Users can also logout to revoke all tokens.
 
 **Q: How do I test JWT authentication locally?**
 A: Use tools like Postman or curl with the Authorization header: `Authorization: Bearer <token>`

@@ -166,12 +166,16 @@ paths:
         - Auth
       summary: Refresh access token
       description: |
-        Get a new access token using the refresh token from cookies.
-        Sets a new accessToken cookie on success.
+        Get new tokens using the refresh token from cookies.
+        Implements token rotation:
+        - Validates refresh token signature and database record
+        - Revokes the old refresh token
+        - Generates new access AND refresh tokens
+        - Sets new HttpOnly cookies for both tokens
       operationId: refreshToken
       responses:
         '200':
-          description: Token refreshed successfully
+          description: Tokens refreshed successfully
           content:
             application/json:
               schema:
@@ -191,20 +195,30 @@ paths:
               example:
                 error: "Refresh token is required"
         '401':
-          description: Invalid or expired refresh token
+          description: Invalid, expired, or revoked refresh token
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-              example:
-                error: "Refresh token expired"
+              examples:
+                expired:
+                  value:
+                    error: "Refresh token expired"
+                revoked:
+                  value:
+                    error: "Token has been revoked"
+                invalid:
+                  value:
+                    error: "Invalid refresh token"
 
   /auth/logout:
     post:
       tags:
         - Auth
       summary: Logout user
-      description: Clear authentication cookies to log out the user.
+      description: |
+        Revoke the refresh token and clear authentication cookies.
+        The refresh token is marked as revoked in the database.
       operationId: logout
       responses:
         '200':
