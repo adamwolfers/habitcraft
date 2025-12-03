@@ -10,7 +10,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - **Backend:** Node.js with Express, JavaScript
 - **Database:** PostgreSQL 14+
 - **Testing:** Jest + Supertest (Backend), Jest + React Testing Library (Frontend)
-- **Deployment:** Docker Compose (dev), k3s + Terraform on AWS (prod)
+- **Deployment:** Docker Compose (dev), Lightsail Containers + RDS on AWS (prod)
 
 ## Version 1.0 Goals
 
@@ -410,11 +410,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Update test examples
   - [x] Fix port configuration
 - [x] **AWS Architecture Documentation** (docs/AWS_ARCHITECTURE.md)
-  - [x] k3s + Terraform infrastructure as code
-  - [x] Environment setup and deployment guide
+  - [x] Lightsail Containers + RDS architecture
+  - [x] Step-by-step setup guide (~30 min)
+  - [x] CI/CD with GitHub Actions
   - [x] Database migration steps
-  - [x] SSL/TLS via Traefik + Let's Encrypt
-  - [x] CloudWatch monitoring setup
+  - [x] Automatic HTTPS on Lightsail domains
+  - [x] Built-in monitoring dashboards
   - [x] Security checklist
   - [x] Backup and disaster recovery procedures
 
@@ -441,15 +442,20 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Production Configuration
 
-- [ ] Update Docker Compose for production
-  - [ ] Environment variable management
-  - [ ] PostgreSQL production config
-  - [ ] Health checks for services
-  - [ ] Volume management for data persistence
+- [ ] Production Dockerfiles
+  - [ ] Backend Dockerfile with health checks
+  - [ ] Frontend Dockerfile with standalone output
+  - [ ] Test images build and run locally
+- [ ] AWS Lightsail deployment
+  - [ ] Create Lightsail Container Services (frontend + backend)
+  - [ ] Create RDS PostgreSQL instance
+  - [ ] Configure VPC peering for RDS access
+  - [ ] Set up GitHub Secrets for CI/CD
+  - [ ] Deploy and verify health checks
 - [ ] Production environment setup
-  - [ ] Secure JWT_SECRET generation
-  - [ ] HTTPS enforcement
-  - [ ] CORS whitelist for production domains
+  - [ ] Secure JWT_SECRET generation (64+ random bytes)
+  - [ ] HTTPS via Lightsail (automatic on .amazonaws.com domains)
+  - [ ] CORS whitelist for production frontend URL
   - [ ] Rate limiting configuration (production limits and thresholds)
 
 ---
@@ -621,13 +627,13 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - Automated deployment
   - Code quality checks (linting, coverage)
 - **Cloud Deployment**
-  - [x] AWS deployment (k3s on EC2, RDS PostgreSQL)
+  - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
   - Google Cloud Platform
   - Azure deployment
 - **Infrastructure as Code**
-  - [x] Terraform configurations (VPC, EC2, RDS, Secrets Manager)
-  - CloudFormation templates
-  - [x] Kubernetes manifests (deployments, services, ingress)
+  - [x] AWS CLI deployment scripts
+  - [x] GitHub Actions CI/CD workflows
+  - CloudFormation templates (future)
 - **Monitoring & Observability**
   - Application monitoring (Datadog, New Relic)
   - Error tracking (Sentry)
