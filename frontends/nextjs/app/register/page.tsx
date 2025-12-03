@@ -4,6 +4,7 @@ import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { validateRegistrationForm } from '@/utils/authUtils';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -28,15 +29,9 @@ export default function RegisterPage() {
     setValidationError('');
     setApiError('');
 
-    // Validate password length
-    if (password.length < 8) {
-      setValidationError('Password must be at least 8 characters');
-      return;
-    }
-
-    // Validate passwords match
-    if (password !== confirmPassword) {
-      setValidationError('Passwords do not match');
+    const validationError = validateRegistrationForm({ password, confirmPassword });
+    if (validationError) {
+      setValidationError(validationError);
       return;
     }
 
