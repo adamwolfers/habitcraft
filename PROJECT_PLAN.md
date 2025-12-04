@@ -442,9 +442,9 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Production Configuration
 
-- [ ] Production Dockerfiles
-  - [ ] Backend Dockerfile with health checks
-  - [ ] Frontend Dockerfile with standalone output
+- [x] Production Dockerfiles
+  - [x] Backend Dockerfile with health checks
+  - [x] Frontend Dockerfile with standalone output
   - [ ] Test images build and run locally
 - [ ] AWS Lightsail deployment
   - [ ] Create Lightsail Container Services (frontend + backend)
@@ -633,6 +633,7 @@ Extract closure-captured logic from React event handlers into pure utility funct
 - **Infrastructure as Code**
   - [x] AWS CLI deployment scripts
   - [x] GitHub Actions CI/CD workflows
+  - [x] IAM policies for CI/CD, ops, and monitoring
   - CloudFormation templates (future)
 - **Monitoring & Observability**
   - Application monitoring (Datadog, New Relic)
