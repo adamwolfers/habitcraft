@@ -56,6 +56,14 @@ habittracker_fullstack/
 - Comprehensive test coverage
 - Docker-based deployment
 
+## Live Demo
+
+**Production:** https://habitcraft-frontend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/
+
+Create an account or use the demo credentials below to explore.
+
+---
+
 ## Quick Start
 
 ### Prerequisites

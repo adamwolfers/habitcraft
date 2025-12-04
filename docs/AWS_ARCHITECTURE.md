@@ -2,6 +2,18 @@
 
 Simple, cost-effective deployment using AWS Lightsail Container Service and RDS PostgreSQL.
 
+## Current Deployment
+
+| Service | URL |
+|---------|-----|
+| **Frontend** | https://habitcraft-frontend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/ |
+| **Backend API** | https://habitcraft-backend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/ |
+| **Health Check** | https://habitcraft-backend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/health |
+
+**Region:** us-west-2
+
+---
+
 ## Design Goals
 
 - **Quick setup**: Deploy in under an hour
@@ -432,16 +444,27 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY . .
+
+# Copy schema for auto-migrations (from shared/database)
+COPY schema.sql ./
+
+# Entrypoint runs migrations on first deploy, then starts server
+RUN chmod +x entrypoint.sh
 
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
-CMD ["node", "src/index.js"]
+CMD ["./entrypoint.sh"]
+```
+
+**Note:** Before building, copy the schema file:
+```bash
+cp shared/database/schema.sql backends/node/
 ```
 
 ### Frontend (frontends/nextjs/Dockerfile)
@@ -450,6 +473,10 @@ CMD ["node", "src/index.js"]
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+
+# IMPORTANT: NEXT_PUBLIC_* vars are baked in at build time, not runtime!
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
 COPY package*.json ./
 RUN npm ci
@@ -475,6 +502,14 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
   CMD wget -qO- http://localhost:3100/ || exit 1
 
 CMD ["node", "server.js"]
+```
+
+**Important:** When building the frontend image, you must pass the API URL as a build argument:
+
+```bash
+docker build --platform linux/amd64 \
+  --build-arg NEXT_PUBLIC_API_BASE_URL=https://your-backend-url.amazonlightsail.com \
+  -t habitcraft-frontend:latest .
 ```
 
 ---

@@ -445,18 +445,18 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Production Dockerfiles
   - [x] Backend Dockerfile with health checks
   - [x] Frontend Dockerfile with standalone output
-  - [ ] Test images build and run locally
-- [ ] AWS Lightsail deployment
-  - [ ] Create Lightsail Container Services (frontend + backend)
-  - [ ] Create RDS PostgreSQL instance
-  - [ ] Configure VPC peering for RDS access
+  - [x] Test images build and run locally
+- [x] AWS Lightsail deployment
+  - [x] Create Lightsail Container Services (frontend + backend)
+  - [x] Create RDS PostgreSQL instance
+  - [x] Configure VPC peering for RDS access
   - [ ] Set up GitHub Secrets for CI/CD
-  - [ ] Deploy and verify health checks
-- [ ] Production environment setup
-  - [ ] Secure JWT_SECRET generation (64+ random bytes)
-  - [ ] HTTPS via Lightsail (automatic on .amazonaws.com domains)
-  - [ ] CORS whitelist for production frontend URL
-  - [ ] Rate limiting configuration (production limits and thresholds)
+  - [x] Deploy and verify health checks
+- [x] Production environment setup
+  - [x] Secure JWT_SECRET generation (64+ random bytes)
+  - [x] HTTPS via Lightsail (automatic on .amazonaws.com domains)
+  - [x] CORS whitelist for production frontend URL
+  - [x] Rate limiting configuration (production limits and thresholds)
 
 ---
 
@@ -487,10 +487,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Deployment Checklist
 
-- [ ] Application runs in Docker with docker-compose
-- [ ] Environment variables properly configured
-- [ ] Database migrations work correctly
-- [ ] Ready for production deployment
+- [x] Application runs in Docker with docker-compose
+- [x] Environment variables properly configured
+- [x] Database migrations work correctly
+- [x] Production deployment complete (AWS Lightsail + RDS)
 
 ---
 
