@@ -1,0 +1,22 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LightsailContainerDeployment",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:CreateContainerServiceDeployment",
+        "lightsail:GetContainerServices",
+        "lightsail:GetContainerServiceDeployments",
+        "lightsail:PushContainerImage",
+        "lightsail:RegisterContainerImage",
+        "lightsail:GetContainerImages",
+        "lightsail:GetContainerLog"
+      ],
+      "Resource": [
+        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-backend",
+        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-frontend"
+      ]
+    }
+  ]
+}

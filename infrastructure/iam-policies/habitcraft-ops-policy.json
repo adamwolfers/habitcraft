@@ -1,0 +1,82 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LightsailContainerManagement",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:GetContainerServices",
+        "lightsail:GetContainerServiceDeployments",
+        "lightsail:GetContainerImages",
+        "lightsail:GetContainerLog",
+        "lightsail:GetContainerAPIMetadata",
+        "lightsail:CreateContainerServiceDeployment",
+        "lightsail:UpdateContainerService",
+        "lightsail:DeleteContainerImage",
+        "lightsail:PushContainerImage",
+        "lightsail:RegisterContainerImage"
+      ],
+      "Resource": [
+        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-backend",
+        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-frontend"
+      ]
+    },
+    {
+      "Sid": "RDSReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBSnapshots",
+        "rds:DescribeDBSecurityGroups",
+        "rds:DescribeDBParameterGroups",
+        "rds:DescribeEvents",
+        "rds:ListTagsForResource"
+      ],
+      "Resource": [
+        "arn:aws:rds:*:${AWS_ACCOUNT_ID}:db:habitcraft-*",
+        "arn:aws:rds:*:${AWS_ACCOUNT_ID}:snapshot:habitcraft-*"
+      ]
+    },
+    {
+      "Sid": "RDSSnapshots",
+      "Effect": "Allow",
+      "Action": [
+        "rds:CreateDBSnapshot",
+        "rds:DeleteDBSnapshot",
+        "rds:RestoreDBInstanceFromDBSnapshot",
+        "rds:CopyDBSnapshot"
+      ],
+      "Resource": [
+        "arn:aws:rds:*:${AWS_ACCOUNT_ID}:db:habitcraft-*",
+        "arn:aws:rds:*:${AWS_ACCOUNT_ID}:snapshot:habitcraft-*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchMonitoring",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:DescribeAlarms",
+        "cloudwatch:PutMetricAlarm",
+        "cloudwatch:DeleteAlarms"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogs",
+      "Effect": "Allow",
+      "Action": [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:${AWS_ACCOUNT_ID}:log-group:/aws/lightsail/habitcraft-*",
+        "arn:aws:logs:*:${AWS_ACCOUNT_ID}:log-group:/aws/rds/*habitcraft*"
+      ]
+    }
+  ]
+}

@@ -1,25 +1,23 @@
-# Node.js Backend Dockerfile
+# Node.js Backend Dockerfile (Production)
+# For development, use docker-compose which overrides CMD with 'npm run dev'
 
 FROM node:20-alpine
 
-# Set working directory
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install production dependencies only
+RUN npm ci --omit=dev
 
 # Copy application code
 COPY . .
 
-# Expose port
 EXPOSE 3000
 
-# Health check (uses PORT env var, defaults to 3000)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "const port = process.env.PORT || 3000; require('http').get('http://localhost:' + port + '/hello', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+# Health check using /health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/health || exit 1
 
-# Start the application
 CMD ["node", "server.js"]

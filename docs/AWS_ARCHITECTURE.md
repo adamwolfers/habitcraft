@@ -633,7 +633,7 @@ aws lightsail update-container-service \
 - [ ] RDS storage encryption enabled
 - [ ] Strong database password (24+ characters)
 - [ ] VPC peering configured correctly
-- [ ] IAM user for CI/CD has minimal permissions
+- [ ] IAM user for CI/CD uses scoped policy (see `infrastructure/iam-policies/`)
 
 ### Application
 - [ ] JWT secret is strong (64+ random bytes)
@@ -646,26 +646,38 @@ aws lightsail update-container-service \
 - [ ] AWS credentials use IAM user (not root)
 - [ ] Branch protection on main branch
 
-### IAM Policy for CI/CD User
+### IAM Policies
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": [
-        "lightsail:CreateContainerServiceDeployment",
-        "lightsail:GetContainerServices",
-        "lightsail:GetContainerServiceDeployments",
-        "lightsail:PushContainerImage",
-        "lightsail:RegisterContainerImage"
-      ],
-      "Resource": "*"
-    }
-  ]
-}
+Pre-configured IAM policies are available in [`infrastructure/iam-policies/`](../infrastructure/iam-policies/):
+
+| Policy | Purpose |
+|--------|---------|
+| `habitcraft-cicd-policy.json` | CI/CD deployments (GitHub Actions) |
+| `habitcraft-ops-policy.json` | Manual operations, snapshots, monitoring |
+| `habitcraft-readonly-policy.json` | Read-only access for dashboards |
+
+**Quick setup:**
+
+```bash
+cd infrastructure/iam-policies
+
+# Replace placeholder with your account ID
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+sed -i '' "s/\${AWS_ACCOUNT_ID}/$ACCOUNT_ID/g" *.json  # macOS
+# sed -i "s/\${AWS_ACCOUNT_ID}/$ACCOUNT_ID/g" *.json   # Linux
+
+# Create CI/CD user and policy
+aws iam create-user --user-name habitcraft-cicd
+aws iam create-policy --policy-name HabitCraftCICD \
+  --policy-document file://habitcraft-cicd-policy.json
+aws iam attach-user-policy --user-name habitcraft-cicd \
+  --policy-arn arn:aws:iam::$ACCOUNT_ID:policy/HabitCraftCICD
+
+# Generate access keys for GitHub Secrets
+aws iam create-access-key --user-name habitcraft-cicd
 ```
+
+See [`infrastructure/iam-policies/README.md`](../infrastructure/iam-policies/README.md) for complete setup instructions.
 
 ---
 

@@ -1,21 +1,34 @@
-# Next.js Frontend Dockerfile
+# Next.js Frontend Dockerfile (Production)
+# For development, use docker-compose which overrides CMD with 'npm run dev'
 
-FROM node:20-alpine
+# Stage 1: Build
+FROM node:20-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
-
-# Install dependencies
 RUN npm ci
 
-# Copy application code
 COPY . .
+RUN npm run build
 
-# Expose port
-EXPOSE 3000
+# Stage 2: Production
+FROM node:20-alpine AS runner
 
-# Start the development server
-CMD ["npm", "run", "dev"]
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=3100
+
+# Copy standalone build output
+COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+
+EXPOSE 3100
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget -qO- http://localhost:3100/ || exit 1
+
+CMD ["node", "server.js"]

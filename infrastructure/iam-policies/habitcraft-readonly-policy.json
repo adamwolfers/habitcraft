@@ -1,0 +1,58 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "LightsailReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "lightsail:GetContainerServices",
+        "lightsail:GetContainerServiceDeployments",
+        "lightsail:GetContainerImages",
+        "lightsail:GetContainerLog"
+      ],
+      "Resource": [
+        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-backend",
+        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-frontend"
+      ]
+    },
+    {
+      "Sid": "RDSReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "rds:DescribeDBInstances",
+        "rds:DescribeDBSnapshots",
+        "rds:DescribeEvents",
+        "rds:ListTagsForResource"
+      ],
+      "Resource": [
+        "arn:aws:rds:*:${AWS_ACCOUNT_ID}:db:habitcraft-*",
+        "arn:aws:rds:*:${AWS_ACCOUNT_ID}:snapshot:habitcraft-*"
+      ]
+    },
+    {
+      "Sid": "CloudWatchReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "cloudwatch:GetMetricData",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:DescribeAlarms"
+      ],
+      "Resource": "*"
+    },
+    {
+      "Sid": "CloudWatchLogsReadOnly",
+      "Effect": "Allow",
+      "Action": [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams"
+      ],
+      "Resource": [
+        "arn:aws:logs:*:${AWS_ACCOUNT_ID}:log-group:/aws/lightsail/habitcraft-*",
+        "arn:aws:logs:*:${AWS_ACCOUNT_ID}:log-group:/aws/rds/*habitcraft*"
+      ]
+    }
+  ]
+}
