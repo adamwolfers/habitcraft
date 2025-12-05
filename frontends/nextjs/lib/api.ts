@@ -37,7 +37,7 @@ async function refreshAccessToken(): Promise<boolean> {
     }
 
     return false;
-  } catch (error) {
+  } catch {
     // Network error during refresh - redirect to login
     redirectToLogin();
     return false;
