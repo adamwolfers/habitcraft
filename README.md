@@ -1,5 +1,8 @@
 # HabitCraft
 
+[![CI](https://github.com/adamwolfers/habitcraft/actions/workflows/ci.yml/badge.svg)](https://github.com/adamwolfers/habitcraft/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/adamwolfers/habitcraft/graph/badge.svg)](https://codecov.io/gh/adamwolfers/habitcraft)
+
 A full-stack habit tracking application built with modern web technologies, following Test-Driven Development (TDD) and clean architecture principles.
 
 ## Project Overview
