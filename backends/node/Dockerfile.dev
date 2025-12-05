@@ -1,21 +1,22 @@
 # Node.js Backend Dockerfile (Development/Testing)
 # Includes devDependencies for nodemon, testing, etc.
+# Note: Build context should be project root for access to shared/database
 
 FROM node:20-alpine
 
 WORKDIR /app
 
 # Copy package files
-COPY package*.json ./
+COPY backends/node/package*.json ./
 
 # Install all dependencies including devDependencies
 RUN npm ci
 
 # Copy application code
-COPY . .
+COPY backends/node/ .
 
-# Copy schema for migrations (copied from shared/database during build)
-COPY schema.sql ./
+# Copy schema for migrations from shared database
+COPY shared/database/schema.sql ./
 
 EXPOSE 3000
 

@@ -28,12 +28,12 @@ services:
   # Node.js Backend for Integration Tests
   backend-node-test:
     build:
-      context: ./backends/node
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: ./backends/node/Dockerfile.dev
     container_name: habitcraft-backend-node-test
     environment:
       NODE_ENV: test
-      PORT: 3010
+      PORT: 3000
       DATABASE_URL: postgresql://habituser:habitpass@postgres-test:5432/habitcraft_test
       DB_HOST: postgres-test
       DB_PORT: 5432
@@ -44,7 +44,7 @@ services:
       FRONTEND_URL: http://localhost:3110
       SKIP_RATE_LIMIT: "true"
     ports:
-      - "3010:3010"
+      - "3010:3000"
     volumes:
       - ./backends/node:/app
       - backend_node_test_modules:/app/node_modules
