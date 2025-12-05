@@ -29,7 +29,7 @@ services:
   backend-node-test:
     build:
       context: ./backends/node
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: habitcraft-backend-node-test
     environment:
       NODE_ENV: test
@@ -59,7 +59,7 @@ services:
   frontend-nextjs-test:
     build:
       context: ./frontends/nextjs
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.dev
     container_name: habitcraft-frontend-nextjs-test
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3010

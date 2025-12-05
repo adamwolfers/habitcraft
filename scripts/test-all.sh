@@ -41,51 +41,46 @@ echo "🐳 Starting test services..."
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT"
 
-# Check if services are already running
-if curl -s http://localhost:3010/health > /dev/null 2>&1; then
-    echo "✅ Test services already running"
-    echo "   (To force rebuild, run: docker compose -f docker-compose.test.yml down)"
-else
-    echo "Stopping any existing test containers..."
-    docker compose -f docker-compose.test.yml down 2>/dev/null || true
-    echo "Removing old test images..."
-    docker rmi habittracker_fullstack-backend-node-test habittracker_fullstack-frontend-nextjs-test 2>/dev/null || true
-    echo "Removing node_modules volumes (ensures fresh dependencies)..."
-    docker volume rm habittracker_fullstack_backend_node_test_modules 2>/dev/null || true
-    echo "Building Docker containers (--no-cache for fresh dependencies)..."
-    docker compose -f docker-compose.test.yml build --no-cache
-    echo "Starting Docker containers..."
-    docker compose -f docker-compose.test.yml up -d
+# Always rebuild containers to ensure fresh state
+echo "Stopping any existing test containers..."
+docker compose -f docker-compose.test.yml down 2>/dev/null || true
+echo "Removing old test images..."
+docker rmi habittracker_fullstack-backend-node-test habittracker_fullstack-frontend-nextjs-test 2>/dev/null || true
+echo "Removing node_modules volumes (ensures fresh dependencies)..."
+docker volume rm habittracker_fullstack_backend_node_test_modules 2>/dev/null || true
+echo "Building Docker containers (--no-cache for fresh dependencies)..."
+docker compose -f docker-compose.test.yml build --no-cache
+echo "Starting Docker containers..."
+docker compose -f docker-compose.test.yml up -d
 
-    # Wait for database to be healthy first
-    echo "Waiting for database..."
-    RETRIES=30
-    until docker compose -f docker-compose.test.yml ps postgres-test 2>/dev/null | grep -q "healthy"; do
-        RETRIES=$((RETRIES - 1))
-        if [ $RETRIES -le 0 ]; then
-            echo "❌ Timeout waiting for database"
-            echo "Check logs: docker compose -f docker-compose.test.yml logs postgres-test"
-            exit 1
-        fi
-        echo "  Waiting for database... ($RETRIES retries left)"
-        sleep 2
-    done
-    echo "✅ Database is ready"
-
-    # Wait for backend
-    if ! wait_for_service "http://localhost:3010/health" "backend"; then
-        echo "Check logs: docker compose -f docker-compose.test.yml logs backend-node-test"
+# Wait for database to be healthy first
+echo "Waiting for database..."
+RETRIES=30
+until docker compose -f docker-compose.test.yml ps postgres-test 2>/dev/null | grep -q "healthy"; do
+    RETRIES=$((RETRIES - 1))
+    if [ $RETRIES -le 0 ]; then
+        echo "❌ Timeout waiting for database"
+        echo "Check logs: docker compose -f docker-compose.test.yml logs postgres-test"
         exit 1
     fi
-    echo "✅ Backend is ready"
+    echo "  Waiting for database... ($RETRIES retries left)"
+    sleep 2
+done
+echo "✅ Database is ready"
 
-    # Wait for frontend
-    if ! wait_for_service "http://localhost:3110" "frontend"; then
-        echo "Check logs: docker compose -f docker-compose.test.yml logs frontend-nextjs-test"
-        exit 1
-    fi
-    echo "✅ Frontend is ready"
+# Wait for backend
+if ! wait_for_service "http://localhost:3010/health" "backend"; then
+    echo "Check logs: docker compose -f docker-compose.test.yml logs backend-node-test"
+    exit 1
 fi
+echo "✅ Backend is ready"
+
+# Wait for frontend
+if ! wait_for_service "http://localhost:3110" "frontend"; then
+    echo "Check logs: docker compose -f docker-compose.test.yml logs frontend-nextjs-test"
+    exit 1
+fi
+echo "✅ Frontend is ready"
 echo ""
 
 # 1. Backend Unit Tests

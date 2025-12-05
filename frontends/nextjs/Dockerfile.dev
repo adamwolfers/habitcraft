@@ -1,0 +1,28 @@
+# Next.js Frontend Dockerfile (Development/Testing)
+# Includes all dependencies for development mode
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Build argument for API URL (required for NEXT_PUBLIC_* vars)
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+ENV PORT=3100
+
+EXPOSE 3100
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:3100/ || exit 1
+
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,26 @@
+# Node.js Backend Dockerfile (Development/Testing)
+# Includes devDependencies for nodemon, testing, etc.
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install all dependencies including devDependencies
+RUN npm ci
+
+# Copy application code
+COPY . .
+
+# Copy schema for migrations (copied from shared/database during build)
+COPY schema.sql ./
+
+EXPOSE 3000
+
+# Health check using /health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/health || exit 1
+
+CMD ["npm", "run", "dev"]
