@@ -55,3 +55,110 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Install Lightsail plugin
+        run: |
+          curl -s "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o /usr/local/bin/lightsailctl
+          chmod +x /usr/local/bin/lightsailctl
+
+      - name: Copy schema for migrations
+        run: cp shared/database/schema.sql backends/node/
+
+      - name: Build and push image
+        run: |
+          docker build -t habitcraft-backend ./backends/node
+          aws lightsail push-container-image \
+            --service-name habitcraft-backend \
+            --label backend \
+            --image habitcraft-backend:latest
+
+      - name: Deploy to Lightsail
+        run: |
+          aws lightsail create-container-service-deployment \
+            --service-name habitcraft-backend \
+            --containers '{
+              "backend": {
+                "image": ":habitcraft-backend.backend.latest",
+                "ports": {"3000": "HTTP"},
+                "environment": {
+                  "NODE_ENV": "production",
+                  "PORT": "3000",
+                  "DB_HOST": "${{ secrets.DB_HOST }}",
+                  "DB_PORT": "5432",
+                  "DB_NAME": "habitcraft",
+                  "DB_USER": "${{ secrets.DB_USER }}",
+                  "DB_PASSWORD": "${{ secrets.DB_PASSWORD }}",
+                  "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
+                  "FRONTEND_URL": "${{ secrets.FRONTEND_URL }}"
+                }
+              }
+            }' \
+            --public-endpoint '{
+              "containerName": "backend",
+              "containerPort": 3000,
+              "healthCheck": {"path": "/health", "intervalSeconds": 30, "timeoutSeconds": 5}
+            }'
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Install Lightsail plugin
+        run: |
+          curl -s "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o /usr/local/bin/lightsailctl
+          chmod +x /usr/local/bin/lightsailctl
+
+      - name: Build and push image
+        run: |
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ secrets.API_URL }} \
+            -t habitcraft-frontend ./frontends/nextjs
+          aws lightsail push-container-image \
+            --service-name habitcraft-frontend \
+            --label frontend \
+            --image habitcraft-frontend:latest
+
+      - name: Deploy to Lightsail
+        run: |
+          aws lightsail create-container-service-deployment \
+            --service-name habitcraft-frontend \
+            --containers '{
+              "frontend": {
+                "image": ":habitcraft-frontend.frontend.latest",
+                "ports": {"3100": "HTTP"},
+                "environment": {}
+              }
+            }' \
+            --public-endpoint '{
+              "containerName": "frontend",
+              "containerPort": 3100,
+              "healthCheck": {"path": "/", "intervalSeconds": 30, "timeoutSeconds": 5}
+            }'

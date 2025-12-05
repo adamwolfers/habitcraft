@@ -13,10 +13,7 @@
         "lightsail:GetContainerImages",
         "lightsail:GetContainerLog"
       ],
-      "Resource": [
-        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-backend",
-        "arn:aws:lightsail:*:${AWS_ACCOUNT_ID}:ContainerService/habitcraft-frontend"
-      ]
+      "Resource": "*"
     }
   ]
 }
