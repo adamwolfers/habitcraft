@@ -622,10 +622,11 @@ Extract closure-captured logic from React event handlers into pure utility funct
 ### Infrastructure & DevOps
 
 - **CI/CD Pipelines**
-  - GitHub Actions workflows
-  - Automated testing on PR
-  - Automated deployment
-  - Code quality checks (linting, coverage)
+  - [x] GitHub Actions workflows (.github/workflows/ci.yml)
+  - [x] Automated testing on every commit
+  - [x] Code quality checks (linting)
+  - [ ] Automated deployment to AWS Lightsail
+  - [ ] Code coverage reporting
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
   - Google Cloud Platform
