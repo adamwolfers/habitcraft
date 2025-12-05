@@ -307,7 +307,7 @@ describe('useHabits', () => {
       await act(async () => {
         try {
           await result.current.createHabit(newHabitFormData);
-        } catch (error) {
+        } catch {
           // Expected to throw
         }
       });
@@ -614,7 +614,7 @@ describe('useHabits', () => {
       await act(async () => {
         try {
           await result.current.updateHabit('habit-1', { name: 'New Name' });
-        } catch (error) {
+        } catch {
           // Expected to throw
         }
       });
@@ -698,7 +698,7 @@ describe('useHabits', () => {
       await act(async () => {
         try {
           await result.current.deleteHabit('habit-1');
-        } catch (error) {
+        } catch {
           // Expected to throw
         }
       });

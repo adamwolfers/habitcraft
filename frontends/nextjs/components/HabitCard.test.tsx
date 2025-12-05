@@ -20,9 +20,7 @@ describe('HabitCard', () => {
 
   const mockOnToggleCompletion = jest.fn();
   const mockOnDelete = jest.fn();
-  const mockIsCompletedOnDate = jest.fn((_habitId: string, _date: Date) => {
-    return false;
-  });
+  const mockIsCompletedOnDate = jest.fn(() => false);
 
   beforeEach(() => {
     mockOnToggleCompletion.mockClear();

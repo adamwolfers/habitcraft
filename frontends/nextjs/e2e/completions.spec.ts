@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, Locator } from '@playwright/test';
 
 /**
  * Completion Tracking E2E Tests
@@ -21,29 +21,11 @@ function getHabitCard(page: Page, habitName: string) {
 }
 
 /**
- * Helper to get a day button within a habit card.
- * dayOffset: 0 = today, -1 = yesterday, etc.
- */
-function getDayButton(habitCard: ReturnType<typeof getHabitCard>, dayIndex: number) {
-  // The calendar shows 7 days (index 0-6, where 6 is typically today for current week)
-  return habitCard.locator('.grid-cols-7 > button').nth(dayIndex);
-}
-
-/**
  * Helper to check if a day button shows as completed (has checkmark SVG).
  */
-async function isCompleted(dayButton: ReturnType<typeof getDayButton>) {
+async function isCompleted(dayButton: Locator) {
   const checkmark = dayButton.locator('svg path[d="M5 13l4 4L19 7"]');
   return await checkmark.count() > 0;
-}
-
-/**
- * Get the date string for a given offset from today.
- */
-function getDateWithOffset(offset: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + offset);
-  return date.toLocaleDateString('en-US', { weekday: 'short' });
 }
 
 test.describe('Completion Tracking', () => {
@@ -68,8 +50,7 @@ test.describe('Completion Tracking', () => {
       const dayButtons = habitCard.locator('.grid-cols-7 > button');
 
       // Find a day button that doesn't have a checkmark (not completed)
-      let targetButton = null;
-      let targetIndex = -1;
+      let targetButton: Locator | null = null;
 
       for (let i = 0; i < 7; i++) {
         const btn = dayButtons.nth(i);
@@ -79,7 +60,6 @@ test.describe('Completion Tracking', () => {
         const completed = await isCompleted(btn);
         if (!completed) {
           targetButton = btn;
-          targetIndex = i;
           break;
         }
       }
@@ -92,7 +72,6 @@ test.describe('Completion Tracking', () => {
           const isDisabled = await btn.isDisabled();
           if (!isDisabled) {
             targetButton = btn;
-            targetIndex = i;
             break;
           }
         }

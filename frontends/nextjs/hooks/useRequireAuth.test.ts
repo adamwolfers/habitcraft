@@ -28,7 +28,7 @@ describe('useRequireAuth', () => {
       refresh: jest.fn(),
       replace: jest.fn(),
       prefetch: jest.fn(),
-    } as any);
+    } as ReturnType<typeof useRouter>);
   });
 
   describe('when user is authenticated', () => {

@@ -1,4 +1,4 @@
-import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit } from './api';
+import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit, setOnAuthFailure } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -109,7 +109,6 @@ describe('fetchHabits', () => {
 
   it('should throw error when API returns 401 unauthorized', async () => {
     // Set up auth failure callback to prevent JSDOM navigation warnings
-    const { setOnAuthFailure } = require('./api');
     const onAuthFailure = jest.fn();
     setOnAuthFailure(onAuthFailure);
 
@@ -122,7 +121,7 @@ describe('fetchHabits', () => {
     await expect(fetchHabits(mockUserId)).rejects.toThrow('Failed to fetch habits: 401');
 
     // Clean up callback
-    setOnAuthFailure(undefined);
+    setOnAuthFailure(null);
   });
 
   it('should throw error when API returns 500 server error', async () => {
@@ -446,7 +445,6 @@ describe('deleteHabit', () => {
 
   it('should throw error when deletion fails due to unauthorized', async () => {
     // Set up auth failure callback to prevent JSDOM navigation warnings
-    const { setOnAuthFailure } = require('./api');
     const onAuthFailure = jest.fn();
     setOnAuthFailure(onAuthFailure);
 
@@ -458,7 +456,7 @@ describe('deleteHabit', () => {
     await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 401');
 
     // Clean up callback
-    setOnAuthFailure(undefined);
+    setOnAuthFailure(null);
   });
 });
 
@@ -546,7 +544,7 @@ describe('API Client - JWT Integration', () => {
 
       // Find the refresh call
       const refreshCall = (global.fetch as jest.Mock).mock.calls.find(
-        (call: any[]) => call[0].includes('/auth/refresh')
+        (call: [string, RequestInit?]) => call[0].includes('/auth/refresh')
       );
 
       expect(refreshCall).toBeDefined();
@@ -586,7 +584,7 @@ describe('API Client - JWT Integration', () => {
       const mockSuccessResponse = { ok: true, status: 200, json: async () => [{ id: 1, name: 'Test Habit' }] };
 
       let callCount = 0;
-      global.fetch = jest.fn((url, options) => {
+      global.fetch = jest.fn((url) => {
         callCount++;
         if (callCount === 1) {
           // First attempt fails with 401
@@ -653,9 +651,7 @@ describe('API Client - JWT Integration', () => {
     it('should only retry once per request', async () => {
       const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
 
-      let callCount = 0;
       global.fetch = jest.fn((url) => {
-        callCount++;
         if (url.toString().includes('/auth/refresh')) {
           return Promise.resolve(mockRefreshResponse as Response);
         }
@@ -678,8 +674,7 @@ describe('API Client - JWT Integration', () => {
     it('should call onAuthFailure callback when refresh returns 401', async () => {
       const onAuthFailure = jest.fn();
 
-      // Import and configure the callback
-      const { setOnAuthFailure } = require('./api');
+      // Configure the callback
       setOnAuthFailure(onAuthFailure);
 
       const mock401Response = { ok: false, status: 401, json: async () => ({ error: 'Unauthorized' }) };
