@@ -17,7 +17,7 @@ const { closePool: closeAppPool } = require('./db/pool');
 // Reset database before all tests
 beforeAll(async () => {
   console.log('\n📦 Resetting test database before integration tests...');
-  resetTestDatabase();
+  await resetTestDatabase();
   console.log('✅ Test database ready\n');
 });
 

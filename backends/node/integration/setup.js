@@ -50,9 +50,46 @@ async function closeTestPool() {
 
 /**
  * Reset the test database to a clean state with fixtures
- * Runs the test-db-reset.sh script
+ * In CI: uses direct SQL (schema already initialized by workflow)
+ * Locally: runs the test-db-reset.sh script via docker-compose
  */
-function resetTestDatabase() {
+async function resetTestDatabase() {
+  // In CI environment, use direct SQL since schema is already set up
+  if (process.env.CI) {
+    const pool = getTestPool();
+    try {
+      // Clear all tables in correct order (respecting foreign keys)
+      await pool.query('DELETE FROM completions');
+      await pool.query('DELETE FROM habits');
+      await pool.query('DELETE FROM refresh_tokens');
+      await pool.query('DELETE FROM users');
+
+      // Insert test fixtures
+      await pool.query(`
+        INSERT INTO users (id, email, password_hash, name)
+        VALUES
+          ('11111111-1111-1111-1111-111111111111', 'test@example.com', '$2b$10$w1PAvb7tS9BwyRI9SEKODOpOBIftLBpYg/k1gUFqHSmTs0ips.ws.', 'Test User'),
+          ('22222222-2222-2222-2222-222222222222', 'test2@example.com', '$2b$10$w1PAvb7tS9BwyRI9SEKODOpOBIftLBpYg/k1gUFqHSmTs0ips.ws.', 'Test User 2')
+        ON CONFLICT (id) DO NOTHING
+      `);
+
+      await pool.query(`
+        INSERT INTO habits (id, user_id, name, description, frequency, color, icon, status)
+        VALUES
+          ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Morning Exercise', 'Daily workout', 'daily', '#3B82F6', '🏃', 'active'),
+          ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'Read Books', 'Read 30 minutes', 'daily', '#10B981', '📚', 'active'),
+          ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'Archived Habit', 'Archived', 'daily', '#6B7280', '📦', 'archived'),
+          ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'User 2 Habit', 'Belongs to user 2', 'daily', '#F59E0B', '⭐', 'active')
+        ON CONFLICT (id) DO NOTHING
+      `);
+      return;
+    } catch (error) {
+      console.error('Failed to reset test database via SQL:', error.message);
+      throw new Error('Failed to reset test database in CI environment');
+    }
+  }
+
+  // Locally, use the docker-compose based script
   const projectRoot = path.resolve(__dirname, '../../..');
   const scriptPath = path.join(projectRoot, 'scripts', 'test-db-reset.sh');
 
@@ -72,7 +109,7 @@ function resetTestDatabase() {
 /**
  * Clear specific tables (faster than full reset for between-test cleanup)
  */
-async function clearTables(tables = ['completions', 'habits', 'users']) {
+async function clearTables(tables = ['completions', 'habits', 'refresh_tokens', 'users']) {
   const pool = getTestPool();
 
   // Delete in order to respect foreign keys
