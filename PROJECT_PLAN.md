@@ -458,6 +458,27 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] CORS whitelist for production frontend URL
   - [x] Rate limiting configuration (production limits and thresholds)
 
+#### Custom Domain (habitcraft.org)
+
+- [ ] **DNS Configuration (IONOS)**
+  - [ ] Create CNAME record for `www.habitcraft.org` → Lightsail frontend URL
+  - [ ] Create CNAME record for `api.habitcraft.org` → Lightsail backend URL
+  - [ ] Configure apex domain (`habitcraft.org`) redirect to `www`
+- [ ] **SSL Certificates (AWS Lightsail)**
+  - [ ] Create certificate for `www.habitcraft.org`
+  - [ ] Create certificate for `api.habitcraft.org`
+  - [ ] Validate domain ownership via DNS (add CNAME validation records at IONOS)
+  - [ ] Attach certificates to Lightsail container services
+- [ ] **Application Configuration**
+  - [ ] Update `FRONTEND_URL` environment variable to `https://www.habitcraft.org`
+  - [ ] Update `API_URL` GitHub secret for frontend builds
+  - [ ] Update CORS configuration for new domain
+- [ ] **Verification**
+  - [ ] Verify HTTPS works on custom domain
+  - [ ] Verify API endpoints accessible at `api.habitcraft.org`
+  - [ ] Verify cookies work across custom domain
+  - [ ] Update README and docs with new URLs
+
 ---
 
 ## v1.0 Success Criteria
@@ -491,6 +512,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Environment variables properly configured
 - [x] Database migrations work correctly
 - [x] Production deployment complete (AWS Lightsail + RDS)
+- [ ] Custom domain configured (habitcraft.org)
 
 ---
 

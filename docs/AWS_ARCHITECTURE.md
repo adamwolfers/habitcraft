@@ -12,6 +12,8 @@ Simple, cost-effective deployment using AWS Lightsail Container Service and RDS 
 
 **Region:** us-west-2
 
+**Planned custom domain:** `habitcraft.org` (see [Custom Domain](#custom-domain-optional) section)
+
 ---
 
 ## Design Goals
@@ -573,7 +575,22 @@ aws cloudwatch put-metric-alarm \
 
 ## Custom Domain (Optional)
 
-### Using Lightsail DNS
+**Planned:** `habitcraft.org` with DNS managed at IONOS
+
+### DNS Configuration
+
+For `habitcraft.org`, DNS is managed externally at IONOS (not Lightsail DNS). Create CNAME records pointing to the Lightsail container service URLs:
+
+| Record | Type | Value |
+|--------|------|-------|
+| `www.habitcraft.org` | CNAME | `habitcraft-frontend.xxxxx.us-west-2.cs.amazonlightsail.com` |
+| `api.habitcraft.org` | CNAME | `habitcraft-backend.xxxxx.us-west-2.cs.amazonlightsail.com` |
+
+**Note:** For the apex domain (`habitcraft.org`), configure a redirect to `www.habitcraft.org` in IONOS, since CNAME records cannot be used for apex domains.
+
+### Alternative: Using Lightsail DNS
+
+If you prefer to manage DNS in AWS:
 
 ```bash
 # Create DNS zone
