@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Habit } from '@/types/habit';
 
 interface EditHabitModalProps {
@@ -58,21 +58,20 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
   const [icon, setIcon] = useState(habit.icon);
   const [error, setError] = useState<string | null>(null);
 
-  // Clear error when modal opens
-  useEffect(() => {
-    if (isOpen) {
-      setError(null);
-    }
-  }, [isOpen]);
-
   if (!isOpen) {
     return null;
   }
 
+  // Clear error and close modal - ensures next open starts fresh
+  const handleClose = () => {
+    setError(null);
+    onClose();
+  };
+
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     // Only close if clicking the backdrop itself, not its children
     if (e.target === e.currentTarget) {
-      onClose();
+      handleClose();
     }
   };
 
@@ -110,7 +109,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
       }
     } else {
       // Just close the modal if nothing changed
-      onClose();
+      handleClose();
     }
   };
 
@@ -130,7 +129,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
             Edit Habit
           </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-gray-400 hover:text-white transition-colors"
             aria-label="Close"
           >
@@ -232,7 +231,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
           <div className="flex justify-end gap-3 mt-6">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 text-gray-400 hover:text-white transition-colors"
             >
               Cancel
