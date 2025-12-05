@@ -450,7 +450,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Create Lightsail Container Services (frontend + backend)
   - [x] Create RDS PostgreSQL instance
   - [x] Configure VPC peering for RDS access
-  - [ ] Set up GitHub Secrets for CI/CD
+  - [x] Set up GitHub Secrets for CI/CD
   - [x] Deploy and verify health checks
 - [x] Production environment setup
   - [x] Secure JWT_SECRET generation (64+ random bytes)
@@ -625,7 +625,7 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - [x] GitHub Actions workflows (.github/workflows/ci.yml)
   - [x] Automated testing on every commit
   - [x] Code quality checks (linting)
-  - [ ] Automated deployment to AWS Lightsail
+  - [x] Automated deployment to AWS Lightsail
   - [ ] Code coverage reporting
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)

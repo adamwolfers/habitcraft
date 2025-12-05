@@ -295,20 +295,31 @@ Your app is now live at the frontend URL!
 
 ## CI/CD with GitHub Actions
 
-### Backend Workflow
+Deployment is integrated into the main CI workflow (`.github/workflows/ci.yml`). The workflow:
+1. Runs tests on every push to any branch
+2. Deploys to Lightsail on pushes to `master` (only after tests pass)
+3. Deploys backend and frontend in parallel
+
+### Workflow Structure
 
 ```yaml
-# .github/workflows/deploy-backend.yml
-name: Deploy Backend
+# .github/workflows/ci.yml
+name: CI
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'backends/node/**'
+    branches: ['**']
 
 jobs:
-  deploy:
+  backend-tests:
+    # ... runs npm test
+
+  frontend-tests:
+    # ... runs npm test and lint
+
+  deploy-backend:
+    needs: [backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -318,12 +329,15 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: us-west-2
 
       - name: Install Lightsail plugin
         run: |
-          curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o /usr/local/bin/lightsailctl
+          curl -s "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o /usr/local/bin/lightsailctl
           chmod +x /usr/local/bin/lightsailctl
+
+      - name: Copy schema for migrations
+        run: cp shared/database/schema.sql backends/node/
 
       - name: Build and push image
         run: |
@@ -333,104 +347,44 @@ jobs:
             --label backend \
             --image habitcraft-backend:latest
 
-      - name: Deploy
+      - name: Deploy to Lightsail
         run: |
           aws lightsail create-container-service-deployment \
             --service-name habitcraft-backend \
-            --containers '{
-              "backend": {
-                "image": ":habitcraft-backend.backend.latest",
-                "ports": {"3000": "HTTP"},
-                "environment": {
-                  "NODE_ENV": "production",
-                  "PORT": "3000",
-                  "DB_HOST": "${{ secrets.DB_HOST }}",
-                  "DB_PORT": "5432",
-                  "DB_NAME": "habitcraft",
-                  "DB_USER": "${{ secrets.DB_USER }}",
-                  "DB_PASSWORD": "${{ secrets.DB_PASSWORD }}",
-                  "JWT_SECRET": "${{ secrets.JWT_SECRET }}",
-                  "FRONTEND_URL": "${{ secrets.FRONTEND_URL }}"
-                }
-              }
-            }' \
-            --public-endpoint '{
-              "containerName": "backend",
-              "containerPort": 3000,
-              "healthCheck": {"path": "/health", "intervalSeconds": 30}
-            }'
-```
+            --containers '{ ... }' \
+            --public-endpoint '{ ... }'
 
-### Frontend Workflow
-
-```yaml
-# .github/workflows/deploy-frontend.yml
-name: Deploy Frontend
-
-on:
-  push:
-    branches: [main]
-    paths:
-      - 'frontends/nextjs/**'
-
-jobs:
-  deploy:
+  deploy-frontend:
+    needs: [backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
-
-      - name: Install Lightsail plugin
-        run: |
-          curl "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o /usr/local/bin/lightsailctl
-          chmod +x /usr/local/bin/lightsailctl
-
+      # Similar to backend, but with build-arg for API URL:
       - name: Build and push image
         run: |
-          docker build -t habitcraft-frontend ./frontends/nextjs
+          docker build \
+            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ secrets.API_URL }} \
+            -t habitcraft-frontend ./frontends/nextjs
           aws lightsail push-container-image \
             --service-name habitcraft-frontend \
             --label frontend \
             --image habitcraft-frontend:latest
-
-      - name: Deploy
-        run: |
-          aws lightsail create-container-service-deployment \
-            --service-name habitcraft-frontend \
-            --containers '{
-              "frontend": {
-                "image": ":habitcraft-frontend.frontend.latest",
-                "ports": {"3100": "HTTP"},
-                "environment": {
-                  "NEXT_PUBLIC_API_URL": "${{ secrets.API_URL }}"
-                }
-              }
-            }' \
-            --public-endpoint '{
-              "containerName": "frontend",
-              "containerPort": 3100,
-              "healthCheck": {"path": "/", "intervalSeconds": 30}
-            }'
 ```
+
+See `.github/workflows/ci.yml` for the complete workflow.
 
 ### Required GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
-| `AWS_ACCESS_KEY_ID` | IAM user access key |
+| `AWS_ACCESS_KEY_ID` | IAM user access key (from `habitcraft-cicd` user) |
 | `AWS_SECRET_ACCESS_KEY` | IAM user secret key |
-| `DB_HOST` | RDS endpoint |
+| `DB_HOST` | RDS endpoint (e.g., `habitcraft-db.xxxxx.us-west-2.rds.amazonaws.com`) |
 | `DB_USER` | Database username |
 | `DB_PASSWORD` | Database password |
 | `JWT_SECRET` | JWT signing secret (64+ random bytes) |
-| `FRONTEND_URL` | Frontend URL (for CORS) |
-| `API_URL` | Backend API URL |
+| `FRONTEND_URL` | Frontend URL for CORS (e.g., `https://habitcraft-frontend.xxxxx.amazonlightsail.com`) |
+| `API_URL` | Backend base URL **without** `/api/v1` (e.g., `https://habitcraft-backend.xxxxx.amazonlightsail.com`) |
 
 ---
 

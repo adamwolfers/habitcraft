@@ -86,9 +86,12 @@ Store the output in GitHub Secrets:
 
 ### CI/CD Policy
 Minimal permissions for automated container deployments:
+- Authenticate with Lightsail container registry
 - Push/register container images to Lightsail
 - Create container service deployments
 - Read deployment status and logs
+
+**Note:** This policy uses `Resource: "*"` because Lightsail container actions don't support resource-level restrictions.
 
 ### Ops Policy
 Extended permissions for manual operations:
