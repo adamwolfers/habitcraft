@@ -296,79 +296,78 @@ Your app is now live at the frontend URL!
 ## CI/CD with GitHub Actions
 
 Deployment is integrated into the main CI workflow (`.github/workflows/ci.yml`). The workflow:
-1. Runs tests on every push to any branch
-2. Deploys to Lightsail on pushes to `master` (only after tests pass)
-3. Deploys backend and frontend in parallel
+1. Skips runs for documentation-only changes (`.md` files, `docs/`, etc.)
+2. Runs four test jobs in parallel on every push
+3. Uploads code coverage to Codecov
+4. Deploys to Lightsail on pushes to `master` (only after all tests pass)
 
 ### Workflow Structure
 
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         On Push/PR                              │
+│              (skipped for docs-only changes)                    │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+          ┌───────────────────┼───────────────────┐
+          │                   │                   │
+          ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ Backend Unit    │ │ Backend         │ │ Frontend Unit   │
+│ Tests           │ │ Integration     │ │ Tests + Lint    │
+│ + Coverage      │ │ Tests           │ │ + Coverage      │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+          │                   │                   │
+          │                   │                   │
+          ▼                   ▼                   ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                         E2E Tests                               │
+│            (Playwright with Docker Compose)                     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              │ (master branch only)
+                              ▼
+          ┌───────────────────┴───────────────────┐
+          │                                       │
+          ▼                                       ▼
+┌─────────────────┐                     ┌─────────────────┐
+│ Deploy Backend  │                     │ Deploy Frontend │
+│ to Lightsail    │                     │ to Lightsail    │
+└─────────────────┘                     └─────────────────┘
+```
+
+### Test Jobs
+
+| Job | Description |
+|-----|-------------|
+| `backend-unit-tests` | Runs Jest unit tests with coverage, uploads to Codecov |
+| `backend-integration-tests` | Spins up PostgreSQL service container, runs integration tests |
+| `frontend-unit-tests` | Runs ESLint and Jest unit tests with coverage, uploads to Codecov |
+| `e2e-tests` | Starts full stack via Docker Compose, runs Playwright tests |
+
+### Deployment Jobs
+
+Deployment runs only on pushes to `master` after all tests pass:
+
 ```yaml
-# .github/workflows/ci.yml
-name: CI
+deploy-backend:
+  needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
+  if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+  steps:
+    - Configure AWS credentials
+    - Install Lightsail plugin
+    - Copy schema for migrations
+    - Build and push Docker image
+    - Deploy to Lightsail Container Service
 
-on:
-  push:
-    branches: ['**']
-
-jobs:
-  backend-tests:
-    # ... runs npm test
-
-  frontend-tests:
-    # ... runs npm test and lint
-
-  deploy-backend:
-    needs: [backend-tests, frontend-tests]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-west-2
-
-      - name: Install Lightsail plugin
-        run: |
-          curl -s "https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl" -o /usr/local/bin/lightsailctl
-          chmod +x /usr/local/bin/lightsailctl
-
-      - name: Copy schema for migrations
-        run: cp shared/database/schema.sql backends/node/
-
-      - name: Build and push image
-        run: |
-          docker build -t habitcraft-backend ./backends/node
-          aws lightsail push-container-image \
-            --service-name habitcraft-backend \
-            --label backend \
-            --image habitcraft-backend:latest
-
-      - name: Deploy to Lightsail
-        run: |
-          aws lightsail create-container-service-deployment \
-            --service-name habitcraft-backend \
-            --containers '{ ... }' \
-            --public-endpoint '{ ... }'
-
-  deploy-frontend:
-    needs: [backend-tests, frontend-tests]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      # Similar to backend, but with build-arg for API URL:
-      - name: Build and push image
-        run: |
-          docker build \
-            --build-arg NEXT_PUBLIC_API_BASE_URL=${{ secrets.API_URL }} \
-            -t habitcraft-frontend ./frontends/nextjs
-          aws lightsail push-container-image \
-            --service-name habitcraft-frontend \
-            --label frontend \
-            --image habitcraft-frontend:latest
+deploy-frontend:
+  needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
+  if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+  steps:
+    - Configure AWS credentials
+    - Install Lightsail plugin
+    - Build image with NEXT_PUBLIC_API_BASE_URL build arg
+    - Push and deploy to Lightsail
 ```
 
 See `.github/workflows/ci.yml` for the complete workflow.
@@ -385,6 +384,7 @@ See `.github/workflows/ci.yml` for the complete workflow.
 | `JWT_SECRET` | JWT signing secret (64+ random bytes) |
 | `FRONTEND_URL` | Frontend URL for CORS (e.g., `https://habitcraft-frontend.xxxxx.amazonlightsail.com`) |
 | `API_URL` | Backend base URL **without** `/api/v1` (e.g., `https://habitcraft-backend.xxxxx.amazonlightsail.com`) |
+| `CODECOV_TOKEN` | Codecov upload token for coverage reporting (optional but recommended) |
 
 ---
 
