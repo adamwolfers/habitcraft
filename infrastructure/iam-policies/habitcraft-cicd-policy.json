@@ -6,6 +6,7 @@
       "Effect": "Allow",
       "Action": [
         "lightsail:CreateContainerServiceDeployment",
+        "lightsail:CreateContainerServiceRegistryLogin",
         "lightsail:GetContainerServices",
         "lightsail:GetContainerServiceDeployments",
         "lightsail:PushContainerImage",
