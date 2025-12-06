@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript type definitions for the Habit Tracker application
+ * Shared TypeScript type definitions for the HabitCraft application
  * These types should match the OpenAPI specification and database schema
  */
 

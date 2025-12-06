@@ -1,6 +1,6 @@
-# Habit Tracker - Java Backend
+# HabitCraft - Java Backend
 
-Java + Spring Boot implementation of the Habit Tracker API.
+Java + Spring Boot implementation of the HabitCraft API.
 
 ## Status
 

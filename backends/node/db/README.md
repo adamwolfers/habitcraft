@@ -1,6 +1,6 @@
 # Database Module
 
-PostgreSQL database connection module for the Habit Tracker Node.js backend.
+PostgreSQL database connection module for the HabitCraft Node.js backend.
 
 ## Overview
 

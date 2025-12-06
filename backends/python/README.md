@@ -1,6 +1,6 @@
-# Habit Tracker - Python Backend
+# HabitCraft - Python Backend
 
-Python + FastAPI implementation of the Habit Tracker API.
+Python + FastAPI implementation of the HabitCraft API.
 
 ## Status
 

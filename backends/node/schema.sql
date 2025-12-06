@@ -1,4 +1,4 @@
--- Habit Tracker Database Schema
+-- HabitCraft Database Schema
 -- PostgreSQL Version 14+
 
 -- Enable UUID extension

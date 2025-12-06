@@ -1,6 +1,6 @@
-# Habit Tracker - Go Backend
+# HabitCraft - Go Backend
 
-Go + Gin implementation of the Habit Tracker API.
+Go + Gin implementation of the HabitCraft API.
 
 ## Status
 

@@ -1,6 +1,6 @@
-# Habit Tracker - React Frontend
+# HabitCraft - React Frontend
 
-React SPA implementation of the Habit Tracker UI.
+React SPA implementation of the HabitCraft UI.
 
 ## Status
 

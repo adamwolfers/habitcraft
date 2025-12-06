@@ -1,6 +1,6 @@
 # Shared Types
 
-This directory contains shared type definitions that can be used across all implementations of the Habit Tracker application.
+This directory contains shared type definitions that can be used across all implementations of the HabitCraft application.
 
 ## Files
 

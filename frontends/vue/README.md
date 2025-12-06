@@ -1,6 +1,6 @@
-# Habit Tracker - Vue.js Frontend
+# HabitCraft - Vue.js Frontend
 
-Vue.js 3 implementation of the Habit Tracker UI.
+Vue.js 3 implementation of the HabitCraft UI.
 
 ## Status
 
