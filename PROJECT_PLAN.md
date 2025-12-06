@@ -590,6 +590,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - React Native mobile app
   - Flutter mobile app
   - Progressive Web App (PWA)
+- **Calendar View Options**
+  - Weekly view (current default)
+  - Monthly view with completion grid
+  - Toggle between views per habit
 - **UI/UX Enhancements**
   - Dark mode
   - Custom themes
