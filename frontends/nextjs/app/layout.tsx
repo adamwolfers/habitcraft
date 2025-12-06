@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HabitCraft",
+  title: "HabitCraft.org | Track your daily habits and build streaks",
   description: "Track your daily habits and build streaks",
 };
 
