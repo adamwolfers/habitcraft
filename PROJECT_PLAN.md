@@ -156,6 +156,19 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Run full test suite to confirm nothing breaks
   - [x] **Documentation: Update OpenAPI specification**
     - [x] Add GET /api/v1/users/me endpoint
+- [ ] **User Profile Management**
+  - [ ] **Update Name (PUT /api/v1/users/me)**
+    - [ ] Write tests for name update endpoint
+    - [ ] Implement name update in backend
+    - [ ] Add name edit UI in frontend
+  - [ ] **Update Email (PUT /api/v1/users/me)**
+    - [ ] Write tests for email update endpoint
+    - [ ] Implement email update in backend
+    - [ ] Add email edit UI in frontend
+  - [ ] **Change Password (PUT /api/v1/users/me/password)**
+    - [ ] Write tests for password change endpoint (require current password)
+    - [ ] Implement password change in backend
+    - [ ] Add password change UI in frontend
 
 ### Frontend - Next.js + React
 
@@ -264,6 +277,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Form with validation
   - [x] Habit customization (name, frequency, color, icon)
   - [x] Connected to API
+  - [ ] **Icon Selector**
+    - [ ] Write tests for icon picker rendering
+    - [ ] Implement icon picker UI (reuse from EditHabitModal)
+    - [ ] Write tests for icon selection in form submission
+    - [ ] Connect icon selection to createHabit API
 - [x] **HabitCard Component**
   - [x] Calendar week view (Sunday-Saturday)
   - [x] Week navigation (previous/next)
@@ -643,6 +661,15 @@ Extract closure-captured logic from React event handlers into pure utility funct
 
 ### Infrastructure & DevOps
 
+- **Local Git Hooks (pre-commit framework)**
+  - [ ] Install pre-commit framework (language-agnostic)
+  - [ ] Configure `.pre-commit-config.yaml`
+  - [ ] Backend unit tests on commit
+  - [ ] Backend integration tests on commit
+  - [ ] Frontend unit tests on commit
+  - [ ] Frontend E2E tests on commit
+  - [ ] Linting on commit (ESLint)
+  - [ ] Document setup in GETTING_STARTED.md
 - **CI/CD Pipelines**
   - [x] GitHub Actions workflows (.github/workflows/ci.yml)
   - [x] Automated testing on every commit
