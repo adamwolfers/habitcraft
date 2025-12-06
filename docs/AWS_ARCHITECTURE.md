@@ -6,13 +6,13 @@ Simple, cost-effective deployment using AWS Lightsail Container Service and RDS 
 
 | Service | URL |
 |---------|-----|
-| **Frontend** | https://habitcraft-frontend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/ |
-| **Backend API** | https://habitcraft-backend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/ |
-| **Health Check** | https://habitcraft-backend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/health |
+| **Frontend** | https://www.habitcraft.org/ |
+| **Backend API** | https://api.habitcraft.org/ |
+| **Health Check** | https://api.habitcraft.org/health |
 
 **Region:** us-west-2
 
-**Planned custom domain:** `habitcraft.org` (see [Custom Domain](#custom-domain-optional) section)
+**Custom domain:** `habitcraft.org` (configured via IONOS DNS + Lightsail SSL certificates)
 
 ---
 
@@ -573,20 +573,20 @@ aws cloudwatch put-metric-alarm \
 
 ---
 
-## Custom Domain (Optional)
+## Custom Domain
 
-**Planned:** `habitcraft.org` with DNS managed at IONOS
+**Active:** `habitcraft.org` with DNS managed at IONOS
 
 ### DNS Configuration
 
-For `habitcraft.org`, DNS is managed externally at IONOS (not Lightsail DNS). Create CNAME records pointing to the Lightsail container service URLs:
+DNS is managed externally at IONOS (not Lightsail DNS). CNAME records point to the Lightsail container service URLs:
 
-| Record | Type | Value |
-|--------|------|-------|
-| `www.habitcraft.org` | CNAME | `habitcraft-frontend.xxxxx.us-west-2.cs.amazonlightsail.com` |
-| `api.habitcraft.org` | CNAME | `habitcraft-backend.xxxxx.us-west-2.cs.amazonlightsail.com` |
+| Record | Type | Target |
+|--------|------|--------|
+| `www.habitcraft.org` | CNAME | `habitcraft-frontend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com` |
+| `api.habitcraft.org` | CNAME | `habitcraft-backend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com` |
 
-**Note:** For the apex domain (`habitcraft.org`), configure a redirect to `www.habitcraft.org` in IONOS, since CNAME records cannot be used for apex domains.
+The apex domain (`habitcraft.org`) is configured with a redirect to `www.habitcraft.org` in IONOS, since CNAME records cannot be used for apex domains.
 
 ### Alternative: Using Lightsail DNS
 
@@ -606,27 +606,30 @@ aws lightsail create-domain-entry \
   }'
 ```
 
-### Enable HTTPS with Custom Domain
+### SSL Certificates
 
-Lightsail Container Services provide automatic HTTPS on the default `.amazonaws.com` domain. For custom domains, you'll need to:
+SSL certificates were created in Lightsail and validated via DNS CNAME records at IONOS:
 
-1. Create a Lightsail certificate
-2. Attach it to the container service
-3. Update DNS to point to the service
+| Domain | Certificate |
+|--------|-------------|
+| `www.habitcraft.org` | Attached to `habitcraft-frontend` service |
+| `api.habitcraft.org` | Attached to `habitcraft-backend` service |
+
+To add additional custom domains, use the Lightsail console or CLI:
 
 ```bash
 # Create certificate
 aws lightsail create-certificate \
-  --certificate-name habitcraft-cert \
-  --domain-name app.yourdomain.com
+  --certificate-name your-cert-name \
+  --domain-name your.domain.com
 
-# Validate domain ownership (follow DNS instructions)
+# Validate domain ownership (add CNAME record at DNS provider)
 
 # Attach to service
 aws lightsail update-container-service \
   --service-name habitcraft-frontend \
   --public-domain-names '{
-    "habitcraft-cert": ["app.yourdomain.com"]
+    "your-cert-name": ["your.domain.com"]
   }'
 ```
 

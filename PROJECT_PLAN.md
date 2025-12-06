@@ -460,24 +460,24 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 #### Custom Domain (habitcraft.org)
 
-- [ ] **DNS Configuration (IONOS)**
-  - [ ] Create CNAME record for `www.habitcraft.org` → Lightsail frontend URL
-  - [ ] Create CNAME record for `api.habitcraft.org` → Lightsail backend URL
-  - [ ] Configure apex domain (`habitcraft.org`) redirect to `www`
-- [ ] **SSL Certificates (AWS Lightsail)**
-  - [ ] Create certificate for `www.habitcraft.org`
-  - [ ] Create certificate for `api.habitcraft.org`
-  - [ ] Validate domain ownership via DNS (add CNAME validation records at IONOS)
-  - [ ] Attach certificates to Lightsail container services
-- [ ] **Application Configuration**
-  - [ ] Update `FRONTEND_URL` environment variable to `https://www.habitcraft.org`
-  - [ ] Update `API_URL` GitHub secret for frontend builds
-  - [ ] Update CORS configuration for new domain
-- [ ] **Verification**
-  - [ ] Verify HTTPS works on custom domain
-  - [ ] Verify API endpoints accessible at `api.habitcraft.org`
-  - [ ] Verify cookies work across custom domain
-  - [ ] Update README and docs with new URLs
+- [x] **DNS Configuration (IONOS)**
+  - [x] Create CNAME record for `www.habitcraft.org` → Lightsail frontend URL
+  - [x] Create CNAME record for `api.habitcraft.org` → Lightsail backend URL
+  - [x] Configure apex domain (`habitcraft.org`) redirect to `www`
+- [x] **SSL Certificates (AWS Lightsail)**
+  - [x] Create certificate for `www.habitcraft.org`
+  - [x] Create certificate for `api.habitcraft.org`
+  - [x] Validate domain ownership via DNS (add CNAME validation records at IONOS)
+  - [x] Attach certificates to Lightsail container services
+- [x] **Application Configuration**
+  - [x] Update `FRONTEND_URL` GitHub secret to `https://www.habitcraft.org`
+  - [x] Update `API_URL` GitHub secret to `https://api.habitcraft.org`
+  - [x] Redeploy services (CORS configured via FRONTEND_URL env var)
+- [x] **Verification**
+  - [x] Verify HTTPS works on custom domain
+  - [x] Verify API endpoints accessible at `api.habitcraft.org`
+  - [x] Verify cookies work across custom domain
+  - [x] Update README and docs with new URLs
 
 ---
 

@@ -2,7 +2,7 @@
 
 Quick start guide for running HabitCraft locally.
 
-> **Live Demo:** https://habitcraft-frontend.yxzyhs04ajgq0.us-west-2.cs.amazonlightsail.com/
+> **Live Demo:** https://www.habitcraft.org/
 >
 > For production deployment, see [AWS Architecture Guide](docs/AWS_ARCHITECTURE.md).
 
