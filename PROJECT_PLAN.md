@@ -394,6 +394,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Remove completion → Visual update
   - [x] Multiple habits completion tracking
   - [x] Calendar navigation
+  - [ ] Fix flaky test: "should persist completion after page reload"
 
 ### Documentation
 
