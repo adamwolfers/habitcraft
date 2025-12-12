@@ -17,16 +17,23 @@ const customJestConfig = {
     '<rootDir>/node_modules/',
     '<rootDir>/e2e/',
   ],
-  collectCoverage: true,
+  // Coverage is disabled by default due to babel-plugin-istanbul incompatibility
+  // with Next.js require hooks. Use --coverage flag or npm run test:coverage to enable.
+  collectCoverage: false,
   collectCoverageFrom: [
     'app/**/*.{js,jsx,ts,tsx}',
     'components/**/*.{js,jsx,ts,tsx}',
     'hooks/**/*.{js,jsx,ts,tsx}',
     'utils/**/*.{js,jsx,ts,tsx}',
+    'lib/**/*.{js,jsx,ts,tsx}',
+    'context/**/*.{js,jsx,ts,tsx}',
     '!**/*.d.ts',
     '!**/node_modules/**',
     '!**/.next/**',
   ],
+  // Use V8 coverage provider instead of babel-plugin-istanbul to avoid
+  // compatibility issues with Next.js require hooks
+  coverageProvider: 'v8',
 }
 
 // createJestConfig is exported this way to ensure that next/jest can load the Next.js config which is async
