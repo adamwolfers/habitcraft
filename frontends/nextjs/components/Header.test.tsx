@@ -35,6 +35,7 @@ describe('Header Component', () => {
         login: jest.fn(),
         register: jest.fn(),
         logout: mockLogout,
+        updateUser: jest.fn(),
       });
     });
 
@@ -65,6 +66,7 @@ describe('Header Component', () => {
         login: jest.fn(),
         register: jest.fn(),
         logout: mockLogout,
+        updateUser: jest.fn(),
       });
     });
 
@@ -158,6 +160,153 @@ describe('Header Component', () => {
     });
   });
 
+  describe('Name Edit', () => {
+    const mockUpdateUser = jest.fn();
+
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: '123',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+        isLoading: false,
+        isAuthenticated: true,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: mockLogout,
+        updateUser: mockUpdateUser,
+      });
+    });
+
+    it('should show edit button next to user name', () => {
+      render(<Header />);
+
+      expect(screen.getByRole('button', { name: /edit name/i })).toBeInTheDocument();
+    });
+
+    it('should show input field when edit button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      expect(screen.getByRole('textbox', { name: /name/i })).toBeInTheDocument();
+    });
+
+    it('should pre-fill input with current name', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /name/i });
+      expect(input).toHaveValue('Test User');
+    });
+
+    it('should show save and cancel buttons in edit mode', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    });
+
+    it('should call updateUser with new name when save is clicked', async () => {
+      const user = userEvent.setup();
+      mockUpdateUser.mockResolvedValue(undefined);
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /name/i });
+      await user.clear(input);
+      await user.type(input, 'New Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockUpdateUser).toHaveBeenCalledWith({ name: 'New Name' });
+      });
+    });
+
+    it('should exit edit mode after successful save', async () => {
+      const user = userEvent.setup();
+      mockUpdateUser.mockResolvedValue(undefined);
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /name/i });
+      await user.clear(input);
+      await user.type(input, 'New Name');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('textbox', { name: /name/i })).not.toBeInTheDocument();
+      });
+    });
+
+    it('should exit edit mode without saving when cancel is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /name/i });
+      await user.clear(input);
+      await user.type(input, 'New Name');
+
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      expect(screen.queryByRole('textbox', { name: /name/i })).not.toBeInTheDocument();
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+    });
+
+    it('should show error message when save fails', async () => {
+      const user = userEvent.setup();
+      mockUpdateUser.mockRejectedValue(new Error('Update failed'));
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/update failed/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should disable save button when name is empty', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit name/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /name/i });
+      await user.clear(input);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      expect(saveButton).toBeDisabled();
+    });
+  });
+
   describe('Error Handling', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({
@@ -172,6 +321,7 @@ describe('Header Component', () => {
         login: jest.fn(),
         register: jest.fn(),
         logout: mockLogout,
+        updateUser: jest.fn(),
       });
     });
 

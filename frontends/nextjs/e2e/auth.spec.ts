@@ -149,6 +149,66 @@ test.describe('Authentication', () => {
     });
   });
 
+  test.describe('Profile Management', () => {
+    test('should update user name', async ({ page }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page
+      await expect(page).toHaveURL('/');
+
+      // Click edit name button
+      await page.getByRole('button', { name: /edit name/i }).click();
+
+      // Should see name input field
+      const nameInput = page.getByRole('textbox', { name: /name/i });
+      await expect(nameInput).toBeVisible();
+
+      // Clear and type new name
+      await nameInput.clear();
+      await nameInput.fill('Updated Test User');
+
+      // Click save
+      await page.getByRole('button', { name: /save/i }).click();
+
+      // Should exit edit mode and show updated name
+      await expect(nameInput).not.toBeVisible();
+      await expect(page.getByText('Updated Test User')).toBeVisible();
+    });
+
+    test('should cancel name edit without saving', async ({ page }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page
+      await expect(page).toHaveURL('/');
+
+      // Get original name
+      const originalName = await page.locator('header').getByText(/test user|updated test user/i).textContent();
+
+      // Click edit name button
+      await page.getByRole('button', { name: /edit name/i }).click();
+
+      // Change the name
+      const nameInput = page.getByRole('textbox', { name: /name/i });
+      await nameInput.clear();
+      await nameInput.fill('Should Not Save');
+
+      // Click cancel
+      await page.getByRole('button', { name: /cancel/i }).click();
+
+      // Should exit edit mode and show original name
+      await expect(nameInput).not.toBeVisible();
+      await expect(page.locator('header').getByText(originalName!)).toBeVisible();
+    });
+  });
+
   test.describe('Token Refresh', () => {
     test('should refresh token automatically when access token expires', async ({ page, context }) => {
       // Login first

@@ -1,6 +1,5 @@
 # Node.js Backend Dockerfile (Development/Testing)
 # Includes devDependencies for nodemon, testing, etc.
-# Note: Build context should be project root for access to shared/database
 
 FROM node:20-alpine
 
