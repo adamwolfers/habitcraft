@@ -477,4 +477,76 @@ describe('AuthContext', () => {
       );
     });
   });
+
+  describe('updateUser', () => {
+    it('should update user name and refresh user state', async () => {
+      const updatedUser = { ...mockUser, name: 'Updated Name' };
+
+      // Mock session check (authenticated user)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUser
+      } as Response);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.user?.name).toBe('Test User');
+
+      // Mock updateUser API call
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => updatedUser
+      } as Response);
+
+      await act(async () => {
+        await result.current.updateUser({ name: 'Updated Name' });
+      });
+
+      expect(result.current.user?.name).toBe('Updated Name');
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/users/me`,
+        expect.objectContaining({
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'Updated Name' })
+        })
+      );
+    });
+
+    it('should throw error when update fails', async () => {
+      // Mock session check (authenticated user)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUser
+      } as Response);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      // Mock failed update
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: 'Name is required' })
+      } as Response);
+
+      await expect(
+        act(async () => {
+          await result.current.updateUser({ name: '' });
+        })
+      ).rejects.toThrow('Name is required');
+
+      // User should remain unchanged
+      expect(result.current.user?.name).toBe('Test User');
+    });
+  });
 });
