@@ -681,7 +681,7 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - [x] Code quality checks (linting)
   - [x] Automated deployment to AWS Lightsail
   - [x] Code coverage reporting (Codecov integration)
-  - [ ] Make integration/E2E tests depend on unit tests passing first
+  - [x] Make integration/E2E tests depend on unit tests passing first
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
   - Google Cloud Platform
