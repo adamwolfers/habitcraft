@@ -9,6 +9,7 @@
 
 - All tests can be run sequentially using scripts/test-all.sh
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
+- Verify that you're in the expected branch and directory before running terminal commands
 
 ## Testing Patterns
 
