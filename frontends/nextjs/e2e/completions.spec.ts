@@ -208,9 +208,13 @@ test.describe('Completion Tracking', () => {
       const afterToggle = await isCompleted(targetButton!);
       expect(afterToggle).toBe(!wasCompleted);
 
-      // Reload the page
+      // Reload the page and wait for completions to load
+      const completionsPromise = page.waitForResponse(
+        resp => resp.url().includes('/completions') && resp.status() < 400
+      );
       await page.reload();
       await expect(page.getByText('Morning Exercise')).toBeVisible();
+      await completionsPromise;
 
       // Get the button again after reload
       const reloadedCard = getHabitCard(page, 'Morning Exercise');
