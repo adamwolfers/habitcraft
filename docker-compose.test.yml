@@ -58,8 +58,8 @@ services:
   # Next.js Frontend for E2E Tests
   frontend-nextjs-test:
     build:
-      context: ./frontends/nextjs
-      dockerfile: Dockerfile.dev
+      context: .
+      dockerfile: ./frontends/nextjs/Dockerfile.dev
     container_name: habitcraft-frontend-nextjs-test
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3010
