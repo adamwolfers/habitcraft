@@ -1,6 +1,6 @@
 ## Development Principles
 
-1. **Test-Driven Development** - Write tests before implementation
+1. **Test-Driven Development** - Write tests before implementation, working backwards from E2E tests to integration tests to unit tests
 2. **Small, Focused Commits** - Commit after each passing test or feature
 3. **Documentation as Code** - Update docs alongside features
 4. **Security First** - Never compromise on authentication and authorization
