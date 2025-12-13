@@ -299,3 +299,32 @@ export async function deleteHabit(
     throw new Error(`Failed to delete habit: ${response.status}`);
   }
 }
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}
+
+/**
+ * Update the current user's name
+ * @param name - The new name
+ * @returns Promise<User> - The updated user
+ */
+export async function updateUserName(name: string): Promise<User> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/users/me`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ name })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update user: ${response.status}`);
+  }
+
+  return response.json();
+}

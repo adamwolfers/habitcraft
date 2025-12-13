@@ -1,4 +1,4 @@
-import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit, setOnAuthFailure } from './api';
+import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit, setOnAuthFailure, updateUserName } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -789,4 +789,59 @@ describe('API Client - JWT Integration', () => {
     });
   });
 
+});
+
+describe('updateUserName', () => {
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should update user name successfully', async () => {
+    const updatedUser = {
+      id: '123e4567-e89b-12d3-a456-426614174000',
+      email: 'test@example.com',
+      name: 'New Name',
+      createdAt: '2025-01-01T00:00:00.000Z'
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => updatedUser
+    });
+
+    const result = await updateUserName('New Name');
+
+    expect(result).toEqual(updatedUser);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/users/me`,
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: 'New Name' })
+      }
+    );
+  });
+
+  it('should throw error when update fails', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400
+    });
+
+    await expect(updateUserName('')).rejects.toThrow('Failed to update user: 400');
+  });
 });
