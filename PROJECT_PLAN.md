@@ -583,10 +583,123 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - Community challenges
   - Public habit templates
 - **Advanced Authentication**
-  - Email verification
-  - Password reset flow
-  - Two-factor authentication (2FA)
-  - OAuth integration (Google, GitHub)
+
+  *Current implementation uses JWT with HttpOnly cookies, bcrypt password hashing, refresh token rotation, database-backed revocation, rate limiting, and security headers. The following enhancements are organized by priority.*
+
+  - [ ] **High Priority** *(Core security and usability gaps)*
+    - [ ] **Password Reset Flow**
+      - *Justification:* Users currently have no account recovery option if they forget their password. This is a critical usability gap that will cause support burden and user frustration.
+      - [ ] Create password reset request endpoint (POST /api/v1/auth/forgot-password)
+      - [ ] Generate secure time-limited reset token (1 hour expiry)
+      - [ ] Store reset token hash in database (not plaintext)
+      - [ ] Send reset email with secure link
+      - [ ] Create password reset endpoint (POST /api/v1/auth/reset-password)
+      - [ ] Invalidate all existing sessions on password reset
+      - [ ] Rate limit reset requests (3 per hour per email)
+      - [ ] Add frontend forgot password page
+      - [ ] Add frontend reset password page
+    - [ ] **Email Verification**
+      - *Justification:* Prevents fake account creation, ensures users own their email address, and is required for password reset functionality.
+      - [ ] Add `email_verified` boolean column to users table
+      - [ ] Generate verification token on registration
+      - [ ] Send verification email with secure link
+      - [ ] Create verification endpoint (GET /api/v1/auth/verify-email)
+      - [ ] Add "Resend verification" functionality
+      - [ ] Consider: Restrict certain features until verified
+      - [ ] Add frontend verification status indicator
+      - [ ] Add frontend resend verification UI
+    - [ ] **Access Token Revocation (Short-lived Blacklist)**
+      - *Justification:* Currently, compromised access tokens remain valid for 15 minutes. A lightweight blacklist enables immediate revocation for security incidents.
+      - [ ] Implement in-memory token blacklist (Map or Set)
+      - [ ] Add token JTI to blacklist on critical events (password change, security logout)
+      - [ ] Check blacklist in JWT middleware (before expiry check)
+      - [ ] Auto-cleanup expired entries from blacklist
+      - [ ] Optional: Redis-backed blacklist for multi-instance deployments
+
+  - [ ] **Medium Priority** *(Enhanced security and user control)*
+    - [ ] **Two-Factor Authentication (2FA/TOTP)**
+      - *Justification:* Adds a second layer of security for users with sensitive data. Increasingly expected by security-conscious users and required for some compliance standards.
+      - [ ] Add `totp_secret` and `totp_enabled` columns to users table
+      - [ ] Create 2FA setup endpoint (generate secret, return QR code)
+      - [ ] Create 2FA verification endpoint (validate TOTP code)
+      - [ ] Create 2FA disable endpoint (require password confirmation)
+      - [ ] Modify login flow to require TOTP when enabled
+      - [ ] Generate backup codes for account recovery
+      - [ ] Add frontend 2FA setup flow with QR code display
+      - [ ] Add frontend 2FA login prompt
+      - [ ] Add frontend backup codes display and regeneration
+    - [ ] **Device/Session Management UI**
+      - *Justification:* Users should be able to see where they're logged in and revoke sessions on lost/stolen devices. The backend already supports `revokeAllUserTokens()`.
+      - [ ] Add `device_info` and `last_used_at` columns to refresh_tokens table
+      - [ ] Capture device info on login (user agent parsing)
+      - [ ] Create endpoint to list active sessions (GET /api/v1/users/me/sessions)
+      - [ ] Create endpoint to revoke specific session (DELETE /api/v1/users/me/sessions/:id)
+      - [ ] Create endpoint to revoke all other sessions (POST /api/v1/users/me/sessions/revoke-others)
+      - [ ] Add frontend sessions management page
+      - [ ] Show device type, location (approximate from IP), last active
+    - [ ] **Automated Token Cleanup**
+      - *Justification:* Expired refresh tokens accumulate in database. Without cleanup, the table grows indefinitely, impacting query performance.
+      - [ ] Create scheduled cleanup job (daily recommended)
+      - [ ] Use existing `cleanupExpiredTokens()` from tokenService.js
+      - [ ] Option A: Cron job calling cleanup endpoint
+      - [ ] Option B: Database scheduled job (pg_cron)
+      - [ ] Option C: Application startup cleanup
+      - [ ] Add monitoring for token table size
+    - [ ] **Account Lockout After Failed Attempts**
+      - *Justification:* Rate limiting alone doesn't prevent distributed attacks. Temporary account lockout adds defense-in-depth against credential stuffing.
+      - [ ] Add `failed_login_attempts` and `locked_until` columns to users table
+      - [ ] Increment counter on failed login
+      - [ ] Lock account after 10 consecutive failures (15-minute lockout)
+      - [ ] Reset counter on successful login
+      - [ ] Return generic error (don't reveal lockout to attacker)
+      - [ ] Optional: Send email notification on lockout
+      - [ ] Log lockout events for security monitoring
+    - [ ] **Password Strength Requirements**
+      - *Justification:* Current 8-character minimum is weak. Stronger requirements reduce successful brute-force attacks.
+      - [ ] Require: 8+ chars, 1 uppercase, 1 lowercase, 1 number
+      - [ ] Optional: Check against common password list (top 10k)
+      - [ ] Add frontend password strength indicator
+      - [ ] Show requirements as user types
+      - [ ] Consider: Check against Have I Been Pwned API
+
+  - [ ] **Nice to Have** *(Enhanced UX and modern auth options)*
+    - [ ] **OAuth/SSO Integration**
+      - *Justification:* Reduces friction for users who prefer social login. Eliminates password management burden for those accounts.
+      - [ ] Google OAuth 2.0 integration
+      - [ ] GitHub OAuth integration
+      - [ ] Handle account linking (OAuth + existing email)
+      - [ ] Add frontend OAuth buttons on login/register pages
+    - [ ] **Passwordless Login (Magic Links)**
+      - *Justification:* Modern authentication option that eliminates password-related security risks entirely.
+      - [ ] Generate secure one-time login token
+      - [ ] Send magic link via email
+      - [ ] Token expires after 15 minutes or single use
+      - [ ] Add frontend "Email me a login link" option
+    - [ ] **WebAuthn/Passkeys Support**
+      - *Justification:* Phishing-resistant authentication using device biometrics or security keys. Emerging industry standard.
+      - [ ] Implement WebAuthn registration flow
+      - [ ] Implement WebAuthn authentication flow
+      - [ ] Store public key credentials in database
+      - [ ] Support as primary auth or 2FA method
+    - [ ] **Login History/Audit Log UI**
+      - *Justification:* Allows users to detect unauthorized access to their account.
+      - [ ] Create `login_history` table (timestamp, IP, user agent, success/failure)
+      - [ ] Record all login attempts
+      - [ ] Create endpoint to fetch login history (GET /api/v1/users/me/login-history)
+      - [ ] Add frontend login history page
+      - [ ] Show suspicious activity warnings
+    - [ ] **Refresh Token Family Tracking**
+      - *Justification:* Detects token replay attacks. If an old (rotated) token is used, revoke the entire token family.
+      - [ ] Add `family_id` column to refresh_tokens table
+      - [ ] All rotated tokens share the same family_id
+      - [ ] On use of revoked token: revoke entire family
+      - [ ] Alert user of potential compromise
+    - [ ] **Breach Detection Integration**
+      - *Justification:* Proactively protect users whose passwords appear in known data breaches.
+      - [ ] Integrate Have I Been Pwned API (k-anonymity model)
+      - [ ] Check on registration and password change
+      - [ ] Optional: Periodic check of existing passwords (hash prefix only)
+      - [ ] Prompt users to change compromised passwords
 - **Mobile Applications**
   - React Native mobile app
   - Flutter mobile app
