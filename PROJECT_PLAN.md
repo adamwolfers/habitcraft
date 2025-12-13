@@ -682,6 +682,162 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - [x] Automated deployment to AWS Lightsail
   - [x] Code coverage reporting (Codecov integration)
   - [x] Make integration/E2E tests depend on unit tests passing first
+  - [ ] **Path-Based Deployment Filtering**
+    - [ ] Add `dorny/paths-filter` action to detect changed paths
+    - [ ] Define path filters for frontend, backend, and shared code:
+      - `backend`: `backends/node/**`, `shared/database/**`
+      - `frontend`: `frontends/nextjs/**`, `shared/types/**`
+      - `shared`: `shared/**` (triggers both)
+      - `ci`: `.github/workflows/**` (triggers both)
+    - [ ] Update `deploy-backend` job condition:
+      - Deploy when backend paths change OR shared paths change OR CI config changes
+      - Skip deployment if only frontend paths changed
+    - [ ] Update `deploy-frontend` job condition:
+      - Deploy when frontend paths change OR shared paths change OR CI config changes
+      - Skip deployment if only backend paths changed
+    - [ ] Add workflow summary output showing which services will deploy
+    - [ ] Test scenarios to verify:
+      - Backend-only change → only backend deploys
+      - Frontend-only change → only frontend deploys
+      - Shared code change → both deploy
+      - CI workflow change → both deploy
+      - Documentation change → neither deploys (already excluded)
+  - [ ] **E2E Test Container Optimization**
+    - **Problem:** Currently using `--build` flag on every E2E run, rebuilding containers even when dependencies haven't changed. This is slow (~2-3 min) but was added to prevent stale node_modules issues.
+    - **Solution:** Conditional rebuild based on lock file changes + Docker BuildKit layer caching
+    - **Prerequisites:**
+      - [x] Dockerfiles already optimized (package files first, npm ci, then source) ✓
+    - [ ] **Phase 1: Add Docker BuildKit caching**
+      - [ ] Add `docker/setup-buildx-action@v3` to e2e-tests job
+      - [ ] Configure GitHub Actions cache for Docker layers:
+        ```yaml
+        - name: Set up Docker Buildx
+          uses: docker/setup-buildx-action@v3
+
+        - name: Cache Docker layers
+          uses: actions/cache@v4
+          with:
+            path: /tmp/.buildx-cache
+            key: ${{ runner.os }}-buildx-${{ hashFiles('**/package-lock.json') }}
+            restore-keys: |
+              ${{ runner.os }}-buildx-
+        ```
+      - [ ] Update docker compose to use BuildKit: `DOCKER_BUILDKIT=1`
+    - [ ] **Phase 2: Conditional rebuild logic**
+      - [ ] Add step to detect if package-lock.json files changed:
+        ```yaml
+        - name: Check for dependency changes
+          id: deps-changed
+          run: |
+            # For push events, compare with previous commit
+            # For PR events, compare with base branch
+            if [ "${{ github.event_name }}" == "pull_request" ]; then
+              BASE_SHA=${{ github.event.pull_request.base.sha }}
+            else
+              BASE_SHA=${{ github.event.before }}
+            fi
+
+            BACKEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'backends/node/package-lock.json' | wc -l)
+            FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontends/nextjs/package-lock.json' | wc -l)
+
+            if [ "$BACKEND_DEPS" -gt 0 ] || [ "$FRONTEND_DEPS" -gt 0 ]; then
+              echo "changed=true" >> $GITHUB_OUTPUT
+              echo "Dependencies changed - will rebuild containers"
+            else
+              echo "changed=false" >> $GITHUB_OUTPUT
+              echo "No dependency changes - will use cached containers"
+            fi
+        ```
+      - [ ] Update "Start test environment" step to conditionally use `--build`:
+        ```yaml
+        - name: Start test environment
+          run: |
+            BUILD_FLAG=""
+            if [ "${{ steps.deps-changed.outputs.changed }}" == "true" ]; then
+              BUILD_FLAG="--build"
+              echo "Building fresh containers due to dependency changes"
+            fi
+            docker compose -f docker-compose.test.yml up -d $BUILD_FLAG --wait
+        ```
+    - [ ] **Phase 3: Add fallback force-rebuild mechanism**
+      - [ ] Add workflow_dispatch input to force rebuild:
+        ```yaml
+        on:
+          workflow_dispatch:
+            inputs:
+              force_rebuild:
+                description: 'Force rebuild E2E test containers'
+                type: boolean
+                default: false
+        ```
+      - [ ] Update conditional logic to check force_rebuild input
+      - [ ] Document in workflow file when to use force rebuild
+    - [ ] **Phase 4: Testing and validation**
+      - [ ] Test scenario: Source-only change → no rebuild, fast startup
+      - [ ] Test scenario: package-lock.json change → rebuild triggered
+      - [ ] Test scenario: Manual force rebuild via workflow_dispatch
+      - [ ] Test scenario: First run (no cache) → full build works
+      - [ ] Measure and document time savings (expected: 1-2 min per run)
+    - [ ] **Phase 5: Update docker-compose.test.yml**
+      - [ ] Remove anonymous volumes that can cause stale issues:
+        ```yaml
+        # Before (problematic):
+        volumes:
+          - /app/node_modules
+
+        # After (explicit named volume):
+        volumes:
+          - frontend_test_modules:/app/node_modules
+        ```
+      - [ ] Add volume cleanup to CI teardown step
+      - [ ] Document volume behavior in docker-compose.test.yml comments
+    - [ ] **Phase 6: Update scripts/test-all.sh for local development**
+      - **Problem:** Script uses `--no-cache` and removes volumes on every run, making local test runs very slow (~3-5 min startup)
+      - [ ] Add `--rebuild` / `-r` flag to force full rebuild when needed:
+        ```bash
+        # Parse arguments
+        FORCE_REBUILD=false
+        while [[ "$#" -gt 0 ]]; do
+            case $1 in
+                -r|--rebuild) FORCE_REBUILD=true ;;
+                *) echo "Unknown parameter: $1"; exit 1 ;;
+            esac
+            shift
+        done
+        ```
+      - [ ] Change default behavior to use cached containers:
+        ```bash
+        if [ "$FORCE_REBUILD" = true ]; then
+            echo "Force rebuild requested - removing old containers and volumes..."
+            docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
+            docker compose -f docker-compose.test.yml build --no-cache
+            docker compose -f docker-compose.test.yml up -d
+        else
+            echo "Starting containers (use --rebuild for fresh build)..."
+            docker compose -f docker-compose.test.yml up -d
+        fi
+        ```
+      - [ ] Remove automatic image deletion (lines 47-48)
+      - [ ] Remove automatic volume deletion (lines 49-50)
+      - [ ] Update script header comments to document the `--rebuild` flag
+      - [ ] Optional: Add auto-detection of package-lock.json changes:
+        ```bash
+        # Store hash of lock files after successful run
+        LOCK_HASH_FILE="$PROJECT_ROOT/.test-deps-hash"
+        CURRENT_HASH=$(cat backends/node/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
+
+        if [ -f "$LOCK_HASH_FILE" ] && [ "$(cat $LOCK_HASH_FILE)" != "$CURRENT_HASH" ]; then
+            echo "⚠️  Dependencies changed since last run - triggering rebuild"
+            FORCE_REBUILD=true
+        fi
+
+        # Save hash after successful run
+        echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
+        ```
+      - [ ] Test scenarios:
+        - Default run (no flags) → fast startup with cached containers
+        - `--rebuild` flag → full rebuild with no cache
+        - Auto-detect dependency change → triggers rebuild automatically
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
   - Google Cloud Platform
