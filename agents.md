@@ -7,9 +7,23 @@
 5. **User Experience** - Smooth, responsive UI with proper error handling
 6. **Code Quality** - Clean, readable, maintainable code
 
+## General Notes
+
 - All tests can be run sequentially using scripts/test-all.sh
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
 - Verify that you're in the expected branch and directory before running terminal commands
+
+## Running tests with npm test
+
+Use `npm test -- <pattern>` to run specific tests. Do NOT use `--testPathPattern` flag - it's deprecated:
+
+```bash
+# Correct
+npm test -- Header.test.tsx
+
+# Wrong - deprecated flag
+npm test -- --testPathPattern="Header.test.tsx"
+```
 
 ## Testing Patterns
 

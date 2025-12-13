@@ -10,13 +10,13 @@ ARG NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 
 # Copy package files
-COPY package*.json ./
+COPY frontends/nextjs/package*.json ./
 
 # Install all dependencies
 RUN npm ci
 
 # Copy application code
-COPY . .
+COPY frontends/nextjs/ .
 
 ENV PORT=3100
 

@@ -14,6 +14,11 @@ The easiest way to run HabitCraft is with Docker Compose, which starts all requi
 
 ```bash
 # From the project root
+
+# First time setup: copy the dev override file
+cp docker-compose.override.yml.example docker-compose.override.yml
+
+# Start services
 docker-compose up postgres backend-node frontend-nextjs
 
 # Access the application:

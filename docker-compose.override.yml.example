@@ -1,0 +1,17 @@
+# Development overrides - automatically loaded by docker-compose
+# Copy this file to docker-compose.override.yml for local development:
+#   cp docker-compose.override.yml.example docker-compose.override.yml
+#
+# This file overrides settings in docker-compose.yml for local development.
+# Production deployments should NOT include docker-compose.override.yml.
+
+services:
+  backend-node:
+    build:
+      context: .
+      dockerfile: backends/node/Dockerfile.dev
+
+  frontend-nextjs:
+    build:
+      context: .
+      dockerfile: frontends/nextjs/Dockerfile.dev
