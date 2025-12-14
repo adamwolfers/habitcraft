@@ -475,6 +475,68 @@ describe('Header Component', () => {
     });
   });
 
+  describe('Profile Modal Trigger', () => {
+    const mockUpdateUser = jest.fn();
+    const mockOnOpenProfileModal = jest.fn();
+
+    beforeEach(() => {
+      mockOnOpenProfileModal.mockClear();
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: '123',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+        isLoading: false,
+        isAuthenticated: true,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: mockLogout,
+        updateUser: mockUpdateUser,
+      });
+    });
+
+    it('should render profile button when authenticated', () => {
+      render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+      expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
+    });
+
+    it('should not render profile button when not authenticated', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        isLoading: false,
+        isAuthenticated: false,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: mockLogout,
+        updateUser: jest.fn(),
+      });
+
+      render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+      expect(screen.queryByRole('button', { name: /profile/i })).not.toBeInTheDocument();
+    });
+
+    it('should call onOpenProfileModal when profile button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+      const profileButton = screen.getByRole('button', { name: /profile/i });
+      await user.click(profileButton);
+
+      expect(mockOnOpenProfileModal).toHaveBeenCalledTimes(1);
+    });
+
+    it('should display user name on profile button', () => {
+      render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+      const profileButton = screen.getByRole('button', { name: /profile/i });
+      expect(profileButton).toHaveTextContent('Test User');
+    });
+  });
+
   describe('Error Handling', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({

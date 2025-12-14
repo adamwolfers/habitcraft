@@ -176,7 +176,8 @@ test.describe('Authentication', () => {
 
       // Should exit edit mode and show updated name
       await expect(nameInput).not.toBeVisible();
-      await expect(page.getByText('Updated Test User')).toBeVisible();
+      // Use .first() since name appears in both inline display and profile button
+      await expect(page.getByText('Updated Test User').first()).toBeVisible();
     });
 
     test('should cancel name edit without saving', async ({ page }) => {
@@ -189,8 +190,8 @@ test.describe('Authentication', () => {
       // Wait for home page
       await expect(page).toHaveURL('/');
 
-      // Get original name
-      const originalName = await page.locator('header').getByText(/test user|updated test user/i).textContent();
+      // Get original name (use .first() since name appears in both inline display and profile button)
+      const originalName = await page.locator('header').getByText(/test user|updated test user/i).first().textContent();
 
       // Click edit name button
       await page.getByRole('button', { name: /edit name/i }).click();
@@ -205,7 +206,8 @@ test.describe('Authentication', () => {
 
       // Should exit edit mode and show original name
       await expect(nameInput).not.toBeVisible();
-      await expect(page.locator('header').getByText(originalName!)).toBeVisible();
+      // Use .first() since name appears in both inline display and profile button
+      await expect(page.locator('header').getByText(originalName!).first()).toBeVisible();
     });
 
     test('should update user email', async ({ page }) => {
@@ -297,6 +299,177 @@ test.describe('Authentication', () => {
 
       // Should show error message
       await expect(page.getByText(/already in use/i)).toBeVisible();
+    });
+  });
+
+  test.describe('Profile Modal', () => {
+    test.beforeEach(async ({ page }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+      await expect(page).toHaveURL('/');
+    });
+
+    test('should open profile modal when clicking profile button', async ({ page }) => {
+      // Click the profile button in header
+      await page.getByRole('button', { name: /profile/i }).click();
+
+      // Modal should be visible
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(page.getByRole('heading', { name: /profile/i })).toBeVisible();
+    });
+
+    test('should display current user info in modal', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+
+      // Should display user's name and email
+      await expect(page.getByRole('dialog')).toBeVisible();
+      await expect(page.getByRole('dialog').getByText(/test user/i)).toBeVisible();
+      await expect(page.getByRole('dialog').getByText('test@example.com')).toBeVisible();
+    });
+
+    test('should close modal when clicking cancel button', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Click cancel button
+      await page.getByRole('button', { name: /cancel/i }).click();
+
+      // Modal should be closed
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+    });
+
+    test('should close modal when clicking close (X) button', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Click close button
+      await page.getByRole('button', { name: /close/i }).click();
+
+      // Modal should be closed
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+    });
+
+    test('should close modal when clicking outside (backdrop)', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Click on backdrop (outside the dialog content)
+      await page.getByTestId('modal-backdrop').click({ position: { x: 10, y: 10 } });
+
+      // Modal should be closed
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+    });
+
+    test('should update user name from profile modal', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Clear and update name
+      const nameInput = page.getByRole('dialog').getByLabel(/name/i);
+      await nameInput.clear();
+      await nameInput.fill('Updated Via Modal');
+
+      // Save changes
+      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
+
+      // Modal should close
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+
+      // Name should be updated in header (check the profile button)
+      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
+
+      // Verify persistence after reload
+      await page.reload();
+      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
+    });
+
+    test('should update user email from profile modal', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Clear and update email
+      const emailInput = page.getByRole('dialog').getByLabel(/email/i);
+      await emailInput.clear();
+      await emailInput.fill('modal-update@example.com');
+
+      // Save changes
+      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
+
+      // Modal should close
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+
+      // Email should be updated in header
+      await expect(page.locator('header').getByText('modal-update@example.com')).toBeVisible();
+
+      // CLEANUP: Restore original email
+      await page.getByRole('button', { name: /profile/i }).click();
+      const restoreInput = page.getByRole('dialog').getByLabel(/email/i);
+      await restoreInput.clear();
+      await restoreInput.fill('test@example.com');
+      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
+      await expect(page.locator('header').getByText('test@example.com')).toBeVisible();
+    });
+
+    test('should cancel profile changes without saving', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Modify name
+      const nameInput = page.getByRole('dialog').getByLabel(/name/i);
+      await nameInput.clear();
+      await nameInput.fill('Should Not Save');
+
+      // Cancel
+      await page.getByRole('button', { name: /cancel/i }).click();
+
+      // Modal should close and changes should not be saved
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+      await expect(page.locator('header').getByText('Should Not Save')).not.toBeVisible();
+    });
+
+    test('should show validation error for invalid email', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Enter invalid email
+      const emailInput = page.getByRole('dialog').getByLabel(/email/i);
+      await emailInput.clear();
+      await emailInput.fill('invalid-email');
+
+      // Save button should be disabled or show validation error
+      const saveButton = page.getByRole('dialog').getByRole('button', { name: /save/i });
+      await expect(saveButton).toBeDisabled();
+    });
+
+    test('should show error when email is already taken', async ({ page }) => {
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Try to change to user 2's email
+      const emailInput = page.getByRole('dialog').getByLabel(/email/i);
+      await emailInput.clear();
+      await emailInput.fill('test2@example.com');
+
+      // Save
+      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
+
+      // Should show error
+      await expect(page.getByRole('dialog').getByText(/already in use/i)).toBeVisible();
+
+      // Modal should still be open
+      await expect(page.getByRole('dialog')).toBeVisible();
     });
   });
 

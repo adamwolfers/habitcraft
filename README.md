@@ -41,6 +41,7 @@ habittracker_fullstack/
 - Protected routes and API endpoints
 - Automatic token refresh
 - User data isolation
+- User profile management (name, email updates)
 
 **Habit Management:**
 - Create, read, update, and delete habits
@@ -113,6 +114,7 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 
 ### Users
 - `GET /api/v1/users/me` - Get current user profile
+- `PUT /api/v1/users/me` - Update current user profile (name, email)
 
 ### Habits
 - `POST /api/v1/habits` - Create a new habit

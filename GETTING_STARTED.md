@@ -119,6 +119,7 @@ psql -d habitcraft -f shared/database/schema.sql
 
 - User registration and login with JWT authentication
 - Secure token management (access + refresh tokens via HttpOnly cookies)
+- User profile management (update name, email)
 - Full habit CRUD operations (Create, Read, Update, Delete)
 - Completion tracking (mark complete, view history, remove)
 - User data isolation and authorization
@@ -130,6 +131,7 @@ psql -d habitcraft -f shared/database/schema.sql
 - User registration and login pages
 - JWT-based authentication with automatic token refresh
 - Protected routes requiring authentication
+- User profile management modal (edit name, email)
 - Habit management UI (create, update, delete)
 - Calendar week view with completion tracking
 - Week navigation (previous/next)

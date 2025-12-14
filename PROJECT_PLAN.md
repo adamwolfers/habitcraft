@@ -170,37 +170,37 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [ ] Implement password change in backend
     - [ ] Add password change UI in frontend
   - [ ] **User Profile Management Modal**
-    - [ ] **Modal Infrastructure**
-      - [ ] Write E2E tests for profile modal open/close (Playwright)
-      - [ ] Write integration tests for profile modal trigger from Header
-      - [ ] Write unit tests for modal open/close functionality
-      - [ ] Implement modal UI structure (open/close, cancel button)
-      - [ ] Write tests for profile button in Header component
-      - [ ] Add profile button to Header component
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
-    - [ ] **Display User Info**
-      - [ ] Write E2E tests for displaying user name and email
-      - [ ] Write unit tests for user info display rendering
-      - [ ] Implement user info display section
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
-    - [ ] **Edit Name**
-      - [ ] Write E2E tests for name edit flow
-      - [ ] Write unit tests for name field rendering and validation
-      - [ ] Implement name input field with validation
-      - [ ] Write unit tests for name update submission
-      - [ ] Connect name update to API
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
-    - [ ] **Edit Email**
-      - [ ] Write E2E tests for email edit flow
-      - [ ] Write unit tests for email field rendering and validation
-      - [ ] Implement email input field with validation
-      - [ ] Write unit tests for email update submission
-      - [ ] Connect email update to API
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
+    - [x] **Modal Infrastructure**
+      - [x] Write E2E tests for profile modal open/close (Playwright)
+      - [x] Write integration tests for profile modal trigger from Header
+      - [x] Write unit tests for modal open/close functionality
+      - [x] Implement modal UI structure (open/close, cancel button)
+      - [x] Write tests for profile button in Header component
+      - [x] Add profile button to Header component
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
+    - [x] **Display User Info**
+      - [x] Write E2E tests for displaying user name and email
+      - [x] Write unit tests for user info display rendering
+      - [x] Implement user info display section
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
+    - [x] **Edit Name**
+      - [x] Write E2E tests for name edit flow
+      - [x] Write unit tests for name field rendering and validation
+      - [x] Implement name input field with validation
+      - [x] Write unit tests for name update submission
+      - [x] Connect name update to API
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
+    - [x] **Edit Email**
+      - [x] Write E2E tests for email edit flow
+      - [x] Write unit tests for email field rendering and validation
+      - [x] Implement email input field with validation
+      - [x] Write unit tests for email update submission
+      - [x] Connect email update to API
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
     - [ ] **Change Password Section**
       - [ ] Write E2E tests for password change flow
       - [ ] Write unit tests for password fields rendering
@@ -210,17 +210,17 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
       - [ ] Connect password change to API
       - [ ] Run all tests (scripts/test-all.sh)
       - [ ] Update project docs if needed
-    - [ ] **Error Handling**
-      - [ ] Write E2E tests for API error display
-      - [ ] Write unit tests for error message rendering
-      - [ ] Implement error handling UI
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
-    - [ ] **Loading States**
-      - [ ] Write unit tests for loading state during save
-      - [ ] Implement loading indicators for save operations
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
+    - [x] **Error Handling**
+      - [x] Write E2E tests for API error display
+      - [x] Write unit tests for error message rendering
+      - [x] Implement error handling UI
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
+    - [x] **Loading States**
+      - [x] Write unit tests for loading state during save
+      - [x] Implement loading indicators for save operations
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
 
 ### Frontend - Next.js + React
 

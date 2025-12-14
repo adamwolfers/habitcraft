@@ -18,9 +18,9 @@ jest.mock('next/font/google', () => ({
   }),
 }));
 
-// Mock Header component
-jest.mock('@/components/Header', () => {
-  return function MockHeader() {
+// Mock HeaderWithProfile component
+jest.mock('@/components/HeaderWithProfile', () => {
+  return function MockHeaderWithProfile() {
     return <div data-testid="header">Header</div>;
   };
 });
