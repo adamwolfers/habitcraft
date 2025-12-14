@@ -11,6 +11,11 @@ import { test, expect, Page } from '@playwright/test';
  * - Morning Exercise (active)
  * - Read Books (active)
  * - Archived Habit (archived)
+ *
+ * Test isolation strategy:
+ * - Fixture habits are READ ONLY - never modified
+ * - Create/Update/Delete tests create unique habits with Date.now() timestamps
+ * - Each test is independent and can run in any order
  */
 
 /**
@@ -91,9 +96,26 @@ test.describe('Habit Management', () => {
   });
 
   test.describe('Update Habit', () => {
+    /**
+     * Helper to create a unique habit for testing updates.
+     * This ensures test isolation - we don't modify fixture data.
+     */
+    async function createTestHabit(page: Page, prefix: string) {
+      const habitName = `${prefix} ${Date.now()}`;
+      await page.getByRole('button', { name: /add new habit/i }).click();
+      await page.getByLabel(/habit name/i).fill(habitName);
+      await page.getByLabel(/description/i).fill('Original description');
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+      await expect(page.getByText(habitName)).toBeVisible();
+      return habitName;
+    }
+
     test('should update habit name and description', async ({ page }) => {
-      // Find and click the edit button on "Morning Exercise" habit
-      const habitCard = getHabitCard(page, 'Morning Exercise');
+      // Create a unique habit for this test (ensures isolation)
+      const originalName = await createTestHabit(page, 'Update Test');
+
+      // Find and click the edit button on our test habit
+      const habitCard = getHabitCard(page, originalName);
       await habitCard.getByRole('button', { name: /edit habit/i }).click();
 
       // Verify modal opened
@@ -103,7 +125,7 @@ test.describe('Habit Management', () => {
       // Update the name
       const nameInput = page.getByLabel(/habit name/i);
       await nameInput.clear();
-      await nameInput.fill('Morning Exercise Updated');
+      await nameInput.fill(`${originalName} Updated`);
 
       // Update the description
       const descriptionInput = page.getByLabel(/description/i);
@@ -117,13 +139,16 @@ test.describe('Habit Management', () => {
       await expect(page.getByRole('dialog')).not.toBeVisible();
 
       // Verify changes persisted
-      await expect(page.getByText('Morning Exercise Updated')).toBeVisible();
+      await expect(page.getByText(`${originalName} Updated`)).toBeVisible();
       await expect(page.getByText('Updated description for E2E test')).toBeVisible();
     });
 
     test('should update habit color', async ({ page }) => {
-      // Find and click the edit button on "Read Books" habit
-      const habitCard = getHabitCard(page, 'Read Books');
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Color Test');
+
+      // Find and click the edit button on our test habit
+      const habitCard = getHabitCard(page, habitName);
       await habitCard.getByRole('button', { name: /edit habit/i }).click();
 
       // Verify modal opened
@@ -140,12 +165,15 @@ test.describe('Habit Management', () => {
 
       // Reload to verify persistence
       await page.reload();
-      await expect(page.getByText('Read Books')).toBeVisible();
+      await expect(page.getByText(habitName)).toBeVisible();
     });
 
     test('should update habit icon', async ({ page }) => {
-      // Find and click the edit button on "Read Books" habit
-      const habitCard = getHabitCard(page, 'Read Books');
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Icon Test');
+
+      // Find and click the edit button on our test habit
+      const habitCard = getHabitCard(page, habitName);
       await habitCard.getByRole('button', { name: /edit habit/i }).click();
 
       // Verify modal opened
@@ -160,13 +188,17 @@ test.describe('Habit Management', () => {
       // Modal should close
       await expect(page.getByRole('dialog')).not.toBeVisible();
 
-      // Verify the new icon is displayed
-      await expect(page.locator('text=🧘')).toBeVisible();
+      // Verify the new icon is displayed on our habit card
+      const updatedCard = getHabitCard(page, habitName);
+      await expect(updatedCard.locator('text=🧘')).toBeVisible();
     });
 
     test('should cancel habit update', async ({ page }) => {
-      // Find and click the edit button on "Morning Exercise" habit
-      const habitCard = getHabitCard(page, 'Morning Exercise');
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Cancel Test');
+
+      // Find and click the edit button on our test habit
+      const habitCard = getHabitCard(page, habitName);
       await habitCard.getByRole('button', { name: /edit habit/i }).click();
 
       // Verify modal opened
@@ -184,13 +216,16 @@ test.describe('Habit Management', () => {
       await expect(page.getByRole('dialog')).not.toBeVisible();
 
       // Original name should still be there
-      await expect(page.getByText('Morning Exercise')).toBeVisible();
+      await expect(page.getByText(habitName)).toBeVisible();
       await expect(page.getByText('This should not be saved')).not.toBeVisible();
     });
 
     test('should close modal by clicking outside', async ({ page }) => {
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Modal Test');
+
       // Find and click the edit button
-      const habitCard = getHabitCard(page, 'Morning Exercise');
+      const habitCard = getHabitCard(page, habitName);
       await habitCard.getByRole('button', { name: /edit habit/i }).click();
 
       // Verify modal opened

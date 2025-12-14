@@ -6,6 +6,11 @@ import { test, expect } from '@playwright/test';
  * Test credentials (from test-fixtures.sql):
  * - User 1: test@example.com / Test1234!
  * - User 2: test2@example.com / Test1234!
+ *
+ * Test isolation strategy:
+ * - User 1: READ ONLY - never modified, used for login/logout/validation tests
+ * - User 2: Never logged in as, only used for "email taken" validation
+ * - Data-modifying tests (profile updates) create unique users via registration
  */
 
 test.describe('Authentication', () => {
@@ -150,12 +155,19 @@ test.describe('Authentication', () => {
   });
 
   test.describe('Profile Management', () => {
+    /**
+     * Tests that modify user data create their own unique users to ensure
+     * test isolation - we don't modify fixture data that other tests depend on.
+     */
     test('should update user name', async ({ page }) => {
-      // Login first
-      await page.goto('/login');
-      await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
-      await page.getByRole('button', { name: /log in/i }).click();
+      // Create a unique user for this test (to avoid modifying fixture users)
+      const uniqueEmail = `name-update-test-${Date.now()}@example.com`;
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Original Name');
+      await page.getByLabel(/email/i).fill(uniqueEmail);
+      await page.getByLabel(/^password$/i).fill('Test1234!');
+      await page.getByLabel(/confirm password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /sign up/i }).click();
 
       // Wait for home page
       await expect(page).toHaveURL('/');
@@ -169,7 +181,7 @@ test.describe('Authentication', () => {
 
       // Clear and type new name
       await nameInput.clear();
-      await nameInput.fill('Updated Test User');
+      await nameInput.fill('Updated Name');
 
       // Click save
       await page.getByRole('button', { name: /save/i }).click();
@@ -177,11 +189,11 @@ test.describe('Authentication', () => {
       // Should exit edit mode and show updated name
       await expect(nameInput).not.toBeVisible();
       // Use .first() since name appears in both inline display and profile button
-      await expect(page.getByText('Updated Test User').first()).toBeVisible();
+      await expect(page.getByText('Updated Name').first()).toBeVisible();
     });
 
     test('should cancel name edit without saving', async ({ page }) => {
-      // Login first
+      // Login as test user 1 (safe since we don't save changes)
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
       await page.getByLabel(/password/i).fill('Test1234!');
@@ -190,8 +202,8 @@ test.describe('Authentication', () => {
       // Wait for home page
       await expect(page).toHaveURL('/');
 
-      // Get original name (use .first() since name appears in both inline display and profile button)
-      const originalName = await page.locator('header').getByText(/test user|updated test user/i).first().textContent();
+      // Get original name from the header
+      const originalName = await page.locator('header').getByText(/test user/i).first().textContent();
 
       // Click edit name button
       await page.getByRole('button', { name: /edit name/i }).click();
@@ -211,17 +223,20 @@ test.describe('Authentication', () => {
     });
 
     test('should update user email', async ({ page }) => {
-      // Login first
-      await page.goto('/login');
-      await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
-      await page.getByRole('button', { name: /log in/i }).click();
+      // Create a unique user for this test (to avoid modifying fixture users)
+      const originalEmail = `email-update-test-${Date.now()}@example.com`;
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Email Update Test User');
+      await page.getByLabel(/email/i).fill(originalEmail);
+      await page.getByLabel(/^password$/i).fill('Test1234!');
+      await page.getByLabel(/confirm password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /sign up/i }).click();
 
       // Wait for home page
       await expect(page).toHaveURL('/');
 
       // Verify original email is displayed
-      await expect(page.locator('header').getByText('test@example.com')).toBeVisible();
+      await expect(page.locator('header').getByText(originalEmail)).toBeVisible();
 
       // Click edit email button
       await page.getByRole('button', { name: /edit email/i }).click();
@@ -230,24 +245,17 @@ test.describe('Authentication', () => {
       const emailInput = page.getByRole('textbox', { name: /email/i });
       await expect(emailInput).toBeVisible();
 
-      // Clear and type new email
+      // Clear and type new email (unique to avoid conflicts)
+      const newEmail = `updated-e2e-${Date.now()}@example.com`;
       await emailInput.clear();
-      await emailInput.fill('updated-e2e@example.com');
+      await emailInput.fill(newEmail);
 
       // Click save
       await page.getByRole('button', { name: /save/i }).click();
 
       // Should exit edit mode and show updated email
       await expect(emailInput).not.toBeVisible();
-      await expect(page.locator('header').getByText('updated-e2e@example.com')).toBeVisible();
-
-      // CLEANUP: Restore original email to not break subsequent tests
-      await page.getByRole('button', { name: /edit email/i }).click();
-      const restoreInput = page.getByRole('textbox', { name: /email/i });
-      await restoreInput.clear();
-      await restoreInput.fill('test@example.com');
-      await page.getByRole('button', { name: /save/i }).click();
-      await expect(page.locator('header').getByText('test@example.com')).toBeVisible();
+      await expect(page.locator('header').getByText(newEmail)).toBeVisible();
     });
 
     test('should cancel email edit without saving', async ({ page }) => {
@@ -277,11 +285,14 @@ test.describe('Authentication', () => {
     });
 
     test('should show error when email is already taken', async ({ page }) => {
-      // Login first
-      await page.goto('/login');
-      await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
-      await page.getByRole('button', { name: /log in/i }).click();
+      // Create a new unique user for this test (to ensure independence from other tests)
+      const uniqueEmail = `taken-test-${Date.now()}@example.com`;
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Taken Test User');
+      await page.getByLabel(/email/i).fill(uniqueEmail);
+      await page.getByLabel(/^password$/i).fill('Test1234!');
+      await page.getByLabel(/confirm password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /sign up/i }).click();
 
       // Wait for home page
       await expect(page).toHaveURL('/');
@@ -289,10 +300,10 @@ test.describe('Authentication', () => {
       // Click edit email button
       await page.getByRole('button', { name: /edit email/i }).click();
 
-      // Try to change to user 2's email (already taken)
+      // Try to change to user 1's email (test@example.com - guaranteed to exist)
       const emailInput = page.getByRole('textbox', { name: /email/i });
       await emailInput.clear();
-      await emailInput.fill('test2@example.com');
+      await emailInput.fill('test@example.com');
 
       // Click save
       await page.getByRole('button', { name: /save/i }).click();
@@ -303,8 +314,12 @@ test.describe('Authentication', () => {
   });
 
   test.describe('Profile Modal', () => {
+    /**
+     * Read-only tests use test user 1 (test@example.com).
+     * These tests don't modify data, so they're safe to run with the shared beforeEach.
+     */
     test.beforeEach(async ({ page }) => {
-      // Login first
+      // Login as test user 1
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
       await page.getByLabel(/password/i).fill('Test1234!');
@@ -367,58 +382,6 @@ test.describe('Authentication', () => {
       await expect(page.getByRole('dialog')).not.toBeVisible();
     });
 
-    test('should update user name from profile modal', async ({ page }) => {
-      // Open profile modal
-      await page.getByRole('button', { name: /profile/i }).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-
-      // Clear and update name
-      const nameInput = page.getByRole('dialog').getByLabel(/name/i);
-      await nameInput.clear();
-      await nameInput.fill('Updated Via Modal');
-
-      // Save changes
-      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
-
-      // Modal should close
-      await expect(page.getByRole('dialog')).not.toBeVisible();
-
-      // Name should be updated in header (check the profile button)
-      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
-
-      // Verify persistence after reload
-      await page.reload();
-      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
-    });
-
-    test('should update user email from profile modal', async ({ page }) => {
-      // Open profile modal
-      await page.getByRole('button', { name: /profile/i }).click();
-      await expect(page.getByRole('dialog')).toBeVisible();
-
-      // Clear and update email
-      const emailInput = page.getByRole('dialog').getByLabel(/email/i);
-      await emailInput.clear();
-      await emailInput.fill('modal-update@example.com');
-
-      // Save changes
-      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
-
-      // Modal should close
-      await expect(page.getByRole('dialog')).not.toBeVisible();
-
-      // Email should be updated in header
-      await expect(page.locator('header').getByText('modal-update@example.com')).toBeVisible();
-
-      // CLEANUP: Restore original email
-      await page.getByRole('button', { name: /profile/i }).click();
-      const restoreInput = page.getByRole('dialog').getByLabel(/email/i);
-      await restoreInput.clear();
-      await restoreInput.fill('test@example.com');
-      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
-      await expect(page.locator('header').getByText('test@example.com')).toBeVisible();
-    });
-
     test('should cancel profile changes without saving', async ({ page }) => {
       // Open profile modal
       await page.getByRole('button', { name: /profile/i }).click();
@@ -453,11 +416,14 @@ test.describe('Authentication', () => {
     });
 
     test('should show error when email is already taken', async ({ page }) => {
+      // Uses beforeEach login as user 1
+      // Safe to use test2@example.com since no other test modifies user 2 now
+
       // Open profile modal
       await page.getByRole('button', { name: /profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
-      // Try to change to user 2's email
+      // Try to change to user 2's email (test2@example.com - guaranteed to exist)
       const emailInput = page.getByRole('dialog').getByLabel(/email/i);
       await emailInput.clear();
       await emailInput.fill('test2@example.com');
@@ -470,6 +436,77 @@ test.describe('Authentication', () => {
 
       // Modal should still be open
       await expect(page.getByRole('dialog')).toBeVisible();
+    });
+  });
+
+  test.describe('Profile Modal Updates', () => {
+    /**
+     * Tests that modify user data create their own unique users to ensure
+     * test isolation - we don't modify fixture data that other tests depend on.
+     */
+    test('should update user name from profile modal', async ({ page }) => {
+      // Create a unique user for this test
+      const uniqueEmail = `modal-name-update-${Date.now()}@example.com`;
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Original Modal Name');
+      await page.getByLabel(/email/i).fill(uniqueEmail);
+      await page.getByLabel(/^password$/i).fill('Test1234!');
+      await page.getByLabel(/confirm password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/');
+
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Clear and update name
+      const nameInput = page.getByRole('dialog').getByLabel(/name/i);
+      await nameInput.clear();
+      await nameInput.fill('Updated Via Modal');
+
+      // Save changes
+      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
+
+      // Modal should close
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+
+      // Name should be updated in header (check the profile button)
+      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
+
+      // Verify persistence after reload
+      await page.reload();
+      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
+    });
+
+    test('should update user email from profile modal', async ({ page }) => {
+      // Create a unique user for this test
+      const originalEmail = `modal-email-update-${Date.now()}@example.com`;
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Email Modal Test User');
+      await page.getByLabel(/email/i).fill(originalEmail);
+      await page.getByLabel(/^password$/i).fill('Test1234!');
+      await page.getByLabel(/confirm password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/');
+
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Clear and update email (unique to avoid conflicts)
+      const newEmail = `modal-updated-${Date.now()}@example.com`;
+      const emailInput = page.getByRole('dialog').getByLabel(/email/i);
+      await emailInput.clear();
+      await emailInput.fill(newEmail);
+
+      // Save changes
+      await page.getByRole('dialog').getByRole('button', { name: /save/i }).click();
+
+      // Modal should close
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+
+      // Email should be updated in header
+      await expect(page.locator('header').getByText(newEmail)).toBeVisible();
     });
   });
 

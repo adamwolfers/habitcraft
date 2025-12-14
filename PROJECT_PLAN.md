@@ -447,6 +447,31 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Multiple habits completion tracking
   - [x] Calendar navigation
   - [x] Fix flaky test: "should persist completion after page reload"
+- [x] **E2E Test Isolation Fixes** ✅
+  - **Problem:** Tests modify fixture data (habits, user profile, completions) without restoration, causing cross-test dependencies and potential failures when test order changes.
+  - **Solution:** Create unique test data instead of modifying fixtures (Option B)
+  - **Data Strategy:**
+    - User 1 (`test@example.com`): READ ONLY - never modified
+    - User 2 (`test2@example.com`): Never logged in as, only used for "email taken" validation
+    - All data-modifying tests create unique entities with `Date.now()` timestamps
+
+  - [x] **habits.spec.ts - Update Habit Tests**
+    - [x] Added `createTestHabit` helper that creates unique habits with timestamp
+    - [x] All 5 update tests now create their own habits before testing
+
+  - [x] **auth.spec.ts - Profile Management Tests**
+    - [x] Profile update tests now register unique users before testing
+    - [x] "Email already taken" tests create unique users and check against user 1's email
+    - [x] Profile Modal Updates describe block creates unique users for each test
+
+  - [x] **completions.spec.ts - Completion Toggle Tests**
+    - [x] Toggle tests create unique habits using `createTestHabit` helper
+    - [x] "Track completions independently" test creates two unique habits
+    - [x] Navigation/display tests use fixture habits (read-only, safe)
+
+  - [x] **Verification**
+    - [x] All 50 E2E tests pass
+    - [x] Comprehensive audit confirms all tests are properly isolated
 
 ### Documentation
 
@@ -569,7 +594,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ### Quality Checklist
 
 - [ ] Comprehensive review of all FE & BE unit tests (evaluate for redundancies, gaps, and refactoring opportunities)
-- [ ] Review E2E tests for proper isolation (each test should be independent and not rely on state from other tests)
+- [x] Review E2E tests for proper isolation (each test should be independent and not rely on state from other tests)
 - [ ] All backend tests passing
 - [ ] All frontend tests passing
 - [ ] All integration tests passing
