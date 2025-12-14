@@ -923,21 +923,22 @@ Extract closure-captured logic from React event handlers into pure utility funct
         - Auto-detect dependency change → triggers rebuild automatically
 
     - [ ] **Phase 2: Add Docker BuildKit caching**
-      - [ ] Add `docker/setup-buildx-action@v3` to e2e-tests job
-      - [ ] Configure GitHub Actions cache for Docker layers:
+      - [x] Add `docker/setup-buildx-action@v3` to e2e-tests job
+      - [x] Enable BuildKit with `DOCKER_BUILDKIT=1` environment variable
+      - [ ] Create `docker-bake.test.hcl` for buildx bake configuration
+      - [ ] Update CI to use `docker buildx bake` with GitHub Actions cache backend:
         ```yaml
-        - name: Set up Docker Buildx
-          uses: docker/setup-buildx-action@v3
-
-        - name: Cache Docker layers
-          uses: actions/cache@v4
-          with:
-            path: /tmp/.buildx-cache
-            key: ${{ runner.os }}-buildx-${{ hashFiles('**/package-lock.json') }}
-            restore-keys: |
-              ${{ runner.os }}-buildx-
+        - name: Build test containers with cache
+          run: |
+            docker buildx bake \
+              -f docker-compose.test.yml \
+              -f docker-bake.test.hcl \
+              --set *.cache-from=type=gha \
+              --set *.cache-to=type=gha,mode=max \
+              --load
         ```
-      - [ ] Update docker compose to use BuildKit: `DOCKER_BUILDKIT=1`
+      - [ ] Remove unused `actions/cache` step (GHA cache is handled by buildx directly)
+      - [ ] Update `docker compose up` to not rebuild (images already built by bake)
 
     - [ ] **Phase 3: Conditional rebuild logic**
       - [ ] Add step to detect if package-lock.json files changed:
