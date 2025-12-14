@@ -19,7 +19,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (updates: { name?: string }) => Promise<void>;
+  updateUser: (updates: { name?: string; email?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }, []);
 
-  const updateUser = useCallback(async (updates: { name?: string }) => {
+  const updateUser = useCallback(async (updates: { name?: string; email?: string }) => {
     const response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
       method: 'PUT',
       credentials: 'include',

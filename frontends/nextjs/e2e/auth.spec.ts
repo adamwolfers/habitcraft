@@ -207,6 +207,97 @@ test.describe('Authentication', () => {
       await expect(nameInput).not.toBeVisible();
       await expect(page.locator('header').getByText(originalName!)).toBeVisible();
     });
+
+    test('should update user email', async ({ page }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page
+      await expect(page).toHaveURL('/');
+
+      // Verify original email is displayed
+      await expect(page.locator('header').getByText('test@example.com')).toBeVisible();
+
+      // Click edit email button
+      await page.getByRole('button', { name: /edit email/i }).click();
+
+      // Should see email input field
+      const emailInput = page.getByRole('textbox', { name: /email/i });
+      await expect(emailInput).toBeVisible();
+
+      // Clear and type new email
+      await emailInput.clear();
+      await emailInput.fill('updated-e2e@example.com');
+
+      // Click save
+      await page.getByRole('button', { name: /save/i }).click();
+
+      // Should exit edit mode and show updated email
+      await expect(emailInput).not.toBeVisible();
+      await expect(page.locator('header').getByText('updated-e2e@example.com')).toBeVisible();
+
+      // CLEANUP: Restore original email to not break subsequent tests
+      await page.getByRole('button', { name: /edit email/i }).click();
+      const restoreInput = page.getByRole('textbox', { name: /email/i });
+      await restoreInput.clear();
+      await restoreInput.fill('test@example.com');
+      await page.getByRole('button', { name: /save/i }).click();
+      await expect(page.locator('header').getByText('test@example.com')).toBeVisible();
+    });
+
+    test('should cancel email edit without saving', async ({ page }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page
+      await expect(page).toHaveURL('/');
+
+      // Click edit email button
+      await page.getByRole('button', { name: /edit email/i }).click();
+
+      // Change the email
+      const emailInput = page.getByRole('textbox', { name: /email/i });
+      await emailInput.clear();
+      await emailInput.fill('should-not-save@example.com');
+
+      // Click cancel
+      await page.getByRole('button', { name: /cancel/i }).click();
+
+      // Should exit edit mode and NOT show the unsaved email
+      await expect(emailInput).not.toBeVisible();
+      await expect(page.locator('header').getByText('should-not-save@example.com')).not.toBeVisible();
+    });
+
+    test('should show error when email is already taken', async ({ page }) => {
+      // Login first
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Wait for home page
+      await expect(page).toHaveURL('/');
+
+      // Click edit email button
+      await page.getByRole('button', { name: /edit email/i }).click();
+
+      // Try to change to user 2's email (already taken)
+      const emailInput = page.getByRole('textbox', { name: /email/i });
+      await emailInput.clear();
+      await emailInput.fill('test2@example.com');
+
+      // Click save
+      await page.getByRole('button', { name: /save/i }).click();
+
+      // Should show error message
+      await expect(page.getByText(/already in use/i)).toBeVisible();
+    });
   });
 
   test.describe('Token Refresh', () => {

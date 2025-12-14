@@ -4,6 +4,11 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
+// Simple email validation regex
+const isValidEmail = (email: string): boolean => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
 export default function Header() {
   const router = useRouter();
   const { user, isAuthenticated, logout, updateUser } = useAuth();
@@ -12,6 +17,10 @@ export default function Header() {
   const [editName, setEditName] = useState('');
   const [nameError, setNameError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [editEmail, setEditEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [isSavingEmail, setIsSavingEmail] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -50,6 +59,32 @@ export default function Header() {
       setNameError(error instanceof Error ? error.message : 'Update failed');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleEditEmailClick = () => {
+    setEditEmail(user?.email || '');
+    setEmailError(null);
+    setIsEditingEmail(true);
+  };
+
+  const handleCancelEmailEdit = () => {
+    setIsEditingEmail(false);
+    setEditEmail('');
+    setEmailError(null);
+  };
+
+  const handleSaveEmail = async () => {
+    setIsSavingEmail(true);
+    setEmailError(null);
+    try {
+      await updateUser({ email: editEmail });
+      setIsEditingEmail(false);
+      setEditEmail('');
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Update failed');
+    } finally {
+      setIsSavingEmail(false);
     }
   };
 
@@ -99,6 +134,47 @@ export default function Header() {
                     onClick={handleEditClick}
                     className="text-gray-400 hover:text-white transition-colors"
                     aria-label="Edit name"
+                  >
+                    ✏️
+                  </button>
+                </>
+              )}
+              {isEditingEmail ? (
+                <div className="flex items-center gap-2">
+                  <label htmlFor="email-input" className="sr-only">Email</label>
+                  <input
+                    id="email-input"
+                    type="email"
+                    value={editEmail}
+                    onChange={(e) => setEditEmail(e.target.value)}
+                    className="px-2 py-1 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  />
+                  <button
+                    onClick={handleSaveEmail}
+                    disabled={!editEmail.trim() || !isValidEmail(editEmail) || isSavingEmail}
+                    className="px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-green-600/50 disabled:cursor-not-allowed text-white rounded transition-colors text-sm"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={handleCancelEmailEdit}
+                    className="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  {emailError && (
+                    <span className="text-red-400 text-sm">{emailError}</span>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <span className="text-gray-400 text-sm">
+                    {user.email}
+                  </span>
+                  <button
+                    onClick={handleEditEmailClick}
+                    className="text-gray-400 hover:text-white transition-colors"
+                    aria-label="Edit email"
                   >
                     ✏️
                   </button>

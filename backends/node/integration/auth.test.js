@@ -346,6 +346,178 @@ describe('Authentication Integration Tests', () => {
     });
   });
 
+  describe('Profile Update', () => {
+    it('should update user name successfully', async () => {
+      // Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Update name
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .set('Cookie', cookieString)
+        .send({ name: 'Updated Test Name' });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.name).toBe('Updated Test Name');
+      expect(updateResponse.body.email).toBe(testUsers.user1.email);
+
+      // Verify in database
+      const pool = getTestPool();
+      const dbResult = await pool.query(
+        'SELECT name FROM users WHERE id = $1',
+        [testUsers.user1.id]
+      );
+      expect(dbResult.rows[0].name).toBe('Updated Test Name');
+    });
+
+    it('should update user email successfully', async () => {
+      // Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Update email
+      const newEmail = 'updated-email@example.com';
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .set('Cookie', cookieString)
+        .send({ email: newEmail });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.email).toBe(newEmail);
+
+      // Verify in database
+      const pool = getTestPool();
+      const dbResult = await pool.query(
+        'SELECT email FROM users WHERE id = $1',
+        [testUsers.user1.id]
+      );
+      expect(dbResult.rows[0].email).toBe(newEmail);
+    });
+
+    it('should update both name and email together', async () => {
+      // Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Update both
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .set('Cookie', cookieString)
+        .send({
+          name: 'Both Updated',
+          email: 'both-updated@example.com',
+        });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.name).toBe('Both Updated');
+      expect(updateResponse.body.email).toBe('both-updated@example.com');
+    });
+
+    it('should reject email update if email is already taken by another user', async () => {
+      // Login as user 1
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Try to update to user 2's email
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .set('Cookie', cookieString)
+        .send({ email: testUsers.user2.email });
+
+      expect(updateResponse.status).toBe(409);
+      expect(updateResponse.body.error.toLowerCase()).toContain('email');
+
+      // Verify original email unchanged in database
+      const pool = getTestPool();
+      const dbResult = await pool.query(
+        'SELECT email FROM users WHERE id = $1',
+        [testUsers.user1.id]
+      );
+      expect(dbResult.rows[0].email).toBe(testUsers.user1.email);
+    });
+
+    it('should normalize email to lowercase', async () => {
+      // Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Update with mixed case email
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .set('Cookie', cookieString)
+        .send({ email: 'UPPERCASE@EXAMPLE.COM' });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.email).toBe('uppercase@example.com');
+    });
+
+    it('should reject invalid email format', async () => {
+      // Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Try invalid email
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .set('Cookie', cookieString)
+        .send({ email: 'not-an-email' });
+
+      expect(updateResponse.status).toBe(400);
+      expect(updateResponse.body.errors).toBeDefined();
+    });
+
+    it('should reject update without authentication', async () => {
+      const updateResponse = await request(app)
+        .put('/api/v1/users/me')
+        .send({ name: 'Unauthenticated Update' });
+
+      expect(updateResponse.status).toBe(401);
+    });
+  });
+
   describe('Logout Flow', () => {
     it('should logout and invalidate session', async () => {
       // Login
