@@ -922,11 +922,11 @@ Extract closure-captured logic from React event handlers into pure utility funct
         - `--rebuild` flag → full rebuild with no cache
         - Auto-detect dependency change → triggers rebuild automatically
 
-    - [ ] **Phase 2: Add Docker BuildKit caching**
+    - [x] **Phase 2: Add Docker BuildKit caching**
       - [x] Add `docker/setup-buildx-action@v3` to e2e-tests job
       - [x] Enable BuildKit with `DOCKER_BUILDKIT=1` environment variable
       - [x] Create `docker-bake.test.hcl` for buildx bake configuration
-      - [ ] Update CI to use `docker/bake-action@v5` with GitHub Actions cache backend:
+      - [x] Update CI to use `docker/bake-action@v5` with GitHub Actions cache backend:
         ```yaml
         - name: Build test containers with cache
           uses: docker/bake-action@v5
@@ -941,7 +941,7 @@ Extract closure-captured logic from React event handlers into pure utility funct
         ```
       - [x] Remove unused `actions/cache` step (GHA cache is handled by buildx directly)
       - [x] Update `docker compose up` to not rebuild (images already built by bake)
-      - [ ] Verify cache hits on subsequent CI runs
+      - [x] Verify cache hits on subsequent CI runs (31% faster: 240s → 166s)
 
     - [ ] **Phase 3: Conditional rebuild logic**
       - [ ] Add step to detect if package-lock.json files changed:
