@@ -873,7 +873,56 @@ Extract closure-captured logic from React event handlers into pure utility funct
     - **Solution:** Conditional rebuild based on lock file changes + Docker BuildKit layer caching
     - **Prerequisites:**
       - [x] Dockerfiles already optimized (package files first, npm ci, then source) ✓
-    - [ ] **Phase 1: Add Docker BuildKit caching**
+
+    - [x] **Phase 1: Update scripts/test-all.sh for local development**
+      - **Problem:** Script uses `--no-cache` and removes volumes on every run, making local test runs very slow (~3-5 min startup)
+      - [x] Add `--rebuild` / `-r` flag to force full rebuild when needed:
+        ```bash
+        # Parse arguments
+        FORCE_REBUILD=false
+        while [[ "$#" -gt 0 ]]; do
+            case $1 in
+                -r|--rebuild) FORCE_REBUILD=true ;;
+                *) echo "Unknown parameter: $1"; exit 1 ;;
+            esac
+            shift
+        done
+        ```
+      - [x] Change default behavior to use cached containers:
+        ```bash
+        if [ "$FORCE_REBUILD" = true ]; then
+            echo "Force rebuild requested - removing old containers and volumes..."
+            docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
+            docker compose -f docker-compose.test.yml build --no-cache
+            docker compose -f docker-compose.test.yml up -d
+        else
+            echo "Starting containers (use --rebuild for fresh build)..."
+            docker compose -f docker-compose.test.yml up -d
+        fi
+        ```
+      - [x] Remove automatic image deletion (lines 47-48)
+      - [x] Remove automatic volume deletion (lines 49-50)
+      - [x] Update script header comments to document the `--rebuild` flag
+      - [x] Add auto-detection of package-lock.json changes:
+        ```bash
+        # Store hash of lock files after successful run
+        LOCK_HASH_FILE="$PROJECT_ROOT/.test-deps-hash"
+        CURRENT_HASH=$(cat backends/node/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
+
+        if [ -f "$LOCK_HASH_FILE" ] && [ "$(cat $LOCK_HASH_FILE)" != "$CURRENT_HASH" ]; then
+            echo "⚠️  Dependencies changed since last run - triggering rebuild"
+            FORCE_REBUILD=true
+        fi
+
+        # Save hash after successful run
+        echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
+        ```
+      - [x] Test scenarios:
+        - Default run (no flags) → fast startup with cached containers
+        - `--rebuild` flag → full rebuild with no cache
+        - Auto-detect dependency change → triggers rebuild automatically
+
+    - [ ] **Phase 2: Add Docker BuildKit caching**
       - [ ] Add `docker/setup-buildx-action@v3` to e2e-tests job
       - [ ] Configure GitHub Actions cache for Docker layers:
         ```yaml
@@ -889,7 +938,8 @@ Extract closure-captured logic from React event handlers into pure utility funct
               ${{ runner.os }}-buildx-
         ```
       - [ ] Update docker compose to use BuildKit: `DOCKER_BUILDKIT=1`
-    - [ ] **Phase 2: Conditional rebuild logic**
+
+    - [ ] **Phase 3: Conditional rebuild logic**
       - [ ] Add step to detect if package-lock.json files changed:
         ```yaml
         - name: Check for dependency changes
@@ -925,7 +975,8 @@ Extract closure-captured logic from React event handlers into pure utility funct
             fi
             docker compose -f docker-compose.test.yml up -d $BUILD_FLAG --wait
         ```
-    - [ ] **Phase 3: Add fallback force-rebuild mechanism**
+
+    - [ ] **Phase 4: Add fallback force-rebuild mechanism**
       - [ ] Add workflow_dispatch input to force rebuild:
         ```yaml
         on:
@@ -938,13 +989,15 @@ Extract closure-captured logic from React event handlers into pure utility funct
         ```
       - [ ] Update conditional logic to check force_rebuild input
       - [ ] Document in workflow file when to use force rebuild
-    - [ ] **Phase 4: Testing and validation**
+
+    - [ ] **Phase 5: Testing and validation**
       - [ ] Test scenario: Source-only change → no rebuild, fast startup
       - [ ] Test scenario: package-lock.json change → rebuild triggered
       - [ ] Test scenario: Manual force rebuild via workflow_dispatch
       - [ ] Test scenario: First run (no cache) → full build works
       - [ ] Measure and document time savings (expected: 1-2 min per run)
-    - [ ] **Phase 5: Update docker-compose.test.yml**
+
+    - [ ] **Phase 6: Update docker-compose.test.yml**
       - [ ] Remove anonymous volumes that can cause stale issues:
         ```yaml
         # Before (problematic):
@@ -957,53 +1010,8 @@ Extract closure-captured logic from React event handlers into pure utility funct
         ```
       - [ ] Add volume cleanup to CI teardown step
       - [ ] Document volume behavior in docker-compose.test.yml comments
-    - [ ] **Phase 6: Update scripts/test-all.sh for local development**
-      - **Problem:** Script uses `--no-cache` and removes volumes on every run, making local test runs very slow (~3-5 min startup)
-      - [ ] Add `--rebuild` / `-r` flag to force full rebuild when needed:
-        ```bash
-        # Parse arguments
-        FORCE_REBUILD=false
-        while [[ "$#" -gt 0 ]]; do
-            case $1 in
-                -r|--rebuild) FORCE_REBUILD=true ;;
-                *) echo "Unknown parameter: $1"; exit 1 ;;
-            esac
-            shift
-        done
-        ```
-      - [ ] Change default behavior to use cached containers:
-        ```bash
-        if [ "$FORCE_REBUILD" = true ]; then
-            echo "Force rebuild requested - removing old containers and volumes..."
-            docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
-            docker compose -f docker-compose.test.yml build --no-cache
-            docker compose -f docker-compose.test.yml up -d
-        else
-            echo "Starting containers (use --rebuild for fresh build)..."
-            docker compose -f docker-compose.test.yml up -d
-        fi
-        ```
-      - [ ] Remove automatic image deletion (lines 47-48)
-      - [ ] Remove automatic volume deletion (lines 49-50)
-      - [ ] Update script header comments to document the `--rebuild` flag
-      - [ ] Optional: Add auto-detection of package-lock.json changes:
-        ```bash
-        # Store hash of lock files after successful run
-        LOCK_HASH_FILE="$PROJECT_ROOT/.test-deps-hash"
-        CURRENT_HASH=$(cat backends/node/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
 
-        if [ -f "$LOCK_HASH_FILE" ] && [ "$(cat $LOCK_HASH_FILE)" != "$CURRENT_HASH" ]; then
-            echo "⚠️  Dependencies changed since last run - triggering rebuild"
-            FORCE_REBUILD=true
-        fi
 
-        # Save hash after successful run
-        echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
-        ```
-      - [ ] Test scenarios:
-        - Default run (no flags) → fast startup with cached containers
-        - `--rebuild` flag → full rebuild with no cache
-        - Auto-detect dependency change → triggers rebuild automatically
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
   - Google Cloud Platform

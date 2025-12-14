@@ -34,6 +34,7 @@ yarn-error.log*
 coverage/
 *.coverage
 .pytest_cache/
+.test-deps-hash
 
 # Playwright
 playwright-results/
