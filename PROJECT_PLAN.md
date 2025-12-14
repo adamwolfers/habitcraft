@@ -925,8 +925,8 @@ Extract closure-captured logic from React event handlers into pure utility funct
     - [ ] **Phase 2: Add Docker BuildKit caching**
       - [x] Add `docker/setup-buildx-action@v3` to e2e-tests job
       - [x] Enable BuildKit with `DOCKER_BUILDKIT=1` environment variable
-      - [ ] Create `docker-bake.test.hcl` for buildx bake configuration
-      - [ ] Update CI to use `docker buildx bake` with GitHub Actions cache backend:
+      - [x] Create `docker-bake.test.hcl` for buildx bake configuration
+      - [x] Update CI to use `docker buildx bake` with GitHub Actions cache backend:
         ```yaml
         - name: Build test containers with cache
           run: |
@@ -937,8 +937,9 @@ Extract closure-captured logic from React event handlers into pure utility funct
               --set *.cache-to=type=gha,mode=max \
               --load
         ```
-      - [ ] Remove unused `actions/cache` step (GHA cache is handled by buildx directly)
-      - [ ] Update `docker compose up` to not rebuild (images already built by bake)
+      - [x] Remove unused `actions/cache` step (GHA cache is handled by buildx directly)
+      - [x] Update `docker compose up` to not rebuild (images already built by bake)
+      - [ ] Verify cache hits on subsequent CI runs
 
     - [ ] **Phase 3: Conditional rebuild logic**
       - [ ] Add step to detect if package-lock.json files changed:
