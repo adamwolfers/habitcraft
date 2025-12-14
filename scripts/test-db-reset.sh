@@ -21,6 +21,7 @@ docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test 
 -- Drop tables in correct order (respecting foreign keys)
 DROP TABLE IF EXISTS completions CASCADE;
 DROP TABLE IF EXISTS habits CASCADE;
+DROP TABLE IF EXISTS refresh_tokens CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 EOF
 

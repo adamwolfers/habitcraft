@@ -43,6 +43,10 @@ export default defineConfig({
     // Base URL for the frontend
     baseURL: 'http://localhost:3110',
 
+    // Use UTC timezone for consistent date handling across environments
+    // This ensures the browser sees the same dates as the database (which uses UTC)
+    timezoneId: 'UTC',
+
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
 
