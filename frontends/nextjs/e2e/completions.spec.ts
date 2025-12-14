@@ -9,6 +9,12 @@ import { test, expect, Page, Locator } from '@playwright/test';
  * Test habits and completions (from test-fixtures.sql):
  * - Morning Exercise: completions for days 0,1,3,4,6 (skipping 2,5 days ago)
  * - Read Books: completions for days 0,1,2 (today, yesterday, 2 days ago)
+ *
+ * Test isolation strategy:
+ * - Fixture habits/completions are READ ONLY - never toggled on current week
+ * - Toggle tests create unique habits with Date.now() timestamps
+ * - Navigation/display tests use fixture data (safe for read-only operations)
+ * - Each test is independent and can run in any order
  */
 
 /**
@@ -41,74 +47,65 @@ test.describe('Completion Tracking', () => {
   });
 
   test.describe('Toggle Completion', () => {
-    test('should toggle completion on and show visual update', async ({ page }) => {
-      const habitCard = getHabitCard(page, 'Morning Exercise');
+    /**
+     * Helper to create a unique habit for testing completions.
+     * This ensures test isolation - we don't modify fixture data.
+     */
+    async function createTestHabit(page: Page, prefix: string) {
+      const habitName = `${prefix} ${Date.now()}`;
+      await page.getByRole('button', { name: /add new habit/i }).click();
+      await page.getByLabel(/habit name/i).fill(habitName);
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+      await expect(page.getByText(habitName)).toBeVisible();
+      return habitName;
+    }
 
-      // Find a day that's not completed (day 2 or 5 based on fixtures)
-      // We need to find an uncompleted day in the current week
-      // The calendar shows Sun-Sat, let's click on an empty day
+    test('should toggle completion on and show visual update', async ({ page }) => {
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Toggle On Test');
+      const habitCard = getHabitCard(page, habitName);
       const dayButtons = habitCard.locator('.grid-cols-7 > button');
 
-      // Find a day button that doesn't have a checkmark (not completed)
+      // Find a non-disabled day (new habit has no completions)
       let targetButton: Locator | null = null;
 
       for (let i = 0; i < 7; i++) {
         const btn = dayButtons.nth(i);
         const isDisabled = await btn.isDisabled();
-        if (isDisabled) continue; // Skip future dates
-
-        const completed = await isCompleted(btn);
-        if (!completed) {
+        if (!isDisabled) {
           targetButton = btn;
           break;
         }
       }
 
-      // If all past days are completed, we'll toggle one off then back on
-      if (!targetButton) {
-        // Use the first non-disabled day
-        for (let i = 0; i < 7; i++) {
-          const btn = dayButtons.nth(i);
-          const isDisabled = await btn.isDisabled();
-          if (!isDisabled) {
-            targetButton = btn;
-            break;
-          }
-        }
-      }
-
       expect(targetButton).not.toBeNull();
 
-      // Get initial state
-      const wasCompleted = await isCompleted(targetButton!);
+      // Verify it's not completed (new habit)
+      expect(await isCompleted(targetButton!)).toBe(false);
 
-      // Click to toggle
+      // Click to toggle on
       await targetButton!.click();
 
       // Wait for visual update
       await page.waitForTimeout(500);
 
-      // Verify the state changed
-      const isNowCompleted = await isCompleted(targetButton!);
-      expect(isNowCompleted).toBe(!wasCompleted);
+      // Verify the state changed to completed
+      expect(await isCompleted(targetButton!)).toBe(true);
     });
 
     test('should toggle completion off and show visual update', async ({ page }) => {
-      const habitCard = getHabitCard(page, 'Read Books');
-
-      // Read Books has completions for today (day 0) based on fixtures
-      // Find a completed day to toggle off
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Toggle Off Test');
+      const habitCard = getHabitCard(page, habitName);
       const dayButtons = habitCard.locator('.grid-cols-7 > button');
 
-      let targetButton = null;
+      // Find a non-disabled day
+      let targetButton: Locator | null = null;
 
       for (let i = 0; i < 7; i++) {
         const btn = dayButtons.nth(i);
         const isDisabled = await btn.isDisabled();
-        if (isDisabled) continue;
-
-        const completed = await isCompleted(btn);
-        if (completed) {
+        if (!isDisabled) {
           targetButton = btn;
           break;
         }
@@ -116,13 +113,13 @@ test.describe('Completion Tracking', () => {
 
       expect(targetButton).not.toBeNull();
 
-      // Verify it's completed
+      // First toggle ON (new habit starts with no completions)
+      await targetButton!.click();
+      await page.waitForTimeout(500);
       expect(await isCompleted(targetButton!)).toBe(true);
 
-      // Click to toggle off
+      // Now toggle OFF
       await targetButton!.click();
-
-      // Wait for visual update
       await page.waitForTimeout(500);
 
       // Verify it's now uncompleted
@@ -130,6 +127,7 @@ test.describe('Completion Tracking', () => {
     });
 
     test('should not allow toggling future dates', async ({ page }) => {
+      // This is a read-only test, safe to use fixture habit
       const habitCard = getHabitCard(page, 'Morning Exercise');
       const dayButtons = habitCard.locator('.grid-cols-7 > button');
 
@@ -155,44 +153,29 @@ test.describe('Completion Tracking', () => {
     });
 
     test('should persist completion after page reload', async ({ page }) => {
-      const habitCard = getHabitCard(page, 'Morning Exercise');
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = await createTestHabit(page, 'Persist Test');
+      const habitCard = getHabitCard(page, habitName);
       const dayButtons = habitCard.locator('.grid-cols-7 > button');
 
-      // Find a non-disabled, non-completed day to toggle ON
-      // This is more predictable than toggling an unknown state
-      let targetButton = null;
+      // Find a non-disabled day (new habit has no completions)
+      let targetButton: Locator | null = null;
       let targetIndex = -1;
 
       for (let i = 0; i < 7; i++) {
         const btn = dayButtons.nth(i);
         const isDisabled = await btn.isDisabled();
-        if (isDisabled) continue;
-
-        const completed = await isCompleted(btn);
-        if (!completed) {
+        if (!isDisabled) {
           targetButton = btn;
           targetIndex = i;
           break;
         }
       }
 
-      // If all days are completed, find any non-disabled day to toggle OFF
-      if (!targetButton) {
-        for (let i = 0; i < 7; i++) {
-          const btn = dayButtons.nth(i);
-          const isDisabled = await btn.isDisabled();
-          if (!isDisabled) {
-            targetButton = btn;
-            targetIndex = i;
-            break;
-          }
-        }
-      }
-
       expect(targetButton).not.toBeNull();
 
-      // Get initial state
-      const wasCompleted = await isCompleted(targetButton!);
+      // Verify initial state (not completed for new habit)
+      expect(await isCompleted(targetButton!)).toBe(false);
 
       // Click and wait for the API request to complete
       const responsePromise = page.waitForResponse(
@@ -205,24 +188,22 @@ test.describe('Completion Tracking', () => {
       await page.waitForTimeout(200);
 
       // Verify state changed
-      const afterToggle = await isCompleted(targetButton!);
-      expect(afterToggle).toBe(!wasCompleted);
+      expect(await isCompleted(targetButton!)).toBe(true);
 
       // Reload the page and wait for completions to load
       const completionsPromise = page.waitForResponse(
         resp => resp.url().includes('/completions') && resp.status() < 400
       );
       await page.reload();
-      await expect(page.getByText('Morning Exercise')).toBeVisible();
+      await expect(page.getByText(habitName)).toBeVisible();
       await completionsPromise;
 
       // Get the button again after reload
-      const reloadedCard = getHabitCard(page, 'Morning Exercise');
+      const reloadedCard = getHabitCard(page, habitName);
       const reloadedButton = reloadedCard.locator('.grid-cols-7 > button').nth(targetIndex);
 
       // Verify state persisted
-      const afterReload = await isCompleted(reloadedButton);
-      expect(afterReload).toBe(!wasCompleted);
+      expect(await isCompleted(reloadedButton)).toBe(true);
     });
   });
 
@@ -311,48 +292,64 @@ test.describe('Completion Tracking', () => {
   });
 
   test.describe('Multiple Habits', () => {
+    /**
+     * Helper to create a unique habit for testing multiple habits.
+     */
+    async function createTestHabit(page: Page, prefix: string) {
+      const habitName = `${prefix} ${Date.now()}`;
+      await page.getByRole('button', { name: /add new habit/i }).click();
+      await page.getByLabel(/habit name/i).fill(habitName);
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+      await expect(page.getByText(habitName)).toBeVisible();
+      return habitName;
+    }
+
     test('should track completions independently for each habit', async ({ page }) => {
-      const exerciseCard = getHabitCard(page, 'Morning Exercise');
-      const readingCard = getHabitCard(page, 'Read Books');
+      // Create two unique habits for this test (ensures isolation)
+      const habit1Name = await createTestHabit(page, 'Independence Test A');
+      const habit2Name = await createTestHabit(page, 'Independence Test B');
+
+      const habit1Card = getHabitCard(page, habit1Name);
+      const habit2Card = getHabitCard(page, habit2Name);
 
       // Find non-disabled days for both habits
-      const exerciseButtons = exerciseCard.locator('.grid-cols-7 > button');
-      const readingButtons = readingCard.locator('.grid-cols-7 > button');
+      const habit1Buttons = habit1Card.locator('.grid-cols-7 > button');
+      const habit2Buttons = habit2Card.locator('.grid-cols-7 > button');
 
-      let exerciseBtn = null;
-      let readingBtn = null;
+      let habit1Btn = null;
+      let habit2Btn = null;
 
       // Find a common day that's not disabled in both
       for (let i = 0; i < 7; i++) {
-        const exBtn = exerciseButtons.nth(i);
-        const rdBtn = readingButtons.nth(i);
+        const btn1 = habit1Buttons.nth(i);
+        const btn2 = habit2Buttons.nth(i);
 
-        const exDisabled = await exBtn.isDisabled();
-        const rdDisabled = await rdBtn.isDisabled();
+        const btn1Disabled = await btn1.isDisabled();
+        const btn2Disabled = await btn2.isDisabled();
 
-        if (!exDisabled && !rdDisabled) {
-          exerciseBtn = exBtn;
-          readingBtn = rdBtn;
+        if (!btn1Disabled && !btn2Disabled) {
+          habit1Btn = btn1;
+          habit2Btn = btn2;
           break;
         }
       }
 
-      expect(exerciseBtn).not.toBeNull();
-      expect(readingBtn).not.toBeNull();
+      expect(habit1Btn).not.toBeNull();
+      expect(habit2Btn).not.toBeNull();
 
-      // Get initial states
-      const exerciseWasCompleted = await isCompleted(exerciseBtn!);
-      const readingWasCompleted = await isCompleted(readingBtn!);
+      // Both new habits start with no completions
+      expect(await isCompleted(habit1Btn!)).toBe(false);
+      expect(await isCompleted(habit2Btn!)).toBe(false);
 
-      // Toggle only the exercise habit
-      await exerciseBtn!.click();
+      // Toggle only habit 1
+      await habit1Btn!.click();
       await page.waitForTimeout(500);
 
-      // Exercise should have changed
-      expect(await isCompleted(exerciseBtn!)).toBe(!exerciseWasCompleted);
+      // Habit 1 should now be completed
+      expect(await isCompleted(habit1Btn!)).toBe(true);
 
-      // Reading should be unchanged
-      expect(await isCompleted(readingBtn!)).toBe(readingWasCompleted);
+      // Habit 2 should still be uncompleted
+      expect(await isCompleted(habit2Btn!)).toBe(false);
     });
 
     test('should show different completion patterns for different habits', async ({ page }) => {
