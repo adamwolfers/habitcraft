@@ -169,6 +169,58 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [ ] Write tests for password change endpoint (require current password)
     - [ ] Implement password change in backend
     - [ ] Add password change UI in frontend
+  - [ ] **User Profile Management Modal**
+    - [ ] **Modal Infrastructure**
+      - [ ] Write E2E tests for profile modal open/close (Playwright)
+      - [ ] Write integration tests for profile modal trigger from Header
+      - [ ] Write unit tests for modal open/close functionality
+      - [ ] Implement modal UI structure (open/close, cancel button)
+      - [ ] Write tests for profile button in Header component
+      - [ ] Add profile button to Header component
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
+    - [ ] **Display User Info**
+      - [ ] Write E2E tests for displaying user name and email
+      - [ ] Write unit tests for user info display rendering
+      - [ ] Implement user info display section
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
+    - [ ] **Edit Name**
+      - [ ] Write E2E tests for name edit flow
+      - [ ] Write unit tests for name field rendering and validation
+      - [ ] Implement name input field with validation
+      - [ ] Write unit tests for name update submission
+      - [ ] Connect name update to API
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
+    - [ ] **Edit Email**
+      - [ ] Write E2E tests for email edit flow
+      - [ ] Write unit tests for email field rendering and validation
+      - [ ] Implement email input field with validation
+      - [ ] Write unit tests for email update submission
+      - [ ] Connect email update to API
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
+    - [ ] **Change Password Section**
+      - [ ] Write E2E tests for password change flow
+      - [ ] Write unit tests for password fields rendering
+      - [ ] Implement password change fields (current, new, confirm)
+      - [ ] Write unit tests for password validation (match, strength)
+      - [ ] Write unit tests for password change submission
+      - [ ] Connect password change to API
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
+    - [ ] **Error Handling**
+      - [ ] Write E2E tests for API error display
+      - [ ] Write unit tests for error message rendering
+      - [ ] Implement error handling UI
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
+    - [ ] **Loading States**
+      - [ ] Write unit tests for loading state during save
+      - [ ] Implement loading indicators for save operations
+      - [ ] Run all tests (scripts/test-all.sh)
+      - [ ] Update project docs if needed
 
 ### Frontend - Next.js + React
 
