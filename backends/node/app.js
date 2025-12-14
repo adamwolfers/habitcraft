@@ -1,4 +1,4 @@
-// HabitCraft Backend API
+// HabitCraft Backend API Server
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
