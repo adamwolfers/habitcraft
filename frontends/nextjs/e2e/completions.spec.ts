@@ -274,22 +274,14 @@ test.describe('Completion Tracking', () => {
 
     test('should load completions when navigating weeks', async ({ page }) => {
       const habitCard = getHabitCard(page, 'Morning Exercise');
-
-      // Count completions in current week
       const dayButtons = habitCard.locator('.grid-cols-7 > button');
-      let currentWeekCompletions = 0;
-      for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
-        if (await isCompleted(btn)) {
-          currentWeekCompletions++;
-        }
-      }
 
-      // Navigate to previous week
+      // Navigate to previous week where fixture completions are stable
+      // (Earlier tests may toggle current week's completions)
       await habitCard.getByRole('button', { name: /previous week/i }).click();
       await page.waitForTimeout(300);
 
-      // Count completions in previous week (should be different or zero)
+      // Count completions in previous week (should have fixture data)
       let prevWeekCompletions = 0;
       for (let i = 0; i < 7; i++) {
         const btn = dayButtons.nth(i);
@@ -298,10 +290,23 @@ test.describe('Completion Tracking', () => {
         }
       }
 
-      // The test fixtures only have completions for the last 7 days,
-      // so previous week should have fewer or no completions
-      // This verifies that completions are loaded per week
-      expect(prevWeekCompletions).toBeLessThanOrEqual(currentWeekCompletions);
+      // Navigate to two weeks ago
+      await habitCard.getByRole('button', { name: /previous week/i }).click();
+      await page.waitForTimeout(300);
+
+      // Count completions in two weeks ago (should have fewer/no completions)
+      let twoWeeksAgoCompletions = 0;
+      for (let i = 0; i < 7; i++) {
+        const btn = dayButtons.nth(i);
+        if (await isCompleted(btn)) {
+          twoWeeksAgoCompletions++;
+        }
+      }
+
+      // The test fixtures have completions for the last 7 days only.
+      // Previous week should have more completions than two weeks ago,
+      // verifying that completions are loaded per week.
+      expect(prevWeekCompletions).toBeGreaterThan(twoWeeksAgoCompletions);
     });
   });
 
@@ -354,9 +359,17 @@ test.describe('Completion Tracking', () => {
       // Based on fixtures:
       // Morning Exercise: completions for days 0,1,3,4,6 (5 out of 7)
       // Read Books: completions for days 0,1,2 (3 out of last 3 days)
+      //
+      // Navigate to previous week to see stable fixture data
+      // (Current week's completions may be toggled by earlier tests)
 
       const exerciseCard = getHabitCard(page, 'Morning Exercise');
       const readingCard = getHabitCard(page, 'Read Books');
+
+      // Navigate both cards to previous week
+      await exerciseCard.getByRole('button', { name: /previous week/i }).click();
+      await readingCard.getByRole('button', { name: /previous week/i }).click();
+      await page.waitForTimeout(300);
 
       // Count completions for each habit
       const exerciseButtons = exerciseCard.locator('.grid-cols-7 > button');
