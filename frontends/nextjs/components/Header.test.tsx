@@ -307,6 +307,174 @@ describe('Header Component', () => {
     });
   });
 
+  describe('Email Edit', () => {
+    const mockUpdateUser = jest.fn();
+
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({
+        user: {
+          id: '123',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+        isLoading: false,
+        isAuthenticated: true,
+        login: jest.fn(),
+        register: jest.fn(),
+        logout: mockLogout,
+        updateUser: mockUpdateUser,
+      });
+    });
+
+    it('should display user email', () => {
+      render(<Header />);
+
+      expect(screen.getByText(/test@example.com/i)).toBeInTheDocument();
+    });
+
+    it('should show edit button next to user email', () => {
+      render(<Header />);
+
+      expect(screen.getByRole('button', { name: /edit email/i })).toBeInTheDocument();
+    });
+
+    it('should show input field when email edit button is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      expect(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
+    });
+
+    it('should pre-fill input with current email', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /email/i });
+      expect(input).toHaveValue('test@example.com');
+    });
+
+    it('should show save and cancel buttons in email edit mode', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      expect(screen.getByRole('button', { name: /save/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
+    });
+
+    it('should call updateUser with new email when save is clicked', async () => {
+      const user = userEvent.setup();
+      mockUpdateUser.mockResolvedValue(undefined);
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /email/i });
+      await user.clear(input);
+      await user.type(input, 'newemail@example.com');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(mockUpdateUser).toHaveBeenCalledWith({ email: 'newemail@example.com' });
+      });
+    });
+
+    it('should exit email edit mode after successful save', async () => {
+      const user = userEvent.setup();
+      mockUpdateUser.mockResolvedValue(undefined);
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /email/i });
+      await user.clear(input);
+      await user.type(input, 'newemail@example.com');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(screen.queryByRole('textbox', { name: /email/i })).not.toBeInTheDocument();
+      });
+    });
+
+    it('should exit email edit mode without saving when cancel is clicked', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /email/i });
+      await user.clear(input);
+      await user.type(input, 'newemail@example.com');
+
+      const cancelButton = screen.getByRole('button', { name: /cancel/i });
+      await user.click(cancelButton);
+
+      expect(screen.queryByRole('textbox', { name: /email/i })).not.toBeInTheDocument();
+      expect(mockUpdateUser).not.toHaveBeenCalled();
+    });
+
+    it('should show error message when email save fails', async () => {
+      const user = userEvent.setup();
+      mockUpdateUser.mockRejectedValue(new Error('Email is already in use'));
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      await user.click(saveButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/email is already in use/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should disable save button when email is empty', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /email/i });
+      await user.clear(input);
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      expect(saveButton).toBeDisabled();
+    });
+
+    it('should disable save button for invalid email format', async () => {
+      const user = userEvent.setup();
+      render(<Header />);
+
+      const editButton = screen.getByRole('button', { name: /edit email/i });
+      await user.click(editButton);
+
+      const input = screen.getByRole('textbox', { name: /email/i });
+      await user.clear(input);
+      await user.type(input, 'not-an-email');
+
+      const saveButton = screen.getByRole('button', { name: /save/i });
+      expect(saveButton).toBeDisabled();
+    });
+  });
+
   describe('Error Handling', () => {
     beforeEach(() => {
       mockUseAuth.mockReturnValue({

@@ -114,7 +114,7 @@ describe('Users API', () => {
       expect(response.body.errors[0].msg).toBe('Name is required');
     });
 
-    it('should return 400 when name field is missing', async () => {
+    it('should return 400 when no fields are provided', async () => {
       const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
 
       const response = await request(app)
@@ -124,7 +124,7 @@ describe('Users API', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.errors).toBeDefined();
-      expect(response.body.errors[0].msg).toBe('Name is required');
+      expect(response.body.errors[0].msg).toBe('At least one field (name or email) is required');
     });
 
     it('should return 400 for name exceeding max length', async () => {
@@ -198,6 +198,179 @@ describe('Users API', () => {
         name: 'Updated Name',
         createdAt: '2025-01-15T10:30:00.000Z'
       });
+    });
+  });
+
+  describe('PUT /api/v1/users/me - Email Update', () => {
+    it('should update user email with valid token', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const updatedUser = {
+        id: mockUserId,
+        email: 'newemail@example.com',
+        name: 'Test User',
+        createdAt: new Date().toISOString()
+      };
+
+      // Mock check for existing email (none found)
+      pool.query.mockResolvedValueOnce({ rows: [] });
+      // Mock update query
+      pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: 'newemail@example.com' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.email).toBe('newemail@example.com');
+    });
+
+    it('should return 400 for invalid email format', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: 'not-an-email' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toBe('Invalid email format');
+    });
+
+    it('should return 400 for empty email', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: '' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+    });
+
+    it('should return 409 when email is already taken by another user', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      // Mock check for existing email - found another user with this email
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: 'different-user-id', email: 'taken@example.com' }]
+      });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: 'taken@example.com' });
+
+      expect(response.status).toBe(409);
+      expect(response.body.error).toBe('Email is already in use');
+    });
+
+    it('should allow updating to the same email (no change)', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const updatedUser = {
+        id: mockUserId,
+        email: 'current@example.com',
+        name: 'Test User',
+        createdAt: new Date().toISOString()
+      };
+
+      // Mock check for existing email - finds current user (same id)
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockUserId, email: 'current@example.com' }]
+      });
+      // Mock update query
+      pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: 'current@example.com' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.email).toBe('current@example.com');
+    });
+
+    it('should normalize email to lowercase', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const updatedUser = {
+        id: mockUserId,
+        email: 'newemail@example.com',
+        name: 'Test User',
+        createdAt: new Date().toISOString()
+      };
+
+      // Mock check for existing email (none found)
+      pool.query.mockResolvedValueOnce({ rows: [] });
+      // Mock update query
+      pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: 'NewEmail@Example.COM' });
+
+      expect(response.status).toBe(200);
+      // Check that the query was called with lowercase email
+      expect(pool.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users'),
+        expect.arrayContaining(['newemail@example.com'])
+      );
+    });
+
+    it('should trim whitespace from email', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const updatedUser = {
+        id: mockUserId,
+        email: 'trimmed@example.com',
+        name: 'Test User',
+        createdAt: new Date().toISOString()
+      };
+
+      // Mock check for existing email (none found)
+      pool.query.mockResolvedValueOnce({ rows: [] });
+      // Mock update query
+      pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: '  trimmed@example.com  ' });
+
+      expect(response.status).toBe(200);
+    });
+
+    it('should update both name and email together', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const updatedUser = {
+        id: mockUserId,
+        email: 'newemail@example.com',
+        name: 'New Name',
+        createdAt: new Date().toISOString()
+      };
+
+      // Mock check for existing email (none found)
+      pool.query.mockResolvedValueOnce({ rows: [] });
+      // Mock update query
+      pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ name: 'New Name', email: 'newemail@example.com' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.name).toBe('New Name');
+      expect(response.body.email).toBe('newemail@example.com');
+    });
+
+    it('should return 401 without token', async () => {
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .send({ email: 'newemail@example.com' });
+
+      expect(response.status).toBe(401);
     });
   });
 });

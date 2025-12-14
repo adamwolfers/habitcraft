@@ -258,6 +258,100 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+    put:
+      tags:
+        - Users
+      summary: Update current user profile
+      description: |
+        Update the authenticated user's profile. At least one field (name or email) must be provided.
+        Email updates will normalize to lowercase and check for uniqueness.
+      operationId: updateCurrentUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                  example: John Doe
+                  description: User's display name
+                email:
+                  type: string
+                  format: email
+                  example: newemail@example.com
+                  description: User's email address (must be unique)
+            examples:
+              updateName:
+                summary: Update name only
+                value:
+                  name: New Name
+              updateEmail:
+                summary: Update email only
+                value:
+                  email: newemail@example.com
+              updateBoth:
+                summary: Update both name and email
+                value:
+                  name: New Name
+                  email: newemail@example.com
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Validation error or no fields provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        msg:
+                          type: string
+                        path:
+                          type: string
+              examples:
+                noFields:
+                  summary: No fields provided
+                  value:
+                    errors:
+                      - msg: "At least one field (name or email) is required"
+                invalidEmail:
+                  summary: Invalid email format
+                  value:
+                    errors:
+                      - msg: "Invalid email format"
+                        path: "email"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: Email is already in use by another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Email is already in use"
+
   /habits:
     get:
       tags:

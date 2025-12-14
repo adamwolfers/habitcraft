@@ -169,6 +169,33 @@ User → Expired Access Token → POST /api/v1/auth/refresh
   }
   ```
 
+#### 5. Update Profile
+- **Endpoint:** `PUT /api/v1/users/me`
+- **Headers:** `Authorization: Bearer <accessToken>`
+- **Request Body (at least one field required):**
+  ```json
+  {
+    "name": "New Name",
+    "email": "newemail@example.com"
+  }
+  ```
+- **Validation:**
+  - Name (optional): Min 1 char, max 100 chars, trimmed
+  - Email (optional): Valid email format, normalized to lowercase, must be unique
+- **Response (200):**
+  ```json
+  {
+    "id": "uuid",
+    "email": "newemail@example.com",
+    "name": "New Name",
+    "createdAt": "2025-01-15T10:30:00Z"
+  }
+  ```
+- **Error Responses:**
+  - 400: Invalid email format or no fields provided
+  - 401: Invalid or missing access token
+  - 409: Email is already in use by another user
+
 ### JWT Token Configuration
 
 **Access Token:**

@@ -161,10 +161,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Write tests for name update endpoint
     - [x] Implement name update in backend
     - [x] Add name edit UI in frontend
-  - [ ] **Update Email (PUT /api/v1/users/me)**
-    - [ ] Write tests for email update endpoint
-    - [ ] Implement email update in backend
-    - [ ] Add email edit UI in frontend
+  - [x] **Update Email (PUT /api/v1/users/me)**
+    - [x] Write tests for email update endpoint
+    - [x] Implement email update in backend
+    - [x] Add email edit UI in frontend
   - [ ] **Change Password (PUT /api/v1/users/me/password)**
     - [ ] Write tests for password change endpoint (require current password)
     - [ ] Implement password change in backend
