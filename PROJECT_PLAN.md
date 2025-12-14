@@ -569,6 +569,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 ### Quality Checklist
 
 - [ ] Comprehensive review of all FE & BE unit tests (evaluate for redundancies, gaps, and refactoring opportunities)
+- [ ] Review E2E tests for proper isolation (each test should be independent and not rely on state from other tests)
 - [ ] All backend tests passing
 - [ ] All frontend tests passing
 - [ ] All integration tests passing
