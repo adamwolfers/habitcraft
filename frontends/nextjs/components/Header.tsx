@@ -9,7 +9,11 @@ const isValidEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-export default function Header() {
+interface HeaderProps {
+  onOpenProfileModal?: () => void;
+}
+
+export default function Header({ onOpenProfileModal }: HeaderProps) {
   const router = useRouter();
   const { user, isAuthenticated, logout, updateUser } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -179,6 +183,15 @@ export default function Header() {
                     ✏️
                   </button>
                 </>
+              )}
+              {onOpenProfileModal && (
+                <button
+                  onClick={onOpenProfileModal}
+                  className="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors text-sm"
+                  aria-label="Profile"
+                >
+                  {user.name}
+                </button>
               )}
               <button
                 onClick={handleLogout}

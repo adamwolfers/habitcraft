@@ -16,6 +16,7 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 - Logout functionality with session management
 - Habit management UI (create, update, delete)
 - Edit habit modal with validation
+- User profile modal with name/email editing
 - Calendar week view with completion tracking
 - Week navigation (previous/next)
 - Optimistic UI updates
@@ -97,6 +98,9 @@ frontends/nextjs/
 │   ├── HabitCard.test.tsx       # Card tests
 │   ├── Header.tsx               # Header with logout
 │   ├── Header.test.tsx          # Header tests
+│   ├── HeaderWithProfile.tsx    # Header wrapper with profile modal
+│   ├── ProfileModal.tsx         # User profile editing modal
+│   ├── ProfileModal.test.tsx    # Profile modal tests
 │   ├── ProtectedRoute.tsx       # Auth guard wrapper
 │   ├── ProtectedRoute.test.tsx  # Guard tests
 │   └── Footer.tsx               # Footer component
@@ -105,6 +109,7 @@ frontends/nextjs/
 │   └── AuthContext.test.tsx     # Context tests
 ├── e2e/                          # Playwright E2E tests
 │   ├── auth.spec.ts             # Authentication flow tests
+│   ├── completions.spec.ts      # Completion tracking tests
 │   ├── habits.spec.ts           # Habit management tests
 │   ├── global-setup.ts          # Test database setup
 │   └── global-teardown.ts       # Test cleanup
@@ -152,6 +157,7 @@ npm test -- app/page.test.tsx
 npm test -- app/login/page.test.tsx
 npm test -- app/register/page.test.tsx
 npm test -- components/EditHabitModal.test.tsx
+npm test -- components/ProfileModal.test.tsx
 ```
 
 ### End-to-End Tests (Playwright)
@@ -181,8 +187,9 @@ docker compose -f ../../docker-compose.test.yml down
 ```
 
 E2E test coverage includes:
-- **Authentication:** Login, registration, logout, token refresh, user isolation
+- **Authentication:** Login, registration, logout, token refresh, user isolation, profile management
 - **Habit Management:** Create, update, delete habits with persistence verification
+- **Completion Tracking:** Toggle completions, week navigation, persistence verification
 
 Comprehensive test coverage includes authentication flow, API integration, state management, UI components, and user interactions.
 

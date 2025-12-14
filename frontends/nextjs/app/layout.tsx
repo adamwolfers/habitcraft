@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
-import Header from "@/components/Header";
+import HeaderWithProfile from "@/components/HeaderWithProfile";
 
 export const metadata: Metadata = {
   title: "HabitCraft.org | Track your daily habits and build streaks",
@@ -17,7 +17,7 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <AuthProvider>
-          <Header />
+          <HeaderWithProfile />
           {children}
         </AuthProvider>
       </body>
