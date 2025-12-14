@@ -926,16 +926,18 @@ Extract closure-captured logic from React event handlers into pure utility funct
       - [x] Add `docker/setup-buildx-action@v3` to e2e-tests job
       - [x] Enable BuildKit with `DOCKER_BUILDKIT=1` environment variable
       - [x] Create `docker-bake.test.hcl` for buildx bake configuration
-      - [x] Update CI to use `docker buildx bake` with GitHub Actions cache backend:
+      - [ ] Update CI to use `docker/bake-action@v5` with GitHub Actions cache backend:
         ```yaml
         - name: Build test containers with cache
-          run: |
-            docker buildx bake \
-              -f docker-compose.test.yml \
-              -f docker-bake.test.hcl \
-              --set *.cache-from=type=gha \
-              --set *.cache-to=type=gha,mode=max \
-              --load
+          uses: docker/bake-action@v5
+          with:
+            files: |
+              docker-compose.test.yml
+              docker-bake.test.hcl
+            set: |
+              *.cache-from=type=gha
+              *.cache-to=type=gha,mode=max
+            load: true
         ```
       - [x] Remove unused `actions/cache` step (GHA cache is handled by buildx directly)
       - [x] Update `docker compose up` to not rebuild (images already built by bake)
