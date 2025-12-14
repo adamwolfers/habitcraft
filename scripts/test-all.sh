@@ -1,11 +1,39 @@
 #!/bin/bash
 
 # Run all tests sequentially
-# Usage: ./scripts/test-all.sh
+# Usage: ./scripts/test-all.sh [options]
+#
+# Options:
+#   -r, --rebuild    Force full rebuild of containers (removes volumes, builds with --no-cache)
+#                    Use this when dependencies have changed or you're experiencing stale issues
+#   -h, --help       Show this help message
+#
+# By default, the script uses cached containers for faster startup (~30s vs ~3min).
+# Dependencies are auto-detected: if package-lock.json files have changed since the
+# last successful run, containers will be rebuilt automatically.
 
 set -e
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOCK_HASH_FILE="$PROJECT_ROOT/.test-deps-hash"
+
+# Parse arguments
+FORCE_REBUILD=false
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -r|--rebuild) FORCE_REBUILD=true ;;
+        -h|--help)
+            echo "Usage: ./scripts/test-all.sh [options]"
+            echo ""
+            echo "Options:"
+            echo "  -r, --rebuild    Force full rebuild of containers"
+            echo "  -h, --help       Show this help message"
+            exit 0
+            ;;
+        *) echo "Unknown parameter: $1"; exit 1 ;;
+    esac
+    shift
+done
 
 echo "=============================================="
 echo "Running All Tests"
@@ -41,17 +69,30 @@ echo "🐳 Starting test services..."
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT"
 
-# Always rebuild containers to ensure fresh state
-echo "Stopping any existing test containers..."
-docker compose -f docker-compose.test.yml down 2>/dev/null || true
-echo "Removing old test images..."
-docker rmi habittracker_fullstack-backend-node-test habittracker_fullstack-frontend-nextjs-test 2>/dev/null || true
-echo "Removing node_modules volumes (ensures fresh dependencies)..."
-docker volume rm habittracker_fullstack_backend_node_test_modules 2>/dev/null || true
-echo "Building Docker containers (--no-cache for fresh dependencies)..."
-docker compose -f docker-compose.test.yml build --no-cache
-echo "Starting Docker containers..."
-docker compose -f docker-compose.test.yml up -d
+# Check if dependencies have changed since last successful run
+CURRENT_HASH=$(cat backends/node/package-lock.json frontends/nextjs/package-lock.json 2>/dev/null | md5 -q 2>/dev/null || cat backends/node/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
+
+if [ "$FORCE_REBUILD" = false ] && [ -f "$LOCK_HASH_FILE" ]; then
+    SAVED_HASH=$(cat "$LOCK_HASH_FILE")
+    if [ "$SAVED_HASH" != "$CURRENT_HASH" ]; then
+        echo "⚠️  Dependencies changed since last run - triggering rebuild"
+        FORCE_REBUILD=true
+    fi
+fi
+
+if [ "$FORCE_REBUILD" = true ]; then
+    echo "Force rebuild requested - removing old containers and volumes..."
+    docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
+    echo "Removing old test images..."
+    docker rmi habitcraft-backend-node-test habitcraft-frontend-nextjs-test 2>/dev/null || true
+    echo "Building Docker containers (--no-cache for fresh dependencies)..."
+    docker compose -f docker-compose.test.yml build --no-cache
+    echo "Starting Docker containers..."
+    docker compose -f docker-compose.test.yml up -d
+else
+    echo "Starting containers (use --rebuild for fresh build)..."
+    docker compose -f docker-compose.test.yml up -d
+fi
 
 # Wait for database to be healthy first
 echo "Waiting for database..."
@@ -152,6 +193,8 @@ echo ""
 # Exit with error if any tests failed
 TOTAL=$((BACKEND_UNIT + FRONTEND_UNIT + INTEGRATION + E2E))
 if [ $TOTAL -eq 4 ]; then
+    # Save dependency hash after successful run
+    echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
     echo "🎉 All tests passed!"
     exit 0
 else
