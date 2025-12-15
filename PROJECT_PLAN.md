@@ -221,6 +221,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
       - [x] Implement loading indicators for save operations
       - [x] Run all tests (scripts/test-all.sh)
       - [x] Update project docs if needed
+    - [x] **Header Cleanup**
+      - [x] Remove redundant user name display from Header (now in profile modal)
+      - [x] Remove redundant user email display from Header (now in profile modal)
+      - [x] Remove edit icons for name/email from Header
+      - [x] Update Header tests to reflect removed elements
+      - [x] Run all tests (scripts/test-all.sh)
 
 ### Frontend - Next.js + React
 
