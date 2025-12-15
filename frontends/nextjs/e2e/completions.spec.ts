@@ -190,20 +190,20 @@ test.describe('Completion Tracking', () => {
       // Verify state changed
       expect(await isCompleted(targetButton!)).toBe(true);
 
-      // Reload the page and wait for completions to load
-      const completionsPromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.status() < 400
-      );
+      // Reload the page
       await page.reload();
       await expect(page.getByText(habitName)).toBeVisible();
-      await completionsPromise;
 
       // Get the button again after reload
       const reloadedCard = getHabitCard(page, habitName);
       const reloadedButton = reloadedCard.locator('.grid-cols-7 > button').nth(targetIndex);
 
-      // Verify state persisted
-      expect(await isCompleted(reloadedButton)).toBe(true);
+      // Verify state persisted - use poll() to retry until completions render
+      // (multiple habits fetch completions concurrently, so we need to wait for this specific one)
+      await expect.poll(
+        async () => await isCompleted(reloadedButton),
+        { timeout: 5000, message: 'Completion state should persist after reload' }
+      ).toBe(true);
     });
   });
 
