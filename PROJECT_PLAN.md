@@ -1057,6 +1057,11 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - [x] IAM policies for CI/CD, ops, and monitoring
   - CloudFormation templates (future)
 - **Monitoring & Observability**
+  - CloudWatch Alarms (AWS-native)
+    - SNS topic for email notifications (`habitcraft-alerts`)
+    - Lightsail alarms: Backend/Frontend CPU high (>80%), sustained load (>60%)
+    - RDS alarms: CPU, connections, storage, read/write latency
+    - Setup scripts in `infrastructure/monitoring/`
   - Application monitoring (Datadog, New Relic)
   - Error tracking (Sentry)
   - Logging aggregation (ELK stack)
