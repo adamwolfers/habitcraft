@@ -555,21 +555,41 @@ Access via: **Lightsail Console → Container Services → [service] → Metrics
 
 Access via: **RDS Console → [database] → Monitoring**
 
-### Set Up Alarms (Optional)
+### CloudWatch Alarms
 
+Automated setup scripts are available in [`infrastructure/monitoring/`](../infrastructure/monitoring/).
+
+**Quick setup:**
 ```bash
-# CPU alarm for backend
-aws cloudwatch put-metric-alarm \
-  --alarm-name habitcraft-backend-cpu \
-  --metric-name CPUUtilization \
-  --namespace AWS/Lightsail \
-  --statistic Average \
-  --period 300 \
-  --threshold 80 \
-  --comparison-operator GreaterThanThreshold \
-  --evaluation-periods 2 \
-  --dimensions Name=ServiceName,Value=habitcraft-backend
+cd infrastructure/monitoring
+chmod +x *.sh
+./setup-alarms.sh your-email@example.com
 ```
+
+This creates an SNS topic for email notifications and the following alarms:
+
+| Alarm | Metric | Threshold |
+|-------|--------|-----------|
+| `habitcraft-backend-cpu-high` | Lightsail CPU | > 80% for 10 min |
+| `habitcraft-backend-cpu-sustained` | Lightsail CPU | > 60% for 30 min |
+| `habitcraft-frontend-cpu-high` | Lightsail CPU | > 80% for 10 min |
+| `habitcraft-db-cpu-high` | RDS CPU | > 80% for 10 min |
+| `habitcraft-db-connections-high` | RDS Connections | > 80 for 10 min |
+| `habitcraft-db-storage-low` | RDS Storage | < 2 GB |
+| `habitcraft-db-read-latency-high` | RDS Read Latency | > 20 ms for 15 min |
+| `habitcraft-db-write-latency-high` | RDS Write Latency | > 20 ms for 15 min |
+
+**View alarms:**
+```bash
+aws cloudwatch describe-alarms \
+  --alarm-name-prefix "habitcraft-" \
+  --query 'MetricAlarms[].{Name:AlarmName,State:StateValue}' \
+  --output table
+```
+
+**Cost:** 8 alarms = $0/month (under 10-alarm free tier)
+
+See [`infrastructure/monitoring/README.md`](../infrastructure/monitoring/README.md) for details.
 
 ---
 
