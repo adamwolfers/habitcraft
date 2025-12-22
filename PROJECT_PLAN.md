@@ -395,10 +395,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Login flow
   - [x] Protected route access
   - [x] Logout flow
-  - [ ] User isolation verification
+  - [x] User isolation verification
     - [x] User 1 sees own habits, not User 2's habits
-    - [ ] User 2 sees own habits, not User 1's habits (reverse direction)
-    - [ ] Session switching: no data leakage between user sessions
+    - [x] User 2 sees own habits, not User 1's habits (reverse direction)
+    - [x] Session switching: no data leakage between user sessions
   - [x] Token refresh during active session
 - [x] **Habit Management E2E** (e2e/habits.spec.ts)
   - [x] Create habit → Appears in list

@@ -136,7 +136,7 @@ test.describe('Authentication', () => {
   });
 
   test.describe('User Isolation', () => {
-    test('should only see own habits after login', async ({ page }) => {
+    test('should only see own habits after login as user 1', async ({ page }) => {
       // Login as user 1
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
@@ -151,6 +151,50 @@ test.describe('Authentication', () => {
 
       // Should NOT see user 2's habits
       await expect(page.getByText('User 2 Habit')).not.toBeVisible();
+    });
+
+    test('should only see own habits after login as user 2', async ({ page }) => {
+      // Login as user 2
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test2@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      await expect(page).toHaveURL('/');
+
+      // Should see user 2's habit
+      await expect(page.getByText('User 2 Habit')).toBeVisible();
+
+      // Should NOT see user 1's habits
+      await expect(page.getByText('Morning Exercise')).not.toBeVisible();
+      await expect(page.getByText('Read Books')).not.toBeVisible();
+    });
+
+    test('should not leak data between user sessions', async ({ page }) => {
+      // Login as user 1
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      await expect(page).toHaveURL('/');
+      await expect(page.getByText('Morning Exercise')).toBeVisible();
+
+      // Logout
+      await page.getByRole('button', { name: /log out/i }).click();
+      await expect(page).toHaveURL('/login');
+
+      // Login as user 2
+      await page.getByLabel(/email/i).fill('test2@example.com');
+      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      await expect(page).toHaveURL('/');
+
+      // Should see only user 2's data (no cached user 1 data)
+      await expect(page.getByText('User 2 Habit')).toBeVisible();
+      await expect(page.getByText('Morning Exercise')).not.toBeVisible();
+      await expect(page.getByText('Read Books')).not.toBeVisible();
     });
   });
 
