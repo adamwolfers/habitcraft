@@ -854,8 +854,8 @@ Extract closure-captured logic from React event handlers into pure utility funct
       - CI workflow change → both deploy
       - Documentation change → neither deploys (already excluded)
   - [ ] **E2E Test Container Optimization**
-    - **Problem:** Currently using `--build` flag on every E2E run, rebuilding containers even when dependencies haven't changed. This is slow (~2-3 min) but was added to prevent stale node_modules issues.
-    - **Solution:** Conditional rebuild based on lock file changes + Docker BuildKit layer caching
+    - **Problem:** Was using `--build` flag on every E2E run, rebuilding containers even when dependencies hadn't changed (~2-3 min).
+    - **Solution:** Docker BuildKit layer caching with GHA cache backend (31% faster: 240s → 166s)
     - **Prerequisites:**
       - [x] Dockerfiles already optimized (package files first, npm ci, then source) ✓
 
@@ -945,10 +945,10 @@ Extract closure-captured logic from React event handlers into pure utility funct
       - [x] Add explanatory comment in docker-compose.test.yml
 
     - [ ] **Phase 6: Testing and validation in CI**
-      - [ ] Test scenario: Source-only change → BuildKit cache hits, fast build
+      - [x] Test scenario: Source-only change → BuildKit cache hits (28s build)
       - [ ] Test scenario: package-lock.json change → BuildKit rebuilds npm layers
-      - [ ] Test scenario: Manual force rebuild via workflow_dispatch
-      - [x] Test scenario: First run (no cache) → full build works (verified locally)
+      - [x] Test scenario: Manual force rebuild via workflow_dispatch (85s build, no cache)
+      - [x] Test scenario: First run (no cache) → full build works
 
 
 - **Cloud Deployment**
