@@ -19,7 +19,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 1. User registration and JWT authentication
 2. Full habit CRUD operations with UI support
 3. Completion tracking with calendar view
-4. Acceptance test coverage
+4. Comprehensive automated test coverage
 
 ---
 
@@ -31,8 +31,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Docker Compose orchestration
 - [x] PostgreSQL database setup
 - [x] Database schema (users, habits, completions tables)
-- [x] Seed data (demo user + sample habits)
-- [x] Update seed data to include second demo user (demo2@example.com / demo1234)
+- [x] Seed data (demo users + sample habits)
 - [x] Environment variables configured
 - [x] Adminer database admin UI
 
@@ -133,76 +132,38 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 - [x] **Refactor user profile to RESTful /users endpoint**
   - [x] **Backend: Write tests for GET /api/v1/users/me (Red phase)**
-    - [x] Create routes/users.test.js
-    - [x] Write test: returns user profile with valid token (200)
-    - [x] Write test: returns 401 without token
-    - [x] Write test: returns 401 with invalid token
-    - [x] Write test: returns 404 if user not found
-    - [x] Run tests and confirm they fail
   - [x] **Backend: Implement users router (Green phase)**
-    - [x] Create routes/users.js with GET /me endpoint
-    - [x] Register router in app.js at /api/v1/users
-    - [x] Run tests and confirm they pass
   - [x] **Frontend: Update AuthContext tests (Red phase)**
-    - [x] Update AuthContext.test.tsx mocks to use /users/me
-    - [x] Run tests and confirm they fail
   - [x] **Frontend: Update AuthContext implementation (Green phase)**
-    - [x] Change /auth/me to /users/me in AuthContext.tsx
-    - [x] Run tests and confirm they pass
   - [x] **Clean-up: Remove deprecated /auth/me endpoint**
-    - [x] Verify /users/me works end-to-end (frontend to backend)
-    - [x] Remove GET /me route from routes/auth.js
-    - [x] Remove /auth/me tests from routes/auth.test.js
-    - [x] Run full test suite to confirm nothing breaks
   - [x] **Documentation: Update OpenAPI specification**
-    - [x] Add GET /api/v1/users/me endpoint
 - [ ] **User Profile Management**
   - [x] **Update Name (PUT /api/v1/users/me)**
-    - [x] Write tests for name update endpoint
-    - [x] Implement name update in backend
-    - [x] Add name edit UI in frontend
   - [x] **Update Email (PUT /api/v1/users/me)**
-    - [x] Write tests for email update endpoint
-    - [x] Implement email update in backend
-    - [x] Add email edit UI in frontend
   - [ ] **Change Password (PUT /api/v1/users/me/password)**
     - [ ] Write tests for password change endpoint (require current password)
     - [ ] Implement password change in backend
     - [ ] Add password change UI in frontend
   - [ ] **User Profile Management Modal**
     - [x] **Modal Infrastructure**
-      - [x] Write E2E tests for profile modal open/close (Playwright)
-      - [x] Write integration tests for profile modal trigger from Header
       - [x] Write unit tests for modal open/close functionality
       - [x] Implement modal UI structure (open/close, cancel button)
       - [x] Write tests for profile button in Header component
       - [x] Add profile button to Header component
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
     - [x] **Display User Info**
-      - [x] Write E2E tests for displaying user name and email
       - [x] Write unit tests for user info display rendering
       - [x] Implement user info display section
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
     - [x] **Edit Name**
-      - [x] Write E2E tests for name edit flow
       - [x] Write unit tests for name field rendering and validation
       - [x] Implement name input field with validation
       - [x] Write unit tests for name update submission
       - [x] Connect name update to API
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
     - [x] **Edit Email**
-      - [x] Write E2E tests for email edit flow
       - [x] Write unit tests for email field rendering and validation
       - [x] Implement email input field with validation
       - [x] Write unit tests for email update submission
       - [x] Connect email update to API
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
     - [ ] **Change Password Section**
-      - [ ] Write E2E tests for password change flow
       - [ ] Write unit tests for password fields rendering
       - [ ] Implement password change fields (current, new, confirm)
       - [ ] Write unit tests for password validation (match, strength)
@@ -211,22 +172,16 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
       - [ ] Run all tests (scripts/test-all.sh)
       - [ ] Update project docs if needed
     - [x] **Error Handling**
-      - [x] Write E2E tests for API error display
       - [x] Write unit tests for error message rendering
       - [x] Implement error handling UI
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
     - [x] **Loading States**
       - [x] Write unit tests for loading state during save
       - [x] Implement loading indicators for save operations
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
     - [x] **Header Cleanup**
       - [x] Remove redundant user name display from Header (now in profile modal)
       - [x] Remove redundant user email display from Header (now in profile modal)
       - [x] Remove edit icons for name/email from Header
       - [x] Update Header tests to reflect removed elements
-      - [x] Run all tests (scripts/test-all.sh)
 
 ### Frontend - Next.js + React
 
@@ -440,7 +395,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Login flow
   - [x] Protected route access
   - [x] Logout flow
-  - [x] User isolation verification
+  - [ ] User isolation verification
+    - [x] User 1 sees own habits, not User 2's habits
+    - [ ] User 2 sees own habits, not User 1's habits (reverse direction)
+    - [ ] Session switching: no data leakage between user sessions
   - [x] Token refresh during active session
 - [x] **Habit Management E2E** (e2e/habits.spec.ts)
   - [x] Create habit → Appears in list
@@ -453,28 +411,24 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Multiple habits completion tracking
   - [x] Calendar navigation
   - [x] Fix flaky test: "should persist completion after page reload"
-- [x] **E2E Test Isolation Fixes** ✅
+- [x] **E2E Test Isolation Fixes**
   - **Problem:** Tests modify fixture data (habits, user profile, completions) without restoration, causing cross-test dependencies and potential failures when test order changes.
-  - **Solution:** Create unique test data instead of modifying fixtures (Option B)
+  - **Solution:** Create unique test data instead of modifying fixtures
   - **Data Strategy:**
     - User 1 (`test@example.com`): READ ONLY - never modified
     - User 2 (`test2@example.com`): Never logged in as, only used for "email taken" validation
     - All data-modifying tests create unique entities with `Date.now()` timestamps
-
   - [x] **habits.spec.ts - Update Habit Tests**
     - [x] Added `createTestHabit` helper that creates unique habits with timestamp
     - [x] All 5 update tests now create their own habits before testing
-
   - [x] **auth.spec.ts - Profile Management Tests**
     - [x] Profile update tests now register unique users before testing
     - [x] "Email already taken" tests create unique users and check against user 1's email
     - [x] Profile Modal Updates describe block creates unique users for each test
-
   - [x] **completions.spec.ts - Completion Toggle Tests**
     - [x] Toggle tests create unique habits using `createTestHabit` helper
     - [x] "Track completions independently" test creates two unique habits
     - [x] Navigation/display tests use fixture habits (read-only, safe)
-
   - [x] **Verification**
     - [x] All 50 E2E tests pass
     - [x] Comprehensive audit confirms all tests are properly isolated
@@ -569,7 +523,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **SSL Certificates (AWS Lightsail)**
   - [x] Create certificate for `www.habitcraft.org`
   - [x] Create certificate for `api.habitcraft.org`
-  - [x] Validate domain ownership via DNS (add CNAME validation records at IONOS)
+  - [x] Validate domain ownership via DNS
   - [x] Attach certificates to Lightsail container services
 - [x] **Application Configuration**
   - [x] Update `FRONTEND_URL` GitHub secret to `https://www.habitcraft.org`
