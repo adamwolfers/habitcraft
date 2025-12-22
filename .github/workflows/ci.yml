@@ -2,6 +2,11 @@ name: CI
 
 on:
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild E2E test containers (bypass BuildKit cache)'
+        type: boolean
+        default: false
   push:
     branches: ['**']
     paths-ignore:
@@ -148,6 +153,35 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need history to compare changes
+
+      - name: Check for dependency changes
+        id: deps-changed
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            BASE_SHA=${{ github.event.pull_request.base.sha }}
+          else
+            BASE_SHA=${{ github.event.before }}
+          fi
+
+          # Handle case where BASE_SHA is empty (first push, workflow_dispatch)
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]; then
+            echo "changed=unknown" >> $GITHUB_OUTPUT
+            echo "ℹ️ Cannot determine dependency changes (first push or manual trigger)"
+            exit 0
+          fi
+
+          BACKEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'backends/node/package-lock.json' | wc -l)
+          FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontends/nextjs/package-lock.json' | wc -l)
+
+          if [ "$BACKEND_DEPS" -gt 0 ] || [ "$FRONTEND_DEPS" -gt 0 ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📦 Dependencies changed - BuildKit will rebuild affected layers"
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "✅ No dependency changes - BuildKit will use cached layers"
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -166,7 +200,7 @@ jobs:
             docker-compose.test.yml
             docker-bake.test.hcl
           set: |
-            *.cache-from=type=gha
+            ${{ !inputs.force_rebuild && '*.cache-from=type=gha' || '' }}
             *.cache-to=type=gha,mode=max
           load: true
 
