@@ -793,9 +793,9 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Code Quality & Testability Refactors
 
-Extract closure-captured logic from React event handlers into pure utility functions for better testability. See `agents.md` for the pattern documentation.
+Extract closure-captured logic from React event handlers into pure utility functions for better testability. See `CLAUDE.md` for the pattern documentation.
 
-- **Registration Form Validation** ✅
+- **Registration Form Validation**
   - [x] Extract `validateRegistrationForm()` to `utils/authUtils.ts`
   - [x] Unit tests for password length and match validation
   - [x] Update `register/page.tsx` to use utility
