@@ -928,77 +928,27 @@ Extract closure-captured logic from React event handlers into pure utility funct
       - [x] Update `docker compose up` to not rebuild (images already built by bake)
       - [x] Verify cache hits on subsequent CI runs (31% faster: 240s → 166s)
 
-    - [ ] **Phase 3: Conditional rebuild logic**
-      - [ ] Add step to detect if package-lock.json files changed:
-        ```yaml
-        - name: Check for dependency changes
-          id: deps-changed
-          run: |
-            # For push events, compare with previous commit
-            # For PR events, compare with base branch
-            if [ "${{ github.event_name }}" == "pull_request" ]; then
-              BASE_SHA=${{ github.event.pull_request.base.sha }}
-            else
-              BASE_SHA=${{ github.event.before }}
-            fi
+    - [x] **Phase 3: Add dependency change visibility logging**
+      - BuildKit layer caching (Phase 2) automatically handles rebuilds when dependencies change
+      - This phase adds visibility into what's happening for debugging/monitoring
+      - [x] Add step to detect and log dependency changes
 
-            BACKEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'backends/node/package-lock.json' | wc -l)
-            FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontends/nextjs/package-lock.json' | wc -l)
+    - [x] **Phase 4: Add force-rebuild workflow_dispatch input**
+      - Provides escape hatch for cache corruption or stale image issues
+      - [x] Add workflow_dispatch input with `force_rebuild` boolean
+      - [x] Update bake-action to conditionally skip cache when force_rebuild is true
 
-            if [ "$BACKEND_DEPS" -gt 0 ] || [ "$FRONTEND_DEPS" -gt 0 ]; then
-              echo "changed=true" >> $GITHUB_OUTPUT
-              echo "Dependencies changed - will rebuild containers"
-            else
-              echo "changed=false" >> $GITHUB_OUTPUT
-              echo "No dependency changes - will use cached containers"
-            fi
-        ```
-      - [ ] Update "Start test environment" step to conditionally use `--build`:
-        ```yaml
-        - name: Start test environment
-          run: |
-            BUILD_FLAG=""
-            if [ "${{ steps.deps-changed.outputs.changed }}" == "true" ]; then
-              BUILD_FLAG="--build"
-              echo "Building fresh containers due to dependency changes"
-            fi
-            docker compose -f docker-compose.test.yml up -d $BUILD_FLAG --wait
-        ```
+    - [x] **Phase 5: Replace anonymous volumes with named volumes**
+      - Anonymous volumes can cause stale node_modules issues
+      - [x] Update frontend-nextjs-test service volumes to use named volumes
+      - [x] Add `frontend_test_modules` and `frontend_test_next` to volumes section
+      - [x] Add explanatory comment in docker-compose.test.yml
 
-    - [ ] **Phase 4: Add fallback force-rebuild mechanism**
-      - [ ] Add workflow_dispatch input to force rebuild:
-        ```yaml
-        on:
-          workflow_dispatch:
-            inputs:
-              force_rebuild:
-                description: 'Force rebuild E2E test containers'
-                type: boolean
-                default: false
-        ```
-      - [ ] Update conditional logic to check force_rebuild input
-      - [ ] Document in workflow file when to use force rebuild
-
-    - [ ] **Phase 5: Testing and validation**
-      - [ ] Test scenario: Source-only change → no rebuild, fast startup
-      - [ ] Test scenario: package-lock.json change → rebuild triggered
+    - [ ] **Phase 6: Testing and validation in CI**
+      - [ ] Test scenario: Source-only change → BuildKit cache hits, fast build
+      - [ ] Test scenario: package-lock.json change → BuildKit rebuilds npm layers
       - [ ] Test scenario: Manual force rebuild via workflow_dispatch
-      - [ ] Test scenario: First run (no cache) → full build works
-      - [ ] Measure and document time savings (expected: 1-2 min per run)
-
-    - [ ] **Phase 6: Update docker-compose.test.yml**
-      - [ ] Remove anonymous volumes that can cause stale issues:
-        ```yaml
-        # Before (problematic):
-        volumes:
-          - /app/node_modules
-
-        # After (explicit named volume):
-        volumes:
-          - frontend_test_modules:/app/node_modules
-        ```
-      - [ ] Add volume cleanup to CI teardown step
-      - [ ] Document volume behavior in docker-compose.test.yml comments
+      - [x] Test scenario: First run (no cache) → full build works (verified locally)
 
 
 - **Cloud Deployment**
