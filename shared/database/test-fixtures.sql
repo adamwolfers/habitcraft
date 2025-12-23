@@ -91,21 +91,36 @@ ON CONFLICT (id) DO NOTHING;
 -- Note: Completions use current date minus N days for realistic testing
 -- These will be relative to when the test database is created
 
--- Completions for "Morning Exercise" habit (last 7 days, 5 completed)
+-- Completions for "Morning Exercise" habit (current week: 5 completed, previous week: 4 completed)
 INSERT INTO completions (habit_id, date)
 SELECT
     'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
     CURRENT_DATE - days
 FROM generate_series(0, 6) AS days
-WHERE days NOT IN (2, 5)  -- Skip 2 and 5 days ago
+WHERE days NOT IN (2, 5)  -- Skip 2 and 5 days ago (current week)
 ON CONFLICT (habit_id, date) DO NOTHING;
 
--- Completions for "Read Books" habit (last 7 days, 3 completed)
+INSERT INTO completions (habit_id, date)
+SELECT
+    'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    CURRENT_DATE - days
+FROM generate_series(7, 13) AS days
+WHERE days NOT IN (8, 10, 12)  -- Skip some days (previous week)
+ON CONFLICT (habit_id, date) DO NOTHING;
+
+-- Completions for "Read Books" habit (current week: 3 completed, previous week: 2 completed)
 INSERT INTO completions (habit_id, date)
 SELECT
     'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
     CURRENT_DATE - days
 FROM generate_series(0, 2) AS days
+ON CONFLICT (habit_id, date) DO NOTHING;
+
+INSERT INTO completions (habit_id, date)
+SELECT
+    'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+    CURRENT_DATE - days
+FROM generate_series(7, 8) AS days  -- 2 completions in previous week
 ON CONFLICT (habit_id, date) DO NOTHING;
 
 -- ============================================================================

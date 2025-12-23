@@ -353,9 +353,9 @@ test.describe('Completion Tracking', () => {
     });
 
     test('should show different completion patterns for different habits', async ({ page }) => {
-      // Based on fixtures:
-      // Morning Exercise: completions for days 0,1,3,4,6 (5 out of 7)
-      // Read Books: completions for days 0,1,2 (3 out of last 3 days)
+      // Based on fixtures (previous week, days 7-13 ago):
+      // Morning Exercise: completions for days 7,9,11,13 (4 out of 7)
+      // Read Books: completions for days 7,8 (2 out of 7)
       //
       // Navigate to previous week to see stable fixture data
       // (Current week's completions may be toggled by earlier tests)
