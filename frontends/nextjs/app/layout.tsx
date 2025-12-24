@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import HeaderWithProfile from "@/components/HeaderWithProfile";
+import { PostHogProvider } from "@/components/PostHogProvider";
+import { PostHogPageView } from "@/components/PostHogPageView";
 
 export const metadata: Metadata = {
   title: "HabitCraft.org | Track your daily habits and build streaks",
@@ -16,10 +19,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <AuthProvider>
-          <HeaderWithProfile />
-          {children}
-        </AuthProvider>
+        <PostHogProvider>
+          <Suspense fallback={null}>
+            <PostHogPageView />
+          </Suspense>
+          <AuthProvider>
+            <HeaderWithProfile />
+            {children}
+          </AuthProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

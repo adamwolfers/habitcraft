@@ -4,11 +4,11 @@ services:
     image: postgres:14-alpine
     container_name: habitcraft-db
     environment:
-      POSTGRES_DB: habitcraft
-      POSTGRES_USER: habituser
-      POSTGRES_PASSWORD: habitpass
+      POSTGRES_DB: ${DB_NAME:-habitcraft}
+      POSTGRES_USER: ${DB_USER:-habituser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-habitpass}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./shared/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
@@ -16,7 +16,7 @@ services:
     networks:
       - habitcraft-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U habituser -d habitcraft"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-habituser} -d ${DB_NAME:-habitcraft}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -28,17 +28,17 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-backend-node
     environment:
-      NODE_ENV: development
-      PORT: 3000
-      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habitcraft
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: ${BACKEND_PORT:-3000}
+      DATABASE_URL: postgresql://${DB_USER:-habituser}:${DB_PASSWORD:-habitpass}@postgres:5432/${DB_NAME:-habitcraft}
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: habitcraft
-      DB_USER: habituser
-      DB_PASSWORD: habitpass
-      JWT_SECRET: your-secret-key-change-in-production
+      DB_NAME: ${DB_NAME:-habitcraft}
+      DB_USER: ${DB_USER:-habituser}
+      DB_PASSWORD: ${DB_PASSWORD:-habitpass}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
     ports:
-      - "3000:3000"
+      - "${BACKEND_PORT:-3000}:3000"
     volumes:
       - ./backends/node:/app
       - backend_node_modules:/app/node_modules
@@ -56,10 +56,10 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-backend-python
     environment:
-      ENVIRONMENT: development
+      ENVIRONMENT: ${NODE_ENV:-development}
       PORT: 3001
-      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habitcraft
-      JWT_SECRET: your-secret-key-change-in-production
+      DATABASE_URL: postgresql://${DB_USER:-habituser}:${DB_PASSWORD:-habitpass}@postgres:5432/${DB_NAME:-habitcraft}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
     ports:
       - "3001:3001"
     volumes:
@@ -78,10 +78,10 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-backend-go
     environment:
-      ENVIRONMENT: development
+      ENVIRONMENT: ${NODE_ENV:-development}
       PORT: 3002
-      DATABASE_URL: postgresql://habituser:habitpass@postgres:5432/habitcraft
-      JWT_SECRET: your-secret-key-change-in-production
+      DATABASE_URL: postgresql://${DB_USER:-habituser}:${DB_PASSWORD:-habitpass}@postgres:5432/${DB_NAME:-habitcraft}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
     ports:
       - "3002:3002"
     volumes:
@@ -99,12 +99,12 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-backend-java
     environment:
-      SPRING_PROFILES_ACTIVE: development
+      SPRING_PROFILES_ACTIVE: ${NODE_ENV:-development}
       SERVER_PORT: 3003
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/habitcraft
-      SPRING_DATASOURCE_USERNAME: habituser
-      SPRING_DATASOURCE_PASSWORD: habitpass
-      JWT_SECRET: your-secret-key-change-in-production
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-habitcraft}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-habituser}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-habitpass}
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
     ports:
       - "3003:3003"
     volumes:
@@ -122,9 +122,12 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-frontend-nextjs
     environment:
-      # Note: This URL is accessed from the browser, not from the container
+      # Note: API URL is accessed from the browser, not from the container
       # So we use localhost (host machine) not backend-node (container network)
-      NEXT_PUBLIC_API_BASE_URL: http://localhost:3000
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000}
+      # PostHog Analytics (optional)
+      NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
+      NEXT_PUBLIC_POSTHOG_HOST: ${NEXT_PUBLIC_POSTHOG_HOST:-https://us.i.posthog.com}
     ports:
       - "3100:3100"
     volumes:
@@ -142,7 +145,7 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-frontend-react
     environment:
-      REACT_APP_API_URL: http://localhost:3000/api/v1
+      REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:3000/api/v1}
     ports:
       - "3101:3000"
     volumes:
@@ -159,7 +162,7 @@ services:
       dockerfile: Dockerfile
     container_name: habitcraft-frontend-vue
     environment:
-      VITE_API_URL: http://localhost:3000/api/v1
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api/v1}
     ports:
       - "3102:3000"
     volumes:
