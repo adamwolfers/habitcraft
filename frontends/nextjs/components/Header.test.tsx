@@ -215,11 +215,11 @@ describe('Header Component', () => {
         expect(mockOnOpenProfileModal).toHaveBeenCalledTimes(1);
       });
 
-      it('should display user name on profile button', () => {
+      it('should display profile icon on profile button', () => {
         render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
 
         const profileButton = screen.getByRole('button', { name: /profile/i });
-        expect(profileButton).toHaveTextContent('Test User');
+        expect(profileButton.querySelector('svg')).toBeInTheDocument();
       });
     });
 
