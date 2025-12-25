@@ -61,7 +61,10 @@ describe('Header Component', () => {
     });
 
     describe('When user is authenticated', () => {
+      const mockOnOpenProfileModal = jest.fn();
+
       beforeEach(() => {
+        mockOnOpenProfileModal.mockClear();
         mockUseAuth.mockReturnValue({
           user: {
             id: '123',
@@ -78,91 +81,19 @@ describe('Header Component', () => {
         });
       });
 
-      it('should render logout button', () => {
-        render(<Header />);
+      it('should show logout in profile menu when authenticated', async () => {
+        const user = userEvent.setup();
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        // Open profile menu
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
 
         expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
       });
-
-      it('should call logout when logout button is clicked', async () => {
-        const user = userEvent.setup();
-        mockLogout.mockResolvedValue(undefined);
-
-        render(<Header />);
-
-        const logoutButton = screen.getByRole('button', { name: /log out/i });
-        await user.click(logoutButton);
-
-        await waitFor(() => {
-          expect(mockLogout).toHaveBeenCalledTimes(1);
-        });
-      });
-
-      it('should redirect to login page after logout', async () => {
-        const user = userEvent.setup();
-        mockLogout.mockResolvedValue(undefined);
-
-        render(<Header />);
-
-        const logoutButton = screen.getByRole('button', { name: /log out/i });
-        await user.click(logoutButton);
-
-        await waitFor(() => {
-          expect(mockPush).toHaveBeenCalledWith('/login');
-        });
-      });
-
-      it('should disable logout button during logout', async () => {
-        const user = userEvent.setup();
-
-        // Create a promise that we can control
-        let resolveLogout: () => void;
-        const logoutPromise = new Promise<void>((resolve) => {
-          resolveLogout = resolve;
-        });
-        mockLogout.mockReturnValue(logoutPromise);
-
-        render(<Header />);
-
-        const logoutButton = screen.getByRole('button', { name: /log out/i });
-        await user.click(logoutButton);
-
-        // Button should be disabled during logout
-        expect(logoutButton).toBeDisabled();
-
-        // Resolve the logout
-        resolveLogout!();
-        await waitFor(() => {
-          expect(logoutButton).not.toBeDisabled();
-        });
-      });
-
-      it('should show loading text during logout', async () => {
-        const user = userEvent.setup();
-
-        let resolveLogout: () => void;
-        const logoutPromise = new Promise<void>((resolve) => {
-          resolveLogout = resolve;
-        });
-        mockLogout.mockReturnValue(logoutPromise);
-
-        render(<Header />);
-
-        const logoutButton = screen.getByRole('button', { name: /log out/i });
-        await user.click(logoutButton);
-
-        // Button text should change during logout
-        expect(screen.getByText(/logging out/i)).toBeInTheDocument();
-
-        // Resolve the logout
-        resolveLogout!();
-        await waitFor(() => {
-          expect(screen.queryByText(/logging out/i)).not.toBeInTheDocument();
-        });
-      });
     });
 
-    describe('Profile Modal Trigger', () => {
+    describe('Profile Menu', () => {
       const mockOnOpenProfileModal = jest.fn();
 
       beforeEach(() => {
@@ -205,26 +136,126 @@ describe('Header Component', () => {
         expect(screen.queryByRole('button', { name: /profile/i })).not.toBeInTheDocument();
       });
 
-      it('should call onOpenProfileModal when profile button is clicked', async () => {
-        const user = userEvent.setup();
-        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
-
-        const profileButton = screen.getByRole('button', { name: /profile/i });
-        await user.click(profileButton);
-
-        expect(mockOnOpenProfileModal).toHaveBeenCalledTimes(1);
-      });
-
       it('should display profile icon on profile button', () => {
         render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
 
         const profileButton = screen.getByRole('button', { name: /profile/i });
         expect(profileButton.querySelector('svg')).toBeInTheDocument();
       });
+
+      it('should show dropdown menu when profile button is clicked', async () => {
+        const user = userEvent.setup();
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
+      });
+
+      it('should not show dropdown menu initially', () => {
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        expect(screen.queryByRole('button', { name: /edit profile/i })).not.toBeInTheDocument();
+      });
+
+      it('should call onOpenProfileModal when Edit Profile is clicked', async () => {
+        const user = userEvent.setup();
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        const editProfileButton = screen.getByRole('button', { name: /edit profile/i });
+        await user.click(editProfileButton);
+
+        expect(mockOnOpenProfileModal).toHaveBeenCalledTimes(1);
+      });
+
+      it('should close menu after Edit Profile is clicked', async () => {
+        const user = userEvent.setup();
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        const editProfileButton = screen.getByRole('button', { name: /edit profile/i });
+        await user.click(editProfileButton);
+
+        expect(screen.queryByRole('button', { name: /edit profile/i })).not.toBeInTheDocument();
+      });
+
+      it('should call logout when Log Out menu item is clicked', async () => {
+        const user = userEvent.setup();
+        mockLogout.mockResolvedValue(undefined);
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        const logoutButton = screen.getByRole('button', { name: /log out/i });
+        await user.click(logoutButton);
+
+        await waitFor(() => {
+          expect(mockLogout).toHaveBeenCalledTimes(1);
+        });
+      });
+
+      it('should redirect to login after logout from menu', async () => {
+        const user = userEvent.setup();
+        mockLogout.mockResolvedValue(undefined);
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        const logoutButton = screen.getByRole('button', { name: /log out/i });
+        await user.click(logoutButton);
+
+        await waitFor(() => {
+          expect(mockPush).toHaveBeenCalledWith('/login');
+        });
+      });
+
+      it('should close menu when clicking outside', async () => {
+        const user = userEvent.setup();
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument();
+
+        // Click outside the menu
+        await user.click(document.body);
+
+        await waitFor(() => {
+          expect(screen.queryByRole('button', { name: /edit profile/i })).not.toBeInTheDocument();
+        });
+      });
+
+      it('should toggle menu open/closed on profile button click', async () => {
+        const user = userEvent.setup();
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+
+        // Open menu
+        await user.click(profileButton);
+        expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument();
+
+        // Close menu
+        await user.click(profileButton);
+        expect(screen.queryByRole('button', { name: /edit profile/i })).not.toBeInTheDocument();
+      });
     });
 
     describe('Error Handling', () => {
+      const mockOnOpenProfileModal = jest.fn();
+
       beforeEach(() => {
+        mockOnOpenProfileModal.mockClear();
         mockUseAuth.mockReturnValue({
           user: {
             id: '123',
@@ -246,7 +277,11 @@ describe('Header Component', () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         mockLogout.mockRejectedValue(new Error('Logout failed'));
 
-        render(<Header />);
+        render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        // Open profile menu and click logout
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
 
         const logoutButton = screen.getByRole('button', { name: /log out/i });
         await user.click(logoutButton);
@@ -342,24 +377,32 @@ describe('Header Component', () => {
         expect(dashboardLink).toHaveAttribute('href', '/dashboard');
       });
 
-      it('should render logout button', () => {
-        render(<Header variant="landing" />);
-
-        expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
-      });
-
       it('should render profile button when callback provided', () => {
         render(<Header variant="landing" onOpenProfileModal={mockOnOpenProfileModal} />);
 
         expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
       });
 
-      it('should call onOpenProfileModal when profile button is clicked', async () => {
+      it('should show profile menu with logout when profile button is clicked', async () => {
         const user = userEvent.setup();
         render(<Header variant="landing" onOpenProfileModal={mockOnOpenProfileModal} />);
 
         const profileButton = screen.getByRole('button', { name: /profile/i });
         await user.click(profileButton);
+
+        expect(screen.getByRole('button', { name: /edit profile/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
+      });
+
+      it('should call onOpenProfileModal when Edit Profile is clicked', async () => {
+        const user = userEvent.setup();
+        render(<Header variant="landing" onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
+
+        const editProfileButton = screen.getByRole('button', { name: /edit profile/i });
+        await user.click(editProfileButton);
 
         expect(mockOnOpenProfileModal).toHaveBeenCalledTimes(1);
       });
@@ -376,11 +419,14 @@ describe('Header Component', () => {
         expect(screen.queryByRole('link', { name: /sign up/i })).not.toBeInTheDocument();
       });
 
-      it('should call logout when logout button is clicked', async () => {
+      it('should call logout when Log Out menu item is clicked', async () => {
         const user = userEvent.setup();
         mockLogout.mockResolvedValue(undefined);
 
-        render(<Header variant="landing" />);
+        render(<Header variant="landing" onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
 
         const logoutButton = screen.getByRole('button', { name: /log out/i });
         await user.click(logoutButton);
@@ -390,11 +436,14 @@ describe('Header Component', () => {
         });
       });
 
-      it('should redirect to login page after logout', async () => {
+      it('should redirect to login page after logout from menu', async () => {
         const user = userEvent.setup();
         mockLogout.mockResolvedValue(undefined);
 
-        render(<Header variant="landing" />);
+        render(<Header variant="landing" onOpenProfileModal={mockOnOpenProfileModal} />);
+
+        const profileButton = screen.getByRole('button', { name: /profile/i });
+        await user.click(profileButton);
 
         const logoutButton = screen.getByRole('button', { name: /log out/i });
         await user.click(logoutButton);

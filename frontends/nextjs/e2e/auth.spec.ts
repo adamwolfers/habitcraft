@@ -79,7 +79,8 @@ test.describe('Authentication', () => {
       // Wait for redirect to home page
       await expect(page).toHaveURL('/dashboard');
 
-      // Click logout button
+      // Open profile menu and click logout
+      await page.getByRole('button', { name: /profile/i }).click();
       await page.getByRole('button', { name: /log out/i }).click();
 
       // Should be redirected to login page
@@ -180,7 +181,8 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL('/dashboard');
       await expect(page.getByText('Morning Exercise')).toBeVisible();
 
-      // Logout
+      // Logout via profile menu
+      await page.getByRole('button', { name: /profile/i }).click();
       await page.getByRole('button', { name: /log out/i }).click();
       await expect(page).toHaveURL('/login');
 
@@ -212,9 +214,12 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL('/dashboard');
     });
 
-    test('should open profile modal when clicking profile button', async ({ page }) => {
-      // Click the profile button in header
+    test('should open profile modal when clicking Edit Profile in menu', async ({ page }) => {
+      // Click the profile button to open menu
       await page.getByRole('button', { name: /profile/i }).click();
+
+      // Click Edit Profile in the menu
+      await page.getByRole('button', { name: /edit profile/i }).click();
 
       // Modal should be visible
       await expect(page.getByRole('dialog')).toBeVisible();
@@ -222,8 +227,9 @@ test.describe('Authentication', () => {
     });
 
     test('should display current user info in modal', async ({ page }) => {
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
 
       // Should display user's name and email
       await expect(page.getByRole('dialog')).toBeVisible();
@@ -232,8 +238,9 @@ test.describe('Authentication', () => {
     });
 
     test('should close modal when clicking cancel button', async ({ page }) => {
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Click cancel button
@@ -244,8 +251,9 @@ test.describe('Authentication', () => {
     });
 
     test('should close modal when clicking close (X) button', async ({ page }) => {
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Click close button
@@ -256,8 +264,9 @@ test.describe('Authentication', () => {
     });
 
     test('should close modal when clicking outside (backdrop)', async ({ page }) => {
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Click on backdrop (outside the dialog content)
@@ -268,8 +277,9 @@ test.describe('Authentication', () => {
     });
 
     test('should cancel profile changes without saving', async ({ page }) => {
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Modify name
@@ -286,8 +296,9 @@ test.describe('Authentication', () => {
     });
 
     test('should show validation error for invalid email', async ({ page }) => {
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Enter invalid email
@@ -304,8 +315,9 @@ test.describe('Authentication', () => {
       // Uses beforeEach login as user 1
       // Safe to use test2@example.com since no other test modifies user 2 now
 
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Try to change to user 2's email (test2@example.com - guaranteed to exist)
@@ -340,8 +352,9 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /sign up/i }).click();
       await expect(page).toHaveURL('/dashboard');
 
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Clear and update name
@@ -357,12 +370,14 @@ test.describe('Authentication', () => {
 
       // Verify name was updated by reopening profile modal
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog').getByLabel(/name/i)).toHaveValue('Updated Via Modal');
       await page.getByRole('dialog').getByRole('button', { name: /cancel/i }).click();
 
       // Verify persistence after reload
       await page.reload();
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog').getByLabel(/name/i)).toHaveValue('Updated Via Modal');
     });
 
@@ -377,8 +392,9 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /sign up/i }).click();
       await expect(page).toHaveURL('/dashboard');
 
-      // Open profile modal
+      // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog')).toBeVisible();
 
       // Clear and update email (unique to avoid conflicts)
@@ -395,6 +411,7 @@ test.describe('Authentication', () => {
 
       // Email should be updated - verify by reopening profile modal
       await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog').getByLabel(/email/i)).toHaveValue(newEmail);
     });
   });
