@@ -20,7 +20,7 @@ export default function RegisterPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/');
+      router.push('/dashboard');
     }
   }, [isAuthenticated, router]);
 
@@ -38,7 +38,7 @@ export default function RegisterPage() {
     // Call register API
     try {
       await register(email, password, name);
-      router.push('/');
+      router.push('/dashboard');
     } catch (error) {
       if (error instanceof Error && error.message) {
         setApiError(error.message);

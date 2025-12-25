@@ -2,13 +2,15 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 
 interface HeaderProps {
   onOpenProfileModal?: () => void;
+  variant?: 'app' | 'landing';
 }
 
-export default function Header({ onOpenProfileModal }: HeaderProps) {
+export default function Header({ onOpenProfileModal, variant = 'app' }: HeaderProps) {
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -27,33 +29,87 @@ export default function Header({ onOpenProfileModal }: HeaderProps) {
     }
   };
 
+  const logoHref = variant === 'landing' ? '/' : '/dashboard';
+
   return (
     <header className="bg-gray-800 border-b border-gray-700">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-white">HabitCraft</h1>
+            <Link href={logoHref} className="text-2xl font-bold text-white hover:text-gray-200 transition-colors">
+              HabitCraft.org
+            </Link>
           </div>
 
-          {isAuthenticated && user && (
+          {variant === 'landing' ? (
+            // Landing page navigation
             <div className="flex items-center gap-4">
-              {onOpenProfileModal && (
-                <button
-                  onClick={onOpenProfileModal}
-                  className="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors text-sm"
-                  aria-label="Profile"
-                >
-                  {user.name}
-                </button>
+              {isAuthenticated && user ? (
+                // Authenticated user on landing page
+                <>
+                  <Link
+                    href="/dashboard"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    Go to Dashboard
+                  </Link>
+                  {onOpenProfileModal && (
+                    <button
+                      onClick={onOpenProfileModal}
+                      className="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors text-sm"
+                      aria-label="Profile"
+                    >
+                      {user.name}
+                    </button>
+                  )}
+                  <button
+                    onClick={handleLogout}
+                    disabled={isLoggingOut}
+                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  >
+                    {isLoggingOut ? 'Logging out...' : 'Log Out'}
+                  </button>
+                </>
+              ) : (
+                // Unauthenticated user on landing page
+                <>
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 text-gray-300 hover:text-white transition-colors"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </>
               )}
-              <button
-                onClick={handleLogout}
-                disabled={isLoggingOut}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-              >
-                {isLoggingOut ? 'Logging out...' : 'Log Out'}
-              </button>
             </div>
+          ) : (
+            // App navigation (dashboard)
+            isAuthenticated && user && (
+              <div className="flex items-center gap-4">
+                {onOpenProfileModal && (
+                  <button
+                    onClick={onOpenProfileModal}
+                    className="px-3 py-1 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors text-sm"
+                    aria-label="Profile"
+                  >
+                    {user.name}
+                  </button>
+                )}
+                <button
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                >
+                  {isLoggingOut ? 'Logging out...' : 'Log Out'}
+                </button>
+              </div>
+            )
           )}
         </div>
       </div>

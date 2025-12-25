@@ -35,8 +35,8 @@ test.describe('Authentication', () => {
       // Submit the form
       await page.getByRole('button', { name: /log in/i }).click();
 
-      // Should redirect to home page with habits
-      await expect(page).toHaveURL('/');
+      // Should redirect to dashboard with habits
+      await expect(page).toHaveURL('/dashboard');
 
       // Should see the habit list (test user has habits from fixtures)
       await expect(page.getByText('Morning Exercise')).toBeVisible();
@@ -60,8 +60,8 @@ test.describe('Authentication', () => {
     });
 
     test('should redirect to login when accessing protected route without auth', async ({ page }) => {
-      // Try to access home page without being logged in
-      await page.goto('/');
+      // Try to access dashboard without being logged in
+      await page.goto('/dashboard');
 
       // Should be redirected to login
       await expect(page).toHaveURL('/login');
@@ -77,7 +77,7 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Wait for redirect to home page
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
 
       // Click logout button
       await page.getByRole('button', { name: /log out/i }).click();
@@ -115,7 +115,7 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /sign up/i }).click();
 
       // Should redirect to home page
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
     });
 
     test('should show error for duplicate email', async ({ page }) => {
@@ -143,7 +143,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/password/i).fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
 
       // Should see user 1's habits
       await expect(page.getByText('Morning Exercise')).toBeVisible();
@@ -160,7 +160,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/password/i).fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
 
       // Should see user 2's habit
       await expect(page.getByText('User 2 Habit')).toBeVisible();
@@ -177,7 +177,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/password/i).fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
       await expect(page.getByText('Morning Exercise')).toBeVisible();
 
       // Logout
@@ -189,7 +189,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/password/i).fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
 
       // Should see only user 2's data (no cached user 1 data)
       await expect(page.getByText('User 2 Habit')).toBeVisible();
@@ -209,7 +209,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/email/i).fill('test@example.com');
       await page.getByLabel(/password/i).fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
     });
 
     test('should open profile modal when clicking profile button', async ({ page }) => {
@@ -338,7 +338,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/^password$/i).fill('Test1234!');
       await page.getByLabel(/confirm password/i).fill('Test1234!');
       await page.getByRole('button', { name: /sign up/i }).click();
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
 
       // Open profile modal
       await page.getByRole('button', { name: /profile/i }).click();
@@ -372,7 +372,7 @@ test.describe('Authentication', () => {
       await page.getByLabel(/^password$/i).fill('Test1234!');
       await page.getByLabel(/confirm password/i).fill('Test1234!');
       await page.getByRole('button', { name: /sign up/i }).click();
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
 
       // Open profile modal
       await page.getByRole('button', { name: /profile/i }).click();
@@ -405,7 +405,7 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Wait for home page with habits
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
       await expect(page.getByText('Morning Exercise')).toBeVisible();
 
       // Simulate access token expiration by clearing only the access token cookie
@@ -425,7 +425,7 @@ test.describe('Authentication', () => {
 
       // User should still be logged in and see their habits
       // (If refresh failed, they would be redirected to /login)
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
       await expect(page.getByText('Morning Exercise')).toBeVisible();
     });
 
@@ -437,7 +437,7 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Wait for home page
-      await expect(page).toHaveURL('/');
+      await expect(page).toHaveURL('/dashboard');
       await expect(page.getByText('Morning Exercise')).toBeVisible();
 
       // Clear ALL cookies (both access and refresh tokens)

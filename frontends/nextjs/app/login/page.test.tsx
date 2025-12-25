@@ -125,7 +125,7 @@ describe('Login Page', () => {
       });
     });
 
-    it('should redirect to home page on successful login', async () => {
+    it('should redirect to dashboard on successful login', async () => {
       const user = userEvent.setup();
       mockLogin.mockResolvedValue(undefined);
 
@@ -141,7 +141,7 @@ describe('Login Page', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/');
+        expect(mockPush).toHaveBeenCalledWith('/dashboard');
       });
     });
   });
@@ -302,7 +302,7 @@ describe('Login Page', () => {
   });
 
   describe('Auto-redirect for authenticated users', () => {
-    it('should redirect to home if user is already authenticated', () => {
+    it('should redirect to dashboard if user is already authenticated', () => {
       mockUseAuth.mockReturnValue({
         user: {
           id: '123',
@@ -319,7 +319,7 @@ describe('Login Page', () => {
 
       render(<LoginPage />);
 
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockPush).toHaveBeenCalledWith('/dashboard');
     });
 
     it('should not redirect if user is not authenticated', () => {
