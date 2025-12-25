@@ -63,8 +63,8 @@ describe('LayoutHeader Component', () => {
 
       render(<LayoutHeader />);
 
-      // App variant shows logout button, not Login/Sign Up
-      expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
+      // App variant shows profile button (with menu containing logout), not Login/Sign Up
+      expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
       expect(screen.queryByRole('link', { name: /log in/i })).not.toBeInTheDocument();
     });
 
@@ -88,7 +88,7 @@ describe('LayoutHeader Component', () => {
       render(<LayoutHeader />);
 
       // Should use app variant (default for non-landing pages)
-      expect(screen.getByRole('button', { name: /log out/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
     });
 
     it('should show Go to Dashboard on landing when authenticated', () => {

@@ -83,15 +83,21 @@ test.describe('Landing Page', () => {
       await expect(page).toHaveURL('/dashboard');
     });
 
-    test('should show logout button on landing page', async ({ page }) => {
+    test('should show profile menu with logout on landing page', async ({ page }) => {
       await page.goto('/');
 
+      // Open profile menu
+      await page.getByRole('button', { name: /profile/i }).click();
+
+      // Should see logout in menu
       await expect(page.getByRole('button', { name: /log out/i })).toBeVisible();
     });
 
-    test('should logout from landing page', async ({ page }) => {
+    test('should logout from landing page via profile menu', async ({ page }) => {
       await page.goto('/');
 
+      // Open profile menu and click logout
+      await page.getByRole('button', { name: /profile/i }).click();
       await page.getByRole('button', { name: /log out/i }).click();
 
       await expect(page).toHaveURL('/login');

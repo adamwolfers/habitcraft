@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
@@ -14,8 +14,36 @@ export default function Header({ onOpenProfileModal, variant = 'app' }: HeaderPr
   const router = useRouter();
   const { user, isAuthenticated, logout } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  const handleToggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleEditProfile = () => {
+    setIsMenuOpen(false);
+    onOpenProfileModal?.();
+  };
 
   const handleLogout = async () => {
+    setIsMenuOpen(false);
     setIsLoggingOut(true);
     try {
       await logout();
@@ -28,6 +56,37 @@ export default function Header({ onOpenProfileModal, variant = 'app' }: HeaderPr
       setIsLoggingOut(false);
     }
   };
+
+  const profileMenu = (
+    <div ref={menuRef} className="relative">
+      <button
+        onClick={handleToggleMenu}
+        className="p-2 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
+        aria-label="Profile"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        </svg>
+      </button>
+      {isMenuOpen && (
+        <div className="absolute right-0 mt-2 w-48 bg-gray-700 rounded-lg shadow-lg py-1 z-50">
+          <button
+            onClick={handleEditProfile}
+            className="w-full text-left px-4 py-2 text-white hover:bg-gray-600 transition-colors"
+          >
+            Edit Profile
+          </button>
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full text-left px-4 py-2 text-white hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoggingOut ? 'Logging out...' : 'Log Out'}
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   const logoHref = variant === 'landing' ? '/' : '/dashboard';
 
@@ -53,24 +112,7 @@ export default function Header({ onOpenProfileModal, variant = 'app' }: HeaderPr
                   >
                     Go to Dashboard
                   </Link>
-                  {onOpenProfileModal && (
-                    <button
-                      onClick={onOpenProfileModal}
-                      className="p-2 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-                      aria-label="Profile"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </button>
-                  )}
-                  <button
-                    onClick={handleLogout}
-                    disabled={isLoggingOut}
-                    className="px-4 py-2 bg-gray-600 hover:bg-gray-500 disabled:bg-gray-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                  >
-                    {isLoggingOut ? 'Logging out...' : 'Log Out'}
-                  </button>
+                  {onOpenProfileModal && profileMenu}
                 </>
               ) : (
                 // Unauthenticated user on landing page
@@ -92,26 +134,9 @@ export default function Header({ onOpenProfileModal, variant = 'app' }: HeaderPr
             </div>
           ) : (
             // App navigation (dashboard)
-            isAuthenticated && user && (
+            isAuthenticated && user && onOpenProfileModal && (
               <div className="flex items-center gap-4">
-                {onOpenProfileModal && (
-                  <button
-                    onClick={onOpenProfileModal}
-                    className="p-2 bg-gray-600 hover:bg-gray-500 text-white rounded transition-colors"
-                    aria-label="Profile"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </button>
-                )}
-                <button
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-                >
-                  {isLoggingOut ? 'Logging out...' : 'Log Out'}
-                </button>
+                {profileMenu}
               </div>
             )
           )}
