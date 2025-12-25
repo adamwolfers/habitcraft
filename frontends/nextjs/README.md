@@ -11,6 +11,7 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 - Comprehensive testing (Jest + React Testing Library)
 - API client with full backend integration
 - JWT authentication with HttpOnly cookies
+- Landing page with feature highlights
 - User registration and login pages
 - Protected routes with authentication guards
 - Logout functionality with session management
@@ -21,6 +22,7 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 - Week navigation (previous/next)
 - Optimistic UI updates
 - Custom hooks for state management (useHabits, useRequireAuth)
+- PostHog analytics integration
 - TDD approach with comprehensive test coverage
 
 See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
@@ -79,57 +81,69 @@ npm start
 ```
 frontends/nextjs/
 ├── app/                           # Next.js app directory
-│   ├── page.tsx                  # Main habits page
-│   ├── page.test.tsx            # Habits page tests
-│   ├── layout.tsx               # Root layout with AuthProvider
-│   ├── layout.test.tsx          # Layout tests
+│   ├── page.tsx                  # Landing page
+│   ├── page.test.tsx             # Landing page tests
+│   ├── layout.tsx                # Root layout with Providers
+│   ├── dashboard/
+│   │   ├── page.tsx              # Habits dashboard (main app)
+│   │   └── page.test.tsx         # Dashboard tests
 │   ├── login/
-│   │   ├── page.tsx            # Login page
-│   │   └── page.test.tsx       # Login tests
+│   │   ├── page.tsx              # Login page
+│   │   └── page.test.tsx         # Login tests
 │   └── register/
-│       ├── page.tsx            # Registration page
-│       └── page.test.tsx       # Registration tests
-├── components/                   # React components
-│   ├── AddHabitForm.tsx         # Habit creation form
-│   ├── AddHabitForm.test.tsx    # Form tests
-│   ├── EditHabitModal.tsx       # Edit habit modal
-│   ├── EditHabitModal.test.tsx  # Modal tests
-│   ├── HabitCard.tsx            # Habit card with calendar
-│   ├── HabitCard.test.tsx       # Card tests
-│   ├── Header.tsx               # Header with logout
-│   ├── Header.test.tsx          # Header tests
-│   ├── HeaderWithProfile.tsx    # Header wrapper with profile modal
-│   ├── ProfileModal.tsx         # User profile editing modal
-│   ├── ProfileModal.test.tsx    # Profile modal tests
-│   ├── ProtectedRoute.tsx       # Auth guard wrapper
-│   ├── ProtectedRoute.test.tsx  # Guard tests
-│   └── Footer.tsx               # Footer component
-├── context/                      # React context
-│   ├── AuthContext.tsx          # Authentication context
-│   └── AuthContext.test.tsx     # Context tests
-├── e2e/                          # Playwright E2E tests
-│   ├── auth.spec.ts             # Authentication flow tests
-│   ├── completions.spec.ts      # Completion tracking tests
-│   ├── habits.spec.ts           # Habit management tests
-│   ├── global-setup.ts          # Test database setup
-│   └── global-teardown.ts       # Test cleanup
-├── hooks/                        # Custom React hooks
-│   ├── useHabits.ts             # Habit state management
-│   ├── useHabits.test.ts        # Hook tests
-│   ├── useRequireAuth.ts        # Auth redirect hook
-│   └── useRequireAuth.test.ts   # Auth hook tests
-├── lib/                          # Utility libraries
-│   ├── api.ts                   # API client
-│   └── api.test.ts              # API tests
-├── utils/                        # Helper utilities
-│   ├── authUtils.ts             # Registration form validation
-│   ├── authUtils.test.ts        # Auth utils tests
-│   ├── dateUtils.ts             # Date manipulation
-│   ├── dateUtils.test.ts        # Date utils tests
-│   ├── habitUtils.ts            # Habit lookup utilities
-│   └── habitUtils.test.ts       # Habit utils tests
-├── playwright.config.ts          # Playwright configuration
-└── package.json                  # Dependencies and scripts
+│       ├── page.tsx              # Registration page
+│       └── page.test.tsx         # Registration tests
+├── components/                    # React components
+│   ├── AddHabitForm.tsx          # Habit creation form
+│   ├── AddHabitForm.test.tsx     # Form tests
+│   ├── EditHabitModal.tsx        # Edit habit modal
+│   ├── EditHabitModal.test.tsx   # Modal tests
+│   ├── Footer.tsx                # Footer component
+│   ├── HabitCard.tsx             # Habit card with calendar
+│   ├── HabitCard.test.tsx        # Card tests
+│   ├── Header.tsx                # Header with logout
+│   ├── Header.test.tsx           # Header tests
+│   ├── HeaderWithProfile.tsx     # Header wrapper with profile modal
+│   ├── HeaderWithProfile.test.tsx # Header wrapper tests
+│   ├── LayoutHeader.tsx          # Route-aware header selector
+│   ├── LayoutHeader.test.tsx     # Layout header tests
+│   ├── PostHogPageView.tsx       # PostHog page view tracking
+│   ├── PostHogProvider.tsx       # PostHog analytics provider
+│   ├── ProfileModal.tsx          # User profile editing modal
+│   ├── ProfileModal.test.tsx     # Profile modal tests
+│   ├── ProtectedRoute.tsx        # Auth guard wrapper
+│   ├── ProtectedRoute.test.tsx   # Guard tests
+│   ├── Providers.tsx             # App providers (Auth, PostHog)
+│   └── Providers.test.tsx        # Providers tests
+├── context/                       # React context
+│   ├── AuthContext.tsx           # Authentication context
+│   └── AuthContext.test.tsx      # Context tests
+├── e2e/                           # Playwright E2E tests
+│   ├── auth.spec.ts              # Authentication flow tests
+│   ├── completions.spec.ts       # Completion tracking tests
+│   ├── habits.spec.ts            # Habit management tests
+│   ├── landing.spec.ts           # Landing page tests
+│   ├── global-setup.ts           # Test database setup
+│   └── global-teardown.ts        # Test cleanup
+├── hooks/                         # Custom React hooks
+│   ├── useHabits.ts              # Habit state management
+│   ├── useHabits.test.ts         # Hook tests
+│   ├── useRequireAuth.ts         # Auth redirect hook
+│   └── useRequireAuth.test.ts    # Auth hook tests
+├── lib/                           # Utility libraries
+│   ├── api.ts                    # API client
+│   └── api.test.ts               # API tests
+├── types/                         # TypeScript types
+│   └── habit.ts                  # Habit type definitions
+├── utils/                         # Helper utilities
+│   ├── authUtils.ts              # Registration form validation
+│   ├── authUtils.test.ts         # Auth utils tests
+│   ├── dateUtils.ts              # Date manipulation
+│   ├── dateUtils.test.ts         # Date utils tests
+│   ├── habitUtils.ts             # Habit lookup utilities
+│   └── habitUtils.test.ts        # Habit utils tests
+├── playwright.config.ts           # Playwright configuration
+└── package.json                   # Dependencies and scripts
 ```
 
 ## Testing
@@ -153,7 +167,7 @@ npm test -- hooks/useHabits.test.ts
 npm test -- hooks/useRequireAuth.test.ts
 npm test -- utils/authUtils.test.ts
 npm test -- utils/habitUtils.test.ts
-npm test -- app/page.test.tsx
+npm test -- app/dashboard/page.test.tsx
 npm test -- app/login/page.test.tsx
 npm test -- app/register/page.test.tsx
 npm test -- components/EditHabitModal.test.tsx
