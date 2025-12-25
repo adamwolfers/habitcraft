@@ -5,7 +5,11 @@ import { useAuth } from '@/context/AuthContext';
 import Header from './Header';
 import ProfileModal from './ProfileModal';
 
-export default function HeaderWithProfile() {
+interface HeaderWithProfileProps {
+  variant?: 'app' | 'landing';
+}
+
+export default function HeaderWithProfile({ variant }: HeaderWithProfileProps) {
   const { user, updateUser } = useAuth();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
@@ -23,7 +27,7 @@ export default function HeaderWithProfile() {
 
   return (
     <>
-      <Header onOpenProfileModal={handleOpenProfileModal} />
+      <Header variant={variant} onOpenProfileModal={handleOpenProfileModal} />
       {user && (
         <ProfileModal
           user={user}

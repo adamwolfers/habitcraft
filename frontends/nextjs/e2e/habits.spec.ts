@@ -36,7 +36,7 @@ test.describe('Habit Management', () => {
     await page.getByLabel(/email/i).fill('test@example.com');
     await page.getByLabel(/password/i).fill('Test1234!');
     await page.getByRole('button', { name: /log in/i }).click();
-    await expect(page).toHaveURL('/');
+    await expect(page).toHaveURL('/dashboard');
     // Wait for habits to load
     await expect(page.getByText('Morning Exercise')).toBeVisible();
   });

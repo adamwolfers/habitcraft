@@ -123,7 +123,7 @@ describe('Registration Page - Basic Form Structure', () => {
   });
 
   describe('Auto-redirect for authenticated users', () => {
-    it('should redirect to home if user is already authenticated', () => {
+    it('should redirect to dashboard if user is already authenticated', () => {
       mockUseAuth.mockReturnValue({
         user: {
           id: '123',
@@ -140,7 +140,7 @@ describe('Registration Page - Basic Form Structure', () => {
 
       render(<RegisterPage />);
 
-      expect(mockPush).toHaveBeenCalledWith('/');
+      expect(mockPush).toHaveBeenCalledWith('/dashboard');
     });
 
     it('should not redirect if user is not authenticated', () => {
@@ -357,7 +357,7 @@ describe('Registration Page - Form Submission', () => {
       });
     });
 
-    it('should redirect to home page on successful registration', async () => {
+    it('should redirect to dashboard on successful registration', async () => {
       const user = userEvent.setup();
       mockRegister.mockResolvedValue(undefined);
 
@@ -377,7 +377,7 @@ describe('Registration Page - Form Submission', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith('/');
+        expect(mockPush).toHaveBeenCalledWith('/dashboard');
       });
     });
 

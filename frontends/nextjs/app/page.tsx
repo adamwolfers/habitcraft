@@ -1,113 +1,138 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useHabits } from "@/hooks/useHabits";
-import { useAuth } from "@/context/AuthContext";
-import AddHabitForm from "@/components/AddHabitForm";
-import HabitCard from "@/components/HabitCard";
-import EditHabitModal from "@/components/EditHabitModal";
-import Footer from "@/components/Footer";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import { Habit, HabitFormData } from "@/types/habit";
-import { findHabitById } from "@/utils/habitUtils";
+import Link from 'next/link';
+import Footer from '@/components/Footer';
 
-export default function Home() {
-  const { user } = useAuth();
-  const {
-    habits,
-    createHabit,
-    updateHabit,
-    toggleCompletion,
-    isHabitCompletedOnDate,
-    deleteHabit,
-  } = useHabits(user?.id ?? "");
-  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
-
-  const handleAddHabit = async (habitData: HabitFormData) => {
-    await createHabit(habitData);
-  };
-
-  const handleDeleteHabit = async (habitId: string) => {
-    try {
-      await deleteHabit(habitId);
-    } catch (error) {
-      console.error("Failed to delete habit:", error);
-      // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
-    }
-  };
-
-  const handleEditHabit = (habitId: string) => {
-    const habit = findHabitById(habits, habitId);
-    if (!habit) {
-      console.error(`Attempted to edit non-existent habit: ${habitId}`);
-      return;
-    }
-    setEditingHabit(habit);
-  };
-
-  const handleUpdateHabit = async (
-    habitId: string,
-    updates: Partial<Habit>
-  ) => {
-    await updateHabit(habitId, updates);
-    setEditingHabit(null);
-  };
-
-  const handleCloseModal = () => {
-    setEditingHabit(null);
-  };
-
+export default function LandingPage() {
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-        <div className="max-w-7xl mx-auto px-4 py-8 flex-1">
-          <div className="space-y-6">
-            <AddHabitForm onAdd={handleAddHabit} />
-            {habits.length === 0 ? (
-              <div className="text-center py-16 text-gray-400">
-                <svg
-                  className="w-16 h-16 mx-auto mb-4 text-gray-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                  />
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      {/* Hero Section */}
+      <section className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
+        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+          Build Better Habits,<br />One Day at a Time
+        </h1>
+        <p className="text-lg md:text-xl text-gray-400 max-w-2xl mb-8">
+          Track your habits, visualize your progress, and achieve your habit goals!
+          Simple and focused habit tracking.
+        </p>
+        <Link
+          href="/register"
+          className="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg transition-colors"
+        >
+          Get Started
+        </Link>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16 px-4 bg-gray-800">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Features</h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gray-700 rounded-lg p-6">
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                <p className="text-lg">
-                  No habits yet. Add your first habit to get started!
-                </p>
               </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
-                {habits.map((habit) => (
-                  <HabitCard
-                    key={habit.id}
-                    habit={habit}
-                    onToggleCompletion={toggleCompletion}
-                    onDelete={handleDeleteHabit}
-                    onEdit={handleEditHabit}
-                    isCompletedOnDate={isHabitCompletedOnDate}
-                  />
-                ))}
+              <h3 className="text-xl font-semibold mb-2">Track Your Habits</h3>
+              <p className="text-gray-400">
+                Create custom habits and track your completions with a simple, intuitive interface.
+              </p>
+              {/* Placeholder for GIF: demo-add-habit.gif */}
+              <div className="mt-4 bg-gray-600 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
+                Demo coming soon
               </div>
-            )}
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-6">
+              <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Visualize Your Progress</h3>
+              <p className="text-gray-400">
+                Stay motivated by seeing your weekly progress.
+              </p>
+              {/* Placeholder for GIF: demo-complete-habit.gif */}
+              <div className="mt-4 bg-gray-600 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
+                Demo coming soon
+              </div>
+            </div>
+
+            <div className="bg-gray-700 rounded-lg p-6">
+              <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Achieve Your Habit Goals</h3>
+              <p className="text-gray-400">
+                Watch your consistency grow week after week, and turn habit goals into true habits!
+              </p>
+              {/* Placeholder for GIF: demo-week-navigation.gif */}
+              <div className="mt-4 bg-gray-600 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
+                Demo coming soon
+              </div>
+            </div>
           </div>
         </div>
-        <Footer />
-      </div>
-      {editingHabit && (
-        <EditHabitModal
-          habit={editingHabit}
-          isOpen={!!editingHabit}
-          onClose={handleCloseModal}
-          onUpdate={handleUpdateHabit}
-        />
-      )}
-    </ProtectedRoute>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-16 px-4">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">How It Works</h2>
+          <div className="space-y-8">
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                1
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Create a Habit</h3>
+                <p className="text-gray-400">
+                  Add a new habit with a name, description, icon, and color. Create habits that matter to you.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                2
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Mark Completions</h3>
+                <p className="text-gray-400">
+                  Mark your habits as complete with a single click. Simple and satisfying.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold">
+                3
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold mb-2">Watch Your Progress Grow</h3>
+                <p className="text-gray-400">
+                  Track your weekly progress and build lasting habits through consistent action.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              href="/register"
+              className="inline-block px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold rounded-lg transition-colors"
+            >
+              Get Started
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+    </div>
   );
 }

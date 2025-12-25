@@ -24,7 +24,7 @@ export default function Footer() {
             </a>
           </div>
           <div className="text-gray-500 text-xs">
-            Track your daily habits and build streaks
+            Track your daily habits, build streaks, and visualize your progress!
           </div>
         </div>
       </div>
