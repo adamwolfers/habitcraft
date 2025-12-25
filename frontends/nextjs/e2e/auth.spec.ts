@@ -355,12 +355,15 @@ test.describe('Authentication', () => {
       // Modal should close
       await expect(page.getByRole('dialog')).not.toBeVisible();
 
-      // Name should be updated in header (check the profile button)
-      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
+      // Verify name was updated by reopening profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog').getByLabel(/name/i)).toHaveValue('Updated Via Modal');
+      await page.getByRole('dialog').getByRole('button', { name: /cancel/i }).click();
 
       // Verify persistence after reload
       await page.reload();
-      await expect(page.getByRole('button', { name: /profile/i })).toHaveText('Updated Via Modal');
+      await page.getByRole('button', { name: /profile/i }).click();
+      await expect(page.getByRole('dialog').getByLabel(/name/i)).toHaveValue('Updated Via Modal');
     });
 
     test('should update user email from profile modal', async ({ page }) => {
