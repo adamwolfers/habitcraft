@@ -10,30 +10,30 @@ Add a per-habit toggle to switch between weekly view (current 7-day row) and mon
 
 ## Implementation Steps (TDD)
 
-### Step 1: Add `getCalendarMonth` utility
-- [ ] Write tests in `frontends/nextjs/utils/dateUtils.test.ts`
-- [ ] Implement `getCalendarMonth()` in `frontends/nextjs/utils/dateUtils.ts`
-- [ ] Commit: "Add getCalendarMonth utility function with tests"
+### Step 1: Add `getCalendarMonth` utility ✅
+- [x] Write tests in `frontends/nextjs/utils/dateUtils.test.ts`
+- [x] Implement `getCalendarMonth()` in `frontends/nextjs/utils/dateUtils.ts`
+- [x] Commit: "Add getCalendarMonth utility function with tests"
 
-### Step 2: Add view toggle UI to HabitCard
-- [ ] Write tests in `frontends/nextjs/components/HabitCard.test.tsx`
-- [ ] Add `viewMode` state and toggle UI in `HabitCard.tsx`
-- [ ] Commit: "Add weekly/monthly view toggle to HabitCard"
+### Step 2: Add view toggle UI to HabitCard ✅
+- [x] Write tests in `frontends/nextjs/components/HabitCard.test.tsx`
+- [x] Add `viewMode` state and toggle UI in `HabitCard.tsx`
+- [x] Commit: "Add weekly/monthly view toggle to HabitCard"
 
-### Step 3: Implement monthly calendar grid
-- [ ] Write tests for monthly grid layout
-- [ ] Add `monthOffset` state and 7-column calendar grid
-- [ ] Commit: "Add monthly calendar grid view"
+### Step 3: Implement monthly calendar grid ✅
+- [x] Write tests for monthly grid layout
+- [x] Add `monthOffset` state and 7-column calendar grid
+- [x] Commit: (combined with step 2)
 
-### Step 4: Add month navigation
-- [ ] Write tests for month navigation
-- [ ] Add previous/next/current month buttons
-- [ ] Commit: "Add month navigation for monthly view"
+### Step 4: Add month navigation ✅
+- [x] Write tests for month navigation
+- [x] Add previous/next/current month buttons
+- [x] Commit: (combined with step 2)
 
-### Step 5: Wire up completion toggling
-- [ ] Write tests for completion toggling in monthly view
-- [ ] Wire onClick handlers for day cells
-- [ ] Commit: "Wire up completion toggling in monthly view"
+### Step 5: Wire up completion toggling ✅
+- [x] Write tests for completion toggling in monthly view
+- [x] Wire onClick handlers for day cells
+- [x] Commit: (combined with step 2)
 
 ### Step 6: Final polish
 - [ ] Run `scripts/test-all.sh` and fix any issues

@@ -69,10 +69,10 @@ describe('HabitCard', () => {
 
     // Should have day name buttons (Mon, Tue, etc.)
     const buttons = screen.getAllByRole('button');
-    // Filter out the delete button and navigation buttons
+    // Filter out the delete button, navigation buttons, and view toggle buttons
     const dayButtons = buttons.filter(btn => {
       const label = btn.getAttribute('aria-label');
-      return !label || (!label.includes('Delete') && !label.includes('week'));
+      return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'));
     });
 
     // Should have 7 day buttons
@@ -93,7 +93,7 @@ describe('HabitCard', () => {
     const buttons = screen.getAllByRole('button');
     const dayButtons = buttons.filter(btn => {
       const label = btn.getAttribute('aria-label');
-      return !label || (!label.includes('Delete') && !label.includes('week'));
+      return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'));
     });
 
     // Click the first day button
@@ -312,7 +312,7 @@ describe('HabitCard', () => {
       const buttons = screen.getAllByRole('button');
       const dayButtons = buttons.filter(btn => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week'));
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'));
       });
 
       // Should still have 7 day buttons
@@ -336,7 +336,7 @@ describe('HabitCard', () => {
       const allButtons = container.querySelectorAll('button');
       const dayButtons = Array.from(allButtons).filter(btn => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
       });
 
       // Check each day button exists and is rendered
@@ -371,7 +371,7 @@ describe('HabitCard', () => {
       const buttons = screen.getAllByRole('button');
       const dayButtons = buttons.filter(btn => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
       });
 
       // Try clicking the last day button (should be a future date in next week)
@@ -405,7 +405,7 @@ describe('HabitCard', () => {
       const buttons = screen.getAllByRole('button');
       const dayButtons = buttons.filter(btn => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
       });
 
       // Clear any previous calls
@@ -437,7 +437,7 @@ describe('HabitCard', () => {
       const allButtons = container.querySelectorAll('button');
       const dayButtons = Array.from(allButtons).filter(btn => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit'));
+        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
       });
 
       // Check that at least one button has disabled styling (opacity or cursor)
@@ -493,6 +493,109 @@ describe('HabitCard', () => {
 
       expect(mockOnEdit).toHaveBeenCalledTimes(1);
       expect(mockOnEdit).toHaveBeenCalledWith(mockHabit.id);
+    });
+  });
+
+  describe('View Mode Toggle', () => {
+    it('should render weekly view by default', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+    });
+
+    it('should render Week and Month toggle buttons', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      expect(screen.getByLabelText(/weekly view/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/monthly view/i)).toBeInTheDocument();
+    });
+
+    it('should switch to monthly view when Month button is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      await user.click(screen.getByLabelText(/monthly view/i));
+
+      expect(screen.getByText(/current month/i)).toBeInTheDocument();
+      expect(screen.queryByText(/current week/i)).not.toBeInTheDocument();
+    });
+
+    it('should switch back to weekly view when Week button is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Switch to monthly
+      await user.click(screen.getByLabelText(/monthly view/i));
+      expect(screen.getByText(/current month/i)).toBeInTheDocument();
+
+      // Switch back to weekly
+      await user.click(screen.getByLabelText(/weekly view/i));
+      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+    });
+
+    it('should have aria-pressed=true on active view button', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      const weeklyButton = screen.getByLabelText(/weekly view/i);
+      const monthlyButton = screen.getByLabelText(/monthly view/i);
+
+      expect(weeklyButton).toHaveAttribute('aria-pressed', 'true');
+      expect(monthlyButton).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('should update aria-pressed when switching views', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      const weeklyButton = screen.getByLabelText(/weekly view/i);
+      const monthlyButton = screen.getByLabelText(/monthly view/i);
+
+      await user.click(monthlyButton);
+
+      expect(weeklyButton).toHaveAttribute('aria-pressed', 'false');
+      expect(monthlyButton).toHaveAttribute('aria-pressed', 'true');
     });
   });
 });
