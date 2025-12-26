@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Habit } from '@/types/habit';
-import { getCalendarWeek, getDayName, getMonthDay } from '@/utils/dateUtils';
+import { getCalendarWeek, getCalendarMonth, getDayName, getMonthDay } from '@/utils/dateUtils';
+
+type ViewMode = 'weekly' | 'monthly';
 
 interface HabitCardProps {
   habit: Habit;
@@ -13,8 +15,11 @@ interface HabitCardProps {
 }
 
 export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit, isCompletedOnDate }: HabitCardProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('weekly');
   const [weekOffset, setWeekOffset] = useState(0);
+  const [monthOffset, setMonthOffset] = useState(0);
   const weekDays = getCalendarWeek(weekOffset);
+  const calendarMonth = getCalendarMonth(monthOffset);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 space-y-4">
@@ -52,7 +57,39 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
         </div>
       </div>
 
+      {/* View Mode Toggle */}
+      <div className="flex justify-center">
+        <div className="flex items-center gap-1 bg-gray-700 rounded-lg p-1">
+          <button
+            onClick={() => setViewMode('weekly')}
+            className={`px-3 py-1 text-xs rounded transition-colors ${
+              viewMode === 'weekly'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+            aria-label="Weekly view"
+            aria-pressed={viewMode === 'weekly'}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => setViewMode('monthly')}
+            className={`px-3 py-1 text-xs rounded transition-colors ${
+              viewMode === 'monthly'
+                ? 'bg-gray-600 text-white'
+                : 'text-gray-400 hover:text-white'
+            }`}
+            aria-label="Monthly view"
+            aria-pressed={viewMode === 'monthly'}
+          >
+            Month
+          </button>
+        </div>
+      </div>
+
       <div className="border-t border-gray-700 pt-4">
+        {viewMode === 'weekly' ? (
+        <>
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={() => setWeekOffset(weekOffset - 1)}
@@ -131,6 +168,103 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             );
           })}
         </div>
+        </>
+        ) : (
+        <>
+        {/* Monthly View */}
+        <div className="flex items-center justify-between mb-3">
+          <button
+            onClick={() => setMonthOffset(monthOffset - 1)}
+            className="text-gray-400 hover:text-white transition-colors p-1"
+            aria-label="Previous month"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setMonthOffset(0)}
+            className={`text-xs px-2 py-1 rounded transition-colors ${
+              monthOffset === 0
+                ? 'text-gray-400'
+                : 'text-blue-400 hover:text-blue-300 hover:bg-gray-700'
+            }`}
+            aria-label="Go to current month"
+          >
+            {monthOffset === 0 ? 'Current month' : calendarMonth.monthName}
+          </button>
+
+          <button
+            onClick={() => setMonthOffset(monthOffset + 1)}
+            className="text-gray-400 hover:text-white transition-colors p-1"
+            aria-label="Next month"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Day headers */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+            <div key={day} className="text-xs text-gray-400 text-center">
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar grid */}
+        <div className="grid grid-cols-7 gap-1">
+          {calendarMonth.weeks.flat().map((dateString, index) => {
+            if (dateString === '') {
+              return <div key={`empty-${index}`} className="h-8" />;
+            }
+
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day);
+            const isCompleted = isCompletedOnDate(habit.id, date);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const isFuture = date > today;
+
+            return (
+              <button
+                key={dateString}
+                onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
+                disabled={isFuture}
+                className={`flex items-center justify-center h-8 rounded transition-all ${
+                  isFuture
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-gray-700'
+                }`}
+              >
+                <div
+                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                    isCompleted
+                      ? ''
+                      : 'border border-gray-600'
+                  }`}
+                  style={{
+                    backgroundColor: isCompleted ? habit.color : 'transparent',
+                  }}
+                >
+                  {isCompleted ? (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : (
+                    <span className="text-gray-400">{day}</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+        </>
+        )}
       </div>
     </div>
   );
