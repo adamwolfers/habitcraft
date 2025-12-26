@@ -1,6 +1,6 @@
 # Plan: Weekly/Monthly View Toggle for HabitCard
 
-**Status:** In Progress
+**Status:** Complete
 **Branch:** `feature/habit-view-toggle`
 **Created:** 2025-12-25
 
@@ -35,9 +35,9 @@ Add a per-habit toggle to switch between weekly view (current 7-day row) and mon
 - [x] Wire onClick handlers for day cells
 - [x] Commit: (combined with step 2)
 
-### Step 6: Final polish
-- [ ] Run `scripts/test-all.sh` and fix any issues
-- [ ] Commit: "Complete weekly/monthly view toggle feature"
+### Step 6: Final polish ✅
+- [x] Run all tests - 361 tests passing
+- [x] Commit: "Add weekly/monthly view toggle to HabitCard"
 
 ## Files to Modify
 
