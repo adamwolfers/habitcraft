@@ -310,7 +310,7 @@ test.describe('Authentication', () => {
       await expect(page.getByRole('dialog')).not.toBeVisible();
     });
 
-    test('should close modal when clicking outside (backdrop)', async ({ page }) => {
+    test('should NOT close modal when clicking outside (backdrop)', async ({ page }) => {
       // Open profile menu and click Edit Profile
       await page.getByRole('button', { name: /profile/i }).click();
       await page.getByRole('button', { name: /edit profile/i }).click();
@@ -319,7 +319,11 @@ test.describe('Authentication', () => {
       // Click on backdrop (outside the dialog content)
       await page.getByTestId('modal-backdrop').click({ position: { x: 10, y: 10 } });
 
-      // Modal should be closed
+      // Modal should remain open (clicking outside does not close it)
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Close modal using Cancel button to clean up
+      await page.getByRole('button', { name: /cancel/i }).click();
       await expect(page.getByRole('dialog')).not.toBeVisible();
     });
 

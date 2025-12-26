@@ -242,7 +242,7 @@ test.describe('Habit Management', () => {
       await expect(page.getByText('This should not be saved')).not.toBeVisible();
     });
 
-    test('should close modal by clicking outside', async ({ page }) => {
+    test('should NOT close modal when clicking outside (backdrop)', async ({ page }) => {
       // Create a unique habit for this test (ensures isolation)
       const habitName = await createTestHabit(page, 'Modal Test');
 
@@ -256,7 +256,11 @@ test.describe('Habit Management', () => {
       // Click the backdrop
       await page.getByTestId('modal-backdrop').click({ position: { x: 10, y: 10 } });
 
-      // Modal should close
+      // Modal should remain open (clicking outside does not close it)
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Close modal using Cancel button to clean up
+      await page.getByRole('button', { name: /cancel/i }).click();
       await expect(page.getByRole('dialog')).not.toBeVisible();
     });
   });

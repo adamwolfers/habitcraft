@@ -28,12 +28,6 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     onClose();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only close if clicking the backdrop itself, not its children
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -77,7 +71,6 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       data-testid="modal-backdrop"
-      onClick={handleBackdropClick}
     >
       <div
         className="bg-gray-800 rounded-lg p-6 w-full max-w-md"

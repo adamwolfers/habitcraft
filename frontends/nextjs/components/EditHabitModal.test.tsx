@@ -100,7 +100,7 @@ describe('EditHabitModal', () => {
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
 
-    it('should call onClose when clicking backdrop', async () => {
+    it('should NOT close when clicking backdrop', async () => {
       const user = userEvent.setup();
       render(
         <EditHabitModal
@@ -114,7 +114,8 @@ describe('EditHabitModal', () => {
       const backdrop = screen.getByTestId('modal-backdrop');
       await user.click(backdrop);
 
-      expect(mockOnClose).toHaveBeenCalledTimes(1);
+      expect(mockOnClose).not.toHaveBeenCalled();
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
   });
 

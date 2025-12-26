@@ -49,11 +49,6 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
     onClose();
   };
 
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
-  };
 
   const trimmedName = name.trim();
   const trimmedEmail = email.trim();
@@ -131,7 +126,6 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
       data-testid="modal-backdrop"
-      onClick={handleBackdropClick}
     >
       <div
         className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
