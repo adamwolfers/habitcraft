@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { Habit } from '@/types/habit';
 import { getCalendarWeek, getCalendarMonth, getDayName, getMonthDay } from '@/utils/dateUtils';
-
-type ViewMode = 'weekly' | 'monthly';
+import { useHabitViewMode } from '@/hooks/useHabitViewMode';
 
 interface HabitCardProps {
   habit: Habit;
@@ -15,7 +14,7 @@ interface HabitCardProps {
 }
 
 export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit, isCompletedOnDate }: HabitCardProps) {
-  const [viewMode, setViewMode] = useState<ViewMode>('weekly');
+  const [viewMode, setViewMode] = useHabitViewMode(habit.id);
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const weekDays = getCalendarWeek(weekOffset);
