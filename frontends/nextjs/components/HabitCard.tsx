@@ -100,17 +100,19 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             </svg>
           </button>
 
-          <button
-            onClick={() => setWeekOffset(0)}
-            className={`text-xs px-2 py-1 rounded transition-colors ${
-              weekOffset === 0
-                ? 'text-gray-400'
-                : 'text-blue-400 hover:text-blue-300 hover:bg-gray-700'
-            }`}
-            aria-label="Go to current week"
-          >
-            {weekOffset === 0 ? 'Current week' : `${getMonthDay(weekDays[0])} - ${getMonthDay(weekDays[6])}`}
-          </button>
+          {weekOffset === 0 ? (
+            <span className="text-xs px-2 py-1 font-bold text-gray-300">
+              {getMonthDay(weekDays[0])} - {getMonthDay(weekDays[6])}
+            </span>
+          ) : (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="text-xs px-2 py-1 rounded transition-colors text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+              aria-label="Go to current week"
+            >
+              {getMonthDay(weekDays[0])} - {getMonthDay(weekDays[6])}
+            </button>
+          )}
 
           <button
             onClick={() => setWeekOffset(weekOffset + 1)}
@@ -182,17 +184,19 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             </svg>
           </button>
 
-          <button
-            onClick={() => setMonthOffset(0)}
-            className={`text-xs px-2 py-1 rounded transition-colors ${
-              monthOffset === 0
-                ? 'text-gray-400'
-                : 'text-blue-400 hover:text-blue-300 hover:bg-gray-700'
-            }`}
-            aria-label="Go to current month"
-          >
-            {monthOffset === 0 ? 'Current month' : calendarMonth.monthName}
-          </button>
+          {monthOffset === 0 ? (
+            <span className="text-xs px-2 py-1 font-bold text-gray-300">
+              {calendarMonth.monthName}
+            </span>
+          ) : (
+            <button
+              onClick={() => setMonthOffset(0)}
+              className="text-xs px-2 py-1 rounded transition-colors text-blue-400 hover:text-blue-300 hover:bg-gray-700"
+              aria-label="Go to current month"
+            >
+              {calendarMonth.monthName}
+            </button>
+          )}
 
           <button
             onClick={() => setMonthOffset(monthOffset + 1)}
