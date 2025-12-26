@@ -1,4 +1,4 @@
-import { formatDate, isToday, getLastNDays, getDayName, getMonthDay, getCalendarWeek, getCalendarMonth, CalendarMonth } from './dateUtils';
+import { formatDate, isToday, getLastNDays, getDayName, getMonthDay, getCalendarWeek, getCalendarMonth } from './dateUtils';
 
 describe('dateUtils', () => {
   describe('formatDate', () => {
@@ -216,7 +216,7 @@ describe('dateUtils', () => {
       if (allDates.length > 0) {
         // The first of the month should appear in the correct day position
         const firstDayDate = allDates[0];
-        const [year, m, day] = firstDayDate.split('-').map(Number);
+        const [, , day] = firstDayDate.split('-').map(Number);
         expect(day).toBe(1); // Should be first of month
       }
     });
