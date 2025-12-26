@@ -1,3 +1,10 @@
+export interface CalendarMonth {
+  year: number;
+  month: number; // 0-11
+  monthName: string;
+  weeks: string[][]; // 4-6 rows of 7 date strings (empty string for padding)
+}
+
 export const formatDate = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -54,4 +61,56 @@ export const getCalendarWeek = (weekOffset: number = 0): string[] => {
   }
 
   return week;
+};
+
+export const getCalendarMonth = (monthOffset: number = 0): CalendarMonth => {
+  const today = new Date();
+  const targetDate = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+
+  const year = targetDate.getFullYear();
+  const month = targetDate.getMonth();
+
+  // Get month name
+  const monthName = targetDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  // Get first day of month (0 = Sunday, 6 = Saturday)
+  const firstDayOfWeek = targetDate.getDay();
+
+  // Get number of days in month
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  // Build calendar grid
+  const weeks: string[][] = [];
+  let currentDay = 1;
+
+  // Calculate how many weeks we need (4-6 rows)
+  const totalCells = firstDayOfWeek + daysInMonth;
+  const numWeeks = Math.ceil(totalCells / 7);
+
+  for (let week = 0; week < numWeeks; week++) {
+    const weekDays: string[] = [];
+
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+      const cellIndex = week * 7 + dayOfWeek;
+
+      if (cellIndex < firstDayOfWeek || currentDay > daysInMonth) {
+        // Padding for days before month starts or after month ends
+        weekDays.push('');
+      } else {
+        // Actual day of the month
+        const date = new Date(year, month, currentDay);
+        weekDays.push(formatDate(date));
+        currentDay++;
+      }
+    }
+
+    weeks.push(weekDays);
+  }
+
+  return {
+    year,
+    month,
+    monthName,
+    weeks,
+  };
 };
