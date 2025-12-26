@@ -653,4 +653,140 @@ describe('Authentication Integration Tests', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('Password Change Flow', () => {
+    it('should change password and allow login with new password', async () => {
+      const newPassword = 'NewSecurePass123!';
+
+      // Step 1: Login with original password
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      expect(loginResponse.status).toBe(200);
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Step 2: Change password
+      const changeResponse = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Cookie', cookieString)
+        .send({
+          currentPassword: testUsers.user1.password,
+          newPassword: newPassword,
+          confirmPassword: newPassword,
+        });
+
+      expect(changeResponse.status).toBe(200);
+      expect(changeResponse.body.message).toContain('successfully');
+
+      // Step 3: Login with new password
+      const newLoginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: newPassword,
+        });
+
+      expect(newLoginResponse.status).toBe(200);
+      expect(newLoginResponse.body.user.email).toBe(testUsers.user1.email);
+    });
+
+    it('should reject login with old password after change', async () => {
+      const newPassword = 'ChangedPassword456!';
+
+      // Step 1: Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Step 2: Change password
+      const changeResponse = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Cookie', cookieString)
+        .send({
+          currentPassword: testUsers.user1.password,
+          newPassword: newPassword,
+          confirmPassword: newPassword,
+        });
+
+      expect(changeResponse.status).toBe(200);
+
+      // Step 3: Try to login with old password - should fail
+      const oldPasswordLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      expect(oldPasswordLogin.status).toBe(401);
+      expect(oldPasswordLogin.body.error.toLowerCase()).toContain('invalid');
+    });
+
+    it('should revoke refresh tokens after password change', async () => {
+      const newPassword = 'TokenRevoke789!';
+
+      // Step 1: Login
+      const loginResponse = await request(app)
+        .post('/api/v1/auth/login')
+        .send({
+          email: testUsers.user1.email,
+          password: testUsers.user1.password,
+        });
+
+      expect(loginResponse.status).toBe(200);
+
+      const cookies = loginResponse.headers['set-cookie'];
+      const cookieString = cookies.map(c => c.split(';')[0]).join('; ');
+
+      // Extract refresh token
+      const refreshCookie = cookies.find(c => c.startsWith('refreshToken='));
+      const refreshToken = refreshCookie.match(/refreshToken=([^;]+)/)[1];
+
+      // Step 2: Verify refresh token works before password change
+      const refreshBefore = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', `refreshToken=${refreshToken}`);
+
+      expect(refreshBefore.status).toBe(200);
+
+      // Step 3: Change password
+      const changeResponse = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Cookie', cookieString)
+        .send({
+          currentPassword: testUsers.user1.password,
+          newPassword: newPassword,
+          confirmPassword: newPassword,
+        });
+
+      expect(changeResponse.status).toBe(200);
+
+      // Step 4: Verify refresh token is revoked after password change
+      const refreshAfter = await request(app)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', `refreshToken=${refreshToken}`);
+
+      expect(refreshAfter.status).toBe(401);
+
+      // Step 5: Verify in database that all refresh tokens are revoked
+      const pool = getTestPool();
+      const dbResult = await pool.query(
+        'SELECT COUNT(*) as count FROM refresh_tokens WHERE user_id = $1 AND revoked = false',
+        [testUsers.user1.id]
+      );
+      expect(parseInt(dbResult.rows[0].count)).toBe(0);
+    });
+  });
 });

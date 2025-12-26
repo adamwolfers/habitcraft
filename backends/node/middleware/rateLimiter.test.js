@@ -6,6 +6,14 @@ jest.mock('../db/pool');
 // Note: These tests verify rate limiting behavior on auth endpoints.
 // We must disable SKIP_RATE_LIMIT to actually test rate limiting.
 
+describe('Rate Limiter Exports', () => {
+  it('should export passwordChangeLimiter', () => {
+    const { passwordChangeLimiter } = require('./rateLimiter');
+    expect(passwordChangeLimiter).toBeDefined();
+    expect(typeof passwordChangeLimiter).toBe('function');
+  });
+});
+
 describe('Rate Limiting', () => {
   let app;
   let pool;

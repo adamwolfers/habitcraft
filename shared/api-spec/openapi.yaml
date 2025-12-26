@@ -352,6 +352,115 @@ paths:
               example:
                 error: "Email is already in use"
 
+  /users/me/password:
+    put:
+      tags:
+        - Users
+      summary: Change password
+      description: |
+        Change the authenticated user's password. Requires current password verification.
+        On success, all refresh tokens are revoked (user must re-login on other devices).
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+                - confirmPassword
+              properties:
+                currentPassword:
+                  type: string
+                  format: password
+                  description: User's current password
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: New password (minimum 8 characters)
+                confirmPassword:
+                  type: string
+                  format: password
+                  description: Must match newPassword
+            example:
+              currentPassword: "OldPass123!"
+              newPassword: "NewSecure456!"
+              confirmPassword: "NewSecure456!"
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              example:
+                message: "Password changed successfully"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        msg:
+                          type: string
+                        path:
+                          type: string
+              examples:
+                missingField:
+                  summary: Missing required field
+                  value:
+                    errors:
+                      - msg: "Current password is required"
+                        path: "currentPassword"
+                passwordTooShort:
+                  summary: Password too short
+                  value:
+                    errors:
+                      - msg: "New password must be at least 8 characters"
+                        path: "newPassword"
+                passwordMismatch:
+                  summary: Passwords don't match
+                  value:
+                    errors:
+                      - msg: "Passwords do not match"
+                        path: "confirmPassword"
+        '401':
+          description: Invalid current password or missing authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid current password"
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          description: Too many requests (rate limited)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Too many password change attempts, please try again later"
+
   /habits:
     get:
       tags:

@@ -1,7 +1,12 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
+const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
 const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
+const { passwordChangeLimiter } = require('../middleware/rateLimiter');
+const { sanitizeBody } = require('../middleware/sanitize');
+const tokenService = require('../services/tokenService');
+const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 
 const router = express.Router();
 
@@ -19,6 +24,20 @@ const updateProfileValidation = [
     .toLowerCase()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Invalid email format')
+];
+
+const changePasswordValidation = [
+  body('currentPassword')
+    .notEmpty().withMessage('Current password is required'),
+  body('newPassword')
+    .isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
+  body('confirmPassword')
+    .custom((value, { req }) => {
+      if (value !== req.body.newPassword) {
+        throw new Error('Passwords do not match');
+      }
+      return true;
+    })
 ];
 
 // GET /api/v1/users/me
@@ -99,6 +118,62 @@ router.put('/me', jwtAuthMiddleware, updateProfileValidation, async (req, res) =
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error updating user profile:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/v1/users/me/password
+router.put('/me/password', jwtAuthMiddleware, passwordChangeLimiter, sanitizeBody, changePasswordValidation, async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+
+    // Fetch user with password hash
+    const userResult = await pool.query(
+      'SELECT id, email, password_hash FROM users WHERE id = $1',
+      [req.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Verify current password
+    const validPassword = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!validPassword) {
+      logSecurityEvent(SECURITY_EVENTS.PASSWORD_CHANGE_FAILURE, req, {
+        userId: req.userId,
+        reason: 'invalid_password'
+      });
+      return res.status(401).json({ error: 'Invalid current password' });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in database
+    await pool.query(
+      'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+      [hashedPassword, req.userId]
+    );
+
+    // Revoke all refresh tokens (force re-login on other devices)
+    await tokenService.revokeAllUserTokens(req.userId);
+
+    logSecurityEvent(SECURITY_EVENTS.PASSWORD_CHANGE_SUCCESS, req, {
+      userId: req.userId,
+      email: user.email
+    });
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

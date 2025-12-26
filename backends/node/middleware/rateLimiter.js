@@ -46,8 +46,23 @@ const refreshLimiter = rateLimit({
   skip: shouldSkip
 });
 
+// Rate limiter for password change - strict to prevent brute force attacks
+const passwordChangeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: {
+    error: 'Too many password change attempts',
+    message: 'Too many password change attempts from this IP, please try again after 15 minutes',
+    statusCode: 429
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: shouldSkip
+});
+
 module.exports = {
   loginLimiter,
   registerLimiter,
-  refreshLimiter
+  refreshLimiter,
+  passwordChangeLimiter
 };
