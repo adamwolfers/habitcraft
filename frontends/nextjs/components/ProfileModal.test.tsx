@@ -108,6 +108,155 @@ describe('ProfileModal', () => {
 
       expect(mockOnClose).toHaveBeenCalledTimes(1);
     });
+
+    it('should clear password error when modal is closed and reopened', async () => {
+      const user = userEvent.setup();
+      const mockOnChangePassword = jest.fn();
+      const { rerender } = render(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onChangePassword={mockOnChangePassword}
+        />
+      );
+
+      // Trigger a password validation error
+      await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
+      await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass123');
+      await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/current password is required/i)).toBeInTheDocument();
+      });
+
+      // Close the modal
+      await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+      // Rerender with isOpen=false then true (simulating close/reopen)
+      rerender(
+        <ProfileModal
+          user={mockUser}
+          isOpen={false}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onChangePassword={mockOnChangePassword}
+        />
+      );
+
+      rerender(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onChangePassword={mockOnChangePassword}
+        />
+      );
+
+      // Error should be cleared
+      expect(screen.queryByText(/current password is required/i)).not.toBeInTheDocument();
+    });
+
+    it('should clear password success message when modal is closed and reopened', async () => {
+      const user = userEvent.setup();
+      const mockOnChangePassword = jest.fn().mockResolvedValue(undefined);
+      const { rerender } = render(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onChangePassword={mockOnChangePassword}
+        />
+      );
+
+      // Successfully change password
+      await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+      await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+      await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+      await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/password changed successfully/i)).toBeInTheDocument();
+      });
+
+      // Close the modal
+      await user.click(screen.getByRole('button', { name: /cancel/i }));
+
+      // Rerender with isOpen=false then true (simulating close/reopen)
+      rerender(
+        <ProfileModal
+          user={mockUser}
+          isOpen={false}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onChangePassword={mockOnChangePassword}
+        />
+      );
+
+      rerender(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onChangePassword={mockOnChangePassword}
+        />
+      );
+
+      // Success message should be cleared
+      expect(screen.queryByText(/password changed successfully/i)).not.toBeInTheDocument();
+    });
+
+    it('should clear profile update error when modal is closed and reopened', async () => {
+      const user = userEvent.setup();
+      mockOnUpdate.mockRejectedValue(new Error('Update failed'));
+      const { rerender } = render(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Trigger a profile update error
+      const nameInput = screen.getByLabelText(/name/i);
+      await user.clear(nameInput);
+      await user.type(nameInput, 'New Name');
+      await user.click(screen.getByRole('button', { name: /save/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/update failed/i)).toBeInTheDocument();
+      });
+
+      // Close the modal via X button
+      await user.click(screen.getByRole('button', { name: /close/i }));
+
+      // Rerender with isOpen=false then true (simulating close/reopen)
+      rerender(
+        <ProfileModal
+          user={mockUser}
+          isOpen={false}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      rerender(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Error should be cleared
+      expect(screen.queryByText(/update failed/i)).not.toBeInTheDocument();
+    });
   });
 
   describe('User Info Display', () => {

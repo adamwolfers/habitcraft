@@ -44,6 +44,8 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
 
   const handleClose = () => {
     setError(null);
+    setPasswordError(null);
+    setPasswordSuccess(false);
     onClose();
   };
 
