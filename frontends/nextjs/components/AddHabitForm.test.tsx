@@ -48,6 +48,7 @@ describe('AddHabitForm', () => {
       name: 'Morning Run',
       description: '5km jog',
       color: '#3b82f6', // Default color
+      icon: '🏃', // Default icon
       frequency: 'daily',
     });
   });
@@ -87,6 +88,7 @@ describe('AddHabitForm', () => {
       name: 'Exercise',
       description: 'Workout',
       color: '#3b82f6',
+      icon: '🏃',
       frequency: 'daily',
     });
   });
@@ -120,6 +122,7 @@ describe('AddHabitForm', () => {
       name: 'Read',
       description: '',
       color: '#10b981', // Second color in PRESET_COLORS
+      icon: '🏃',
       frequency: 'daily',
     });
   });
@@ -160,6 +163,139 @@ describe('AddHabitForm', () => {
     expect(mockOnAdd).not.toHaveBeenCalled();
   });
 
+  describe('Icon Picker', () => {
+    it('should render icon picker when form is open', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Icon label should be visible
+      expect(screen.getByText('Icon')).toBeInTheDocument();
+
+      // Should have icon buttons (first icon is running emoji)
+      expect(screen.getByTestId('icon-option-🏃')).toBeInTheDocument();
+    });
+
+    it('should render all preset icons', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Check for a sample of icons from each category
+      expect(screen.getByTestId('icon-option-🏃')).toBeInTheDocument(); // Fitness
+      expect(screen.getByTestId('icon-option-📚')).toBeInTheDocument(); // Learning
+      expect(screen.getByTestId('icon-option-💧')).toBeInTheDocument(); // Hydration
+      expect(screen.getByTestId('icon-option-🧘')).toBeInTheDocument(); // Meditation
+    });
+
+    it('should show default icon as selected', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // First icon (🏃) should be selected by default
+      const defaultIcon = screen.getByTestId('icon-option-🏃');
+      expect(defaultIcon).toHaveClass('ring-2', 'ring-white', 'scale-110');
+    });
+
+    it('should allow selecting a different icon', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Click on a different icon
+      const bookIcon = screen.getByTestId('icon-option-📚');
+      await user.click(bookIcon);
+
+      // Book icon should now be selected
+      expect(bookIcon).toHaveClass('ring-2', 'ring-white', 'scale-110');
+
+      // Running icon should no longer be selected
+      const runIcon = screen.getByTestId('icon-option-🏃');
+      expect(runIcon).not.toHaveClass('ring-2');
+    });
+
+    it('should include default icon in form submission', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Fill in name
+      const nameInput = screen.getByLabelText(/habit name/i);
+      await user.type(nameInput, 'Morning Run');
+
+      // Submit form without changing icon
+      await user.click(screen.getByText('Add Habit'));
+
+      expect(mockOnAdd).toHaveBeenCalledWith({
+        name: 'Morning Run',
+        description: '',
+        color: '#3b82f6',
+        icon: '🏃', // Default icon
+        frequency: 'daily',
+      });
+    });
+
+    it('should include selected icon in form submission', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Fill in name
+      const nameInput = screen.getByLabelText(/habit name/i);
+      await user.type(nameInput, 'Read Books');
+
+      // Select the book icon
+      await user.click(screen.getByTestId('icon-option-📚'));
+
+      // Submit form
+      await user.click(screen.getByText('Add Habit'));
+
+      expect(mockOnAdd).toHaveBeenCalledWith({
+        name: 'Read Books',
+        description: '',
+        color: '#3b82f6',
+        icon: '📚', // Selected icon
+        frequency: 'daily',
+      });
+    });
+
+    it('should reset icon to default after successful submission', async () => {
+      const user = userEvent.setup();
+      render(<AddHabitForm onAdd={mockOnAdd} />);
+
+      // Open form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Select a different icon
+      await user.click(screen.getByTestId('icon-option-📚'));
+
+      // Fill in name and submit
+      const nameInput = screen.getByLabelText(/habit name/i);
+      await user.type(nameInput, 'Test Habit');
+      await user.click(screen.getByText('Add Habit'));
+
+      // Reopen form
+      await user.click(screen.getByText('+ Add New Habit'));
+
+      // Default icon should be selected again
+      const defaultIcon = screen.getByTestId('icon-option-🏃');
+      expect(defaultIcon).toHaveClass('ring-2', 'ring-white', 'scale-110');
+    });
+  });
+
   it('should allow submitting without description', async () => {
     const user = userEvent.setup();
     render(<AddHabitForm onAdd={mockOnAdd} />);
@@ -178,6 +314,7 @@ describe('AddHabitForm', () => {
       name: 'Walk',
       description: '',
       color: '#3b82f6',
+      icon: '🏃',
       frequency: 'daily',
     });
   });

@@ -65,6 +65,28 @@ test.describe('Habit Management', () => {
       await expect(page.getByText('This is a test habit created by E2E tests')).toBeVisible();
     });
 
+    test('should create a habit with selected icon', async ({ page }) => {
+      // Generate unique habit name to avoid conflicts
+      const habitName = `Icon Test Habit ${Date.now()}`;
+
+      // Click the "Add New Habit" button
+      await page.getByRole('button', { name: /add new habit/i }).click();
+
+      // Fill in the habit form
+      await page.getByLabel(/habit name/i).fill(habitName);
+
+      // Select the book icon (📚)
+      await page.getByTestId('icon-option-📚').click();
+
+      // Submit the form
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+
+      // Verify the new habit appears with the selected icon
+      await expect(page.getByText(habitName)).toBeVisible();
+      const habitCard = getHabitCard(page, habitName);
+      await expect(habitCard.locator('text=📚')).toBeVisible();
+    });
+
     test('should require habit name', async ({ page }) => {
       // Click the "Add New Habit" button
       await page.getByRole('button', { name: /add new habit/i }).click();

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Habit } from '@/types/habit';
+import { PRESET_COLORS, PRESET_ICONS } from '@/utils/habitUtils';
 
 interface EditHabitModalProps {
   habit: Habit;
@@ -9,47 +10,6 @@ interface EditHabitModalProps {
   onClose: () => void;
   onUpdate: (habitId: string, updates: Partial<Habit>) => Promise<void>;
 }
-
-const PRESET_COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#f97316', // orange
-];
-
-const PRESET_ICONS = [
-  // Row 1: Fitness & Health
-  '🏃', // running/exercise
-  '📚', // reading/learning
-  '🧘', // meditation/yoga
-  '💧', // water/hydration
-  '🥗', // healthy eating
-  '💪', // strength/fitness
-  '🎯', // goals/targets
-  '✍️', // writing/journaling
-  // Row 2: Daily Activities
-  '😴', // sleep/rest
-  '🚶', // walking
-  '🎨', // creative/art
-  '🎵', // music practice
-  '🧹', // cleaning/organizing
-  '💻', // coding/work
-  '🌱', // gardening/plants
-  '🙏', // gratitude/prayer
-  // Row 3: Wellness & Routines
-  '☕', // morning routine
-  '🚫', // quit bad habit
-  '📱', // limit screen time
-  '🎮', // gaming/hobbies
-  '🧠', // learning/brain
-  '💊', // medication/vitamins
-  '🦷', // dental care
-  '🌙', // evening routine
-];
 
 export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: EditHabitModalProps) {
   const [name, setName] = useState(habit.name);
@@ -198,7 +158,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
 
             <div>
               <label className="block text-sm font-medium mb-2">Icon</label>
-              <div className="flex flex-wrap gap-2">
+              <div className="inline-grid grid-cols-8 gap-2">
                 {PRESET_ICONS.map((i) => (
                   <button
                     key={i}

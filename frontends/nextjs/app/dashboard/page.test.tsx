@@ -28,6 +28,15 @@ jest.mock('@/hooks/useHabits');
 // Mock the habitUtils module
 jest.mock('@/utils/habitUtils', () => ({
   findHabitById: jest.fn(),
+  PRESET_COLORS: [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+    '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',
+  ],
+  PRESET_ICONS: [
+    '🏃', '📚', '🧘', '💧', '🥗', '💪', '🎯', '✍️',
+    '😴', '🚶', '🎨', '🎵', '🧹', '💻', '🌱', '🙏',
+    '☕', '🚫', '📱', '🎮', '🧠', '💊', '🦷', '🌙',
+  ],
 }));
 
 const mockFindHabitById = habitUtilsModule.findHabitById as jest.MockedFunction<typeof habitUtilsModule.findHabitById>;
@@ -326,6 +335,7 @@ describe('Dashboard Page - Delete Functionality', () => {
         name: 'New Habit',
         description: 'Test description',
         color: '#3b82f6',
+        icon: '🏃',
         frequency: 'daily',
       });
     });

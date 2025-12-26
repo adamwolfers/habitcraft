@@ -290,11 +290,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Form with validation
   - [x] Habit customization (name, frequency, color, icon)
   - [x] Connected to API
-  - [ ] **Icon Selector**
-    - [ ] Write tests for icon picker rendering
-    - [ ] Implement icon picker UI (reuse from EditHabitModal)
-    - [ ] Write tests for icon selection in form submission
-    - [ ] Connect icon selection to createHabit API
+  - [x] **Icon Selector**
+    - [x] Write tests for icon picker rendering
+    - [x] Implement icon picker UI (reuse from EditHabitModal)
+    - [x] Write tests for icon selection in form submission
+    - [x] Connect icon selection to createHabit API
 - [x] **HabitCard Component**
   - [x] Calendar week view (Sunday-Saturday)
   - [x] Week navigation (previous/next)

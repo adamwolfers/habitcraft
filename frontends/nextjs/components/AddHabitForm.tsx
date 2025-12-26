@@ -2,27 +2,18 @@
 
 import { useState } from 'react';
 import { HabitFormData } from '@/types/habit';
+import { PRESET_COLORS, PRESET_ICONS } from '@/utils/habitUtils';
 
 interface AddHabitFormProps {
   onAdd: (habit: HabitFormData) => Promise<void> | void;
 }
-
-const PRESET_COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#f59e0b', // amber
-  '#ef4444', // red
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#06b6d4', // cyan
-  '#f97316', // orange
-];
 
 export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [color, setColor] = useState(PRESET_COLORS[0]);
+  const [icon, setIcon] = useState(PRESET_ICONS[0]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +23,14 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           name: name.trim(),
           description: description.trim(),
           color,
+          icon,
           frequency: 'daily' // Default to daily for now
         });
         // Only clear form and close if successful
         setName('');
         setDescription('');
         setColor(PRESET_COLORS[0]);
+        setIcon(PRESET_ICONS[0]);
         setIsOpen(false);
       } catch (error) {
         console.error('Error adding habit:', error);
@@ -102,6 +95,25 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
               }`}
               style={{ backgroundColor: c }}
             />
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">Icon</label>
+        <div className="inline-grid grid-cols-8 gap-2">
+          {PRESET_ICONS.map((i) => (
+            <button
+              key={i}
+              type="button"
+              data-testid={`icon-option-${i}`}
+              onClick={() => setIcon(i)}
+              className={`w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 transition-all text-xl flex items-center justify-center ${
+                icon === i ? 'ring-2 ring-white scale-110' : ''
+              }`}
+            >
+              {i}
+            </button>
           ))}
         </div>
       </div>
