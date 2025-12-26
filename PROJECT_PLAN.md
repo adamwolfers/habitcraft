@@ -141,8 +141,8 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] **Update Name (PUT /api/v1/users/me)**
   - [x] **Update Email (PUT /api/v1/users/me)**
   - [ ] **Change Password (PUT /api/v1/users/me/password)**
-    - [ ] Write tests for password change endpoint (require current password)
-    - [ ] Implement password change in backend
+    - [x] Write tests for password change endpoint (require current password)
+    - [x] Implement password change in backend
     - [ ] Add password change UI in frontend
   - [ ] **User Profile Management Modal**
     - [x] **Modal Infrastructure**

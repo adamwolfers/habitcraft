@@ -2,9 +2,15 @@ const request = require('supertest');
 const app = require('../app');
 const pool = require('../db/pool');
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
+const tokenService = require('../services/tokenService');
+const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 
 // Mock the database pool
 jest.mock('../db/pool');
+jest.mock('bcrypt');
+jest.mock('../services/tokenService');
+jest.mock('../utils/securityLogger');
 
 describe('Users API', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -371,6 +377,212 @@ describe('Users API', () => {
         .send({ email: 'newemail@example.com' });
 
       expect(response.status).toBe(401);
+    });
+  });
+
+  describe('PUT /api/v1/users/me/password', () => {
+    const validPasswordChange = {
+      currentPassword: 'OldPass123!',
+      newPassword: 'NewSecure456!',
+      confirmPassword: 'NewSecure456!'
+    };
+
+    beforeEach(() => {
+      // Reset mocks
+      bcrypt.compare.mockReset();
+      bcrypt.hash.mockReset();
+      tokenService.revokeAllUserTokens.mockReset();
+      logSecurityEvent.mockReset();
+    });
+
+    it('should return 401 without authentication token', async () => {
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .send(validPasswordChange);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 400 for missing currentPassword', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          newPassword: 'NewSecure456!',
+          confirmPassword: 'NewSecure456!'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].path).toBe('currentPassword');
+    });
+
+    it('should return 400 for missing newPassword', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          currentPassword: 'OldPass123!',
+          confirmPassword: 'NewSecure456!'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].path).toBe('newPassword');
+    });
+
+    it('should return 400 for newPassword too short', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          currentPassword: 'OldPass123!',
+          newPassword: 'short',
+          confirmPassword: 'short'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toContain('8 characters');
+    });
+
+    it('should return 400 when passwords do not match', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          currentPassword: 'OldPass123!',
+          newPassword: 'NewSecure456!',
+          confirmPassword: 'DifferentPass789!'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toContain('match');
+    });
+
+    it('should return 404 if user not found', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      pool.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(validPasswordChange);
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('User not found');
+    });
+
+    it('should return 401 for wrong current password', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        password_hash: 'hashed_password'
+      };
+
+      pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+      bcrypt.compare.mockResolvedValueOnce(false);
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(validPasswordChange);
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Invalid current password');
+      expect(logSecurityEvent).toHaveBeenCalledWith(
+        SECURITY_EVENTS.PASSWORD_CHANGE_FAILURE,
+        expect.any(Object),
+        expect.objectContaining({ userId: mockUserId, reason: 'invalid_password' })
+      );
+    });
+
+    it('should change password successfully with valid data', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        password_hash: 'old_hashed_password'
+      };
+
+      pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+      bcrypt.compare.mockResolvedValueOnce(true);
+      bcrypt.hash.mockResolvedValueOnce('new_hashed_password');
+      pool.query.mockResolvedValueOnce({ rows: [{ id: mockUserId }] });
+      tokenService.revokeAllUserTokens.mockResolvedValueOnce();
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(validPasswordChange);
+
+      expect(response.status).toBe(200);
+      expect(response.body.message).toBe('Password changed successfully');
+      expect(bcrypt.hash).toHaveBeenCalledWith('NewSecure456!', 10);
+      expect(tokenService.revokeAllUserTokens).toHaveBeenCalledWith(mockUserId);
+      expect(logSecurityEvent).toHaveBeenCalledWith(
+        SECURITY_EVENTS.PASSWORD_CHANGE_SUCCESS,
+        expect.any(Object),
+        expect.objectContaining({ userId: mockUserId })
+      );
+    });
+
+    it('should update password_hash in database', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        password_hash: 'old_hashed_password'
+      };
+
+      pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+      bcrypt.compare.mockResolvedValueOnce(true);
+      bcrypt.hash.mockResolvedValueOnce('new_hashed_password');
+      pool.query.mockResolvedValueOnce({ rows: [{ id: mockUserId }] });
+      tokenService.revokeAllUserTokens.mockResolvedValueOnce();
+
+      await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(validPasswordChange);
+
+      expect(pool.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE users'),
+        expect.arrayContaining(['new_hashed_password', mockUserId])
+      );
+    });
+
+    it('should revoke all refresh tokens after password change', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        password_hash: 'old_hashed_password'
+      };
+
+      pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+      bcrypt.compare.mockResolvedValueOnce(true);
+      bcrypt.hash.mockResolvedValueOnce('new_hashed_password');
+      pool.query.mockResolvedValueOnce({ rows: [{ id: mockUserId }] });
+      tokenService.revokeAllUserTokens.mockResolvedValueOnce();
+
+      await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(validPasswordChange);
+
+      expect(tokenService.revokeAllUserTokens).toHaveBeenCalledWith(mockUserId);
     });
   });
 });
