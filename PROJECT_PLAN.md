@@ -137,7 +137,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] **Frontend: Update AuthContext implementation (Green phase)**
   - [x] **Clean-up: Remove deprecated /auth/me endpoint**
   - [x] **Documentation: Update OpenAPI specification**
-- [ ] **User Profile Management**
+- [x] **User Profile Management**
   - [x] **Update Name (PUT /api/v1/users/me)**
   - [x] **Update Email (PUT /api/v1/users/me)**
   - [x] **Change Password (PUT /api/v1/users/me/password)**
@@ -541,25 +541,21 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Functionality Checklist
 
-- [ ] User can register with email/password
-- [ ] User can login and receive JWT tokens
-- [ ] User can access protected routes with valid token
-- [ ] User can create, read, update, delete habits
-- [ ] User can track habit completions
-- [ ] User can view calendar with completion status
-- [ ] Users are isolated (can't see each other's data)
-- [ ] Token refresh works automatically
-- [ ] Logout clears authentication state
+- [x] User can register with email/password
+- [x] User can login and receive JWT tokens
+- [x] User can access protected routes with valid token
+- [x] User can create, read, update, delete habits
+- [x] User can track habit completions
+- [x] User can view calendar with completion status
+- [x] Users are isolated (can't see each other's data)
+- [x] Token refresh works automatically
+- [x] Logout clears authentication state
 
 ### Quality Checklist
 
 - [ ] Comprehensive review of all FE & BE unit tests (evaluate for redundancies, gaps, and refactoring opportunities)
 - [x] Review E2E tests for proper isolation (each test should be independent and not rely on state from other tests)
-- [ ] All backend tests passing
-- [ ] All frontend tests passing
-- [ ] All integration tests passing
-- [ ] All E2E tests passing
-- [ ] Code coverage >80% (backend and frontend)
+- [ ] Code coverage >90% (backend and frontend)
 - [ ] Documentation complete and accurate
 - [ ] Security hardening complete
 
@@ -569,28 +565,11 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Environment variables properly configured
 - [x] Database migrations work correctly
 - [x] Production deployment complete (AWS Lightsail + RDS)
-- [ ] Custom domain configured (habitcraft.org)
+- [x] Custom domain configured (habitcraft.org)
 
 ---
 
 ## Beyond v1.0
-
-### Additional Backend Implementations
-
-| Language | Framework   | ORM/Database       | Testing          | Status         |
-| -------- | ----------- | ------------------ | ---------------- | -------------- |
-| Node.js  | Express     | pg (node-postgres) | Jest + Supertest | ✅ In Progress |
-| Python   | FastAPI     | SQLAlchemy         | Pytest           | 🔜 Planned     |
-| Go       | Gin         | GORM               | testing          | 🔜 Planned     |
-| Java     | Spring Boot | JPA/Hibernate      | JUnit            | 🔜 Planned     |
-
-### Additional Frontend Implementations
-
-| Framework | State Management | Styling           | Testing    | Status         |
-| --------- | ---------------- | ----------------- | ---------- | -------------- |
-| Next.js   | React Hooks      | Tailwind CSS      | Jest + RTL | ✅ In Progress |
-| React     | Redux/Zustand    | Styled Components | Jest + RTL | 🔜 Planned     |
-| Vue       | Pinia            | Tailwind CSS      | Vitest     | 🔜 Planned     |
 
 ### Feature Enhancements
 
@@ -742,12 +721,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - React Native mobile app
   - Flutter mobile app
   - Progressive Web App (PWA)
-- **Calendar View Options**
-  - Weekly view (current default)
-  - Monthly view with completion grid
-  - Toggle between views per habit
 - **UI/UX Enhancements**
-  - Dark mode
   - Custom themes
   - Accessibility improvements (WCAG AA compliance)
   - Internationalization (i18n)
@@ -812,8 +786,6 @@ Extract closure-captured logic from React event handlers into pure utility funct
 - **Async Action Handlers** (`Header.tsx:12-24`, `AddHabitForm.tsx:27-47`)
   - [ ] Extract `handleLogoutWithRecovery()` pattern
   - [ ] Extract form reset logic to `resetFormState()`
-- **Backdrop Click Handler** (`EditHabitModal.tsx:72-77`)
-  - [ ] Extract `createBackdropClickHandler()` for modal reuse
 
 ### Infrastructure & DevOps
 
@@ -953,13 +925,11 @@ Extract closure-captured logic from React event handlers into pure utility funct
 
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
-  - Google Cloud Platform
-  - Azure deployment
 - **Infrastructure as Code**
   - [x] AWS CLI deployment scripts
   - [x] GitHub Actions CI/CD workflows
   - [x] IAM policies for CI/CD, ops, and monitoring
-  - CloudFormation templates (future)
+  - Terraform
 - **Monitoring & Observability**
   - CloudWatch Alarms (AWS-native)
     - SNS topic for email notifications (`habitcraft-alerts`)
