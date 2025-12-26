@@ -611,6 +611,62 @@ test.describe('Completion Tracking', () => {
       // Weekly view should still be on previous week (not reset)
       await expect(habitCard.getByText('Current week')).not.toBeVisible();
     });
+
+    test('should persist view mode preference after page reload', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Verify starting in weekly view
+      await expect(habitCard.getByText('Current week')).toBeVisible();
+      const weekButton = habitCard.getByRole('button', { name: /weekly view/i });
+      await expect(weekButton).toHaveAttribute('aria-pressed', 'true');
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+
+      // Reload the page
+      await page.reload();
+      await expect(page.getByText('Morning Exercise')).toBeVisible();
+
+      // Get the habit card again after reload
+      const reloadedCard = getHabitCard(page, 'Morning Exercise');
+
+      // Should still be in monthly view
+      await expect(reloadedCard.getByText('Current month')).toBeVisible();
+      const monthButton = reloadedCard.getByRole('button', { name: /monthly view/i });
+      await expect(monthButton).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    test('should persist different view modes for different habits', async ({ page }) => {
+      // Get both fixture habits
+      const exerciseCard = getHabitCard(page, 'Morning Exercise');
+      const readingCard = getHabitCard(page, 'Read Books');
+
+      // Verify both start in weekly view
+      await expect(exerciseCard.getByText('Current week')).toBeVisible();
+      await expect(readingCard.getByText('Current week')).toBeVisible();
+
+      // Switch only Morning Exercise to monthly view
+      await exerciseCard.getByRole('button', { name: /monthly view/i }).click();
+      await expect(exerciseCard.getByText('Current month')).toBeVisible();
+
+      // Read Books should still be in weekly view
+      await expect(readingCard.getByText('Current week')).toBeVisible();
+
+      // Reload the page
+      await page.reload();
+      await expect(page.getByText('Morning Exercise')).toBeVisible();
+
+      // Get the cards again after reload
+      const reloadedExercise = getHabitCard(page, 'Morning Exercise');
+      const reloadedReading = getHabitCard(page, 'Read Books');
+
+      // Morning Exercise should be in monthly view
+      await expect(reloadedExercise.getByText('Current month')).toBeVisible();
+
+      // Read Books should still be in weekly view
+      await expect(reloadedReading.getByText('Current week')).toBeVisible();
+    });
   });
 
   test.describe('Calendar Display', () => {
