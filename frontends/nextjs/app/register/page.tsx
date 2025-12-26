@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { validateRegistrationForm } from '@/utils/authUtils';
+import PasswordInput from '@/components/PasswordInput';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -121,13 +122,12 @@ export default function RegisterPage() {
               <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
                 value={password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 required
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 pr-12 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="••••••••"
               />
             </div>
@@ -136,13 +136,12 @@ export default function RegisterPage() {
               <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-2">
                 Confirm Password
               </label>
-              <input
+              <PasswordInput
                 id="confirm-password"
-                type="password"
                 value={confirmPassword}
                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                 required
-                className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 pr-12 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="••••••••"
               />
             </div>

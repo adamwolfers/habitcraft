@@ -21,8 +21,31 @@ test.describe('Authentication', () => {
       // Verify login form is displayed
       await expect(page.getByRole('heading', { name: /log in/i })).toBeVisible();
       await expect(page.getByLabel(/email/i)).toBeVisible();
-      await expect(page.getByLabel(/password/i)).toBeVisible();
+      await expect(page.locator('#password')).toBeVisible();
       await expect(page.getByRole('button', { name: /log in/i })).toBeVisible();
+    });
+
+    test('should toggle password visibility on login page', async ({ page }) => {
+      await page.goto('/login');
+
+      const passwordInput = page.locator('#password');
+      const toggleButton = page.getByRole('button', { name: /show password/i });
+
+      // Initially password should be hidden
+      await expect(passwordInput).toHaveAttribute('type', 'password');
+      await expect(toggleButton).toBeVisible();
+
+      // Type a password
+      await passwordInput.fill('mySecretPassword');
+
+      // Click toggle to show password
+      await toggleButton.click();
+      await expect(passwordInput).toHaveAttribute('type', 'text');
+      await expect(page.getByRole('button', { name: /hide password/i })).toBeVisible();
+
+      // Click toggle to hide password again
+      await page.getByRole('button', { name: /hide password/i }).click();
+      await expect(passwordInput).toHaveAttribute('type', 'password');
     });
 
     test('should login successfully with valid credentials', async ({ page }) => {
@@ -30,7 +53,7 @@ test.describe('Authentication', () => {
 
       // Fill in credentials
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
 
       // Submit the form
       await page.getByRole('button', { name: /log in/i }).click();
@@ -47,7 +70,7 @@ test.describe('Authentication', () => {
 
       // Fill in wrong credentials
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('wrongpassword');
+      await page.locator('#password').fill('wrongpassword');
 
       // Submit the form
       await page.getByRole('button', { name: /log in/i }).click();
@@ -73,7 +96,7 @@ test.describe('Authentication', () => {
       // Login first
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Wait for redirect to home page
@@ -98,6 +121,30 @@ test.describe('Authentication', () => {
       await expect(page.getByLabel(/email/i)).toBeVisible();
       await expect(page.getByLabel(/^password$/i)).toBeVisible();
       await expect(page.getByLabel(/confirm password/i)).toBeVisible();
+    });
+
+    test('should toggle password visibility on registration page', async ({ page }) => {
+      await page.goto('/register');
+
+      const passwordInput = page.getByLabel(/^password$/i);
+      const confirmPasswordInput = page.getByLabel(/confirm password/i);
+
+      // Get both toggle buttons (there should be 2)
+      const toggleButtons = page.getByRole('button', { name: /show password/i });
+      await expect(toggleButtons).toHaveCount(2);
+
+      // Both inputs should start as password type
+      await expect(passwordInput).toHaveAttribute('type', 'password');
+      await expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+
+      // Toggle first password field
+      await toggleButtons.first().click();
+      await expect(passwordInput).toHaveAttribute('type', 'text');
+      await expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+
+      // Toggle confirm password field
+      await page.getByRole('button', { name: /show password/i }).click();
+      await expect(confirmPasswordInput).toHaveAttribute('type', 'text');
     });
 
     test('should register new user successfully', async ({ page }) => {
@@ -141,7 +188,7 @@ test.describe('Authentication', () => {
       // Login as user 1
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       await expect(page).toHaveURL('/dashboard');
@@ -158,7 +205,7 @@ test.describe('Authentication', () => {
       // Login as user 2
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test2@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       await expect(page).toHaveURL('/dashboard');
@@ -175,7 +222,7 @@ test.describe('Authentication', () => {
       // Login as user 1
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       await expect(page).toHaveURL('/dashboard');
@@ -188,7 +235,7 @@ test.describe('Authentication', () => {
 
       // Login as user 2
       await page.getByLabel(/email/i).fill('test2@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       await expect(page).toHaveURL('/dashboard');
@@ -209,7 +256,7 @@ test.describe('Authentication', () => {
       // Login as test user 1
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
       await expect(page).toHaveURL('/dashboard');
     });
@@ -421,7 +468,7 @@ test.describe('Authentication', () => {
       // Login first
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Wait for home page with habits
@@ -453,7 +500,7 @@ test.describe('Authentication', () => {
       // Login first
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
-      await page.getByLabel(/password/i).fill('Test1234!');
+      await page.locator('#password').fill('Test1234!');
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Wait for home page
@@ -476,6 +523,40 @@ test.describe('Authentication', () => {
      * Password change tests create unique users to ensure test isolation.
      * Each test registers a fresh user so we can safely modify their password.
      */
+
+    test('should toggle password visibility in password change form', async ({ page }) => {
+      // Login as test user
+      await page.goto('/login');
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.locator('#password').fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+      await expect(page).toHaveURL('/dashboard');
+
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Get password inputs in the change password section
+      const currentPasswordInput = page.getByLabel(/current password/i);
+      const newPasswordInput = page.getByLabel(/^new password$/i);
+      const confirmPasswordInput = page.getByLabel(/confirm.*password/i);
+
+      // Get toggle buttons (should be 3 in the password change section)
+      const toggleButtons = page.getByRole('dialog').getByRole('button', { name: /show password/i });
+      await expect(toggleButtons).toHaveCount(3);
+
+      // All should start hidden
+      await expect(currentPasswordInput).toHaveAttribute('type', 'password');
+      await expect(newPasswordInput).toHaveAttribute('type', 'password');
+      await expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+
+      // Toggle current password visibility
+      await toggleButtons.first().click();
+      await expect(currentPasswordInput).toHaveAttribute('type', 'text');
+      await expect(newPasswordInput).toHaveAttribute('type', 'password');
+      await expect(confirmPasswordInput).toHaveAttribute('type', 'password');
+    });
 
     test('should change password successfully', async ({ page }) => {
       const uniqueId = Date.now();
@@ -576,7 +657,7 @@ test.describe('Authentication', () => {
 
       // Login with new password
       await page.getByLabel(/email/i).fill(email);
-      await page.getByLabel(/password/i).fill(newPassword);
+      await page.locator('#password').fill(newPassword);
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Should successfully login
@@ -617,7 +698,7 @@ test.describe('Authentication', () => {
 
       // Try to login with old password
       await page.getByLabel(/email/i).fill(email);
-      await page.getByLabel(/password/i).fill(originalPassword);
+      await page.locator('#password').fill(originalPassword);
       await page.getByRole('button', { name: /log in/i }).click();
 
       // Should fail to login

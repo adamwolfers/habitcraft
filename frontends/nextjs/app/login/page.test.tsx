@@ -39,7 +39,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      expect(screen.getByLabelText('Password')).toBeInTheDocument();
     });
 
     it('should render login button', () => {
@@ -112,7 +112,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -132,7 +132,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -160,7 +160,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -191,7 +191,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -219,7 +219,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'wrongpassword');
@@ -239,7 +239,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'wrongpassword');
@@ -264,7 +264,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'wrongpassword');
@@ -287,7 +287,7 @@ describe('Login Page', () => {
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
+      const passwordInput = screen.getByLabelText('Password');
 
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
