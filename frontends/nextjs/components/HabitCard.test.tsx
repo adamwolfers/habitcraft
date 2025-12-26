@@ -242,8 +242,8 @@ describe('HabitCard', () => {
       expect(nextButton).toBeInTheDocument();
     });
 
-    it('should display current week by default', () => {
-      render(
+    it('should display current week date range as bold non-clickable text', () => {
+      const { container } = render(
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
@@ -252,25 +252,16 @@ describe('HabitCard', () => {
         />
       );
 
-      // Should show "Current week" or similar indicator
-      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+      // Should show date range (e.g., "Dec 22 - Dec 28") not "Current week"
+      expect(screen.queryByText(/current week/i)).not.toBeInTheDocument();
+
+      // Should be a span (not a button) with font-bold class
+      const weekRangeSpan = container.querySelector('span.font-bold');
+      expect(weekRangeSpan).toBeInTheDocument();
+      expect(weekRangeSpan?.textContent).toMatch(/\w{3} \d+ - \w{3} \d+/);
     });
 
-    it('should render Today button', () => {
-      render(
-        <HabitCard
-          habit={mockHabit}
-          onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
-          isCompletedOnDate={mockIsCompletedOnDate}
-        />
-      );
-
-      const todayButton = screen.getByLabelText(/go to current week/i);
-      expect(todayButton).toBeInTheDocument();
-    });
-
-    it('should return to current week when Today button is clicked', async () => {
+    it('should render clickable date range when not on current week', async () => {
       const user = userEvent.setup();
       render(
         <HabitCard
@@ -284,17 +275,38 @@ describe('HabitCard', () => {
       // Navigate away from current week
       const prevButton = screen.getByLabelText(/previous week/i);
       await user.click(prevButton);
+
+      // Should have a button to go back to current week
+      const todayButton = screen.getByLabelText(/go to current week/i);
+      expect(todayButton).toBeInTheDocument();
+      expect(todayButton.tagName).toBe('BUTTON');
+    });
+
+    it('should return to current week when date range button is clicked', async () => {
+      const user = userEvent.setup();
+      const { container } = render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDate}
+        />
+      );
+
+      // Navigate away from current week
+      const prevButton = screen.getByLabelText(/previous week/i);
+      await user.click(prevButton);
       await user.click(prevButton);
 
-      // Should no longer show "Current week"
-      expect(screen.queryByText(/current week/i)).not.toBeInTheDocument();
+      // Should not have bold span (we're not on current week)
+      expect(container.querySelector('span.font-bold')).not.toBeInTheDocument();
 
-      // Click Today button
+      // Click the date range button to go back
       const todayButton = screen.getByLabelText(/go to current week/i);
       await user.click(todayButton);
 
-      // Should be back to current week
-      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+      // Should be back to current week (bold span visible)
+      expect(container.querySelector('span.font-bold')).toBeInTheDocument();
     });
 
     it('should show week date range', () => {
@@ -498,7 +510,7 @@ describe('HabitCard', () => {
 
   describe('View Mode Toggle', () => {
     it('should render weekly view by default', () => {
-      render(
+      const { container } = render(
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
@@ -507,7 +519,10 @@ describe('HabitCard', () => {
         />
       );
 
-      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+      // Should show the bold date range span for current week
+      const weekRangeSpan = container.querySelector('span.font-bold');
+      expect(weekRangeSpan).toBeInTheDocument();
+      expect(weekRangeSpan?.textContent).toMatch(/\w{3} \d+ - \w{3} \d+/);
     });
 
     it('should render Week and Month toggle buttons', () => {
@@ -526,7 +541,7 @@ describe('HabitCard', () => {
 
     it('should switch to monthly view when Month button is clicked', async () => {
       const user = userEvent.setup();
-      render(
+      const { container } = render(
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
@@ -537,13 +552,17 @@ describe('HabitCard', () => {
 
       await user.click(screen.getByLabelText(/monthly view/i));
 
-      expect(screen.getByText(/current month/i)).toBeInTheDocument();
-      expect(screen.queryByText(/current week/i)).not.toBeInTheDocument();
+      // Should show month name as bold text
+      expect(screen.queryByText(/current month/i)).not.toBeInTheDocument();
+      const monthNameSpan = container.querySelector('span.font-bold');
+      expect(monthNameSpan).toBeInTheDocument();
+      // Month name should match pattern like "December 2025"
+      expect(monthNameSpan?.textContent).toMatch(/\w+ \d{4}/);
     });
 
     it('should switch back to weekly view when Week button is clicked', async () => {
       const user = userEvent.setup();
-      render(
+      const { container } = render(
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
@@ -554,11 +573,16 @@ describe('HabitCard', () => {
 
       // Switch to monthly
       await user.click(screen.getByLabelText(/monthly view/i));
-      expect(screen.getByText(/current month/i)).toBeInTheDocument();
+      // Should show month name as bold text
+      let boldSpan = container.querySelector('span.font-bold');
+      expect(boldSpan?.textContent).toMatch(/\w+ \d{4}/);
 
       // Switch back to weekly
       await user.click(screen.getByLabelText(/weekly view/i));
-      expect(screen.getByText(/current week/i)).toBeInTheDocument();
+      // Should show the bold date range span for current week
+      boldSpan = container.querySelector('span.font-bold');
+      expect(boldSpan).toBeInTheDocument();
+      expect(boldSpan?.textContent).toMatch(/\w{3} \d+ - \w{3} \d+/);
     });
 
     it('should have aria-pressed=true on active view button', () => {
