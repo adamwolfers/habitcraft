@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { changePassword } from '@/lib/api';
 import Header from './Header';
 import ProfileModal from './ProfileModal';
 
@@ -25,6 +26,14 @@ export default function HeaderWithProfile({ variant }: HeaderWithProfileProps) {
     await updateUser(updates);
   };
 
+  const handleChangePassword = async (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => {
+    await changePassword(currentPassword, newPassword, confirmPassword);
+  };
+
   return (
     <>
       <Header variant={variant} onOpenProfileModal={handleOpenProfileModal} />
@@ -34,6 +43,7 @@ export default function HeaderWithProfile({ variant }: HeaderWithProfileProps) {
           isOpen={isProfileModalOpen}
           onClose={handleCloseProfileModal}
           onUpdate={handleUpdateProfile}
+          onChangePassword={handleChangePassword}
         />
       )}
     </>

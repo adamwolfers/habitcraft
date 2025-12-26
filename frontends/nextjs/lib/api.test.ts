@@ -1,4 +1,4 @@
-import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit, setOnAuthFailure, updateUserName } from './api';
+import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit, setOnAuthFailure, updateUserName, changePassword } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -843,5 +843,96 @@ describe('updateUserName', () => {
     });
 
     await expect(updateUserName('')).rejects.toThrow('Failed to update user: 400');
+  });
+});
+
+describe('changePassword', () => {
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should call PUT /users/me/password with correct payload', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: 'Password changed successfully' })
+    });
+
+    await changePassword('oldpass123', 'newpass456', 'newpass456');
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/users/me/password`,
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: 'oldpass123',
+          newPassword: 'newpass456',
+          confirmPassword: 'newpass456'
+        })
+      }
+    );
+  });
+
+  it('should resolve successfully on 200 response', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ message: 'Password changed successfully' })
+    });
+
+    await expect(changePassword('oldpass', 'newpass123', 'newpass123')).resolves.not.toThrow();
+  });
+
+  it('should throw error with message for wrong current password (401)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Invalid current password' })
+    });
+
+    // Set up auth failure callback to prevent redirect
+    const onAuthFailure = jest.fn();
+    setOnAuthFailure(onAuthFailure);
+
+    await expect(changePassword('wrongpass', 'newpass123', 'newpass123'))
+      .rejects.toThrow('Invalid current password');
+
+    setOnAuthFailure(null);
+  });
+
+  it('should throw error for validation failures (400)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'New password must be at least 8 characters' })
+    });
+
+    await expect(changePassword('oldpass', 'short', 'short'))
+      .rejects.toThrow('New password must be at least 8 characters');
+  });
+
+  it('should throw generic error for other failures', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'Internal server error' })
+    });
+
+    await expect(changePassword('oldpass', 'newpass123', 'newpass123'))
+      .rejects.toThrow('Failed to change password');
   });
 });

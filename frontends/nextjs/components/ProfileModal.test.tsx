@@ -542,4 +542,376 @@ describe('ProfileModal', () => {
       });
     });
   });
+
+  describe('Change Password Section', () => {
+    const mockOnChangePassword = jest.fn();
+
+    beforeEach(() => {
+      mockOnChangePassword.mockClear();
+    });
+
+    describe('Password Fields Rendering', () => {
+      it('should render Change Password section heading', () => {
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        expect(screen.getByRole('heading', { name: /change password/i })).toBeInTheDocument();
+      });
+
+      it('should render current password field', () => {
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        expect(screen.getByLabelText(/current password/i)).toBeInTheDocument();
+      });
+
+      it('should render new password field', () => {
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        expect(screen.getByLabelText(/^new password$/i)).toBeInTheDocument();
+      });
+
+      it('should render confirm password field', () => {
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        expect(screen.getByLabelText(/confirm.*password/i)).toBeInTheDocument();
+      });
+
+      it('should render Change Password button', () => {
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        expect(screen.getByRole('button', { name: /^change password$/i })).toBeInTheDocument();
+      });
+    });
+
+    describe('Password Validation', () => {
+      it('should show error for empty current password', async () => {
+        const user = userEvent.setup();
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        // Fill in new password fields but leave current empty
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass123');
+
+        const changeButton = screen.getByRole('button', { name: /^change password$/i });
+        await user.click(changeButton);
+
+        await waitFor(() => {
+          expect(screen.getByText(/current password is required/i)).toBeInTheDocument();
+        });
+      });
+
+      it('should show error for new password less than 8 chars', async () => {
+        const user = userEvent.setup();
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'short');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'short');
+
+        const changeButton = screen.getByRole('button', { name: /^change password$/i });
+        await user.click(changeButton);
+
+        await waitFor(() => {
+          expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
+        });
+      });
+
+      it('should show error for password mismatch', async () => {
+        const user = userEvent.setup();
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'different123');
+
+        const changeButton = screen.getByRole('button', { name: /^change password$/i });
+        await user.click(changeButton);
+
+        await waitFor(() => {
+          expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
+        });
+      });
+
+      it('should clear error when user types in any password field', async () => {
+        const user = userEvent.setup();
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        // Trigger an error first
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass123');
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        await waitFor(() => {
+          expect(screen.getByText(/current password is required/i)).toBeInTheDocument();
+        });
+
+        // Type in any field should clear error
+        await user.type(screen.getByLabelText(/current password/i), 'a');
+
+        expect(screen.queryByText(/current password is required/i)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Password Submission', () => {
+      it('should call onChangePassword API on valid submission', async () => {
+        const user = userEvent.setup();
+        mockOnChangePassword.mockResolvedValue(undefined);
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        await waitFor(() => {
+          expect(mockOnChangePassword).toHaveBeenCalledWith('oldpass123', 'newpass456', 'newpass456');
+        });
+      });
+
+      it('should show loading state while submitting', async () => {
+        const user = userEvent.setup();
+        let resolveChange: () => void;
+        const changePromise = new Promise<void>((resolve) => {
+          resolveChange = resolve;
+        });
+        mockOnChangePassword.mockReturnValue(changePromise);
+
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        // Should show "Changing..." while in progress
+        expect(screen.getByText(/changing/i)).toBeInTheDocument();
+
+        resolveChange!();
+        await waitFor(() => {
+          expect(screen.queryByText(/changing/i)).not.toBeInTheDocument();
+        });
+      });
+
+      it('should disable button while submitting', async () => {
+        const user = userEvent.setup();
+        let resolveChange: () => void;
+        const changePromise = new Promise<void>((resolve) => {
+          resolveChange = resolve;
+        });
+        mockOnChangePassword.mockReturnValue(changePromise);
+
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        const changeButton = screen.getByRole('button', { name: /^change password$/i });
+        await user.click(changeButton);
+
+        // Button should be disabled during submission
+        expect(changeButton).toBeDisabled();
+
+        resolveChange!();
+        await waitFor(() => {
+          expect(changeButton).not.toBeDisabled();
+        });
+      });
+
+      it('should clear password fields on success', async () => {
+        const user = userEvent.setup();
+        mockOnChangePassword.mockResolvedValue(undefined);
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        await waitFor(() => {
+          expect(screen.getByLabelText(/current password/i)).toHaveValue('');
+          expect(screen.getByLabelText(/^new password$/i)).toHaveValue('');
+          expect(screen.getByLabelText(/confirm.*password/i)).toHaveValue('');
+        });
+      });
+
+      it('should show success message after password change', async () => {
+        const user = userEvent.setup();
+        mockOnChangePassword.mockResolvedValue(undefined);
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        await waitFor(() => {
+          expect(screen.getByText(/password changed successfully/i)).toBeInTheDocument();
+        });
+      });
+
+      it('should show error for wrong current password (401)', async () => {
+        const user = userEvent.setup();
+        mockOnChangePassword.mockRejectedValue(new Error('Invalid current password'));
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'wrongpass');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        await waitFor(() => {
+          expect(screen.getByText(/invalid current password/i)).toBeInTheDocument();
+        });
+      });
+
+      it('should show generic error for API failures', async () => {
+        const user = userEvent.setup();
+        mockOnChangePassword.mockRejectedValue(new Error('Failed to change password'));
+        render(
+          <ProfileModal
+            user={mockUser}
+            isOpen={true}
+            onClose={mockOnClose}
+            onUpdate={mockOnUpdate}
+            onChangePassword={mockOnChangePassword}
+          />
+        );
+
+        await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
+        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+
+        await user.click(screen.getByRole('button', { name: /^change password$/i }));
+
+        await waitFor(() => {
+          expect(screen.getByText(/failed to change password/i)).toBeInTheDocument();
+        });
+      });
+    });
+  });
 });
