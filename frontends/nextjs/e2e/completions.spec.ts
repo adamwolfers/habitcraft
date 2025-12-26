@@ -390,6 +390,229 @@ test.describe('Completion Tracking', () => {
     });
   });
 
+  test.describe('View Mode Toggle', () => {
+    test('should start in weekly view by default', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Weekly view should be active
+      const weekButton = habitCard.getByRole('button', { name: /weekly view/i });
+      await expect(weekButton).toHaveAttribute('aria-pressed', 'true');
+
+      // Should show "Current week" label
+      await expect(habitCard.getByText('Current week')).toBeVisible();
+
+      // Should show 7 day columns
+      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      await expect(dayButtons).toHaveCount(7);
+    });
+
+    test('should switch to monthly view when clicking Month toggle', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Click the Month toggle button
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+
+      // Monthly view should now be active
+      const monthButton = habitCard.getByRole('button', { name: /monthly view/i });
+      await expect(monthButton).toHaveAttribute('aria-pressed', 'true');
+
+      // Weekly view should not be active
+      const weekButton = habitCard.getByRole('button', { name: /weekly view/i });
+      await expect(weekButton).toHaveAttribute('aria-pressed', 'false');
+
+      // Should show "Current month" label
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+    });
+
+    test('should display month calendar grid with day headers', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+
+      // Check for day headers in monthly view
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      for (const day of dayNames) {
+        await expect(habitCard.getByText(day, { exact: true })).toBeVisible();
+      }
+    });
+
+    test('should switch back to weekly view when clicking Week toggle', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Switch to monthly view first
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+
+      // Switch back to weekly view
+      await habitCard.getByRole('button', { name: /weekly view/i }).click();
+
+      // Weekly view should be active again
+      const weekButton = habitCard.getByRole('button', { name: /weekly view/i });
+      await expect(weekButton).toHaveAttribute('aria-pressed', 'true');
+
+      // Should show "Current week" label
+      await expect(habitCard.getByText('Current week')).toBeVisible();
+    });
+
+    test('should navigate to previous month', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+
+      // Click previous month button
+      await habitCard.getByRole('button', { name: /previous month/i }).click();
+
+      // Should no longer show "Current month"
+      await expect(habitCard.getByText('Current month')).not.toBeVisible();
+
+      // Should show a month name instead (e.g., "November 2024")
+      const monthLabel = habitCard.getByRole('button', { name: /go to current month/i });
+      await expect(monthLabel).toBeVisible();
+    });
+
+    test('should navigate to next month from past', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+
+      // Go to previous month first
+      await habitCard.getByRole('button', { name: /previous month/i }).click();
+      await expect(habitCard.getByText('Current month')).not.toBeVisible();
+
+      // Click next month button
+      await habitCard.getByRole('button', { name: /next month/i }).click();
+
+      // Should be back to current month
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+    });
+
+    test('should return to current month when clicking month label', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+
+      // Go to previous month
+      await habitCard.getByRole('button', { name: /previous month/i }).click();
+      await expect(habitCard.getByText('Current month')).not.toBeVisible();
+
+      // Click the month label (acts as "Today" button)
+      await habitCard.getByRole('button', { name: /go to current month/i }).click();
+
+      // Should be back to current month
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+    });
+
+    test('should toggle completion in monthly view', async ({ page }) => {
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = `Monthly Toggle ${Date.now()}`;
+      await page.getByRole('button', { name: /add new habit/i }).click();
+      await page.getByLabel(/habit name/i).fill(habitName);
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+      await expect(page.getByText(habitName)).toBeVisible();
+
+      const habitCard = getHabitCard(page, habitName);
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+
+      // Find a non-disabled day button in the monthly grid
+      const monthGrid = habitCard.locator('.grid-cols-7').last();
+      const dayButtons = monthGrid.locator('button:not([disabled])');
+
+      // Get the first available day button
+      const targetButton = dayButtons.first();
+      await expect(targetButton).toBeVisible();
+
+      // Verify it's not completed (new habit)
+      expect(await isCompleted(targetButton)).toBe(false);
+
+      // Click to toggle on
+      await targetButton.click();
+      await page.waitForTimeout(500);
+
+      // Verify the state changed to completed
+      expect(await isCompleted(targetButton)).toBe(true);
+    });
+
+    test('should preserve completions when switching between views', async ({ page }) => {
+      // Create a unique habit for this test (ensures isolation)
+      const habitName = `View Switch ${Date.now()}`;
+      await page.getByRole('button', { name: /add new habit/i }).click();
+      await page.getByLabel(/habit name/i).fill(habitName);
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+      await expect(page.getByText(habitName)).toBeVisible();
+
+      const habitCard = getHabitCard(page, habitName);
+
+      // Toggle a completion in weekly view
+      const weekDayButtons = habitCard.locator('.grid-cols-7 > button');
+      let targetButton: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const btn = weekDayButtons.nth(i);
+        const isDisabled = await btn.isDisabled();
+        if (!isDisabled) {
+          targetButton = btn;
+          break;
+        }
+      }
+
+      expect(targetButton).not.toBeNull();
+
+      // Toggle completion on
+      await targetButton!.click();
+      await page.waitForTimeout(500);
+      expect(await isCompleted(targetButton!)).toBe(true);
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+
+      // The completion should still be visible in the monthly view
+      // (the same date should show as completed)
+      const monthGrid = habitCard.locator('.grid-cols-7').last();
+      const completedDays = monthGrid.locator('button svg path[d="M5 13l4 4L19 7"]');
+      await expect(completedDays.first()).toBeVisible();
+
+      // Switch back to weekly view
+      await habitCard.getByRole('button', { name: /weekly view/i }).click();
+      await expect(habitCard.getByText('Current week')).toBeVisible();
+
+      // The completion should still be there
+      expect(await isCompleted(targetButton!)).toBe(true);
+    });
+
+    test('should maintain separate navigation state for each view', async ({ page }) => {
+      const habitCard = getHabitCard(page, 'Morning Exercise');
+
+      // Navigate to previous week in weekly view
+      await habitCard.getByRole('button', { name: /previous week/i }).click();
+      await expect(habitCard.getByText('Current week')).not.toBeVisible();
+
+      // Switch to monthly view
+      await habitCard.getByRole('button', { name: /monthly view/i }).click();
+
+      // Monthly view should start at current month
+      await expect(habitCard.getByText('Current month')).toBeVisible();
+
+      // Navigate to previous month
+      await habitCard.getByRole('button', { name: /previous month/i }).click();
+      await expect(habitCard.getByText('Current month')).not.toBeVisible();
+
+      // Switch back to weekly view
+      await habitCard.getByRole('button', { name: /weekly view/i }).click();
+
+      // Weekly view should still be on previous week (not reset)
+      await expect(habitCard.getByText('Current week')).not.toBeVisible();
+    });
+  });
+
   test.describe('Calendar Display', () => {
     test('should display 7 days in the calendar', async ({ page }) => {
       const habitCard = getHabitCard(page, 'Morning Exercise');
