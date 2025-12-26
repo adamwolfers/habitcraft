@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { validatePasswordChange } from '@/utils/authUtils';
 
 interface User {
   id: string;
@@ -14,6 +15,7 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updates: { name?: string; email?: string }) => Promise<void>;
+  onChangePassword?: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
 }
 
 // Simple email validation regex
@@ -21,11 +23,19 @@ const isValidEmail = (email: string): boolean => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
-export default function ProfileModal({ user, isOpen, onClose, onUpdate }: ProfileModalProps) {
+export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChangePassword }: ProfileModalProps) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   if (!isOpen) {
     return null;
@@ -45,6 +55,40 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }: Profil
   const trimmedName = name.trim();
   const trimmedEmail = email.trim();
   const isFormValid = trimmedName.length > 0 && trimmedEmail.length > 0 && isValidEmail(trimmedEmail);
+
+  const handlePasswordChange = async () => {
+    const validationError = validatePasswordChange({
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+
+    if (validationError) {
+      setPasswordError(validationError);
+      return;
+    }
+
+    if (!onChangePassword) {
+      return;
+    }
+
+    setIsChangingPassword(true);
+    setPasswordError(null);
+
+    try {
+      await onChangePassword(currentPassword, newPassword, confirmPassword);
+      // Clear fields and show success on success
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setPasswordSuccess(true);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to change password';
+      setPasswordError(errorMessage);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +218,91 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate }: Profil
             </button>
           </div>
         </form>
+
+        {onChangePassword && (
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <h3 className="text-lg font-medium mb-4">Change Password</h3>
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="current-password" className="block text-sm font-medium mb-2">
+                  Current Password
+                </label>
+                <input
+                  id="current-password"
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => {
+                    setCurrentPassword(e.target.value);
+                    setPasswordError(null);
+                    setPasswordSuccess(false);
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="new-password" className="block text-sm font-medium mb-2">
+                  New Password
+                </label>
+                <input
+                  id="new-password"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setPasswordError(null);
+                    setPasswordSuccess(false);
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="confirm-password" className="block text-sm font-medium mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirm-password"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setPasswordError(null);
+                    setPasswordSuccess(false);
+                  }}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {passwordError && (
+                <div
+                  role="alert"
+                  className="p-3 bg-red-500/10 border border-red-500 text-red-500 rounded-lg text-sm"
+                >
+                  {passwordError}
+                </div>
+              )}
+
+              {passwordSuccess && (
+                <div
+                  role="status"
+                  className="p-3 bg-green-500/10 border border-green-500 text-green-500 rounded-lg text-sm"
+                >
+                  Password changed successfully
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handlePasswordChange}
+                disabled={isChangingPassword}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+              >
+                {isChangingPassword ? 'Changing...' : 'Change Password'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

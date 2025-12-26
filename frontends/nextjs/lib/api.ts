@@ -328,3 +328,32 @@ export async function updateUserName(name: string): Promise<User> {
 
   return response.json();
 }
+
+/**
+ * Change the current user's password
+ * @param currentPassword - The current password for verification
+ * @param newPassword - The new password
+ * @param confirmPassword - Confirmation of the new password
+ */
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string
+): Promise<void> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/users/me/password`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    if (response.status === 401 || response.status === 400) {
+      throw new Error(data.error || 'Password change failed');
+    }
+    throw new Error('Failed to change password');
+  }
+}

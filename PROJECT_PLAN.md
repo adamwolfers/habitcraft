@@ -140,10 +140,10 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [ ] **User Profile Management**
   - [x] **Update Name (PUT /api/v1/users/me)**
   - [x] **Update Email (PUT /api/v1/users/me)**
-  - [ ] **Change Password (PUT /api/v1/users/me/password)**
+  - [x] **Change Password (PUT /api/v1/users/me/password)**
     - [x] Write tests for password change endpoint (require current password)
     - [x] Implement password change in backend
-    - [ ] Add password change UI in frontend
+    - [x] Add password change UI in frontend
   - [ ] **User Profile Management Modal**
     - [x] **Modal Infrastructure**
       - [x] Write unit tests for modal open/close functionality
@@ -163,14 +163,14 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
       - [x] Implement email input field with validation
       - [x] Write unit tests for email update submission
       - [x] Connect email update to API
-    - [ ] **Change Password Section**
-      - [ ] Write unit tests for password fields rendering
-      - [ ] Implement password change fields (current, new, confirm)
-      - [ ] Write unit tests for password validation (match, strength)
-      - [ ] Write unit tests for password change submission
-      - [ ] Connect password change to API
-      - [ ] Run all tests (scripts/test-all.sh)
-      - [ ] Update project docs if needed
+    - [x] **Change Password Section**
+      - [x] Write unit tests for password fields rendering
+      - [x] Implement password change fields (current, new, confirm)
+      - [x] Write unit tests for password validation (match, strength)
+      - [x] Write unit tests for password change submission
+      - [x] Connect password change to API
+      - [x] Run all tests (scripts/test-all.sh)
+      - [x] Update project docs if needed
     - [x] **Error Handling**
       - [x] Write unit tests for error message rendering
       - [x] Implement error handling UI

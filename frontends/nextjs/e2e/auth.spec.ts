@@ -470,4 +470,159 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL('/login');
     });
   });
+
+  test.describe('Password Change', () => {
+    /**
+     * Password change tests create unique users to ensure test isolation.
+     * Each test registers a fresh user so we can safely modify their password.
+     */
+
+    test('should change password successfully', async ({ page }) => {
+      const uniqueId = Date.now();
+      const email = `pwchange-${uniqueId}@example.com`;
+      const originalPassword = 'Original123!';
+      const newPassword = 'NewPass456!';
+
+      // Register a new user
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Password Test User');
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByLabel(/^password$/i).fill(originalPassword);
+      await page.getByLabel(/confirm password/i).fill(originalPassword);
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/dashboard');
+
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Fill in password change fields
+      await page.getByLabel(/current password/i).fill(originalPassword);
+      await page.getByLabel(/^new password$/i).fill(newPassword);
+      await page.getByLabel(/confirm.*password/i).fill(newPassword);
+
+      // Submit password change
+      await page.getByRole('button', { name: /^change password$/i }).click();
+
+      // Fields should be cleared on success
+      await expect(page.getByLabel(/current password/i)).toHaveValue('');
+      await expect(page.getByLabel(/^new password$/i)).toHaveValue('');
+      await expect(page.getByLabel(/confirm.*password/i)).toHaveValue('');
+    });
+
+    test('should show error for wrong current password', async ({ page }) => {
+      const uniqueId = Date.now();
+      const email = `pwwrong-${uniqueId}@example.com`;
+      const originalPassword = 'Original123!';
+
+      // Register a new user
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Wrong Password Test');
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByLabel(/^password$/i).fill(originalPassword);
+      await page.getByLabel(/confirm password/i).fill(originalPassword);
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/dashboard');
+
+      // Open profile modal
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
+      await expect(page.getByRole('dialog')).toBeVisible();
+
+      // Fill in password change with wrong current password
+      await page.getByLabel(/current password/i).fill('WrongPassword123!');
+      await page.getByLabel(/^new password$/i).fill('NewPass456!');
+      await page.getByLabel(/confirm.*password/i).fill('NewPass456!');
+
+      // Submit password change
+      await page.getByRole('button', { name: /^change password$/i }).click();
+
+      // Should show error for invalid current password
+      await expect(page.getByText(/invalid current password/i)).toBeVisible();
+    });
+
+    test('should login with new password after change', async ({ page }) => {
+      const uniqueId = Date.now();
+      const email = `pwlogin-${uniqueId}@example.com`;
+      const originalPassword = 'Original123!';
+      const newPassword = 'NewPass456!';
+
+      // Register a new user
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Login After Change Test');
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByLabel(/^password$/i).fill(originalPassword);
+      await page.getByLabel(/confirm password/i).fill(originalPassword);
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/dashboard');
+
+      // Open profile modal and change password
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
+      await page.getByLabel(/current password/i).fill(originalPassword);
+      await page.getByLabel(/^new password$/i).fill(newPassword);
+      await page.getByLabel(/confirm.*password/i).fill(newPassword);
+      await page.getByRole('button', { name: /^change password$/i }).click();
+
+      // Wait for success (fields cleared)
+      await expect(page.getByLabel(/current password/i)).toHaveValue('');
+
+      // Close modal and logout
+      await page.getByRole('button', { name: /cancel/i }).click();
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /log out/i }).click();
+      await expect(page).toHaveURL('/login');
+
+      // Login with new password
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByLabel(/password/i).fill(newPassword);
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Should successfully login
+      await expect(page).toHaveURL('/dashboard');
+    });
+
+    test('should reject old password after change', async ({ page }) => {
+      const uniqueId = Date.now();
+      const email = `pwreject-${uniqueId}@example.com`;
+      const originalPassword = 'Original123!';
+      const newPassword = 'NewPass456!';
+
+      // Register a new user
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Reject Old Password Test');
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByLabel(/^password$/i).fill(originalPassword);
+      await page.getByLabel(/confirm password/i).fill(originalPassword);
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/dashboard');
+
+      // Open profile modal and change password
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
+      await page.getByLabel(/current password/i).fill(originalPassword);
+      await page.getByLabel(/^new password$/i).fill(newPassword);
+      await page.getByLabel(/confirm.*password/i).fill(newPassword);
+      await page.getByRole('button', { name: /^change password$/i }).click();
+
+      // Wait for success
+      await expect(page.getByLabel(/current password/i)).toHaveValue('');
+
+      // Close modal and logout
+      await page.getByRole('button', { name: /cancel/i }).click();
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /log out/i }).click();
+      await expect(page).toHaveURL('/login');
+
+      // Try to login with old password
+      await page.getByLabel(/email/i).fill(email);
+      await page.getByLabel(/password/i).fill(originalPassword);
+      await page.getByRole('button', { name: /log in/i }).click();
+
+      // Should fail to login
+      await expect(page.getByText(/invalid/i)).toBeVisible();
+      await expect(page).toHaveURL('/login');
+    });
+  });
 });
