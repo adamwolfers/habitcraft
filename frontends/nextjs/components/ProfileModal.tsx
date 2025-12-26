@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { validatePasswordChange } from '@/utils/authUtils';
+import PasswordInput from '@/components/PasswordInput';
 
 interface User {
   id: string;
@@ -227,16 +228,15 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
                 <label htmlFor="current-password" className="block text-sm font-medium mb-2">
                   Current Password
                 </label>
-                <input
+                <PasswordInput
                   id="current-password"
-                  type="password"
                   value={currentPassword}
                   onChange={(e) => {
                     setCurrentPassword(e.target.value);
                     setPasswordError(null);
                     setPasswordSuccess(false);
                   }}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -244,16 +244,15 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
                 <label htmlFor="new-password" className="block text-sm font-medium mb-2">
                   New Password
                 </label>
-                <input
+                <PasswordInput
                   id="new-password"
-                  type="password"
                   value={newPassword}
                   onChange={(e) => {
                     setNewPassword(e.target.value);
                     setPasswordError(null);
                     setPasswordSuccess(false);
                   }}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -261,16 +260,15 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
                 <label htmlFor="confirm-password" className="block text-sm font-medium mb-2">
                   Confirm Password
                 </label>
-                <input
+                <PasswordInput
                   id="confirm-password"
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);
                     setPasswordError(null);
                     setPasswordSuccess(false);
                   }}
-                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 

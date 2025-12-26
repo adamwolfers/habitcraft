@@ -128,7 +128,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - [x] Habit ownership validation
   - [x] Date format validation
 
-#### User Management (API Refactor)
+#### User Management
 
 - [x] **Refactor user profile to RESTful /users endpoint**
   - [x] **Backend: Write tests for GET /api/v1/users/me (Red phase)**
@@ -144,7 +144,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - [x] Write tests for password change endpoint (require current password)
     - [x] Implement password change in backend
     - [x] Add password change UI in frontend
-  - [ ] **User Profile Management Modal**
+  - [x] **User Profile Management Modal**
     - [x] **Modal Infrastructure**
       - [x] Write unit tests for modal open/close functionality
       - [x] Implement modal UI structure (open/close, cancel button)
