@@ -17,18 +17,23 @@ async function globalSetup() {
   // Path from frontends/nextjs/e2e/ up to project root
   const projectRoot = resolve(__dirname, '../../..');
 
-  try {
-    // Reset test database to clean state with fixtures
-    console.log('📦 Resetting test database...');
-    execSync(`${projectRoot}/scripts/test-db-reset.sh`, {
-      stdio: 'inherit',
-      cwd: projectRoot,
-    });
-    console.log('✅ Test database reset complete\n');
-  } catch (error) {
-    console.error('❌ Failed to reset test database');
-    console.error('Make sure the test database is running: ./scripts/test-db-start.sh');
-    throw error;
+  // Skip DB reset if SKIP_E2E_SETUP is set (used by test-all.sh for parallel shards)
+  if (process.env.SKIP_E2E_SETUP) {
+    console.log('⏭️  Skipping database reset (SKIP_E2E_SETUP=1)\n');
+  } else {
+    try {
+      // Reset test database to clean state with fixtures
+      console.log('📦 Resetting test database...');
+      execSync(`${projectRoot}/scripts/test-db-reset.sh`, {
+        stdio: 'inherit',
+        cwd: projectRoot,
+      });
+      console.log('✅ Test database reset complete\n');
+    } catch (error) {
+      console.error('❌ Failed to reset test database');
+      console.error('Make sure the test database is running: ./scripts/test-db-start.sh');
+      throw error;
+    }
   }
 
   // Verify services are accessible

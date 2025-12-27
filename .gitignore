@@ -41,6 +41,7 @@ playwright-results/
 playwright-report/
 blob-report/
 test-results/
+.e2e-shard-logs/
 
 # Next.js
 .next/
