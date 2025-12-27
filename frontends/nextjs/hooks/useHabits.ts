@@ -9,6 +9,7 @@ import {
   fetchCompletions as apiFetchCompletions,
   createCompletion as apiCreateCompletion,
   deleteCompletion as apiDeleteCompletion,
+  updateCompletionNote as apiUpdateCompletionNote,
   deleteHabit as apiDeleteHabit
 } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
@@ -142,6 +143,26 @@ export const useHabits = (userId: string) => {
     }
   };
 
+  const updateNote = async (habitId: string, date: string, notes: string | null): Promise<void> => {
+    try {
+      const updatedCompletion = await apiUpdateCompletionNote(userId, habitId, date, notes);
+
+      // Update local state
+      const habitCompletions = completions.get(habitId) || [];
+      const updatedCompletions = habitCompletions.map(c =>
+        c.date === date ? updatedCompletion : c
+      );
+      setCompletions(new Map(completions).set(habitId, updatedCompletions));
+    } catch (error) {
+      console.error('Error updating note:', error);
+      throw error;
+    }
+  };
+
+  const getCompletionsForHabit = (habitId: string): Completion[] => {
+    return completions.get(habitId) || [];
+  };
+
   return {
     habits,
     createHabit,
@@ -149,6 +170,8 @@ export const useHabits = (userId: string) => {
     toggleCompletion,
     isHabitCompletedOnDate,
     deleteHabit,
+    updateNote,
+    getCompletionsForHabit,
     isAuthLoading,
   };
 };

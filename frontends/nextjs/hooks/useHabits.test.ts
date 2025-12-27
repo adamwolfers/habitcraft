@@ -29,6 +29,7 @@ const mockCreateCompletion = api.createCompletion as jest.MockedFunction<typeof 
 const mockDeleteCompletion = api.deleteCompletion as jest.MockedFunction<typeof api.deleteCompletion>;
 const mockDeleteHabit = api.deleteHabit as jest.MockedFunction<typeof api.deleteHabit>;
 const mockUpdateHabit = api.updateHabit as jest.MockedFunction<typeof api.updateHabit>;
+const mockUpdateCompletionNote = api.updateCompletionNote as jest.MockedFunction<typeof api.updateCompletionNote>;
 
 describe('useHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -860,6 +861,180 @@ describe('useHabits', () => {
 
       // Verify habits array is unchanged (habit wasn't in local state)
       expect(result.current.habits).toEqual(mockHabitsFromApi);
+    });
+  });
+
+  describe('updateNote', () => {
+    const mockCompletions: Completion[] = [
+      {
+        id: 'completion-1',
+        habitId: 'habit-1',
+        date: '2025-01-15',
+        notes: null,
+        createdAt: '2025-01-15T10:00:00.000Z'
+      }
+    ];
+
+    beforeEach(() => {
+      mockFetchCompletions.mockResolvedValue([]);
+    });
+
+    it('should update note via API and update local state', async () => {
+      const updatedCompletion: Completion = {
+        ...mockCompletions[0],
+        notes: 'Ran 5 miles'
+      };
+
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockUpdateCompletionNote.mockResolvedValue(updatedCompletion);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Update the note
+      await act(async () => {
+        await result.current.updateNote('habit-1', '2025-01-15', 'Ran 5 miles');
+      });
+
+      // Verify API was called with correct data
+      expect(mockUpdateCompletionNote).toHaveBeenCalledWith(mockUserId, 'habit-1', '2025-01-15', 'Ran 5 miles');
+
+      // Verify local state was updated
+      const completions = result.current.getCompletionsForHabit('habit-1');
+      const updatedEntry = completions.find(c => c.date === '2025-01-15');
+      expect(updatedEntry?.notes).toBe('Ran 5 miles');
+    });
+
+    it('should clear note when null is passed', async () => {
+      const completionWithNote: Completion = {
+        ...mockCompletions[0],
+        notes: 'Existing note'
+      };
+
+      const updatedCompletion: Completion = {
+        ...mockCompletions[0],
+        notes: null
+      };
+
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue([completionWithNote]);
+      mockUpdateCompletionNote.mockResolvedValue(updatedCompletion);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Clear the note
+      await act(async () => {
+        await result.current.updateNote('habit-1', '2025-01-15', null);
+      });
+
+      // Verify API was called with null
+      expect(mockUpdateCompletionNote).toHaveBeenCalledWith(mockUserId, 'habit-1', '2025-01-15', null);
+
+      // Verify local state was updated
+      const completions = result.current.getCompletionsForHabit('habit-1');
+      const updatedEntry = completions.find(c => c.date === '2025-01-15');
+      expect(updatedEntry?.notes).toBeNull();
+    });
+
+    it('should handle update errors gracefully', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockUpdateCompletionNote.mockRejectedValue(new Error('API Error'));
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Try to update note (should throw)
+      await act(async () => {
+        try {
+          await result.current.updateNote('habit-1', '2025-01-15', 'New note');
+        } catch {
+          // Expected to throw
+        }
+      });
+
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error updating note:', expect.any(Error));
+
+      // Verify local state wasn't modified
+      const completions = result.current.getCompletionsForHabit('habit-1');
+      const entry = completions.find(c => c.date === '2025-01-15');
+      expect(entry?.notes).toBeNull();
+
+      consoleErrorSpy.mockRestore();
+    });
+  });
+
+  describe('getCompletionsForHabit', () => {
+    const mockCompletions: Completion[] = [
+      {
+        id: 'completion-1',
+        habitId: 'habit-1',
+        date: '2025-01-15',
+        notes: 'Great workout',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      },
+      {
+        id: 'completion-2',
+        habitId: 'habit-1',
+        date: '2025-01-14',
+        notes: null,
+        createdAt: '2025-01-14T10:00:00.000Z'
+      }
+    ];
+
+    it('should return completions array for a habit', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      const completions = result.current.getCompletionsForHabit('habit-1');
+      expect(completions).toEqual(mockCompletions);
+    });
+
+    it('should return empty array for habit with no completions', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue([]);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      const completions = result.current.getCompletionsForHabit('habit-1');
+      expect(completions).toEqual([]);
+    });
+
+    it('should return empty array for non-existent habit', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      const completions = result.current.getCompletionsForHabit('non-existent');
+      expect(completions).toEqual([]);
     });
   });
 });

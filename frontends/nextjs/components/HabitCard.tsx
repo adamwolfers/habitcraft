@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Habit } from '@/types/habit';
+import { Habit, Completion } from '@/types/habit';
 import { getCalendarWeek, getCalendarMonth, getDayName, getMonthDay } from '@/utils/dateUtils';
 import { useHabitViewMode } from '@/hooks/useHabitViewMode';
 
@@ -11,14 +11,23 @@ interface HabitCardProps {
   onDelete: (habitId: string) => void;
   onEdit?: (habitId: string) => void;
   isCompletedOnDate: (habitId: string, date: Date) => boolean;
+  completions?: Completion[];
+  onOpenNoteModal?: (habitId: string, date: string) => void;
 }
 
-export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit, isCompletedOnDate }: HabitCardProps) {
+export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit, isCompletedOnDate, completions, onOpenNoteModal }: HabitCardProps) {
   const [viewMode, setViewMode] = useHabitViewMode(habit.id);
   const [weekOffset, setWeekOffset] = useState(0);
   const [monthOffset, setMonthOffset] = useState(0);
   const weekDays = getCalendarWeek(weekOffset);
   const calendarMonth = getCalendarMonth(monthOffset);
+
+  // Helper to get note for a specific date
+  const getNoteForDate = (dateString: string): string | null => {
+    if (!completions) return null;
+    const completion = completions.find(c => c.date === dateString);
+    return completion?.notes || null;
+  };
 
   return (
     <div className="bg-gray-800 rounded-lg p-6 space-y-4">
@@ -136,36 +145,62 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             today.setHours(0, 0, 0, 0);
             const isFuture = date > today;
 
+            const note = getNoteForDate(dateString);
+            const hasNote = note !== null;
+
             return (
-              <button
-                key={dateString}
-                onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
-                disabled={isFuture}
-                className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                  isFuture
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-700'
-                }`}
-              >
-                <span className="text-xs text-gray-400">{getDayName(dateString)}</span>
-                <span className="text-xs text-gray-500">{getMonthDay(dateString).split(' ')[1]}</span>
-                <div
-                  className={`w-8 h-8 rounded-full border-2 transition-all ${
-                    isCompleted
-                      ? 'border-transparent scale-110'
-                      : 'border-gray-600'
+              <div key={dateString} className="flex flex-col items-center gap-1">
+                <button
+                  onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
+                  disabled={isFuture}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
+                    isFuture
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-gray-700'
                   }`}
-                  style={{
-                    backgroundColor: isCompleted ? habit.color : 'transparent',
-                  }}
                 >
-                  {isCompleted && (
-                    <svg className="w-full h-full p-1 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-              </button>
+                  <span className="text-xs text-gray-400">{getDayName(dateString)}</span>
+                  <span className="text-xs text-gray-500">{getMonthDay(dateString).split(' ')[1]}</span>
+                  <div
+                    className={`w-8 h-8 rounded-full border-2 transition-all ${
+                      isCompleted
+                        ? 'border-transparent scale-110'
+                        : 'border-gray-600'
+                    }`}
+                    style={{
+                      backgroundColor: isCompleted ? habit.color : 'transparent',
+                    }}
+                  >
+                    {isCompleted && (
+                      <svg className="w-full h-full p-1 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+                {/* Note indicator for completed days */}
+                {isCompleted && onOpenNoteModal && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenNoteModal(habit.id, dateString);
+                    }}
+                    className="p-1 text-gray-400 hover:text-white transition-colors"
+                    aria-label={hasNote ? 'View note' : 'Add note'}
+                  >
+                    {hasNote ? (
+                      <svg data-testid="note-filled" className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                        <path d="M8 12h8v2H8zm0 4h5v2H8z"/>
+                      </svg>
+                    ) : (
+                      <svg data-testid="note-outline" className="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
             );
           })}
         </div>
@@ -222,7 +257,7 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
         <div className="grid grid-cols-7 gap-1">
           {calendarMonth.weeks.flat().map((dateString, index) => {
             if (dateString === '') {
-              return <div key={`empty-${index}`} className="h-8" />;
+              return <div key={`empty-${index}`} className="h-10" />;
             }
 
             const [year, month, day] = dateString.split('-').map(Number);
@@ -233,36 +268,64 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
             today.setHours(0, 0, 0, 0);
             const isFuture = date > today;
 
+            const note = getNoteForDate(dateString);
+            const hasNote = note !== null;
+
             return (
-              <button
-                key={dateString}
-                onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
-                disabled={isFuture}
-                className={`flex items-center justify-center h-8 rounded transition-all ${
-                  isFuture
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:bg-gray-700'
-                }`}
-              >
-                <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
-                    isCompleted
-                      ? ''
-                      : 'border border-gray-600'
+              <div key={dateString} className="flex flex-col items-center">
+                <button
+                  onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
+                  disabled={isFuture}
+                  className={`flex items-center justify-center h-8 w-full rounded transition-all ${
+                    isFuture
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-gray-700'
                   }`}
-                  style={{
-                    backgroundColor: isCompleted ? habit.color : 'transparent',
-                  }}
                 >
-                  {isCompleted ? (
-                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <span className="text-gray-400">{day}</span>
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                      isCompleted
+                        ? ''
+                        : 'border border-gray-600'
+                    }`}
+                    style={{
+                      backgroundColor: isCompleted ? habit.color : 'transparent',
+                    }}
+                  >
+                    {isCompleted ? (
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <span className="text-gray-400">{day}</span>
+                    )}
+                  </div>
+                </button>
+                {/* Note indicator - always reserve space for consistent layout */}
+                <div className="h-4 flex items-center justify-center">
+                  {isCompleted && onOpenNoteModal && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenNoteModal(habit.id, dateString);
+                      }}
+                      className="p-0.5 text-gray-400 hover:text-white transition-colors"
+                      aria-label={hasNote ? 'View note' : 'Add note'}
+                    >
+                      {hasNote ? (
+                        <svg data-testid="note-filled" className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+                          <path d="M8 12h8v2H8zm0 4h5v2H8z"/>
+                        </svg>
+                      ) : (
+                        <svg data-testid="note-outline" className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      )}
+                    </button>
                   )}
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

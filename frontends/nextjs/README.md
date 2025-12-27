@@ -18,7 +18,7 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 - Habit management UI (create, update, delete)
 - Edit habit modal with validation
 - User profile modal with name/email editing
-- Calendar week view with completion tracking
+- Calendar week/month view with completion tracking and notes
 - Week navigation (previous/next)
 - Optimistic UI updates
 - Custom hooks for state management (useHabits, useRequireAuth)

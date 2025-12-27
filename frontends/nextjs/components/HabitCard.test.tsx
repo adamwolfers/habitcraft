@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HabitCard from './HabitCard';
-import { Habit } from '@/types/habit';
+import { Habit, Completion } from '@/types/habit';
 
 describe('HabitCard', () => {
   const mockHabit: Habit = {
@@ -620,6 +620,137 @@ describe('HabitCard', () => {
 
       expect(weeklyButton).toHaveAttribute('aria-pressed', 'false');
       expect(monthlyButton).toHaveAttribute('aria-pressed', 'true');
+    });
+  });
+
+  describe('Note Indicator', () => {
+    const mockOnOpenNoteModal = jest.fn();
+
+    // Get current week's Sunday to create completions
+    const today = new Date();
+    const currentDay = today.getDay();
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - currentDay);
+    const monday = new Date(sunday);
+    monday.setDate(sunday.getDate() + 1);
+    const mondayString = monday.toISOString().split('T')[0];
+
+    const mockCompletions: Completion[] = [
+      {
+        id: 'completion-1',
+        habitId: '1',
+        date: mondayString,
+        notes: 'Ran 3 miles',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      }
+    ];
+
+    const mockCompletionsWithoutNotes: Completion[] = [
+      {
+        id: 'completion-2',
+        habitId: '1',
+        date: mondayString,
+        notes: null,
+        createdAt: '2025-01-15T10:00:00.000Z'
+      }
+    ];
+
+    const mockIsCompletedOnDateWithMonday = jest.fn((_habitId: string, date: Date) => {
+      const dateString = date.toISOString().split('T')[0];
+      return dateString === mondayString;
+    });
+
+    beforeEach(() => {
+      mockOnOpenNoteModal.mockClear();
+      mockIsCompletedOnDateWithMonday.mockClear();
+      // Clear localStorage to ensure weekly view (default) is used
+      localStorage.clear();
+    });
+
+    it('should render note icon for completed days when completions are provided', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDateWithMonday}
+          completions={mockCompletions}
+          onOpenNoteModal={mockOnOpenNoteModal}
+        />
+      );
+
+      // Should have note buttons for completed days
+      const noteButtons = screen.getAllByLabelText(/note/i);
+      expect(noteButtons.length).toBeGreaterThan(0);
+    });
+
+    it('should show filled note icon when note exists', () => {
+      const { container } = render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDateWithMonday}
+          completions={mockCompletions}
+          onOpenNoteModal={mockOnOpenNoteModal}
+        />
+      );
+
+      // Should have a filled note indicator (using data-testid)
+      const filledNoteIcon = container.querySelector('[data-testid="note-filled"]');
+      expect(filledNoteIcon).toBeInTheDocument();
+    });
+
+    it('should show outline note icon when no note exists', () => {
+      const { container } = render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDateWithMonday}
+          completions={mockCompletionsWithoutNotes}
+          onOpenNoteModal={mockOnOpenNoteModal}
+        />
+      );
+
+      // Should have an outline note indicator
+      const outlineNoteIcon = container.querySelector('[data-testid="note-outline"]');
+      expect(outlineNoteIcon).toBeInTheDocument();
+    });
+
+    it('should call onOpenNoteModal with habitId and date when note icon is clicked', async () => {
+      const user = userEvent.setup();
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDateWithMonday}
+          completions={mockCompletions}
+          onOpenNoteModal={mockOnOpenNoteModal}
+        />
+      );
+
+      const noteButtons = screen.getAllByLabelText(/note/i);
+      await user.click(noteButtons[0]);
+
+      expect(mockOnOpenNoteModal).toHaveBeenCalledTimes(1);
+      expect(mockOnOpenNoteModal).toHaveBeenCalledWith(mockHabit.id, mondayString);
+    });
+
+    it('should not render note icons when onOpenNoteModal is not provided', () => {
+      render(
+        <HabitCard
+          habit={mockHabit}
+          onToggleCompletion={mockOnToggleCompletion}
+          onDelete={mockOnDelete}
+          isCompletedOnDate={mockIsCompletedOnDateWithMonday}
+          completions={mockCompletions}
+        />
+      );
+
+      const noteButtons = screen.queryAllByLabelText(/note/i);
+      expect(noteButtons.length).toBe(0);
     });
   });
 });

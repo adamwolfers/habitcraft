@@ -652,6 +652,52 @@ paths:
                 $ref: '#/components/schemas/Error'
 
   /habits/{habitId}/completions/{date}:
+    put:
+      tags:
+        - Completions
+      summary: Update completion note
+      description: Update the note for an existing habit completion
+      operationId: updateCompletionNote
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/HabitId'
+        - name: date
+          in: path
+          required: true
+          description: Date of the completion to update
+          schema:
+            type: string
+            format: date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notes:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+                  example: "Went for a 45-minute run in the park"
+                  description: Note content (pass null to clear the note)
+      responses:
+        '200':
+          description: Completion note updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Completion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
     delete:
       tags:
         - Completions

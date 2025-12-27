@@ -12,7 +12,7 @@ Node.js + Express implementation of the HabitCraft API.
 - JWT authentication with HttpOnly cookies and refresh tokens
 - CORS support with credentials for frontend integration
 - Full habit CRUD operations (Create, Read, Update, Delete)
-- Completion tracking (Create, Read, Delete with date filtering)
+- Completion tracking (Create, Read, Update notes, Delete with date filtering)
 - Rate limiting on authentication endpoints (express-rate-limit)
 - Input sanitization for XSS prevention (xss library)
 - Security headers via helmet (CSP, HSTS, X-Frame-Options, etc.)
@@ -88,8 +88,9 @@ JWT_SECRET=your-secret-key-change-in-production
 - `DELETE /api/v1/habits/:id` - Delete habit
 
 ### Completions
-- `POST /api/v1/habits/:habitId/completions` - Mark habit complete
+- `POST /api/v1/habits/:habitId/completions` - Mark habit complete (optional notes)
 - `GET /api/v1/habits/:habitId/completions` - List completions (?startDate & ?endDate filters)
+- `PUT /api/v1/habits/:habitId/completions/:date` - Update completion note
 - `DELETE /api/v1/habits/:habitId/completions/:date` - Remove completion
 
 ### Authentication

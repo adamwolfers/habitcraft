@@ -155,6 +155,54 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
   }
 });
 
+// PUT /api/v1/habits/:habitId/completions/:date
+router.put('/:date', jwtAuthMiddleware, sanitizeBody, async (req, res) => {
+  try {
+    const { habitId, date } = req.params;
+    const { notes } = req.body;
+    const userId = req.userId;
+
+    // Validate date
+    if (!isValidDate(date)) {
+      return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    // Verify habit exists and belongs to user
+    const habitCheck = await verifyHabitOwnership(habitId, userId);
+
+    if (!habitCheck.exists) {
+      return res.status(404).json({ error: 'Habit not found' });
+    }
+
+    if (!habitCheck.owned) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    // Update completion note
+    const result = await pool.query(
+      `UPDATE completions
+       SET notes = $1
+       WHERE habit_id = $2 AND date = $3
+       RETURNING
+         id,
+         habit_id AS "habitId",
+         TO_CHAR(date, 'YYYY-MM-DD') AS date,
+         notes,
+         created_at AS "createdAt"`,
+      [notes === null ? null : notes, habitId, date]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Completion not found' });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating completion note:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // DELETE /api/v1/habits/:habitId/completions/:date
 router.delete('/:date', jwtAuthMiddleware, async (req, res) => {
   try {
