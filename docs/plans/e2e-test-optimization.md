@@ -6,6 +6,14 @@ This document outlines strategies to reduce E2E test execution time, both locall
 
 **Key insight**: Tests already use good isolation patterns (unique timestamps, read-only fixtures), making parallelization safe.
 
+## Status
+
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1.1 | CI Sharding + Workers | ✅ Completed |
+| 2.1 | Local Parallel Sharding | ✅ Completed |
+| 3.x | Additional Optimizations | ⏳ Future |
+
 ## Current State
 
 - **Framework**: Playwright v1.57.0

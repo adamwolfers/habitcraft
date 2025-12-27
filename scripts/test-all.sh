@@ -160,15 +160,73 @@ else
 fi
 echo ""
 
-# 4. E2E Tests
-echo "🌐 [4/4] End-to-End Tests"
+# 4. E2E Tests (parallel shards)
+echo "🌐 [4/4] End-to-End Tests (4 parallel shards)"
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT/frontends/nextjs"
-if npm run test:e2e; then
-    E2E=1
-    echo "✅ E2E tests passed"
+
+# Reset database once before running shards
+echo "  Resetting test database..."
+"$PROJECT_ROOT/scripts/test-db-reset.sh" > /dev/null 2>&1
+
+# Create temp directory for shard logs
+E2E_LOG_DIR="$PROJECT_ROOT/frontends/nextjs/.e2e-shard-logs"
+mkdir -p "$E2E_LOG_DIR"
+
+# Disable set -e for parallel section (exit codes handled manually)
+set +e
+
+# Run 4 shards in parallel with SKIP_E2E_SETUP to avoid duplicate DB resets
+# Using individual variables for compatibility with older bash (macOS /bin/bash is 3.x)
+SKIP_E2E_SETUP=1 npx playwright test --shard=1/4 > "$E2E_LOG_DIR/shard-1.log" 2>&1 &
+PID1=$!
+echo "  Started shard 1/4 (PID $PID1)"
+
+SKIP_E2E_SETUP=1 npx playwright test --shard=2/4 > "$E2E_LOG_DIR/shard-2.log" 2>&1 &
+PID2=$!
+echo "  Started shard 2/4 (PID $PID2)"
+
+SKIP_E2E_SETUP=1 npx playwright test --shard=3/4 > "$E2E_LOG_DIR/shard-3.log" 2>&1 &
+PID3=$!
+echo "  Started shard 3/4 (PID $PID3)"
+
+SKIP_E2E_SETUP=1 npx playwright test --shard=4/4 > "$E2E_LOG_DIR/shard-4.log" 2>&1 &
+PID4=$!
+echo "  Started shard 4/4 (PID $PID4)"
+
+# Wait for all shards (timeout handled by playwright's own timeout settings)
+E2E=1
+for shard in 1 2 3 4; do
+    eval "PID=\$PID$shard"
+
+    wait $PID
+    EXIT_CODE=$?
+
+    if [ $EXIT_CODE -eq 0 ]; then
+        echo "  ✅ Shard $shard/4 passed"
+    else
+        echo "  ❌ Shard $shard/4 failed (exit code $EXIT_CODE)"
+        echo "     See $E2E_LOG_DIR/shard-$shard.log for details"
+        E2E=0
+    fi
+done
+
+# Re-enable set -e
+set -e
+
+# Show summary from shard logs
+echo ""
+echo "📊 E2E Summary:"
+grep -h "passed\|failed" "$E2E_LOG_DIR"/*.log 2>/dev/null | grep -E "^\s*[0-9]+" || echo "  (no summary available)"
+
+# Clean up logs on success, keep on failure for debugging
+if [ $E2E -eq 1 ]; then
+    rm -rf "$E2E_LOG_DIR"
+    echo ""
+    echo "✅ E2E tests passed (all shards)"
 else
-    echo "❌ E2E tests failed"
+    echo ""
+    echo "❌ E2E tests failed (some shards)"
 fi
 echo ""
 
