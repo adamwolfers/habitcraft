@@ -2,7 +2,12 @@
 
 import { useState } from 'react';
 import { Habit } from '@/types/habit';
-import { PRESET_COLORS, PRESET_ICONS } from '@/utils/habitUtils';
+import {
+  PRESET_COLORS,
+  PRESET_ICONS,
+  detectHabitChanges,
+  buildHabitUpdatePayload,
+} from '@/utils/habitUtils';
 
 interface EditHabitModalProps {
   habit: Habit;
@@ -32,30 +37,17 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const trimmedName = name.trim();
-    const trimmedDescription = description.trim();
-
     // Don't submit if name is empty (though HTML5 validation should prevent this)
-    if (!trimmedName) {
+    if (!name.trim()) {
       return;
     }
 
-    // Check if anything has changed
-    const nameChanged = trimmedName !== habit.name;
-    const descriptionChanged = trimmedDescription !== (habit.description || '');
-    const colorChanged = color !== habit.color;
-    const iconChanged = icon !== habit.icon;
+    const formValues = { name, description, color, icon };
 
-    if (nameChanged || descriptionChanged || colorChanged || iconChanged) {
+    if (detectHabitChanges(formValues, habit)) {
       try {
-        // Send all required fields along with the updates
-        await onUpdate(habit.id, {
-          name: trimmedName,
-          description: trimmedDescription || null, // Convert empty string to null
-          frequency: habit.frequency,
-          color: color,
-          icon: icon,
-        });
+        const payload = buildHabitUpdatePayload(formValues, habit);
+        await onUpdate(habit.id, payload);
       } catch (err) {
         // Handle error - extract message from Error object or use generic message
         const errorMessage = err instanceof Error ? err.message : 'Failed to update habit';

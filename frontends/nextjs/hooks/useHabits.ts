@@ -12,6 +12,7 @@ import {
   deleteHabit as apiDeleteHabit
 } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import { filterCompletionsByDate } from '@/utils/completionUtils';
 
 // Helper to format date as YYYY-MM-DD
 function formatDate(date: Date): string {
@@ -91,7 +92,7 @@ export const useHabits = (userId: string) => {
 
         // Update local state
         const habitCompletions = completions.get(habitId) || [];
-        const updatedCompletions = habitCompletions.filter(c => c.date.split('T')[0] !== dateString);
+        const updatedCompletions = filterCompletionsByDate(habitCompletions, dateString, 'exclude');
         setCompletions(new Map(completions).set(habitId, updatedCompletions));
       } else {
         // Create completion
