@@ -3,9 +3,17 @@ import { useHabits } from './useHabits';
 import { HabitFormData, Habit, Completion } from '@/types/habit';
 import * as api from '@/lib/api';
 import * as authContextModule from '@/context/AuthContext';
+import * as confettiUtils from '@/utils/confettiUtils';
 
 // Mock the API module
 jest.mock('@/lib/api');
+
+// Mock the confetti utils
+jest.mock('@/utils/confettiUtils', () => ({
+  triggerConfetti: jest.fn(),
+}));
+
+const mockTriggerConfetti = confettiUtils.triggerConfetti as jest.MockedFunction<typeof confettiUtils.triggerConfetti>;
 
 // Mock the useAuth hook
 jest.mock('@/context/AuthContext', () => ({
@@ -552,6 +560,84 @@ describe('useHabits', () => {
 
       const isCompleted = result.current.isHabitCompletedOnDate('non-existent', new Date('2025-01-15'));
       expect(isCompleted).toBe(false);
+    });
+
+    it('should trigger confetti when creating a completion', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue([]);
+
+      const newCompletion: Completion = {
+        id: 'completion-new',
+        habitId: 'habit-1',
+        date: '2025-01-16',
+        notes: null,
+        createdAt: '2025-01-16T10:00:00.000Z'
+      };
+
+      mockCreateCompletion.mockResolvedValue(newCompletion);
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Clear any previous calls
+      mockTriggerConfetti.mockClear();
+
+      // Toggle completion (should create and trigger confetti)
+      await act(async () => {
+        await result.current.toggleCompletion('habit-1', new Date('2025-01-16'));
+      });
+
+      expect(mockTriggerConfetti).toHaveBeenCalledTimes(1);
+    });
+
+    it('should NOT trigger confetti when deleting a completion', async () => {
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockDeleteCompletion.mockResolvedValue();
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Clear any previous calls
+      mockTriggerConfetti.mockClear();
+
+      // Toggle completion (should delete, not create)
+      await act(async () => {
+        await result.current.toggleCompletion('habit-1', new Date('2025-01-15'));
+      });
+
+      expect(mockDeleteCompletion).toHaveBeenCalled();
+      expect(mockTriggerConfetti).not.toHaveBeenCalled();
+    });
+
+    it('should NOT trigger confetti when completion creation fails', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
+      mockFetchCompletions.mockResolvedValue([]);
+      mockCreateCompletion.mockRejectedValue(new Error('API Error'));
+
+      const { result } = renderHook(() => useHabits(mockUserId));
+
+      await waitFor(() => {
+        expect(result.current.habits).toHaveLength(1);
+      });
+
+      // Clear any previous calls
+      mockTriggerConfetti.mockClear();
+
+      // Toggle completion (should fail)
+      await act(async () => {
+        await result.current.toggleCompletion('habit-1', new Date('2025-01-16'));
+      });
+
+      expect(mockTriggerConfetti).not.toHaveBeenCalled();
+      consoleErrorSpy.mockRestore();
     });
   });
 

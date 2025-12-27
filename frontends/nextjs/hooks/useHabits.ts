@@ -13,6 +13,7 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { filterCompletionsByDate } from '@/utils/completionUtils';
+import { triggerConfetti } from '@/utils/confettiUtils';
 
 // Helper to format date as YYYY-MM-DD
 function formatDate(date: Date): string {
@@ -101,6 +102,9 @@ export const useHabits = (userId: string) => {
         // Update local state
         const habitCompletions = completions.get(habitId) || [];
         setCompletions(new Map(completions).set(habitId, [...habitCompletions, newCompletion]));
+
+        // Celebrate the completion with confetti!
+        triggerConfetti();
       }
     } catch (error) {
       console.error('Error toggling completion:', error);
