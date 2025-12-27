@@ -2,14 +2,14 @@
 
 ## Project Vision
 
-HabitCraft is a full-stack habit tracking application demonstrating modern web development practices with Test-Driven Development (TDD), clean architecture, and comprehensive testing.
+HabitCraft is a full-stack habit tracking application demonstrating modern web development practices with Test-Driven Development (TDD) and comprehensive testing.
 
 ## Technology Stack
 
 - **Frontend:** Next.js with React, TypeScript, Tailwind CSS
 - **Backend:** Node.js with Express, JavaScript
 - **Database:** PostgreSQL 14+
-- **Testing:** Jest + Supertest (Backend), Jest + React Testing Library (Frontend)
+- **Testing:** Jest + Supertest (Backend), Jest + React Testing Library (Frontend), Playwright (E2E)
 - **Deployment:** Docker Compose (dev), Lightsail Containers + RDS on AWS (prod)
 
 ## Version 1.0 Goals
@@ -27,513 +27,116 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Infrastructure & Setup
 
-- [x] Project structure and configuration
-- [x] Docker Compose orchestration
-- [x] PostgreSQL database setup
-- [x] Database schema (users, habits, completions tables)
-- [x] Seed data (demo users + sample habits)
-- [x] Environment variables configured
-- [x] Adminer database admin UI
+- [x] Project scaffolding with Docker Compose orchestration
+- [x] PostgreSQL database (schema for users, habits, completions)
+- [x] Seed data with demo users and Adminer for database administration
 
 ### Backend - Node.js + Express
 
 #### Foundation
 
-- [x] Express app setup and configuration
-- [x] Testing framework (Jest + Supertest)
-- [x] Database connection pool
-- [x] CORS support
-- [x] Environment variable management
-- [x] Hello World endpoint with tests
+- [x] Express app with Jest + Supertest testing
+- [x] Database connection pool, CORS support, environment variable configuration
 
 #### Authentication & Authorization
 
-- [x] Install dependencies (bcrypt, jsonwebtoken, express-validator)
-- [x] **User Registration (POST /api/v1/auth/register)**
-  - [x] Write tests (valid registration, duplicate email, validation, password hashing, JWT generation)
-  - [x] Implement endpoint with input validation
-  - [x] Hash passwords with bcrypt (10 salt rounds)
-  - [x] Generate access token (15 min) and refresh token (7 days)
-- [x] **User Login (POST /api/v1/auth/login)**
-  - [x] Write tests (success, invalid email, wrong password, token generation)
-  - [x] Implement endpoint with credential verification
-  - [x] Generic error messages (prevent user enumeration)
-  - [x] Generate JWT tokens
-- [x] **JWT Authentication Middleware**
-  - [x] Write tests (valid token, missing/malformed/expired tokens, wrong token type)
-  - [x] Implement jwtAuth.js middleware
-  - [x] Extract and verify token from Authorization header
-  - [x] Attach userId to request object
-- [x] **Token Refresh (POST /api/v1/auth/refresh)**
-  - [x] Write tests (valid refresh, expired token, wrong type, invalid signature)
-  - [x] Implement refresh endpoint
-  - [x] Validate refresh token and generate new access token
-- [x] **User Profile (GET /api/v1/auth/me)**
-  - [x] Write tests (success with valid token, missing/invalid/expired token)
-  - [x] Implement profile endpoint
-  - [x] Return user data (id, email, name, createdAt)
-- [x] **Update Protected Routes**
-  - [x] Write tests for habit endpoints with JWT authentication
-  - [x] Write tests for completion endpoints with JWT authentication
-  - [x] Replace mockAuth with jwtAuth middleware (with X-User-Id fallback for development)
-  - [x] Remove mockAuth.js file
-  - [x] Verify user isolation and data access controls
-  - [x] Remove X-User-Id fallback once frontend JWT auth is complete
-- [x] **Secure Token Storage (HttpOnly Cookies)**
-  - [x] Install cookie-parser middleware
-  - [x] Update CORS config to allow credentials
-  - [x] Update login/register to set HttpOnly cookies instead of returning tokens in body
-  - [x] Update JWT middleware to read tokens from cookies (with Authorization header fallback)
-  - [x] Update refresh endpoint to use cookies
-  - [x] Add logout endpoint to clear cookies
-  - [x] Update frontend to use credentials: 'include' for API requests
-  - [x] Remove localStorage token handling from frontend (using HttpOnly cookies instead)
+- [x] **Registration/Login** - Bcrypt password hashing (10 rounds), JWT access tokens (15 min) and refresh tokens (7 days), generic error messages to prevent user enumeration
+- [x] **JWT Middleware** - Token validation, request user attachment, protected route enforcement
+- [x] **Token Refresh** - Secure refresh token rotation with database-backed revocation
+- [x] **HttpOnly Cookies** - Secure token storage (no localStorage), CORS credentials support, logout endpoint
 
 #### Habit Management
 
-- [x] **POST /api/v1/habits** - Create habit
-  - [x] Tests
-  - [x] Input validation (name, frequency, color, icon)
-  - [x] User isolation enforcement
-- [x] **GET /api/v1/habits** - List habits
-  - [x] Tests
-  - [x] Optional status filter (active/archived)
-  - [x] User isolation
-- [x] **PUT /api/v1/habits/:id** - Update habit
-  - [x] Tests
-  - [x] Field updates (name, description, frequency, targetDays, color, icon, status)
-  - [x] User ownership enforcement
-- [x] **DELETE /api/v1/habits/:id** - Delete habit
-  - [x] Tests
-  - [x] User ownership enforcement
+- [x] Full CRUD API (`/api/v1/habits`) with validation, status filtering, ownership enforcement, and user isolation
 
 #### Completion Tracking
 
-- [x] **POST /api/v1/habits/:habitId/completions** - Mark complete
-  - [x] Tests
-  - [x] Habit ownership validation
-  - [x] Duplicate prevention (409 Conflict)
-  - [x] Date format validation
-- [x] **Prevent future date completions**
-  - [x] Write tests (reject dates after today, allow today and past dates)
-  - [x] Add validation to POST completions endpoint
-  - [x] Return 400 Bad Request with clear error message
-  - [x] Disable future date bubbles in HabitCard UI
-- [x] **GET /api/v1/habits/:habitId/completions** - List completions
-  - [x] Tests
-  - [x] Date range filtering (startDate, endDate)
-  - [x] Habit ownership validation
-- [x] **DELETE /api/v1/habits/:habitId/completions/:date** - Remove completion
-  - [x] Tests
-  - [x] Habit ownership validation
-  - [x] Date format validation
+- [x] Completion API (`/api/v1/habits/:habitId/completions`) with date validation, future date prevention, duplicate prevention (409), and date range filtering
 
 #### User Management
 
-- [x] **Refactor user profile to RESTful /users endpoint**
-  - [x] **Backend: Write tests for GET /api/v1/users/me (Red phase)**
-  - [x] **Backend: Implement users router (Green phase)**
-  - [x] **Frontend: Update AuthContext tests (Red phase)**
-  - [x] **Frontend: Update AuthContext implementation (Green phase)**
-  - [x] **Clean-up: Remove deprecated /auth/me endpoint**
-  - [x] **Documentation: Update OpenAPI specification**
-- [x] **User Profile Management**
-  - [x] **Update Name (PUT /api/v1/users/me)**
-  - [x] **Update Email (PUT /api/v1/users/me)**
-  - [x] **Change Password (PUT /api/v1/users/me/password)**
-    - [x] Write tests for password change endpoint (require current password)
-    - [x] Implement password change in backend
-    - [x] Add password change UI in frontend
-  - [x] **User Profile Management Modal**
-    - [x] **Modal Infrastructure**
-      - [x] Write unit tests for modal open/close functionality
-      - [x] Implement modal UI structure (open/close, cancel button)
-      - [x] Write tests for profile button in Header component
-      - [x] Add profile button to Header component
-    - [x] **Display User Info**
-      - [x] Write unit tests for user info display rendering
-      - [x] Implement user info display section
-    - [x] **Edit Name**
-      - [x] Write unit tests for name field rendering and validation
-      - [x] Implement name input field with validation
-      - [x] Write unit tests for name update submission
-      - [x] Connect name update to API
-    - [x] **Edit Email**
-      - [x] Write unit tests for email field rendering and validation
-      - [x] Implement email input field with validation
-      - [x] Write unit tests for email update submission
-      - [x] Connect email update to API
-    - [x] **Change Password Section**
-      - [x] Write unit tests for password fields rendering
-      - [x] Implement password change fields (current, new, confirm)
-      - [x] Write unit tests for password validation (match, strength)
-      - [x] Write unit tests for password change submission
-      - [x] Connect password change to API
-      - [x] Run all tests (scripts/test-all.sh)
-      - [x] Update project docs if needed
-    - [x] **Error Handling**
-      - [x] Write unit tests for error message rendering
-      - [x] Implement error handling UI
-    - [x] **Loading States**
-      - [x] Write unit tests for loading state during save
-      - [x] Implement loading indicators for save operations
-    - [x] **Header Cleanup**
-      - [x] Remove redundant user name display from Header (now in profile modal)
-      - [x] Remove redundant user email display from Header (now in profile modal)
-      - [x] Remove edit icons for name/email from Header
-      - [x] Update Header tests to reflect removed elements
+- [x] RESTful user endpoints (`/api/v1/users/me`) for profile updates (name, email) and password change
+- [x] Frontend Profile Modal with edit capabilities, loading states, and error handling
 
 ### Frontend - Next.js + React
 
 #### Foundation
 
-- [x] Next.js project setup with TypeScript
-- [x] Tailwind CSS configuration
-- [x] Testing framework (Jest + React Testing Library)
-- [x] Environment variable configuration
+- [x] Next.js 14 with TypeScript, Tailwind CSS, Jest + React Testing Library
 
 #### Authentication & Authorization
 
-- [x] **Auth Context (context/AuthContext.tsx)**
-  - [x] Write tests (login, logout, register, session persistence, loading states)
-  - [x] Implement AuthContext with user state management
-  - [x] Cookie-based authentication (HttpOnly cookies)
-  - [x] isLoading and isAuthenticated flags
-- [x] **Custom Auth Hooks**
-  - [x] Write tests for useAuth() hook
-  - [x] Write tests for useRequireAuth() hook (redirect logic)
-  - [x] Implement hooks
-- [x] **API Client JWT Integration (lib/api.ts)**
-  - [x] Write tests (401 interception, token refresh, retry logic)
-  - [x] Implement 401 interceptor
-  - [x] Automatic token refresh on expired access token
-  - [x] Request retry with new token
-  - [x] Configurable auth failure callback (setOnAuthFailure)
-  - [x] Configure auth failure callback in app initialization
-  - [x] Fix JSDOM navigation warnings in existing tests (lines 117, 445)
-  - [x] Fix React act() warnings in AuthContext tests
-  - [x] Fix React act() warnings in useHabits tests
-- [x] **Login Page (app/login/page.tsx)**
-  - [x] Write tests (form rendering, validation, loading, errors, redirect, links)
-  - [x] Implement email/password form
-  - [x] Form validation (browser HTML5 validation)
-  - [x] Error handling and loading states
-  - [x] Add AuthProvider to app layout
-    - [x] Write tests for layout with AuthProvider
-    - [x] Wrap app with AuthProvider in layout.tsx
-  - [x] Update seed data with working demo password
-    - [x] Generate bcrypt hash for demo password (demo123)
-    - [x] Update seed.sql with valid password hash
-    - [x] Update documentation (GETTING_STARTED.md, database README)
-- [x] **Registration Page (app/register/page.tsx)**
-  - [x] **Step 1: Basic Form Structure**
-    - [x] Write tests for form rendering (name, email, password, confirm password fields, submit button, heading, link to login)
-    - [x] Implement basic registration form UI
-    - [x] Add auto-redirect for already authenticated users
-  - [x] **Step 2: Form Validation**
-    - [x] Write tests for HTML5 validation (required fields, email format)
-    - [x] Write tests for password matching validation
-    - [x] Write tests for minimum password length (8 characters)
-    - [x] Implement client-side validation logic
-  - [x] **Step 3: Form Submission**
-    - [x] Write tests for successful registration flow
-    - [x] Write tests for redirect to home page after registration
-    - [x] Implement form submission logic
-  - [x] **Step 4: Error Handling**
-    - [x] Write tests for API error display
-    - [x] Write tests for clearing errors on input change
-    - [x] Implement error handling UI and logic
-- [x] **Protected Routes**
-  - [x] Write tests (loading state, redirect, authenticated access)
-  - [x] Implement ProtectedRoute wrapper component
-  - [x] Wrap main app pages
-- [x] **Logout Functionality**
-  - [x] Write tests (Header component with logout button, loading states, error handling)
-  - [x] Add logout button to UI (Header component in layout)
-  - [x] Implement logout flow (calls AuthContext.logout, redirects to /login)
+- [x] **AuthContext** - User state management, cookie-based auth, isLoading/isAuthenticated flags
+- [x] **Custom Hooks** - `useAuth()` for context access, `useRequireAuth()` for protected route redirects
+- [x] **API Client** - 401 interception, automatic token refresh, request retry
+- [x] **Login/Registration Pages** - Form validation, error handling, auto-redirect for authenticated users
+- [x] **Protected Routes** - ProtectedRoute wrapper with loading states and redirect logic
+- [x] **Logout** - Header component with logout button, cookie clearing, redirect to login
 
 #### API Integration
 
-- [x] API client service (lib/api.ts)
-- [x] Type definitions matching backend
-- [x] Error handling for API calls
-- [x] **Habits API**
-  - [x] fetchHabits()
-  - [x] createHabit()
-  - [x] updateHabit()
-  - [x] deleteHabit()
-- [x] **Completions API**
-  - [x] fetchCompletions()
-  - [x] createCompletion()
-  - [x] deleteCompletion()
+- [x] Typed API client (`lib/api.ts`) with full CRUD operations for habits and completions
 
 #### State Management
 
-- [x] useHabits hook
-  - [x] Fetch habits from API
-  - [x] Create habit
-  - [x] Update habit
-  - [x] Delete habit
-  - [x] Toggle completion
-  - [x] Check completion status
-  - [x] Optimistic UI updates
+- [x] `useHabits` hook managing habit fetching, CRUD operations, completion toggling, and optimistic UI updates
 
 #### UI Components
 
-- [x] **Home Page (app/page.tsx)**
-  - [x] Display habits from database
-  - [x] Create habit form integration
-  - [x] Update habit functionality (see EditHabitModal component below)
-  - [x] Delete habit button
-  - [x] Loading and empty states
-- [x] **AddHabitForm Component**
-  - [x] Form with validation
-  - [x] Habit customization (name, frequency, color, icon)
-  - [x] Connected to API
-  - [x] **Icon Selector**
-    - [x] Write tests for icon picker rendering
-    - [x] Implement icon picker UI (reuse from EditHabitModal)
-    - [x] Write tests for icon selection in form submission
-    - [x] Connect icon selection to createHabit API
-- [x] **HabitCard Component**
-  - [x] Calendar week view (Sunday-Saturday)
-  - [x] Week navigation (previous/next)
-  - [x] Completion bubbles with checkmarks
-  - [x] Color-coded indicators
-  - [x] Toggle completion on click
-  - [x] Delete button
-  - [x] Timezone handling for dates
-  - [x] Remove color dot next to edit button
-  - [x] Add "Today" button to jump to current week
-- [x] **EditHabitModal Component**
-  - [x] **Modal Infrastructure**
-    - [x] Write tests for modal open/close functionality
-    - [x] Implement modal UI structure (open/close, cancel button)
-    - [x] Write tests for edit button in HabitCard
-    - [x] Add edit button to HabitCard component
-  - [x] **Update Habit Title**
-    - [x] Write tests for title field rendering and validation
-    - [x] Implement title input field with validation
-    - [x] Write tests for title update submission
-    - [x] Connect title update to API
-  - [x] **Update Habit Description**
-    - [x] Write tests for description field rendering
-    - [x] Implement description textarea field
-    - [x] Write tests for description update submission
-    - [x] Connect description update to API
-  - [x] **Update Habit Color**
-    - [x] Write tests for color picker rendering
-    - [x] Implement color picker component
-    - [x] Write tests for color update submission
-    - [x] Connect color update to API
-  - [x] **Update Habit Icon**
-    - [x] Write tests for icon selector rendering (24 icons)
-    - [x] Implement icon selector component with 24 preset emojis
-    - [x] Write tests for icon update submission
-    - [x] Connect icon update to API
-  - [x] **Error Handling**
-    - [x] Write tests for API error display
-    - [x] Implement error handling UI
-- [x] **Date Utilities (utils/dateUtils.ts)**
-  - [x] getCalendarWeek() function
-  - [x] Week calculation logic
+- [x] **Dashboard** - Habit list display, create form, loading/empty states
+- [x] **AddHabitForm** - Validated form with name, frequency, color, and icon selector (24 preset emojis)
+- [x] **HabitCard** - Calendar week/month view, week navigation, completion bubbles, color-coded indicators, "Today" button
+- [x] **EditHabitModal** - Edit title, description, color, and icon with validation and error handling
+- [x] **Date Utilities** - `getCalendarWeek()` and `getCalendarMonth()` functions with timezone handling
 
 ### Acceptance Testing
 
 #### Test Infrastructure
 
-- [x] **Test Database Configuration**
-  - [x] Separate Docker container for test database (docker-compose.test.yml)
-  - [x] Test database: habitcraft_test on port 5433 (avoids conflict with dev on 5432)
-  - [x] Same schema as production (shared/database/schema.sql)
-- [x] **Automatic Setup/Teardown Scripts** (scripts/)
-  - [x] test-db-start.sh - Start test database container
-  - [x] test-db-stop.sh - Stop test database container
-  - [x] test-db-reset.sh - Reset to clean state with fixtures
-  - [x] test-db-fresh.sh - Remove all data and start fresh
-- [x] **Test Data Fixtures** (shared/database/test-fixtures.sql)
-  - [x] Test User 1: test@example.com / Test1234! (UUID: 11111111-...)
-  - [x] Test User 2: test2@example.com / Test1234! (UUID: 22222222-...)
-  - [x] Sample habits with predictable UUIDs for both users
-  - [x] Sample completions for integration testing
-- [x] **Environment Variables for Test Environment**
-  - [x] backends/node/.env.test - Test database connection, test JWT secret
-  - [x] frontends/nextjs/.env.test - Test API URL
-- [x] **E2E Testing Framework**
-  - [x] Install and configure Playwright (@playwright/test)
-  - [x] Playwright configuration (playwright.config.ts)
-  - [x] Global setup/teardown for test database (e2e/global-setup.ts, e2e/global-teardown.ts)
-  - [x] npm scripts: test:e2e, test:e2e:ui, test:e2e:headed, test:e2e:report
+- [x] **Test Database** - Separate Docker container (port 5433), same schema as production
+- [x] **Setup Scripts** - `test-db-start.sh`, `test-db-stop.sh`, `test-db-reset.sh`, `test-db-fresh.sh`
+- [x] **Test Fixtures** - Two test users with predictable UUIDs, sample habits, and completions
+- [x] **E2E Framework** - Playwright with global setup/teardown, multiple run modes
 
 #### Backend Integration Tests
 
-- [x] **Authentication Flow Tests** (integration/auth.test.js)
-  - [x] Register → Login → Access Protected Route
-  - [x] Login → Token Refresh → Continue Session
-  - [x] Invalid Credentials → Proper Error Response
-  - [x] User isolation verification
-  - [x] Logout and session invalidation
-  - [x] Token expiration handling
-- [x] **Habit CRUD Integration Tests** (integration/habits.test.js)
-  - [x] Full CRUD cycle with real database
-  - [x] User isolation (can't access other users' data)
-  - [x] Cascading deletes (habits → completions)
-  - [x] Status filtering with real data
-  - [x] Update validations with database constraints
-- [x] **Completion Tracking Integration Tests** (integration/completions.test.js)
-  - [x] Create completion → Verify in database
-  - [x] Date filtering with real data
-  - [x] Delete completion → Verify removal
-  - [x] Duplicate prevention
-  - [x] Habit ownership validation
+- [x] Authentication flows, habit CRUD with user isolation, cascading deletes, completion tracking with duplicate prevention
 
-#### Frontend End-to-End Tests (Playwright)
+#### Frontend E2E Tests (Playwright)
 
-- [x] Set up Playwright E2E testing framework
-- [x] **Authentication Flow E2E** (e2e/auth.spec.ts)
-  - [x] User registration flow
-  - [x] Login flow
-  - [x] Protected route access
-  - [x] Logout flow
-  - [x] User isolation verification
-    - [x] User 1 sees own habits, not User 2's habits
-    - [x] User 2 sees own habits, not User 1's habits (reverse direction)
-    - [x] Session switching: no data leakage between user sessions
-  - [x] Token refresh during active session
-- [x] **Habit Management E2E** (e2e/habits.spec.ts)
-  - [x] Create habit → Appears in list
-  - [x] Update habit → Changes persist
-  - [x] Delete habit → Removed from list
-- [x] **Completion Tracking E2E** (e2e/completions.spec.ts)
-  - [x] Toggle completion → Visual update
-  - [x] Navigate week → Loads completions
-  - [x] Remove completion → Visual update
-  - [x] Multiple habits completion tracking
-  - [x] Calendar navigation
-  - [x] Fix flaky test: "should persist completion after page reload"
-- [x] **E2E Test Isolation Fixes**
-  - **Problem:** Tests modify fixture data (habits, user profile, completions) without restoration, causing cross-test dependencies and potential failures when test order changes.
-  - **Solution:** Create unique test data instead of modifying fixtures
-  - **Data Strategy:**
-    - User 1 (`test@example.com`): READ ONLY - never modified
-    - User 2 (`test2@example.com`): Never logged in as, only used for "email taken" validation
-    - All data-modifying tests create unique entities with `Date.now()` timestamps
-  - [x] **habits.spec.ts - Update Habit Tests**
-    - [x] Added `createTestHabit` helper that creates unique habits with timestamp
-    - [x] All 5 update tests now create their own habits before testing
-  - [x] **auth.spec.ts - Profile Management Tests**
-    - [x] Profile update tests now register unique users before testing
-    - [x] "Email already taken" tests create unique users and check against user 1's email
-    - [x] Profile Modal Updates describe block creates unique users for each test
-  - [x] **completions.spec.ts - Completion Toggle Tests**
-    - [x] Toggle tests create unique habits using `createTestHabit` helper
-    - [x] "Track completions independently" test creates two unique habits
-    - [x] Navigation/display tests use fixture habits (read-only, safe)
-  - [x] **Verification**
-    - [x] All 50 E2E tests pass
-    - [x] Comprehensive audit confirms all tests are properly isolated
+- [x] 50 E2E tests covering authentication, habit management, and completion tracking
+- [x] **Test Isolation** - Fixture users are read-only; data-modifying tests create unique entities with timestamps
 
 ### Documentation
 
-- [x] **Update README.md**
-  - [x] v1 feature list
-  - [x] Remove polyglot/multi-backend references
-  - [x] Update roadmap with completed work
-  - [x] Current technology stack
-- [x] **Update GETTING_STARTED.md**
-  - [x] Remove mock auth references
-  - [x] Add JWT authentication setup steps
-  - [x] Update quick start instructions
-- [x] **Update OpenAPI Specification**
-  - [x] Add authentication endpoints (/auth/refresh, /auth/logout)
-  - [x] Update auth responses for HttpOnly cookies
-  - [x] Add 403 Forbidden response for completions
-  - [x] Remove unimplemented endpoints (GET /habits/{id}, statistics)
-  - [x] Fix DELETE completion response (200 with body)
-  - [x] Add request/response examples
-- [ ] **User Guide**
-  - [ ] Registration and login instructions
-  - [ ] Habit management guide
-  - [ ] Completion tracking guide
-  - [ ] Troubleshooting section
-- [x] **Update Backend README**
-  - [x] Remove mock auth references
-  - [x] Document JWT configuration
-  - [x] Update endpoint list
-- [x] **Update Frontend README**
-  - [x] Update status and completed features list
-  - [x] Update project structure with all components
-  - [x] Update test examples
-  - [x] Fix port configuration
-- [x] **AWS Architecture Documentation** (docs/AWS_ARCHITECTURE.md)
-  - [x] Lightsail Containers + RDS architecture
-  - [x] Step-by-step setup guide (~30 min)
-  - [x] CI/CD with GitHub Actions
-  - [x] Database migration steps
-  - [x] Automatic HTTPS on Lightsail domains
-  - [x] Built-in monitoring dashboards
-  - [x] Security checklist
-  - [x] Backup and disaster recovery procedures
+- [x] **README.md** - v1 features, current tech stack, removed polyglot references
+- [x] **GETTING_STARTED.md** - JWT auth setup, quick start instructions
+- [x] **OpenAPI Spec** - Complete API documentation with auth endpoints and examples
+- [x] **Backend/Frontend READMEs** - Current endpoints, component structure, test examples
+- [x] **AWS Architecture** (`docs/AWS_ARCHITECTURE.md`) - Lightsail + RDS setup, CI/CD, security checklist, backup procedures
+- [ ] **User Guide** - Registration, habit management, troubleshooting
 
 ### Security & Deployment
 
 #### Security Hardening
 
-- [x] Rate limiting on auth endpoints (express-rate-limit implementation)
-- [x] Input sanitization (XSS prevention with xss library)
-- [x] CORS configuration for specific origins (uses FRONTEND_URL env var, not wildcard)
-- [x] Production secret enforcement (fail startup if JWT_SECRET not set in production)
-- [x] Security headers (helmet.js - CSP, HSTS, etc.)
-- [x] Security event logging (failed logins, token refresh, auth failures)
-- [x] Security audit
-  - [x] Review authentication code (bcrypt, JWT, HttpOnly cookies, rate limiting)
-  - [x] Check OWASP Top 10 vulnerabilities (parameterized queries, no injection vectors)
-  - [x] Verify environment variable security (.env files gitignored, secrets from env)
-  - [x] Test token expiration and refresh (15m access, 7d refresh, proper rejection)
-- [x] Token security enhancements
-  - [x] Refresh token rotation on use
-  - [x] Token revocation/blacklist for logout
-  - [x] Unique token identifiers (jti claim)
-  - [x] Database storage for refresh tokens
+- [x] **Rate Limiting** - express-rate-limit on auth endpoints
+- [x] **Input Sanitization** - XSS prevention with xss library, parameterized SQL queries
+- [x] **CORS** - Specific origin configuration via FRONTEND_URL env var
+- [x] **Security Headers** - helmet.js (CSP, HSTS, etc.)
+- [x] **Token Security** - Refresh token rotation, database-backed revocation, unique JTI claims
+- [x] **Security Audit** - OWASP Top 10 review, environment variable security, token expiration testing
 
 #### Production Configuration
 
-- [x] Production Dockerfiles
-  - [x] Backend Dockerfile with health checks
-  - [x] Frontend Dockerfile with standalone output
-  - [x] Test images build and run locally
-- [x] AWS Lightsail deployment
-  - [x] Create Lightsail Container Services (frontend + backend)
-  - [x] Create RDS PostgreSQL instance
-  - [x] Configure VPC peering for RDS access
-  - [x] Set up GitHub Secrets for CI/CD
-  - [x] Deploy and verify health checks
-- [x] Production environment setup
-  - [x] Secure JWT_SECRET generation (64+ random bytes)
-  - [x] HTTPS via Lightsail (automatic on .amazonaws.com domains)
-  - [x] CORS whitelist for production frontend URL
-  - [x] Rate limiting configuration (production limits and thresholds)
+- [x] **Dockerfiles** - Production-optimized with health checks and standalone output
+- [x] **AWS Lightsail** - Frontend + Backend containers, RDS PostgreSQL, VPC peering
+- [x] **Environment** - Secure JWT_SECRET (64+ bytes), automatic HTTPS, production rate limits
 
 #### Custom Domain (habitcraft.org)
 
-- [x] **DNS Configuration (IONOS)**
-  - [x] Create CNAME record for `www.habitcraft.org` → Lightsail frontend URL
-  - [x] Create CNAME record for `api.habitcraft.org` → Lightsail backend URL
-  - [x] Configure apex domain (`habitcraft.org`) redirect to `www`
-- [x] **SSL Certificates (AWS Lightsail)**
-  - [x] Create certificate for `www.habitcraft.org`
-  - [x] Create certificate for `api.habitcraft.org`
-  - [x] Validate domain ownership via DNS
-  - [x] Attach certificates to Lightsail container services
-- [x] **Application Configuration**
-  - [x] Update `FRONTEND_URL` GitHub secret to `https://www.habitcraft.org`
-  - [x] Update `API_URL` GitHub secret to `https://api.habitcraft.org`
-  - [x] Redeploy services (CORS configured via FRONTEND_URL env var)
-- [x] **Verification**
-  - [x] Verify HTTPS works on custom domain
-  - [x] Verify API endpoints accessible at `api.habitcraft.org`
-  - [x] Verify cookies work across custom domain
-  - [x] Update README and docs with new URLs
+- [x] DNS (IONOS) with CNAME records, Lightsail SSL certificates
+- [x] Verified HTTPS/cookie functionality across `www.habitcraft.org` and `api.habitcraft.org`
 
 ---
 
@@ -769,10 +372,9 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 Extract closure-captured logic from React event handlers into pure utility functions for better testability. See `CLAUDE.md` for the pattern documentation.
 
-- **Registration Form Validation**
-  - [x] Extract `validateRegistrationForm()` to `utils/authUtils.ts`
-  - [x] Unit tests for password length and match validation
-  - [x] Update `register/page.tsx` to use utility
+- **Registration Form Validation** ✓
+  - Extracted `validateRegistrationForm()` to `utils/authUtils.ts`
+  - Unit tests for password length and match validation
 - **Edit Modal Change Detection** (`EditHabitModal.tsx:79-115`)
   - [ ] Extract `detectHabitChanges(current, original)` to `utils/habitUtils.ts`
   - [ ] Extract `buildHabitUpdatePayload()` for update payload construction
@@ -799,12 +401,8 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - [ ] Linting on commit (ESLint)
   - [ ] Document setup in GETTING_STARTED.md
 - **CI/CD Pipelines**
-  - [x] GitHub Actions workflows (.github/workflows/ci.yml)
-  - [x] Automated testing on every commit
-  - [x] Code quality checks (linting)
-  - [x] Automated deployment to AWS Lightsail
-  - [x] Code coverage reporting (Codecov integration)
-  - [x] Make integration/E2E tests depend on unit tests passing first
+  - [x] GitHub Actions workflows with automated testing, linting, Codecov coverage, and AWS Lightsail deployment
+  - [x] Integration/E2E tests depend on unit tests passing first
   - [ ] **Path-Based Deployment Filtering**
     - [ ] Add `dorny/paths-filter` action to detect changed paths
     - [ ] Define path filters for frontend, backend, and shared code:
@@ -826,102 +424,10 @@ Extract closure-captured logic from React event handlers into pure utility funct
       - CI workflow change → both deploy
       - Documentation change → neither deploys (already excluded)
   - [x] **E2E Test Container Optimization**
-    - **Problem:** Was using `--build` flag on every E2E run, rebuilding containers even when dependencies hadn't changed (~2-3 min).
-    - **Solution:** Docker BuildKit layer caching with GHA cache backend (31% faster: 240s → 166s)
-    - **Prerequisites:**
-      - [x] Dockerfiles already optimized (package files first, npm ci, then source) ✓
-
-    - [x] **Phase 1: Update scripts/test-all.sh for local development**
-      - **Problem:** Script uses `--no-cache` and removes volumes on every run, making local test runs very slow (~3-5 min startup)
-      - [x] Add `--rebuild` / `-r` flag to force full rebuild when needed:
-        ```bash
-        # Parse arguments
-        FORCE_REBUILD=false
-        while [[ "$#" -gt 0 ]]; do
-            case $1 in
-                -r|--rebuild) FORCE_REBUILD=true ;;
-                *) echo "Unknown parameter: $1"; exit 1 ;;
-            esac
-            shift
-        done
-        ```
-      - [x] Change default behavior to use cached containers:
-        ```bash
-        if [ "$FORCE_REBUILD" = true ]; then
-            echo "Force rebuild requested - removing old containers and volumes..."
-            docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
-            docker compose -f docker-compose.test.yml build --no-cache
-            docker compose -f docker-compose.test.yml up -d
-        else
-            echo "Starting containers (use --rebuild for fresh build)..."
-            docker compose -f docker-compose.test.yml up -d
-        fi
-        ```
-      - [x] Remove automatic image deletion (lines 47-48)
-      - [x] Remove automatic volume deletion (lines 49-50)
-      - [x] Update script header comments to document the `--rebuild` flag
-      - [x] Add auto-detection of package-lock.json changes:
-        ```bash
-        # Store hash of lock files after successful run
-        LOCK_HASH_FILE="$PROJECT_ROOT/.test-deps-hash"
-        CURRENT_HASH=$(cat backends/node/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
-
-        if [ -f "$LOCK_HASH_FILE" ] && [ "$(cat $LOCK_HASH_FILE)" != "$CURRENT_HASH" ]; then
-            echo "⚠️  Dependencies changed since last run - triggering rebuild"
-            FORCE_REBUILD=true
-        fi
-
-        # Save hash after successful run
-        echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
-        ```
-      - [x] Test scenarios:
-        - Default run (no flags) → fast startup with cached containers
-        - `--rebuild` flag → full rebuild with no cache
-        - Auto-detect dependency change → triggers rebuild automatically
-
-    - [x] **Phase 2: Add Docker BuildKit caching**
-      - [x] Add `docker/setup-buildx-action@v3` to e2e-tests job
-      - [x] Enable BuildKit with `DOCKER_BUILDKIT=1` environment variable
-      - [x] Create `docker-bake.test.hcl` for buildx bake configuration
-      - [x] Update CI to use `docker/bake-action@v5` with GitHub Actions cache backend:
-        ```yaml
-        - name: Build test containers with cache
-          uses: docker/bake-action@v5
-          with:
-            files: |
-              docker-compose.test.yml
-              docker-bake.test.hcl
-            set: |
-              *.cache-from=type=gha
-              *.cache-to=type=gha,mode=max
-            load: true
-        ```
-      - [x] Remove unused `actions/cache` step (GHA cache is handled by buildx directly)
-      - [x] Update `docker compose up` to not rebuild (images already built by bake)
-      - [x] Verify cache hits on subsequent CI runs (31% faster: 240s → 166s)
-
-    - [x] **Phase 3: Add dependency change visibility logging**
-      - BuildKit layer caching (Phase 2) automatically handles rebuilds when dependencies change
-      - This phase adds visibility into what's happening for debugging/monitoring
-      - [x] Add step to detect and log dependency changes
-
-    - [x] **Phase 4: Add force-rebuild workflow_dispatch input**
-      - Provides escape hatch for cache corruption or stale image issues
-      - [x] Add workflow_dispatch input with `force_rebuild` boolean
-      - [x] Update bake-action to conditionally skip cache when force_rebuild is true
-
-    - [x] **Phase 5: Replace anonymous volumes with named volumes**
-      - Anonymous volumes can cause stale node_modules issues
-      - [x] Update frontend-nextjs-test service volumes to use named volumes
-      - [x] Add `frontend_test_modules` and `frontend_test_next` to volumes section
-      - [x] Add explanatory comment in docker-compose.test.yml
-
-    - [x] **Phase 6: Testing and validation in CI**
-      - [x] Test scenario: Source-only change → BuildKit cache hits (28s build)
-      - [x] Test scenario: package-lock.json change → BuildKit rebuilds npm layers (106s build)
-      - [x] Test scenario: Manual force rebuild via workflow_dispatch (85s build, no cache)
-      - [x] Test scenario: First run (no cache) → full build works
-
+    - Docker BuildKit layer caching with GHA cache backend (31% faster: 240s → 166s)
+    - Local development: `scripts/test-all.sh` with `--rebuild` flag, auto-detection of dependency changes
+    - CI: `docker/bake-action@v5` with GHA cache, force-rebuild workflow_dispatch input
+    - Named volumes to prevent stale node_modules issues
 
 - **Cloud Deployment**
   - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
@@ -929,7 +435,7 @@ Extract closure-captured logic from React event handlers into pure utility funct
   - [x] AWS CLI deployment scripts
   - [x] GitHub Actions CI/CD workflows
   - [x] IAM policies for CI/CD, ops, and monitoring
-  - Terraform
+  - [ ] Terraform
 - **Monitoring & Observability**
   - CloudWatch Alarms (AWS-native)
     - SNS topic for email notifications (`habitcraft-alerts`)
@@ -970,6 +476,7 @@ Extract closure-captured logic from React event handlers into pure utility funct
 - **Project Plan:** `/PROJECT_PLAN.md` (this file)
 - **Getting Started:** `/GETTING_STARTED.md`
 - **Authentication Guide:** `/AUTHENTICATION.md`
+- **Testing Guide:** `/docs/TESTING.md`
 - **AWS Architecture:** `/docs/AWS_ARCHITECTURE.md`
 - **Main README:** `/README.md`
 - **API Specification:** `/shared/api-spec/openapi.yaml`
