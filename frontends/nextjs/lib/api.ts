@@ -256,6 +256,37 @@ export async function deleteCompletion(
 }
 
 /**
+ * Update a completion's note
+ * @param userId - The user ID
+ * @param habitId - The habit ID
+ * @param date - The completion date (YYYY-MM-DD)
+ * @param notes - The new note content (pass null to clear the note)
+ * @returns Promise<Completion> - The updated completion
+ */
+export async function updateCompletionNote(
+  userId: string,
+  habitId: string,
+  date: string,
+  notes: string | null
+): Promise<Completion> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`, {
+    method: 'PUT',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-User-Id': userId
+    },
+    body: JSON.stringify({ notes })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update completion note: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+/**
  * Delete a habit
  * @param userId - The user ID
  * @param habitId - The habit ID to delete

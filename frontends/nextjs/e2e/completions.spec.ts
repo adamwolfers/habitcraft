@@ -90,13 +90,13 @@ test.describe('Completion Tracking', () => {
       // Create a unique habit for this test (ensures isolation)
       const habitName = await createTestHabit(page, 'Toggle On Test');
       const habitCard = getHabitCard(page, habitName);
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Find a non-disabled day (new habit has no completions)
       let targetButton: Locator | null = null;
 
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         const isDisabled = await btn.isDisabled();
         if (!isDisabled) {
           targetButton = btn;
@@ -123,13 +123,13 @@ test.describe('Completion Tracking', () => {
       // Create a unique habit for this test (ensures isolation)
       const habitName = await createTestHabit(page, 'Toggle Off Test');
       const habitCard = getHabitCard(page, habitName);
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Find a non-disabled day
       let targetButton: Locator | null = null;
 
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         const isDisabled = await btn.isDisabled();
         if (!isDisabled) {
           targetButton = btn;
@@ -155,12 +155,12 @@ test.describe('Completion Tracking', () => {
     test('should not allow toggling future dates', async ({ page }) => {
       // This is a read-only test, safe to use fixture habit
       const habitCard = getHabitCard(page, 'Morning Exercise');
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Check if any future dates are disabled
       let foundDisabled = false;
       for (let i = 6; i >= 0; i--) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         const isDisabled = await btn.isDisabled();
         if (isDisabled) {
           foundDisabled = true;
@@ -182,14 +182,14 @@ test.describe('Completion Tracking', () => {
       // Create a unique habit for this test (ensures isolation)
       const habitName = await createTestHabit(page, 'Persist Test');
       const habitCard = getHabitCard(page, habitName);
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Find a non-disabled day (new habit has no completions)
       let targetButton: Locator | null = null;
       let targetIndex = -1;
 
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         const isDisabled = await btn.isDisabled();
         if (!isDisabled) {
           targetButton = btn;
@@ -222,7 +222,7 @@ test.describe('Completion Tracking', () => {
 
       // Get the button again after reload
       const reloadedCard = getHabitCard(page, habitName);
-      const reloadedButton = reloadedCard.locator('.grid-cols-7 > button').nth(targetIndex);
+      const reloadedButton = reloadedCard.locator('.grid-cols-7 > div').nth(targetIndex).locator('button').first();
 
       // Verify state persisted - use poll() to retry until completions render
       // (multiple habits fetch completions concurrently, so we need to wait for this specific one)
@@ -281,7 +281,7 @@ test.describe('Completion Tracking', () => {
 
     test('should load completions when navigating weeks', async ({ page }) => {
       const habitCard = getHabitCard(page, 'Morning Exercise');
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Navigate to previous week where fixture completions are stable
       // (Earlier tests may toggle current week's completions)
@@ -291,7 +291,7 @@ test.describe('Completion Tracking', () => {
       // Count completions in previous week (should have fixture data)
       let prevWeekCompletions = 0;
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         if (await isCompleted(btn)) {
           prevWeekCompletions++;
         }
@@ -304,7 +304,7 @@ test.describe('Completion Tracking', () => {
       // Count completions in two weeks ago (should have fewer/no completions)
       let twoWeeksAgoCompletions = 0;
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         if (await isCompleted(btn)) {
           twoWeeksAgoCompletions++;
         }
@@ -339,16 +339,16 @@ test.describe('Completion Tracking', () => {
       const habit2Card = getHabitCard(page, habit2Name);
 
       // Find non-disabled days for both habits
-      const habit1Buttons = habit1Card.locator('.grid-cols-7 > button');
-      const habit2Buttons = habit2Card.locator('.grid-cols-7 > button');
+      const habit1Columns = habit1Card.locator('.grid-cols-7 > div');
+      const habit2Columns = habit2Card.locator('.grid-cols-7 > div');
 
       let habit1Btn = null;
       let habit2Btn = null;
 
       // Find a common day that's not disabled in both
       for (let i = 0; i < 7; i++) {
-        const btn1 = habit1Buttons.nth(i);
-        const btn2 = habit2Buttons.nth(i);
+        const btn1 = habit1Columns.nth(i).locator('button').first();
+        const btn2 = habit2Columns.nth(i).locator('button').first();
 
         const btn1Disabled = await btn1.isDisabled();
         const btn2Disabled = await btn2.isDisabled();
@@ -395,15 +395,15 @@ test.describe('Completion Tracking', () => {
       await page.waitForTimeout(300);
 
       // Count completions for each habit
-      const exerciseButtons = exerciseCard.locator('.grid-cols-7 > button');
-      const readingButtons = readingCard.locator('.grid-cols-7 > button');
+      const exerciseColumns = exerciseCard.locator('.grid-cols-7 > div');
+      const readingColumns = readingCard.locator('.grid-cols-7 > div');
 
       let exerciseCompletions = 0;
       let readingCompletions = 0;
 
       for (let i = 0; i < 7; i++) {
-        if (await isCompleted(exerciseButtons.nth(i))) exerciseCompletions++;
-        if (await isCompleted(readingButtons.nth(i))) readingCompletions++;
+        if (await isCompleted(exerciseColumns.nth(i).locator('button').first())) exerciseCompletions++;
+        if (await isCompleted(readingColumns.nth(i).locator('button').first())) readingCompletions++;
       }
 
       // Both habits should have some completions (from fixtures)
@@ -428,8 +428,8 @@ test.describe('Completion Tracking', () => {
       expect(await isOnCurrentWeek(habitCard)).toBe(true);
 
       // Should show 7 day columns
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
-      await expect(dayButtons).toHaveCount(7);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+      await expect(dayColumns).toHaveCount(7);
     });
 
     test('should switch to monthly view when clicking Month toggle', async ({ page }) => {
@@ -577,11 +577,11 @@ test.describe('Completion Tracking', () => {
       const habitCard = getHabitCard(page, habitName);
 
       // Toggle a completion in weekly view
-      const weekDayButtons = habitCard.locator('.grid-cols-7 > button');
+      const weekDayColumns = habitCard.locator('.grid-cols-7 > div');
       let targetButton: Locator | null = null;
 
       for (let i = 0; i < 7; i++) {
-        const btn = weekDayButtons.nth(i);
+        const btn = weekDayColumns.nth(i).locator('button').first();
         const isDisabled = await btn.isDisabled();
         if (!isDisabled) {
           targetButton = btn;
@@ -698,9 +698,9 @@ test.describe('Completion Tracking', () => {
   test.describe('Calendar Display', () => {
     test('should display 7 days in the calendar', async ({ page }) => {
       const habitCard = getHabitCard(page, 'Morning Exercise');
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
-      await expect(dayButtons).toHaveCount(7);
+      await expect(dayColumns).toHaveCount(7);
     });
 
     test('should display day names', async ({ page }) => {
@@ -716,11 +716,11 @@ test.describe('Completion Tracking', () => {
 
     test('should show completed days with color fill', async ({ page }) => {
       const habitCard = getHabitCard(page, 'Morning Exercise');
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Find a completed day
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         if (await isCompleted(btn)) {
           // The completion circle should have the habit's color as background
           const circle = btn.locator('div.rounded-full');
@@ -737,11 +737,11 @@ test.describe('Completion Tracking', () => {
 
     test('should show uncompleted days with border only', async ({ page }) => {
       const habitCard = getHabitCard(page, 'Morning Exercise');
-      const dayButtons = habitCard.locator('.grid-cols-7 > button');
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
 
       // Find an uncompleted, non-disabled day
       for (let i = 0; i < 7; i++) {
-        const btn = dayButtons.nth(i);
+        const btn = dayColumns.nth(i).locator('button').first();
         const isDisabled = await btn.isDisabled();
         if (isDisabled) continue;
 
@@ -756,6 +756,387 @@ test.describe('Completion Tracking', () => {
           break;
         }
       }
+    });
+  });
+
+  test.describe('Completion Notes', () => {
+    /**
+     * Helper to create a unique habit for testing notes.
+     */
+    async function createTestHabit(page: Page, prefix: string) {
+      const habitName = `${prefix} ${Date.now()}`;
+      await page.getByRole('button', { name: /add new habit/i }).click();
+      await page.getByLabel(/habit name/i).fill(habitName);
+      await page.getByRole('button', { name: /^add habit$/i }).click();
+      await expect(page.getByText(habitName)).toBeVisible();
+      return habitName;
+    }
+
+    test('should show note icon after completing a day', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Note Icon Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day button
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Verify note icon appears (either "Add note" or "View note")
+      const noteButton = targetColumn!.getByRole('button', { name: /note/i });
+      await expect(noteButton).toBeVisible();
+    });
+
+    test('should open note modal when clicking note icon', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Note Modal Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day and complete it
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Click note icon
+      const noteButton = targetColumn!.getByRole('button', { name: /note/i });
+      await noteButton.click();
+
+      // Verify modal opens
+      const modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      // Verify modal shows habit name
+      await expect(modal.getByText(habitName)).toBeVisible();
+
+      // Verify Save and Cancel buttons are present
+      await expect(modal.getByRole('button', { name: /save/i })).toBeVisible();
+      await expect(modal.getByRole('button', { name: /cancel/i })).toBeVisible();
+    });
+
+    test('should add a note to a completion', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Add Note Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day and complete it
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Click note icon (outline - no note yet)
+      const noteButton = targetColumn!.getByRole('button', { name: /add note/i });
+      await noteButton.click();
+
+      // Wait for modal
+      const modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      // Enter a note
+      const textarea = modal.getByRole('textbox');
+      await textarea.fill('Ran 5 miles in the park');
+
+      // Wait for API and click Save
+      const responsePromise = page.waitForResponse(
+        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+      );
+      await modal.getByRole('button', { name: /save/i }).click();
+      await responsePromise;
+
+      // Modal should close
+      await expect(modal).not.toBeVisible();
+
+      // Note icon should now show filled (View note)
+      const viewNoteButton = targetColumn!.getByRole('button', { name: /view note/i });
+      await expect(viewNoteButton).toBeVisible();
+    });
+
+    test('should edit an existing note', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Edit Note Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day and complete it
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Add initial note
+      let noteButton = targetColumn!.getByRole('button', { name: /note/i });
+      await noteButton.click();
+
+      let modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      await modal.getByRole('textbox').fill('Original note');
+
+      let responsePromise = page.waitForResponse(
+        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+      );
+      await modal.getByRole('button', { name: /save/i }).click();
+      await responsePromise;
+
+      await expect(modal).not.toBeVisible();
+
+      // Re-open modal and edit note
+      noteButton = targetColumn!.getByRole('button', { name: /view note/i });
+      await noteButton.click();
+
+      modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      // Verify original note is shown
+      const textarea = modal.getByRole('textbox');
+      await expect(textarea).toHaveValue('Original note');
+
+      // Edit the note
+      await textarea.clear();
+      await textarea.fill('Updated note content');
+
+      responsePromise = page.waitForResponse(
+        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+      );
+      await modal.getByRole('button', { name: /save/i }).click();
+      await responsePromise;
+
+      await expect(modal).not.toBeVisible();
+
+      // Verify note was updated by re-opening modal
+      noteButton = targetColumn!.getByRole('button', { name: /view note/i });
+      await noteButton.click();
+
+      modal = page.getByRole('dialog');
+      await expect(modal.getByRole('textbox')).toHaveValue('Updated note content');
+
+      // Close modal
+      await modal.getByRole('button', { name: /cancel/i }).click();
+    });
+
+    test('should delete a note', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Delete Note Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day and complete it
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Add a note first
+      let noteButton = targetColumn!.getByRole('button', { name: /note/i });
+      await noteButton.click();
+
+      let modal = page.getByRole('dialog');
+      await modal.getByRole('textbox').fill('Note to be deleted');
+
+      let responsePromise = page.waitForResponse(
+        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+      );
+      await modal.getByRole('button', { name: /save/i }).click();
+      await responsePromise;
+
+      await expect(modal).not.toBeVisible();
+
+      // Open modal and delete note
+      noteButton = targetColumn!.getByRole('button', { name: /view note/i });
+      await noteButton.click();
+
+      modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      // Verify Delete Note button is present
+      const deleteButton = modal.getByRole('button', { name: /delete note/i });
+      await expect(deleteButton).toBeVisible();
+
+      // Delete the note
+      responsePromise = page.waitForResponse(
+        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+      );
+      await deleteButton.click();
+      await responsePromise;
+
+      await expect(modal).not.toBeVisible();
+
+      // Note icon should now show outline (Add note)
+      const addNoteButton = targetColumn!.getByRole('button', { name: /add note/i });
+      await expect(addNoteButton).toBeVisible();
+    });
+
+    test('should close modal without saving when clicking Cancel', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Cancel Note Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day and complete it
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Open note modal
+      const noteButton = targetColumn!.getByRole('button', { name: /note/i });
+      await noteButton.click();
+
+      const modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      // Enter some text
+      await modal.getByRole('textbox').fill('Text that will be discarded');
+
+      // Click Cancel
+      await modal.getByRole('button', { name: /cancel/i }).click();
+
+      // Modal should close
+      await expect(modal).not.toBeVisible();
+
+      // Re-open modal and verify note was not saved
+      await noteButton.click();
+      const reopenedModal = page.getByRole('dialog');
+      const textarea = reopenedModal.getByRole('textbox');
+      await expect(textarea).toHaveValue('');
+
+      // Close modal
+      await reopenedModal.getByRole('button', { name: /cancel/i }).click();
+    });
+
+    test('should show character count in note modal', async ({ page }) => {
+      // Create a unique habit for this test
+      const habitName = await createTestHabit(page, 'Char Count Test');
+      const habitCard = getHabitCard(page, habitName);
+      const dayColumns = habitCard.locator('.grid-cols-7 > div');
+
+      // Find a non-disabled day and complete it
+      let targetColumn: Locator | null = null;
+
+      for (let i = 0; i < 7; i++) {
+        const col = dayColumns.nth(i);
+        const dayBtn = col.locator('button').first();
+        const isDisabled = await dayBtn.isDisabled();
+        if (!isDisabled) {
+          targetColumn = col;
+          break;
+        }
+      }
+
+      expect(targetColumn).not.toBeNull();
+
+      // Complete the day
+      const dayBtn = targetColumn!.locator('button').first();
+      await dayBtn.click();
+      await page.waitForTimeout(500);
+
+      // Open note modal
+      const noteButton = targetColumn!.getByRole('button', { name: /note/i });
+      await noteButton.click();
+
+      const modal = page.getByRole('dialog');
+      await expect(modal).toBeVisible();
+
+      // Verify initial character count
+      await expect(modal.getByText('0/500')).toBeVisible();
+
+      // Type some text
+      await modal.getByRole('textbox').fill('Hello');
+
+      // Verify updated character count
+      await expect(modal.getByText('5/500')).toBeVisible();
+
+      // Close modal
+      await modal.getByRole('button', { name: /cancel/i }).click();
     });
   });
 });

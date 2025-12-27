@@ -1,4 +1,4 @@
-import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, deleteHabit, setOnAuthFailure, updateUserName, changePassword } from './api';
+import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, updateCompletionNote, deleteHabit, setOnAuthFailure, updateUserName, changePassword } from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -384,6 +384,102 @@ describe('deleteCompletion', () => {
     });
 
     await expect(deleteCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow('Failed to delete completion: 404');
+  });
+});
+
+describe('updateCompletionNote', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const mockHabitId = 'habit-123';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should update completion note with PUT request', async () => {
+    const mockCompletion: Completion = {
+      id: 'completion-1',
+      habitId: mockHabitId,
+      date: '2025-01-15',
+      notes: 'Updated note',
+      createdAt: '2025-01-15T10:00:00.000Z'
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockCompletion
+    });
+
+    const result = await updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'Updated note');
+
+    expect(result).toEqual(mockCompletion);
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions/2025-01-15`,
+      {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': mockUserId
+        },
+        body: JSON.stringify({ notes: 'Updated note' })
+      }
+    );
+  });
+
+  it('should clear note when null is passed', async () => {
+    const mockCompletion: Completion = {
+      id: 'completion-1',
+      habitId: mockHabitId,
+      date: '2025-01-15',
+      notes: null,
+      createdAt: '2025-01-15T10:00:00.000Z'
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => mockCompletion
+    });
+
+    const result = await updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', null);
+
+    expect(result.notes).toBeNull();
+    expect(global.fetch).toHaveBeenCalledWith(
+      `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions/2025-01-15`,
+      expect.objectContaining({
+        body: JSON.stringify({ notes: null })
+      })
+    );
+  });
+
+  it('should throw error when update fails due to not found', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 404
+    });
+
+    await expect(updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'note'))
+      .rejects.toThrow('Failed to update completion note: 404');
+  });
+
+  it('should throw error when update fails due to unauthorized', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 403
+    });
+
+    await expect(updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'note'))
+      .rejects.toThrow('Failed to update completion note: 403');
   });
 });
 

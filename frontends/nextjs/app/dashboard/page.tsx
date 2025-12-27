@@ -6,10 +6,18 @@ import { useAuth } from "@/context/AuthContext";
 import AddHabitForm from "@/components/AddHabitForm";
 import HabitCard from "@/components/HabitCard";
 import EditHabitModal from "@/components/EditHabitModal";
+import CompletionNoteModal from "@/components/CompletionNoteModal";
 import Footer from "@/components/Footer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Habit, HabitFormData } from "@/types/habit";
 import { findHabitById } from "@/utils/habitUtils";
+
+interface NoteModalState {
+  habitId: string;
+  habitName: string;
+  date: string;
+  existingNote: string | null;
+}
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -20,8 +28,11 @@ export default function Dashboard() {
     toggleCompletion,
     isHabitCompletedOnDate,
     deleteHabit,
+    updateNote,
+    getCompletionsForHabit,
   } = useHabits(user?.id ?? "");
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [noteModal, setNoteModal] = useState<NoteModalState | null>(null);
 
   const handleAddHabit = async (habitData: HabitFormData) => {
     await createHabit(habitData);
@@ -55,6 +66,40 @@ export default function Dashboard() {
 
   const handleCloseModal = () => {
     setEditingHabit(null);
+  };
+
+  const handleOpenNoteModal = (habitId: string, date: string) => {
+    const habit = findHabitById(habits, habitId);
+    if (!habit) {
+      console.error(`Attempted to open note for non-existent habit: ${habitId}`);
+      return;
+    }
+
+    const completions = getCompletionsForHabit(habitId);
+    const completion = completions.find((c) => c.date === date);
+    const existingNote = completion?.notes || null;
+
+    setNoteModal({
+      habitId,
+      habitName: habit.name,
+      date,
+      existingNote,
+    });
+  };
+
+  const handleSaveNote = async (note: string | null) => {
+    if (!noteModal) return;
+
+    try {
+      await updateNote(noteModal.habitId, noteModal.date, note);
+      setNoteModal(null);
+    } catch (error) {
+      console.error("Failed to update note:", error);
+    }
+  };
+
+  const handleCloseNoteModal = () => {
+    setNoteModal(null);
   };
 
   return (
@@ -92,6 +137,8 @@ export default function Dashboard() {
                     onDelete={handleDeleteHabit}
                     onEdit={handleEditHabit}
                     isCompletedOnDate={isHabitCompletedOnDate}
+                    completions={getCompletionsForHabit(habit.id)}
+                    onOpenNoteModal={handleOpenNoteModal}
                   />
                 ))}
               </div>
@@ -106,6 +153,15 @@ export default function Dashboard() {
           isOpen={!!editingHabit}
           onClose={handleCloseModal}
           onUpdate={handleUpdateHabit}
+        />
+      )}
+      {noteModal && (
+        <CompletionNoteModal
+          habitName={noteModal.habitName}
+          date={noteModal.date}
+          existingNote={noteModal.existingNote}
+          onSave={handleSaveNote}
+          onClose={handleCloseNoteModal}
         />
       )}
     </ProtectedRoute>

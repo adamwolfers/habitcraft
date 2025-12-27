@@ -404,6 +404,183 @@ describe('Completions API', () => {
     });
   });
 
+  describe('PUT /api/v1/habits/:habitId/completions/:date', () => {
+    it('should update a completion note', async () => {
+      const updatedCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: mockDate,
+        notes: 'Updated note',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      };
+
+      // Mock habit exists check
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      // Mock completion update
+      pool.query.mockResolvedValueOnce({
+        rows: [updatedCompletion]
+      });
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: 'Updated note' });
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual(updatedCompletion);
+      expect(pool.query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE completions'),
+        expect.arrayContaining([mockHabitId, mockDate])
+      );
+    });
+
+    it('should clear note when null is passed', async () => {
+      const updatedCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: mockDate,
+        notes: null,
+        createdAt: '2025-01-15T10:00:00.000Z'
+      };
+
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: [updatedCompletion]
+      });
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: null });
+
+      expect(response.status).toBe(200);
+      expect(response.body.notes).toBe(null);
+    });
+
+    it('should return 401 without authentication', async () => {
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .send({ notes: 'Updated note' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 400 for invalid date format', async () => {
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/invalid-date`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: 'Updated note' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain('date');
+    });
+
+    it('should return 404 when completion does not exist', async () => {
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: []
+      });
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: 'Updated note' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toContain('Completion not found');
+    });
+
+    it('should return 404 when habit does not exist', async () => {
+      pool.query.mockResolvedValueOnce({ rows: [] });
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: 'Updated note' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toContain('Habit not found');
+    });
+
+    it('should return 403 when habit belongs to different user', async () => {
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: 'different-user-id' }]
+      });
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: 'Updated note' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.error.toLowerCase()).toContain('access');
+    });
+
+    it('should sanitize XSS from notes field', async () => {
+      const updatedCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: mockDate,
+        notes: 'Sanitized notes',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      };
+
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: [updatedCompletion]
+      });
+
+      await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: '<script>alert("xss")</script>Sanitized notes' });
+
+      const updateCall = pool.query.mock.calls[1];
+      const updatedNotes = updateCall[1][0]; // notes is first param
+      expect(updatedNotes).toBe('Sanitized notes');
+      expect(updatedNotes).not.toContain('<script>');
+    });
+
+    it('should trim whitespace from notes field', async () => {
+      const updatedCompletion = {
+        id: mockCompletionId,
+        habitId: mockHabitId,
+        date: mockDate,
+        notes: 'Trimmed notes',
+        createdAt: '2025-01-15T10:00:00.000Z'
+      };
+
+      pool.query.mockResolvedValueOnce({
+        rows: [{ id: mockHabitId, user_id: mockUserId }]
+      });
+
+      pool.query.mockResolvedValueOnce({
+        rows: [updatedCompletion]
+      });
+
+      await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: '  Trimmed notes  ' });
+
+      const updateCall = pool.query.mock.calls[1];
+      const updatedNotes = updateCall[1][0];
+      expect(updatedNotes).toBe('Trimmed notes');
+    });
+  });
+
   describe('Input sanitization', () => {
     it('should sanitize XSS from notes field', async () => {
       const mockCompletion = {

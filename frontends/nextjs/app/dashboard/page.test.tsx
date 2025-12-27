@@ -83,9 +83,12 @@ describe('Dashboard Page - Delete Functionality', () => {
   ];
 
   const mockCreateHabit = jest.fn();
+  const mockUpdateHabit = jest.fn();
   const mockToggleCompletion = jest.fn();
   const mockIsHabitCompletedOnDate = jest.fn();
   const mockDeleteHabit = jest.fn();
+  const mockUpdateNote = jest.fn();
+  const mockGetCompletionsForHabit = jest.fn().mockReturnValue([]);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -113,9 +116,12 @@ describe('Dashboard Page - Delete Functionality', () => {
     mockUseHabits.mockReturnValue({
       habits: mockHabits,
       createHabit: mockCreateHabit,
+      updateHabit: mockUpdateHabit,
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      updateNote: mockUpdateNote,
+      getCompletionsForHabit: mockGetCompletionsForHabit,
       isAuthLoading: false,
     });
   });
@@ -181,6 +187,8 @@ describe('Dashboard Page - Delete Functionality', () => {
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      updateNote: jest.fn(),
+      getCompletionsForHabit: jest.fn().mockReturnValue([]),
       isAuthLoading: false,
     });
 
@@ -295,9 +303,12 @@ describe('Dashboard Page - Delete Functionality', () => {
     mockUseHabits.mockReturnValue({
       habits: [],
       createHabit: mockCreateHabit,
+      updateHabit: mockUpdateHabit,
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      updateNote: mockUpdateNote,
+      getCompletionsForHabit: mockGetCompletionsForHabit,
       isAuthLoading: false,
     });
 
@@ -372,6 +383,8 @@ describe('Dashboard Page - Edit Functionality', () => {
   const mockToggleCompletion = jest.fn();
   const mockIsHabitCompletedOnDate = jest.fn();
   const mockDeleteHabit = jest.fn();
+  const mockUpdateNote = jest.fn();
+  const mockGetCompletionsForHabit = jest.fn().mockReturnValue([]);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -402,6 +415,8 @@ describe('Dashboard Page - Edit Functionality', () => {
       toggleCompletion: mockToggleCompletion,
       isHabitCompletedOnDate: mockIsHabitCompletedOnDate,
       deleteHabit: mockDeleteHabit,
+      updateNote: mockUpdateNote,
+      getCompletionsForHabit: mockGetCompletionsForHabit,
       isAuthLoading: false,
     });
   });

@@ -448,6 +448,127 @@ describe('Completion Tracking Integration Tests', () => {
     });
   });
 
+  describe('Update Completion Note (PUT /api/v1/habits/:habitId/completions/:date)', () => {
+    it('should update note on existing completion', async () => {
+      const today = getToday();
+      const pool = getTestPool();
+
+      // Create a completion first
+      await pool.query(
+        'INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)',
+        [testHabits.exercise, today, 'Original note']
+      );
+
+      // Update the note
+      const response = await request(app)
+        .put(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
+        .set('Cookie', user1Cookies)
+        .send({ notes: 'Updated note content' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.notes).toBe('Updated note content');
+      expect(response.body.habitId).toBe(testHabits.exercise);
+      expect(response.body.date).toBe(today);
+
+      // Verify in database
+      const result = await pool.query(
+        'SELECT notes FROM completions WHERE habit_id = $1 AND date = $2',
+        [testHabits.exercise, today]
+      );
+      expect(result.rows[0].notes).toBe('Updated note content');
+    });
+
+    it('should clear note when null is passed', async () => {
+      const today = getToday();
+      const pool = getTestPool();
+
+      // Create a completion with a note
+      await pool.query(
+        'INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)',
+        [testHabits.exercise, today, 'Note to delete']
+      );
+
+      // Clear the note by passing null
+      const response = await request(app)
+        .put(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
+        .set('Cookie', user1Cookies)
+        .send({ notes: null });
+
+      expect(response.status).toBe(200);
+      expect(response.body.notes).toBeNull();
+
+      // Verify in database
+      const result = await pool.query(
+        'SELECT notes FROM completions WHERE habit_id = $1 AND date = $2',
+        [testHabits.exercise, today]
+      );
+      expect(result.rows[0].notes).toBeNull();
+    });
+
+    it('should return 404 when completion does not exist', async () => {
+      const response = await request(app)
+        .put(`/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`)
+        .set('Cookie', user1Cookies)
+        .send({ notes: 'Some note' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toContain('not found');
+    });
+
+    it('should return 404 for non-existent habit', async () => {
+      const response = await request(app)
+        .put('/api/v1/habits/99999999-9999-9999-9999-999999999999/completions/2025-01-01')
+        .set('Cookie', user1Cookies)
+        .send({ notes: 'Some note' });
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should return 400 for invalid date format', async () => {
+      const response = await request(app)
+        .put(`/api/v1/habits/${testHabits.exercise}/completions/invalid-date`)
+        .set('Cookie', user1Cookies)
+        .send({ notes: 'Some note' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error.toLowerCase()).toContain('date');
+    });
+
+    it('should return 401 without authentication', async () => {
+      const response = await request(app)
+        .put(`/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`)
+        .send({ notes: 'Some note' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should not allow user 1 to update note on user 2 habit', async () => {
+      const today = getToday();
+      const pool = getTestPool();
+
+      // Create completion for user 2's habit
+      await pool.query(
+        'INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)',
+        [testHabits.user2Habit, today, 'User 2 note']
+      );
+
+      // User 1 tries to update it
+      const response = await request(app)
+        .put(`/api/v1/habits/${testHabits.user2Habit}/completions/${today}`)
+        .set('Cookie', user1Cookies)
+        .send({ notes: 'Hacked note' });
+
+      expect(response.status).toBe(403);
+
+      // Verify note unchanged
+      const result = await pool.query(
+        'SELECT notes FROM completions WHERE habit_id = $1 AND date = $2',
+        [testHabits.user2Habit, today]
+      );
+      expect(result.rows[0].notes).toBe('User 2 note');
+    });
+  });
+
   describe('Habit Ownership Validation', () => {
     it('should not allow user 1 to create completion for user 2 habit', async () => {
       const response = await request(app)

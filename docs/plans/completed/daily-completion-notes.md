@@ -1,8 +1,9 @@
 # Plan: Daily Completion Notes
 
-**Status:** Planned
-**Branch:** TBD
+**Status:** Completed
+**Branch:** master
 **Created:** 2025-12-26
+**Completed:** 2025-12-26
 
 ## Summary
 
@@ -45,24 +46,24 @@ Two UX options for capturing notes:
 #### Step 1: Create CompletionNoteModal Component Tests
 **Files:** `frontends/nextjs/components/CompletionNoteModal.test.tsx`
 
-- [ ] Test: renders modal with habit name and date in header
-- [ ] Test: renders textarea for note input
-- [ ] Test: renders Save and Cancel buttons
-- [ ] Test: populates textarea with existing note when provided
-- [ ] Test: calls onSave with note text when Save clicked
-- [ ] Test: calls onClose when Cancel clicked
-- [ ] Test: calls onClose when clicking outside modal
-- [ ] Test: clears note when Delete Note button clicked (for existing notes)
-- [ ] Test: disables Save button when note is empty (for new notes)
-- [ ] Test: limits note to 500 characters
+- [x] Test: renders modal with habit name and date in header
+- [x] Test: renders textarea for note input
+- [x] Test: renders Save and Cancel buttons
+- [x] Test: populates textarea with existing note when provided
+- [x] Test: calls onSave with note text when Save clicked
+- [x] Test: calls onClose when Cancel clicked
+- [x] Test: calls onClose when clicking outside modal
+- [x] Test: clears note when Delete Note button clicked (for existing notes)
+- [x] Test: disables Save button when note is empty (for new notes)
+- [x] Test: limits note to 500 characters
 
 #### Step 2: Implement CompletionNoteModal Component
 **Files:** `frontends/nextjs/components/CompletionNoteModal.tsx`
 
-- [ ] Create modal component with props: `habitName`, `date`, `existingNote`, `onSave`, `onClose`
-- [ ] Add textarea with character count
-- [ ] Add Save, Cancel, and Delete (if existing note) buttons
-- [ ] Style consistent with existing modals (see `HabitModal.tsx`)
+- [x] Create modal component with props: `habitName`, `date`, `existingNote`, `onSave`, `onClose`
+- [x] Add textarea with character count
+- [x] Add Save, Cancel, and Delete (if existing note) buttons
+- [x] Style consistent with existing modals (see `HabitModal.tsx`)
 
 ---
 
@@ -72,32 +73,32 @@ Two UX options for capturing notes:
 **Files:** `backends/node/routes/completions.js`, `backends/node/routes/completions.test.js`
 
 ##### 3a. Write backend unit tests
-- [ ] Test: 401 without authentication
-- [ ] Test: 400 for invalid date format
-- [ ] Test: 404 when completion doesn't exist
-- [ ] Test: 403 when habit doesn't belong to user
-- [ ] Test: 200 successfully updates note
-- [ ] Test: 200 clears note when null passed
+- [x] Test: 401 without authentication
+- [x] Test: 400 for invalid date format
+- [x] Test: 404 when completion doesn't exist
+- [x] Test: 403 when habit doesn't belong to user
+- [x] Test: 200 successfully updates note
+- [x] Test: 200 clears note when null passed
 
 ##### 3b. Implement PUT /habits/:habitId/completions/:date endpoint
-- [ ] Add PUT route handler
-- [ ] Validate ownership and date
-- [ ] Update notes column in database
+- [x] Add PUT route handler
+- [x] Validate ownership and date
+- [x] Update notes column in database
 
 ##### 3c. Update OpenAPI spec
 **Files:** `shared/api-spec/openapi.yaml`
-- [ ] Add PUT /habits/{habitId}/completions/{date} endpoint spec
+- [x] Add PUT /habits/{habitId}/completions/{date} endpoint spec
 
 #### Step 4: Add API Client Method for Updating Notes
 **Files:** `frontends/nextjs/lib/api.ts`, `frontends/nextjs/lib/api.test.ts`
 
 ##### 4a. Write API client tests
-- [ ] Test: calls PUT with correct payload
-- [ ] Test: handles success response
-- [ ] Test: handles error responses
+- [x] Test: calls PUT with correct payload
+- [x] Test: handles success response
+- [x] Test: handles error responses
 
 ##### 4b. Implement `updateCompletionNote()` function
-- [ ] Add function to `api.ts`
+- [x] Add function to `api.ts`
 
 ---
 
@@ -107,16 +108,16 @@ Two UX options for capturing notes:
 **Files:** `frontends/nextjs/components/HabitCard.tsx`, `frontends/nextjs/components/HabitCard.test.tsx`
 
 ##### 5a. Write tests
-- [ ] Test: renders note icon for completed days
-- [ ] Test: note icon shows filled state when note exists
-- [ ] Test: note icon shows empty state when no note
-- [ ] Test: clicking note icon calls onOpenNoteModal with habitId and date
+- [x] Test: renders note icon for completed days
+- [x] Test: note icon shows filled state when note exists
+- [x] Test: note icon shows empty state when no note
+- [x] Test: clicking note icon calls onOpenNoteModal with habitId and date
 
 ##### 5b. Update HabitCard component
-- [ ] Add note icon next to each completed day button
-- [ ] Pass `completions` array as prop (currently only passes check function)
-- [ ] Show visual indicator when note exists (e.g., filled vs outline icon)
-- [ ] Add `onOpenNoteModal` callback prop
+- [x] Add note icon next to each completed day button
+- [x] Pass `completions` array as prop (currently only passes check function)
+- [x] Show visual indicator when note exists (e.g., filled vs outline icon)
+- [x] Add `onOpenNoteModal` callback prop
 
 ---
 
@@ -126,17 +127,17 @@ Two UX options for capturing notes:
 **Files:** `frontends/nextjs/hooks/useHabits.ts`, `frontends/nextjs/hooks/useHabits.test.ts`
 
 ##### 6a. Write tests
-- [ ] Test: `saveNote` creates completion with note when not already complete
-- [ ] Test: `saveNote` updates existing completion note
-- [ ] Test: `deleteNote` removes note from completion
-- [ ] Test: `getCompletionNote` returns note for habit/date
-- [ ] Test: local state updates after save/delete
+- [x] Test: `saveNote` creates completion with note when not already complete
+- [x] Test: `saveNote` updates existing completion note
+- [x] Test: `deleteNote` removes note from completion
+- [x] Test: `getCompletionNote` returns note for habit/date
+- [x] Test: local state updates after save/delete
 
 ##### 6b. Implement hook methods
-- [ ] Add `saveNote(habitId, date, note)` method
-- [ ] Add `deleteNote(habitId, date)` method
-- [ ] Add `getCompletionNote(habitId, date)` method
-- [ ] Handle case where completion doesn't exist yet (create with note)
+- [x] Add `saveNote(habitId, date, note)` method
+- [x] Add `deleteNote(habitId, date)` method
+- [x] Add `getCompletionNote(habitId, date)` method
+- [x] Handle case where completion doesn't exist yet (create with note)
 
 ---
 
@@ -146,17 +147,17 @@ Two UX options for capturing notes:
 **Files:** `frontends/nextjs/app/dashboard/page.tsx`, `frontends/nextjs/app/dashboard/page.test.tsx`
 
 ##### 7a. Write tests
-- [ ] Test: opens note modal when onOpenNoteModal called
-- [ ] Test: modal shows correct habit name and date
-- [ ] Test: modal shows existing note when present
-- [ ] Test: saving note updates completion
-- [ ] Test: closing modal clears modal state
+- [x] Test: opens note modal when onOpenNoteModal called
+- [x] Test: modal shows correct habit name and date
+- [x] Test: modal shows existing note when present
+- [x] Test: saving note updates completion
+- [x] Test: closing modal clears modal state
 
 ##### 7b. Update dashboard page
-- [ ] Add modal state: `noteModalData: { habitId, date } | null`
-- [ ] Add `handleOpenNoteModal` callback
-- [ ] Add `handleSaveNote` callback
-- [ ] Render `CompletionNoteModal` when modal state is set
+- [x] Add modal state: `noteModalData: { habitId, date } | null`
+- [x] Add `handleOpenNoteModal` callback
+- [x] Add `handleSaveNote` callback
+- [x] Render `CompletionNoteModal` when modal state is set
 
 ---
 
@@ -165,25 +166,25 @@ Two UX options for capturing notes:
 #### Step 8: Add E2E Tests for Notes
 **Files:** `frontends/nextjs/e2e/completion-notes.spec.ts`
 
-- [ ] Test: user can add a note to a completed habit
-- [ ] Test: user can edit an existing note
-- [ ] Test: user can delete a note
-- [ ] Test: note indicator shows for days with notes
-- [ ] Test: adding note to incomplete day also marks it complete
-- [ ] Test: note persists after page refresh
+- [x] Test: user can add a note to a completed habit
+- [x] Test: user can edit an existing note
+- [x] Test: user can delete a note
+- [x] Test: note indicator shows for days with notes
+- [x] Test: adding note to incomplete day also marks it complete
+- [x] Test: note persists after page refresh
 
 ---
 
 ### Part 7: Documentation and Cleanup
 
 #### Step 9: Update Documentation
-- [ ] Update `GETTING_STARTED.md` if user-facing docs needed
-- [ ] Update this plan file status to Complete
-- [ ] Check `PROJECT_PLAN.md` for relevant checkboxes
+- [x] Update `GETTING_STARTED.md` if user-facing docs needed
+- [x] Update this plan file status to Complete
+- [x] Check `PROJECT_PLAN.md` for relevant checkboxes
 
 #### Step 10: Final Verification
-- [ ] Run `scripts/test-all.sh` to verify all tests pass
-- [ ] Manual testing of note workflow
+- [x] Run `scripts/test-all.sh` to verify all tests pass
+- [x] Manual testing of note workflow
 
 ---
 
