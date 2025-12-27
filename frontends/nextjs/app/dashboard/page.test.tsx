@@ -28,6 +28,14 @@ jest.mock('@/hooks/useHabits');
 // Mock the habitUtils module
 jest.mock('@/utils/habitUtils', () => ({
   findHabitById: jest.fn(),
+  detectHabitChanges: jest.fn().mockReturnValue(true),
+  buildHabitUpdatePayload: jest.fn().mockImplementation((formValues, habit) => ({
+    name: formValues.name.trim(),
+    description: formValues.description.trim() || null,
+    frequency: habit.frequency,
+    color: formValues.color,
+    icon: formValues.icon,
+  })),
   PRESET_COLORS: [
     '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
     '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',

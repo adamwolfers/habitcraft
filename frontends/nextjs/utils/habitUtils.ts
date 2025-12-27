@@ -1,5 +1,60 @@
 import { Habit } from "@/types/habit";
 
+export interface HabitFormValues {
+  name: string;
+  description: string;
+  color: string;
+  icon: string;
+}
+
+export interface HabitUpdatePayload {
+  name: string;
+  description: string | null;
+  frequency: "daily" | "weekly";
+  color: string;
+  icon: string;
+}
+
+/**
+ * Detects whether any habit fields have changed between form values and original habit.
+ * Handles null description in original habit by comparing to empty string.
+ */
+export function detectHabitChanges(
+  formValues: HabitFormValues,
+  originalHabit: Habit
+): boolean {
+  const trimmedName = formValues.name.trim();
+  const trimmedDescription = formValues.description.trim();
+  const originalDescription = originalHabit.description || "";
+
+  const nameChanged = trimmedName !== originalHabit.name;
+  const descriptionChanged = trimmedDescription !== originalDescription;
+  const colorChanged = formValues.color !== originalHabit.color;
+  const iconChanged = formValues.icon !== originalHabit.icon;
+
+  return nameChanged || descriptionChanged || colorChanged || iconChanged;
+}
+
+/**
+ * Builds the update payload for a habit from form values.
+ * Trims whitespace and converts empty description to null.
+ */
+export function buildHabitUpdatePayload(
+  formValues: HabitFormValues,
+  originalHabit: Habit
+): HabitUpdatePayload {
+  const trimmedName = formValues.name.trim();
+  const trimmedDescription = formValues.description.trim();
+
+  return {
+    name: trimmedName,
+    description: trimmedDescription || null,
+    frequency: originalHabit.frequency,
+    color: formValues.color,
+    icon: formValues.icon,
+  };
+}
+
 export const PRESET_COLORS = [
   '#3b82f6', // blue
   '#10b981', // green

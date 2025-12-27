@@ -373,21 +373,18 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 Extract closure-captured logic from React event handlers into pure utility functions for better testability. See `CLAUDE.md` for the pattern documentation.
 
 - **Registration Form Validation** ✓
-  - Extracted `validateRegistrationForm()` to `utils/authUtils.ts`
-  - Unit tests for password length and match validation
-- **Edit Modal Change Detection** (`EditHabitModal.tsx:79-115`)
-  - [ ] Extract `detectHabitChanges(current, original)` to `utils/habitUtils.ts`
-  - [ ] Extract `buildHabitUpdatePayload()` for update payload construction
-  - [ ] Unit tests for change detection edge cases
-- **Completion Filtering** (`useHabits.ts:93-94`)
-  - [ ] Extract `filterCompletionsByDate()` to `utils/completionUtils.ts`
-  - [ ] Unit tests for date filtering logic
-- **Login Form Handler** (`login/page.tsx:40-49`)
-  - [ ] Extract field change handler factory to `utils/formUtils.ts`
-  - [ ] Reusable across login/register forms
-- **Async Action Handlers** (`Header.tsx:12-24`, `AddHabitForm.tsx:27-47`)
-  - [ ] Extract `handleLogoutWithRecovery()` pattern
-  - [ ] Extract form reset logic to `resetFormState()`
+  - [x] Extracted `validateRegistrationForm()` to `utils/authUtils.ts`
+  - [x] Unit tests for password length and match validation
+- **Edit Modal Change Detection** ✓
+  - [x] Extracted `detectHabitChanges()` to `utils/habitUtils.ts`
+  - [x] Extracted `buildHabitUpdatePayload()` for update payload construction
+  - [x] Unit tests for change detection edge cases (8 tests)
+- **Completion Filtering** ✓
+  - [x] Extracted `filterCompletionsByDate()` to `utils/completionUtils.ts`
+  - [x] Unit tests for date filtering logic (10 tests)
+- **Form Reset Defaults** ✓
+  - [x] Extracted `getDefaultHabitFormValues()` to `utils/formUtils.ts`
+  - [x] Used in AddHabitForm for initialization and reset
 
 ### Infrastructure & DevOps
 
