@@ -203,9 +203,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
   - Community challenges
   - Public habit templates
 - **Advanced Authentication**
-
   *Current implementation uses JWT with HttpOnly cookies, bcrypt password hashing, refresh token rotation, database-backed revocation, rate limiting, and security headers. The following enhancements are organized by priority.*
-
   - [ ] **High Priority** *(Core security and usability gaps)*
     - [ ] **Password Reset Flow**
       - *Justification:* Users currently have no account recovery option if they forget their password. This is a critical usability gap that will cause support burden and user frustration.
@@ -368,23 +366,9 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
     - Implementation and run tests (green phase)
     - Evaluate refactoring opportunities (refactor phase)
 
-### Code Quality & Testability Refactors
+### Code Quality & Testability Refactors ✓
 
-Extract closure-captured logic from React event handlers into pure utility functions for better testability. See `CLAUDE.md` for the pattern documentation.
-
-- **Registration Form Validation** ✓
-  - [x] Extracted `validateRegistrationForm()` to `utils/authUtils.ts`
-  - [x] Unit tests for password length and match validation
-- **Edit Modal Change Detection** ✓
-  - [x] Extracted `detectHabitChanges()` to `utils/habitUtils.ts`
-  - [x] Extracted `buildHabitUpdatePayload()` for update payload construction
-  - [x] Unit tests for change detection edge cases (8 tests)
-- **Completion Filtering** ✓
-  - [x] Extracted `filterCompletionsByDate()` to `utils/completionUtils.ts`
-  - [x] Unit tests for date filtering logic (10 tests)
-- **Form Reset Defaults** ✓
-  - [x] Extracted `getDefaultHabitFormValues()` to `utils/formUtils.ts`
-  - [x] Used in AddHabitForm for initialization and reset
+See [docs/plans/code-quality-testability-refactors.md](docs/plans/code-quality-testability-refactors.md) for completed work and planned improvements.
 
 ### Infrastructure & DevOps
 
