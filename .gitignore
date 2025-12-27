@@ -39,6 +39,7 @@ coverage/
 # Playwright
 playwright-results/
 playwright-report/
+blob-report/
 test-results/
 
 # Next.js
