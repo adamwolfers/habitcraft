@@ -29,8 +29,8 @@ export default defineConfig({
   // Retry on CI only
   retries: process.env.CI ? 2 : 0,
 
-  // Single worker - E2E tests share database state and must run serially
-  workers: 1,
+  // 2 workers per shard in CI (shards provide isolation), 1 locally for debugging
+  workers: process.env.CI ? 2 : 1,
 
   // Reporter to use
   reporter: [
