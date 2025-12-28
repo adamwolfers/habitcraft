@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import EditHabitModal from './EditHabitModal';
 import { Habit } from '@/types/habit';
+import { PRESET_COLORS, PRESET_ICONS } from '@/utils/habitUtils';
 
 describe('EditHabitModal', () => {
   const mockHabit: Habit = {
@@ -515,7 +516,7 @@ describe('EditHabitModal', () => {
       );
 
       const colorButtons = screen.getAllByTestId(/color-option-/);
-      expect(colorButtons).toHaveLength(8);
+      expect(colorButtons).toHaveLength(PRESET_COLORS.length);
     });
 
     it('should highlight the current habit color', () => {
@@ -665,7 +666,7 @@ describe('EditHabitModal', () => {
       );
 
       const iconButtons = screen.getAllByTestId(/icon-option-/);
-      expect(iconButtons).toHaveLength(24);
+      expect(iconButtons).toHaveLength(PRESET_ICONS.length);
     });
 
     it('should highlight the current habit icon', () => {
