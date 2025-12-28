@@ -3,6 +3,8 @@ import {
   detectHabitChanges,
   buildHabitUpdatePayload,
   HabitFormValues,
+  PRESET_COLORS,
+  PRESET_ICONS,
 } from "./habitUtils";
 import { Habit } from "@/types/habit";
 

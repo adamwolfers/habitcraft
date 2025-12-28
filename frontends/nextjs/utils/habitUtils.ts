@@ -56,6 +56,7 @@ export function buildHabitUpdatePayload(
 }
 
 export const PRESET_COLORS = [
+  // Row 1
   '#3b82f6', // blue
   '#10b981', // green
   '#f59e0b', // amber
@@ -64,6 +65,15 @@ export const PRESET_COLORS = [
   '#ec4899', // pink
   '#06b6d4', // cyan
   '#f97316', // orange
+  // Row 2
+  '#6366f1', // indigo
+  '#14b8a6', // teal
+  '#eab308', // yellow
+  '#f43f5e', // rose
+  '#84cc16', // lime
+  '#0ea5e9', // sky
+  '#22c55e', // emerald
+  '#64748b', // slate
 ];
 
 export const PRESET_ICONS = [
@@ -94,6 +104,15 @@ export const PRESET_ICONS = [
   '💊', // medication/vitamins
   '🦷', // dental care
   '🌙', // evening routine
+  // Row 4: Outdoor Activities
+  '🥾', // hiking
+  '🌲', // forest/trees
+  '🏞️', // national park/lake
+  '🛤️', // trail
+  '⛰️', // mountain
+  '🏕️', // camping
+  '🚴', // cycling
+  '🎣', // fishing
 ];
 
 export function findHabitById(
