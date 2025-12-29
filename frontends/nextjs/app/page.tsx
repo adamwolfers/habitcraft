@@ -38,10 +38,6 @@ export default function LandingPage() {
               <p className="text-gray-400">
                 Create custom habits and track your completions with a simple, intuitive interface.
               </p>
-              {/* Placeholder for GIF: demo-add-habit.gif */}
-              <div className="mt-4 bg-gray-600 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
-                Demo coming soon
-              </div>
             </div>
 
             <div className="bg-gray-700 rounded-lg p-6">
@@ -54,10 +50,6 @@ export default function LandingPage() {
               <p className="text-gray-400">
                 Stay motivated by seeing your weekly progress.
               </p>
-              {/* Placeholder for GIF: demo-complete-habit.gif */}
-              <div className="mt-4 bg-gray-600 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
-                Demo coming soon
-              </div>
             </div>
 
             <div className="bg-gray-700 rounded-lg p-6">
@@ -70,10 +62,6 @@ export default function LandingPage() {
               <p className="text-gray-400">
                 Watch your consistency grow week after week, and turn habit goals into true habits!
               </p>
-              {/* Placeholder for GIF: demo-week-navigation.gif */}
-              <div className="mt-4 bg-gray-600 rounded-lg h-40 flex items-center justify-center text-gray-400 text-sm">
-                Demo coming soon
-              </div>
             </div>
           </div>
         </div>
