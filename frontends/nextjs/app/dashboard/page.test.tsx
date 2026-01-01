@@ -36,6 +36,12 @@ jest.mock('@/utils/habitUtils', () => ({
     color: formValues.color,
     icon: formValues.icon,
   })),
+  getDateButtonFutureClasses: jest.fn().mockImplementation((isFuture) =>
+    isFuture ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700'
+  ),
+  getDateCircleStyle: jest.fn().mockImplementation((isCompleted, color) => ({
+    backgroundColor: isCompleted ? color : 'transparent',
+  })),
   PRESET_COLORS: [
     '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
     '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',

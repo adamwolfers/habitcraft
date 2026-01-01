@@ -5,6 +5,28 @@ export interface CalendarMonth {
   weeks: string[][]; // 4-6 rows of 7 date strings (empty string for padding)
 }
 
+/**
+ * Parse a date string (YYYY-MM-DD) into a local Date object.
+ * This avoids timezone issues that occur when using new Date('YYYY-MM-DD')
+ * which parses as UTC midnight and can shift to the previous day.
+ */
+export const parseLocalDateFromString = (dateString: string): Date => {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+
+/**
+ * Check if a date is in the future (after today).
+ * Compares at midnight to ignore time component.
+ */
+export const isFutureDate = (date: Date): boolean => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const compareDate = new Date(date);
+  compareDate.setHours(0, 0, 0, 0);
+  return compareDate > today;
+};
+
 export const formatDate = (date: Date): string => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -28,16 +50,12 @@ export const getLastNDays = (n: number): string[] => {
 };
 
 export const getDayName = (dateString: string): string => {
-  // Parse as local date to avoid timezone shifts
-  const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = parseLocalDateFromString(dateString);
   return date.toLocaleDateString('en-US', { weekday: 'short' });
 };
 
 export const getMonthDay = (dateString: string): string => {
-  // Parse as local date to avoid timezone shifts
-  const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = parseLocalDateFromString(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 

@@ -5,6 +5,8 @@ import {
   HabitFormValues,
   PRESET_COLORS,
   PRESET_ICONS,
+  getDateButtonFutureClasses,
+  getDateCircleStyle,
 } from "./habitUtils";
 import { Habit } from "@/types/habit";
 
@@ -229,5 +231,34 @@ describe("buildHabitUpdatePayload", () => {
     };
     const payload = buildHabitUpdatePayload(formValues, originalHabit);
     expect(payload.description).toBe("Daily workout");
+  });
+});
+
+describe("getDateButtonFutureClasses", () => {
+  it("returns disabled classes for future dates", () => {
+    const classes = getDateButtonFutureClasses(true);
+    expect(classes).toBe("opacity-50 cursor-not-allowed");
+  });
+
+  it("returns hover classes for non-future dates", () => {
+    const classes = getDateButtonFutureClasses(false);
+    expect(classes).toBe("hover:bg-gray-700");
+  });
+});
+
+describe("getDateCircleStyle", () => {
+  it("returns background color when completed", () => {
+    const style = getDateCircleStyle(true, "#3b82f6");
+    expect(style).toEqual({ backgroundColor: "#3b82f6" });
+  });
+
+  it("returns transparent background when not completed", () => {
+    const style = getDateCircleStyle(false, "#3b82f6");
+    expect(style).toEqual({ backgroundColor: "transparent" });
+  });
+
+  it("handles different colors", () => {
+    const style = getDateCircleStyle(true, "#ef4444");
+    expect(style).toEqual({ backgroundColor: "#ef4444" });
   });
 });

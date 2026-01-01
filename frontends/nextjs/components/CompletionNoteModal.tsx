@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { parseLocalDateFromString } from '@/utils/dateUtils';
 
 interface CompletionNoteModalProps {
   habitName: string;
@@ -11,8 +12,7 @@ interface CompletionNoteModalProps {
 }
 
 function formatDate(dateString: string): string {
-  const [year, month, day] = dateString.split('-').map(Number);
-  const date = new Date(year, month - 1, day);
+  const date = parseLocalDateFromString(dateString);
   return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',

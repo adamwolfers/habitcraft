@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Habit, Completion } from '@/types/habit';
-import { getCalendarWeek, getCalendarMonth, getDayName, getMonthDay } from '@/utils/dateUtils';
+import { getCalendarWeek, getCalendarMonth, getDayName, getMonthDay, parseLocalDateFromString, isFutureDate } from '@/utils/dateUtils';
+import { getDateButtonFutureClasses, getDateCircleStyle } from '@/utils/habitUtils';
 import { useHabitViewMode } from '@/hooks/useHabitViewMode';
 
 interface HabitCardProps {
@@ -135,15 +136,9 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
         </div>
         <div className="grid grid-cols-7 gap-2">
           {weekDays.map((dateString) => {
-            // Parse date string as local date, not UTC
-            const [year, month, day] = dateString.split('-').map(Number);
-            const date = new Date(year, month - 1, day);
+            const date = parseLocalDateFromString(dateString);
             const isCompleted = isCompletedOnDate(habit.id, date);
-
-            // Check if date is in the future
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const isFuture = date > today;
+            const isFuture = isFutureDate(date);
 
             const note = getNoteForDate(dateString);
             const hasNote = note !== null;
@@ -153,11 +148,7 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
                 <button
                   onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
                   disabled={isFuture}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${
-                    isFuture
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-gray-700'
-                  }`}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all ${getDateButtonFutureClasses(isFuture)}`}
                 >
                   <span className="text-xs text-gray-400">{getDayName(dateString)}</span>
                   <span className="text-xs text-gray-500">{getMonthDay(dateString).split(' ')[1]}</span>
@@ -167,9 +158,7 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
                         ? 'border-transparent scale-110'
                         : 'border-gray-600'
                     }`}
-                    style={{
-                      backgroundColor: isCompleted ? habit.color : 'transparent',
-                    }}
+                    style={getDateCircleStyle(isCompleted, habit.color)}
                   >
                     {isCompleted && (
                       <svg className="w-full h-full p-1 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,13 +249,10 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
               return <div key={`empty-${index}`} className="h-10" />;
             }
 
-            const [year, month, day] = dateString.split('-').map(Number);
-            const date = new Date(year, month - 1, day);
+            const date = parseLocalDateFromString(dateString);
             const isCompleted = isCompletedOnDate(habit.id, date);
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const isFuture = date > today;
+            const isFuture = isFutureDate(date);
+            const day = date.getDate();
 
             const note = getNoteForDate(dateString);
             const hasNote = note !== null;
@@ -276,11 +262,7 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
                 <button
                   onClick={() => !isFuture && onToggleCompletion(habit.id, date)}
                   disabled={isFuture}
-                  className={`flex items-center justify-center h-8 w-full rounded transition-all ${
-                    isFuture
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-gray-700'
-                  }`}
+                  className={`flex items-center justify-center h-8 w-full rounded transition-all ${getDateButtonFutureClasses(isFuture)}`}
                 >
                   <div
                     className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
@@ -288,9 +270,7 @@ export default function HabitCard({ habit, onToggleCompletion, onDelete, onEdit,
                         ? ''
                         : 'border border-gray-600'
                     }`}
-                    style={{
-                      backgroundColor: isCompleted ? habit.color : 'transparent',
-                    }}
+                    style={getDateCircleStyle(isCompleted, habit.color)}
                   >
                     {isCompleted ? (
                       <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
