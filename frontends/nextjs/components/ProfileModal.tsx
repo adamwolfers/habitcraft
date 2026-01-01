@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { validatePasswordChange } from '@/utils/authUtils';
+import { isValidProfileForm } from '@/utils/validationUtils';
 import PasswordInput from '@/components/PasswordInput';
 
 interface User {
@@ -18,11 +19,6 @@ interface ProfileModalProps {
   onUpdate: (updates: { name?: string; email?: string }) => Promise<void>;
   onChangePassword?: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
 }
-
-// Simple email validation regex
-const isValidEmail = (email: string): boolean => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-};
 
 export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChangePassword }: ProfileModalProps) {
   const [name, setName] = useState(user.name);
@@ -52,7 +48,7 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
 
   const trimmedName = name.trim();
   const trimmedEmail = email.trim();
-  const isFormValid = trimmedName.length > 0 && trimmedEmail.length > 0 && isValidEmail(trimmedEmail);
+  const isFormValid = isValidProfileForm(name, email);
 
   const handlePasswordChange = async () => {
     const validationError = validatePasswordChange({

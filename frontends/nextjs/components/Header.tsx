@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { useClickOutside } from '@/hooks/useClickOutside';
 
 interface HeaderProps {
   onOpenProfileModal?: () => void;
@@ -17,21 +18,13 @@ export default function Header({ onOpenProfileModal, variant = 'app' }: HeaderPr
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-
+  const handleClickOutside = useCallback(() => {
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      setIsMenuOpen(false);
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
   }, [isMenuOpen]);
+
+  useClickOutside(menuRef, handleClickOutside);
 
   const handleToggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);

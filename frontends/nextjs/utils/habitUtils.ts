@@ -121,3 +121,24 @@ export function findHabitById(
 ): Habit | undefined {
   return habits.find((h) => h.id === habitId);
 }
+
+/**
+ * Returns the CSS classes for a date button based on whether the date is in the future.
+ * Future dates get disabled styling, past/present dates get hover styling.
+ */
+export function getDateButtonFutureClasses(isFuture: boolean): string {
+  return isFuture ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-700";
+}
+
+/**
+ * Returns the inline style object for a date completion circle.
+ * Completed dates show the habit color, uncompleted dates are transparent.
+ */
+export function getDateCircleStyle(
+  isCompleted: boolean,
+  color: string
+): { backgroundColor: string } {
+  return {
+    backgroundColor: isCompleted ? color : "transparent",
+  };
+}

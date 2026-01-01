@@ -1,4 +1,4 @@
-import { formatDate, isToday, getLastNDays, getDayName, getMonthDay, getCalendarWeek, getCalendarMonth } from './dateUtils';
+import { formatDate, isToday, getLastNDays, getDayName, getMonthDay, getCalendarWeek, getCalendarMonth, parseLocalDateFromString, isFutureDate } from './dateUtils';
 
 describe('dateUtils', () => {
   describe('formatDate', () => {
@@ -12,6 +12,80 @@ describe('dateUtils', () => {
       const date = new Date('2025-01-05T12:00:00.000Z');
       const formatted = formatDate(date);
       expect(formatted).toBe('2025-01-05');
+    });
+  });
+
+  describe('parseLocalDateFromString', () => {
+    it('should parse date string to local Date object', () => {
+      const date = parseLocalDateFromString('2025-10-30');
+      expect(date.getFullYear()).toBe(2025);
+      expect(date.getMonth()).toBe(9); // 0-indexed
+      expect(date.getDate()).toBe(30);
+    });
+
+    it('should handle January dates correctly', () => {
+      const date = parseLocalDateFromString('2025-01-15');
+      expect(date.getFullYear()).toBe(2025);
+      expect(date.getMonth()).toBe(0);
+      expect(date.getDate()).toBe(15);
+    });
+
+    it('should handle December dates correctly', () => {
+      const date = parseLocalDateFromString('2025-12-25');
+      expect(date.getFullYear()).toBe(2025);
+      expect(date.getMonth()).toBe(11);
+      expect(date.getDate()).toBe(25);
+    });
+
+    it('should create local date without timezone shift', () => {
+      // This is the key benefit - parsing as local date avoids UTC midnight being shifted to previous day
+      const date = parseLocalDateFromString('2025-06-15');
+      expect(date.getDate()).toBe(15); // Should always be 15, not 14
+    });
+
+    it('should handle single digit months with leading zeros', () => {
+      const date = parseLocalDateFromString('2025-03-05');
+      expect(date.getMonth()).toBe(2); // March is 0-indexed to 2
+      expect(date.getDate()).toBe(5);
+    });
+  });
+
+  describe('isFutureDate', () => {
+    it('should return true for tomorrow', () => {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      expect(isFutureDate(tomorrow)).toBe(true);
+    });
+
+    it('should return false for today', () => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expect(isFutureDate(today)).toBe(false);
+    });
+
+    it('should return false for yesterday', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      yesterday.setHours(0, 0, 0, 0);
+      expect(isFutureDate(yesterday)).toBe(false);
+    });
+
+    it('should return true for a date far in the future', () => {
+      const futureDate = new Date(2099, 11, 31);
+      expect(isFutureDate(futureDate)).toBe(true);
+    });
+
+    it('should return false for a date far in the past', () => {
+      const pastDate = new Date(2000, 0, 1);
+      expect(isFutureDate(pastDate)).toBe(false);
+    });
+
+    it('should compare at midnight (ignore time component)', () => {
+      // Today at 23:59:59 should not be considered future
+      const todayLate = new Date();
+      todayLate.setHours(23, 59, 59, 999);
+      expect(isFutureDate(todayLate)).toBe(false);
     });
   });
 
