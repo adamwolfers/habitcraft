@@ -1,3 +1,9 @@
+## General Notes
+
+- Verify that you're in the expected branch and directory before running terminal commands
+- All tests can be run sequentially using scripts/test-all.sh
+- After each round of updates, and before committing those changes, check all project docs to see if they need updating
+
 ## Development Principles
 
 1. **Security First** - Never compromise on authentication and authorization
@@ -7,11 +13,6 @@
 5. **User Experience** - Smooth, responsive UI with proper error handling
 6. **Code Quality** - Clean, readable, modular, maintainable code
 
-## General Notes
-
-- All tests can be run sequentially using scripts/test-all.sh
-- After each round of updates, and before committing those changes, check all project docs to see if they need updating
-- Verify that you're in the expected branch and directory before running terminal commands
 
 ## Running tests with npm test
 
