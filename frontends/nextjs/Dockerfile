@@ -6,9 +6,13 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Build argument for API URL (required for NEXT_PUBLIC_* vars)
+# Build arguments for NEXT_PUBLIC_* vars (baked in at build time)
 ARG NEXT_PUBLIC_API_BASE_URL
+ARG NEXT_PUBLIC_POSTHOG_KEY
+ARG NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_POSTHOG_KEY=$NEXT_PUBLIC_POSTHOG_KEY
+ENV NEXT_PUBLIC_POSTHOG_HOST=$NEXT_PUBLIC_POSTHOG_HOST
 
 COPY package*.json ./
 RUN npm ci

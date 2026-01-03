@@ -363,6 +363,7 @@ jobs:
         run: |
           docker build \
             --build-arg NEXT_PUBLIC_API_BASE_URL=${{ secrets.API_URL }} \
+            --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY }} \
             -t habitcraft-frontend ./frontends/nextjs
           aws lightsail push-container-image \
             --service-name habitcraft-frontend \

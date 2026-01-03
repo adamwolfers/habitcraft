@@ -386,6 +386,7 @@ See `.github/workflows/ci.yml` for the complete workflow.
 | `JWT_SECRET` | JWT signing secret (64+ random bytes) |
 | `FRONTEND_URL` | Frontend URL for CORS (e.g., `https://habitcraft-frontend.xxxxx.amazonlightsail.com`) |
 | `API_URL` | Backend base URL **without** `/api/v1` (e.g., `https://habitcraft-backend.xxxxx.amazonlightsail.com`) |
+| `POSTHOG_KEY` | PostHog project API key (e.g., `phc_xxxx`) for analytics |
 | `CODECOV_TOKEN` | Codecov upload token for coverage reporting (optional but recommended) |
 
 ---
@@ -460,11 +461,12 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=15s \
 CMD ["node", "server.js"]
 ```
 
-**Important:** When building the frontend image, you must pass the API URL as a build argument:
+**Important:** When building the frontend image, you must pass NEXT_PUBLIC_* variables as build arguments:
 
 ```bash
 docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_BASE_URL=https://your-backend-url.amazonlightsail.com \
+  --build-arg NEXT_PUBLIC_POSTHOG_KEY=phc_your_posthog_key \
   -t habitcraft-frontend:latest .
 ```
 
