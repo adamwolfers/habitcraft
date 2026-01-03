@@ -329,7 +329,6 @@ describe('CompletionNoteModal', () => {
     });
 
     it('should limit note to 500 characters', async () => {
-      const user = userEvent.setup();
       render(
         <CompletionNoteModal
           habitName="Exercise"

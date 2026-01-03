@@ -3,8 +3,6 @@ import {
   detectHabitChanges,
   buildHabitUpdatePayload,
   HabitFormValues,
-  PRESET_COLORS,
-  PRESET_ICONS,
   getDateButtonFutureClasses,
   getDateCircleStyle,
 } from "./habitUtils";
