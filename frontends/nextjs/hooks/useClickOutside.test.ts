@@ -1,6 +1,5 @@
 import { renderHook } from '@testing-library/react';
 import { useClickOutside } from './useClickOutside';
-import { useRef } from 'react';
 
 describe('useClickOutside', () => {
   let callback: jest.Mock;
