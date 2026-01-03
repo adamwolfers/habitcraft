@@ -526,7 +526,7 @@ interface HabitReminderSettings {
 | File | Changes |
 |------|---------|
 | `PROJECT_PLAN.md` | Update feature checkboxes |
-| `docs/plans/email-reminders.md` | This plan file |
+| `docs/plans/up-next/email-reminders.md` | This plan file |
 
 ---
 
