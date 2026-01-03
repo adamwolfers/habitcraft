@@ -105,7 +105,7 @@ export default function Dashboard() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-900 text-white flex flex-col">
-        <div className="max-w-7xl mx-auto px-4 py-8 flex-1">
+        <div className="max-w-4xl w-full mx-auto px-4 py-8 flex-1">
           <div className="space-y-6">
             <AddHabitForm onAdd={handleAddHabit} />
             {habits.length === 0 ? (
