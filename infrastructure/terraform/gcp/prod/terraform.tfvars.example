@@ -1,0 +1,18 @@
+# Copy this file to terraform.tfvars and fill in your values
+# DO NOT commit terraform.tfvars to version control
+
+project_id = "habitcraft-prod"
+project    = "habitcraft"
+region     = "us-central1"
+
+# Database password - use a strong, unique password
+db_password = "CHANGE_ME_TO_A_SECURE_PASSWORD"
+
+# Email for monitoring alerts
+alert_email = "your-email@example.com"
+
+# Domain configuration
+frontend_url    = "https://www.habitcraft.org"
+api_domain      = "api.habitcraft.org"
+frontend_domain = "www.habitcraft.org"
+apex_domain     = "habitcraft.org"
