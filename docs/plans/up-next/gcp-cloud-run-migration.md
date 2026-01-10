@@ -15,7 +15,7 @@ Deploy HabitCraft to Google Cloud Platform using a serverless-first architecture
 4. **Infrastructure as Code** - Terraform for reproducible deployments
 5. **Simple operations** - Fewer moving parts than EC2/VM-based architecture
 
-**Estimated monthly cost:** ~$15-25/mo (low traffic) vs ~$27/mo current AWS Lightsail
+**Estimated monthly cost:** ~$12-22/mo (low traffic) vs ~$27/mo current AWS Lightsail
 
 ---
 
@@ -39,15 +39,16 @@ Users (HTTPS)
 ```
 Users (HTTPS)
     |
-    +-> www.habitcraft.org -> Cloud Load Balancer -> Cloud Run (Frontend)
-    |                               |
-    +-> api.habitcraft.org ---------+-------------> Cloud Run (Backend)
-                                                          |
-                                                          v
-                                                   Cloud SQL PostgreSQL
-                                                          ^
-                                                          |
-    Cloud Scheduler -> Cloud Tasks ---> Cloud Run (Worker) [for email reminders]
+    +-> www.habitcraft.org -> Cloud Run (Frontend) [with domain mapping]
+    |
+    +-> api.habitcraft.org -> Cloud Run (Backend)  [with domain mapping]
+                                    |
+                                    v
+                             Cloud SQL PostgreSQL
+                              (via Auth Proxy)
+                                    ^
+                                    |
+              Cloud Scheduler ------+ [direct invocation for email reminders]
 ```
 
 ### Component Mapping
@@ -55,33 +56,34 @@ Users (HTTPS)
 | Current (AWS)            | Target (GCP)                    | Notes                          |
 | ------------------------ | ------------------------------- | ------------------------------ |
 | Lightsail Containers     | Cloud Run                       | Serverless, scale-to-zero      |
-| RDS PostgreSQL           | Cloud SQL PostgreSQL            | Managed PostgreSQL             |
-| Lightsail built-in LB    | Cloud Load Balancing            | Global HTTPS load balancer     |
-| Lightsail SSL            | Google-managed SSL certificates | Auto-renewal                   |
+| RDS PostgreSQL           | Cloud SQL PostgreSQL            | Managed, via Auth Proxy        |
+| Lightsail built-in LB    | Cloud Run domain mapping        | Built-in, no separate LB needed |
+| Lightsail SSL            | Google-managed SSL certificates | Auto-renewal via domain mapping |
 | IONOS DNS                | Cloud DNS (optional)            | Or keep IONOS                  |
 | CloudWatch               | Cloud Monitoring + Cloud Trace  | Logging, metrics, tracing      |
-| GitHub Actions + AWS CLI | Cloud Build or GitHub Actions   | CI/CD pipeline                 |
+| GitHub Actions + AWS CLI | GitHub Actions + gcloud CLI     | CI/CD pipeline                 |
 | N/A                      | Artifact Registry               | Container image storage        |
-| N/A                      | Cloud Scheduler + Cloud Tasks   | For scheduled email reminders  |
+| N/A                      | Cloud Scheduler                 | Direct Cloud Run invocation    |
 | N/A                      | Secret Manager                  | Secure secrets storage         |
 
 ---
 
 ## Technology Choices
 
-| Component        | Choice                            | Rationale                                   |
-| ---------------- | --------------------------------- | ------------------------------------------- |
-| Compute          | Cloud Run                         | Serverless, scale-to-zero, per-request cost |
-| Database         | Cloud SQL PostgreSQL              | Managed, automatic backups, HA options      |
+| Component          | Choice                          | Rationale                                   |
+| ------------------ | ------------------------------- | ------------------------------------------- |
+| Compute            | Cloud Run                       | Serverless, scale-to-zero, per-request cost |
+| Database           | Cloud SQL PostgreSQL            | Managed, automatic backups, HA options      |
+| DB Connectivity    | Cloud SQL Auth Proxy            | No VPC needed, IAM auth, simpler setup      |
 | Container Registry | Artifact Registry               | GCP-native, integrated with Cloud Build     |
-| Load Balancer    | External Application Load Balancer | Global, Cloud CDN ready, managed SSL       |
-| SSL Certificates | Google-managed certificates       | Free, auto-renewal                          |
-| Secrets          | Secret Manager                    | Secure, versioned, IAM-controlled           |
-| CI/CD            | GitHub Actions + gcloud CLI       | Familiar workflow, minimal changes          |
-| Scheduled Jobs   | Cloud Scheduler + Cloud Tasks     | Serverless, reliable delivery               |
-| Monitoring       | Cloud Monitoring + Cloud Logging  | Built-in, free tier generous                |
-| IaC              | Terraform                         | Same tooling as AWS plan                    |
-| DNS              | Cloud DNS (optional)              | Or keep IONOS with CNAMEs                   |
+| Custom Domains     | Cloud Run domain mapping        | Built-in SSL, no separate LB needed         |
+| SSL Certificates   | Google-managed certificates     | Free, auto-renewal via domain mapping       |
+| Secrets            | Secret Manager                  | Secure, versioned, IAM-controlled           |
+| CI/CD              | GitHub Actions + gcloud CLI     | Familiar workflow, minimal changes          |
+| Scheduled Jobs     | Cloud Scheduler                 | Direct Cloud Run invocation, simple         |
+| Monitoring         | Cloud Monitoring + Cloud Logging| Built-in, free tier generous                |
+| IaC                | Terraform                       | Same tooling as AWS plan                    |
+| DNS                | Cloud DNS (optional)            | Or keep IONOS with CNAMEs                   |
 
 ### Why Cloud Run over Compute Engine (VMs)?
 
@@ -115,10 +117,7 @@ gcloud services enable \
   sqladmin.googleapis.com \
   artifactregistry.googleapis.com \
   cloudscheduler.googleapis.com \
-  cloudtasks.googleapis.com \
   secretmanager.googleapis.com \
-  compute.googleapis.com \
-  certificatemanager.googleapis.com \
   cloudbuild.googleapis.com \
   monitoring.googleapis.com \
   logging.googleapis.com
@@ -167,35 +166,25 @@ gcloud projects add-iam-policy-binding habitcraft-prod \
 
 ### Directory Layout
 
+We use a flat structure initially for simplicity. Extract modules only when adding environments or when files exceed ~500 lines.
+
 ```
 infrastructure/
 ├── terraform/
-│   ├── gcp/
-│   │   ├── environments/
-│   │   │   ├── dev/
-│   │   │   │   ├── main.tf
-│   │   │   │   ├── variables.tf
-│   │   │   │   ├── outputs.tf
-│   │   │   │   └── terraform.tfvars
-│   │   │   └── prod/
-│   │   │       ├── main.tf
-│   │   │       ├── variables.tf
-│   │   │       ├── outputs.tf
-│   │   │       └── terraform.tfvars
-│   │   ├── modules/
-│   │   │   ├── artifact-registry/
-│   │   │   ├── cloud-run/
-│   │   │   ├── cloud-sql/
-│   │   │   ├── load-balancer/
-│   │   │   ├── secrets/
-│   │   │   └── scheduler/
-│   │   └── shared/
-│   │       └── backend.tf
+│   └── gcp/
+│       └── prod/
+│           ├── main.tf           # All resources (Cloud Run, Cloud SQL, etc.)
+│           ├── variables.tf      # Input variables
+│           ├── outputs.tf        # Output values
+│           ├── terraform.tfvars  # Variable values (not committed)
+│           └── backend.tf        # GCS state configuration
 ```
+
+**Note on dev environment:** For local development, use Docker Compose to avoid doubling cloud costs. A separate GCP dev environment can be added later by duplicating the `prod/` directory if full cloud parity is needed for testing.
 
 ### Step 1: Terraform State Backend (GCS)
 
-**File:** `infrastructure/terraform/gcp/shared/backend.tf`
+**File:** `infrastructure/terraform/gcp/prod/backend.tf`
 
 ```hcl
 terraform {
@@ -243,7 +232,7 @@ resource "google_storage_bucket" "terraform_state" {
 
 ## Part 3: Artifact Registry
 
-**File:** `infrastructure/terraform/gcp/modules/artifact-registry/main.tf`
+Add to `infrastructure/terraform/gcp/prod/main.tf`:
 
 ```hcl
 resource "google_artifact_registry_repository" "main" {
@@ -273,7 +262,7 @@ output "repository_url" {
 
 ## Part 4: Secret Manager
 
-**File:** `infrastructure/terraform/gcp/modules/secrets/main.tf`
+Add to `infrastructure/terraform/gcp/prod/main.tf`:
 
 ```hcl
 resource "google_secret_manager_secret" "jwt_secret" {
@@ -313,7 +302,7 @@ resource "google_secret_manager_secret_iam_member" "backend_db" {
 
 ## Part 5: Cloud SQL PostgreSQL
 
-**File:** `infrastructure/terraform/gcp/modules/cloud-sql/main.tf`
+Add to `infrastructure/terraform/gcp/prod/main.tf`:
 
 ```hcl
 resource "google_sql_database_instance" "main" {
@@ -337,13 +326,10 @@ resource "google_sql_database_instance" "main" {
       }
     }
 
+    # Use Cloud SQL Auth Proxy - no VPC needed, simpler setup
     ip_configuration {
-      ipv4_enabled = false           # No public IP
-      private_network = var.vpc_id   # Private connectivity only
-
-      # Alternative: Allow Cloud Run via Cloud SQL Auth Proxy (no VPC needed)
-      # ipv4_enabled = true
-      # require_ssl  = true
+      ipv4_enabled = true
+      require_ssl  = true
     }
 
     maintenance_window {
@@ -370,38 +356,26 @@ resource "google_sql_user" "app" {
   instance = google_sql_database_instance.main.name
   password = var.db_password
 }
-
-output "connection_name" {
-  value = google_sql_database_instance.main.connection_name
-}
-
-output "private_ip" {
-  value = google_sql_database_instance.main.private_ip_address
-}
 ```
 
-### Cloud SQL Connection Options
+### Why Cloud SQL Auth Proxy?
 
-**Option A: Cloud SQL Auth Proxy (Recommended for simplicity)**
-- No VPC required
-- Automatic IAM authentication
-- Encrypted connection
-- Works out of the box with Cloud Run
+We use the Auth Proxy approach (built into Cloud Run) rather than Private IP + VPC:
 
-**Option B: Private IP + VPC Connector**
-- Lower latency
-- More complex setup
-- Requires Serverless VPC Access connector (~$7/mo)
+- **No VPC required** - Saves ~$7/mo on Serverless VPC Access connector
+- **Simpler setup** - No VPC, subnets, or firewall rules to manage
+- **IAM authentication** - Uses service account identity, no password in connection string
+- **Encrypted connection** - TLS by default
+- **Works out of the box** - Cloud Run has native support via volume mounts
 
 - [ ] Create Cloud SQL PostgreSQL instance
 - [ ] Create database and user
-- [ ] Choose connection method (Auth Proxy vs Private IP)
 
 ---
 
 ## Part 6: Cloud Run Services
 
-**File:** `infrastructure/terraform/gcp/modules/cloud-run/main.tf`
+Add to `infrastructure/terraform/gcp/prod/main.tf`:
 
 ```hcl
 # Backend API Service
@@ -599,9 +573,15 @@ output "frontend_url" {
 }
 ```
 
-### Cold Start Mitigation
+### Cold Start Strategy
 
-For low-latency requirements, configure minimum instances:
+**Initial approach:** Start with `min_instance_count = 0` (scale to zero) and monitor.
+
+Cold starts typically add ~500ms-2s latency. For a habit tracker where users check at predictable times (morning/evening), occasional cold starts are acceptable.
+
+**When to add minimum instances:**
+
+Monitor Cloud Run latency metrics in Cloud Monitoring. If p99 latency is consistently >2s and users report sluggishness, add minimum instances:
 
 ```hcl
 scaling {
@@ -610,195 +590,66 @@ scaling {
 }
 ```
 
+**Cost tradeoff:** Each always-on instance adds ~$15/mo. Only add if cold starts become a real UX problem.
+
+### Custom Domain Mapping
+
+Instead of a load balancer, use Cloud Run's built-in domain mapping:
+
+```bash
+# Map custom domains (run after Cloud Run services are deployed)
+gcloud run domain-mappings create --service=habitcraft-backend \
+  --domain=api.habitcraft.org --region=us-central1
+
+gcloud run domain-mappings create --service=habitcraft-frontend \
+  --domain=www.habitcraft.org --region=us-central1
+
+# Also map apex domain to frontend
+gcloud run domain-mappings create --service=habitcraft-frontend \
+  --domain=habitcraft.org --region=us-central1
+```
+
+This provides:
+- Free Google-managed SSL certificates (auto-renewed)
+- No load balancer cost (~$3+/mo saved)
+- Simpler setup than External Application Load Balancer
+
+**DNS Configuration:** After mapping, update IONOS DNS with the CNAME records shown in `gcloud run domain-mappings describe`.
+
+**When to add a Load Balancer later:** Only add an External Application Load Balancer if you need:
+- Cloud CDN for global caching
+- Cloud Armor for WAF/DDoS protection
+- Multi-region deployment with global load balancing
+
 - [ ] Create backend Cloud Run service
 - [ ] Create frontend Cloud Run service
 - [ ] Configure Cloud SQL connectivity
 - [ ] Set up secrets access
 - [ ] Configure public access (allUsers invoker)
+- [ ] Set up custom domain mappings
+- [ ] Update DNS records
 
 ---
 
-## Part 7: Load Balancer with Custom Domain
+## Part 7: Scheduled Email Reminders
 
-**File:** `infrastructure/terraform/gcp/modules/load-balancer/main.tf`
+Cloud Scheduler invokes Cloud Run directly - no Cloud Tasks needed for simple scheduled jobs.
 
-```hcl
-# Reserve static IP
-resource "google_compute_global_address" "main" {
-  name = "${var.project}-lb-ip"
-}
-
-# SSL Certificate (Google-managed)
-resource "google_compute_managed_ssl_certificate" "main" {
-  name = "${var.project}-cert"
-
-  managed {
-    domains = ["www.habitcraft.org", "api.habitcraft.org", "habitcraft.org"]
-  }
-}
-
-# Backend service for Cloud Run (Frontend)
-resource "google_compute_backend_service" "frontend" {
-  name                  = "${var.project}-frontend-backend"
-  protocol              = "HTTPS"
-  port_name             = "http"
-  timeout_sec           = 30
-  enable_cdn            = true  # Enable Cloud CDN for static assets
-
-  backend {
-    group = google_compute_region_network_endpoint_group.frontend.id
-  }
-
-  cdn_policy {
-    cache_mode                   = "CACHE_ALL_STATIC"
-    default_ttl                  = 3600
-    max_ttl                      = 86400
-    serve_while_stale            = 86400
-  }
-}
-
-# Backend service for Cloud Run (API)
-resource "google_compute_backend_service" "backend" {
-  name        = "${var.project}-backend-backend"
-  protocol    = "HTTPS"
-  port_name   = "http"
-  timeout_sec = 60
-  enable_cdn  = false  # No caching for API
-
-  backend {
-    group = google_compute_region_network_endpoint_group.backend.id
-  }
-}
-
-# Serverless NEG for Frontend
-resource "google_compute_region_network_endpoint_group" "frontend" {
-  name                  = "${var.project}-frontend-neg"
-  network_endpoint_type = "SERVERLESS"
-  region                = var.region
-
-  cloud_run {
-    service = var.frontend_service_name
-  }
-}
-
-# Serverless NEG for Backend
-resource "google_compute_region_network_endpoint_group" "backend" {
-  name                  = "${var.project}-backend-neg"
-  network_endpoint_type = "SERVERLESS"
-  region                = var.region
-
-  cloud_run {
-    service = var.backend_service_name
-  }
-}
-
-# URL Map (routing rules)
-resource "google_compute_url_map" "main" {
-  name            = "${var.project}-lb"
-  default_service = google_compute_backend_service.frontend.id
-
-  host_rule {
-    hosts        = ["api.habitcraft.org"]
-    path_matcher = "api"
-  }
-
-  host_rule {
-    hosts        = ["www.habitcraft.org", "habitcraft.org"]
-    path_matcher = "frontend"
-  }
-
-  path_matcher {
-    name            = "api"
-    default_service = google_compute_backend_service.backend.id
-  }
-
-  path_matcher {
-    name            = "frontend"
-    default_service = google_compute_backend_service.frontend.id
-  }
-}
-
-# HTTPS Proxy
-resource "google_compute_target_https_proxy" "main" {
-  name             = "${var.project}-https-proxy"
-  url_map          = google_compute_url_map.main.id
-  ssl_certificates = [google_compute_managed_ssl_certificate.main.id]
-}
-
-# HTTP Proxy (for redirect)
-resource "google_compute_target_http_proxy" "redirect" {
-  name    = "${var.project}-http-redirect"
-  url_map = google_compute_url_map.redirect.id
-}
-
-# Redirect URL Map
-resource "google_compute_url_map" "redirect" {
-  name = "${var.project}-http-redirect"
-
-  default_url_redirect {
-    https_redirect = true
-    strip_query    = false
-  }
-}
-
-# Global Forwarding Rules
-resource "google_compute_global_forwarding_rule" "https" {
-  name                  = "${var.project}-https"
-  ip_protocol           = "TCP"
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-  port_range            = "443"
-  target                = google_compute_target_https_proxy.main.id
-  ip_address            = google_compute_global_address.main.id
-}
-
-resource "google_compute_global_forwarding_rule" "http" {
-  name                  = "${var.project}-http"
-  ip_protocol           = "TCP"
-  load_balancing_scheme = "EXTERNAL_MANAGED"
-  port_range            = "80"
-  target                = google_compute_target_http_proxy.redirect.id
-  ip_address            = google_compute_global_address.main.id
-}
-
-output "load_balancer_ip" {
-  value = google_compute_global_address.main.address
-}
-```
-
-- [ ] Reserve static IP address
-- [ ] Create Google-managed SSL certificate
-- [ ] Create backend services with serverless NEGs
-- [ ] Configure URL map for host-based routing
-- [ ] Set up HTTPS and HTTP (redirect) forwarding rules
-- [ ] Enable Cloud CDN for frontend
-
----
-
-## Part 8: Scheduled Email Reminders
-
-**File:** `infrastructure/terraform/gcp/modules/scheduler/main.tf`
+Add to `infrastructure/terraform/gcp/prod/main.tf`:
 
 ```hcl
-# Cloud Tasks queue for reliable delivery
-resource "google_cloud_tasks_queue" "reminders" {
-  name     = "email-reminders"
+# Service account for scheduler
+resource "google_service_account" "scheduler" {
+  account_id   = "scheduler-service"
+  display_name = "Cloud Scheduler Service"
+}
+
+# Grant scheduler permission to invoke Cloud Run
+resource "google_cloud_run_v2_service_iam_member" "scheduler_invoker" {
   location = var.region
-
-  rate_limits {
-    max_concurrent_dispatches = 10
-    max_dispatches_per_second = 5
-  }
-
-  retry_config {
-    max_attempts       = 5
-    max_backoff        = "3600s"
-    min_backoff        = "10s"
-    max_doublings      = 4
-  }
-
-  stackdriver_logging_config {
-    sampling_ratio = 1.0
-  }
+  name     = google_cloud_run_v2_service.backend.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.scheduler.email}"
 }
 
 # Cloud Scheduler job to trigger reminder processing
@@ -810,11 +661,11 @@ resource "google_cloud_scheduler_job" "process_reminders" {
 
   http_target {
     http_method = "POST"
-    uri         = "${var.backend_url}/api/v1/internal/process-reminders"
+    uri         = "${google_cloud_run_v2_service.backend.uri}/api/v1/internal/process-reminders"
 
     oidc_token {
-      service_account_email = var.scheduler_service_account
-      audience              = var.backend_url
+      service_account_email = google_service_account.scheduler.email
+      audience              = google_cloud_run_v2_service.backend.uri
     }
   }
 
@@ -822,30 +673,19 @@ resource "google_cloud_scheduler_job" "process_reminders" {
     retry_count = 3
   }
 }
-
-# Service account for scheduler
-resource "google_service_account" "scheduler" {
-  account_id   = "scheduler-service"
-  display_name = "Cloud Scheduler Service"
-}
-
-# Grant scheduler permission to invoke Cloud Run
-resource "google_cloud_run_v2_service_iam_member" "scheduler_invoker" {
-  location = var.region
-  name     = var.backend_service_name
-  role     = "roles/run.invoker"
-  member   = "serviceAccount:${google_service_account.scheduler.email}"
-}
 ```
 
-- [ ] Create Cloud Tasks queue
-- [ ] Create Cloud Scheduler job
-- [ ] Configure service account for scheduler
+**Why no Cloud Tasks?**
+
+Cloud Tasks is useful for fan-out workloads (distributing work to many workers) or delayed task execution. For a simple "run every 5 minutes" job, Cloud Scheduler can invoke Cloud Run directly, which is simpler and has fewer moving parts.
+
+- [ ] Create scheduler service account
 - [ ] Grant invoker permissions
+- [ ] Create Cloud Scheduler job
 
 ---
 
-## Part 9: CI/CD with GitHub Actions
+## Part 8: CI/CD with GitHub Actions
 
 **File:** `.github/workflows/deploy-gcp.yml`
 
@@ -903,12 +743,36 @@ jobs:
           docker push ${{ env.ARTIFACT_REGISTRY }}/backend:${{ github.sha }}
           docker push ${{ env.ARTIFACT_REGISTRY }}/backend:latest
 
+      - name: Run database migrations
+        run: |
+          # Run migrations using Cloud Run Jobs (one-time execution)
+          gcloud run jobs execute habitcraft-migrations \
+            --region ${{ env.REGION }} \
+            --wait
+
       - name: Deploy to Cloud Run
+        id: deploy-backend
         run: |
           gcloud run deploy ${{ env.BACKEND_SERVICE }} \
             --image ${{ env.ARTIFACT_REGISTRY }}/backend:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed
+
+      - name: Verify backend health
+        run: |
+          BACKEND_URL=$(gcloud run services describe ${{ env.BACKEND_SERVICE }} \
+            --region ${{ env.REGION }} --format='value(status.url)')
+          # Wait for health check to pass
+          for i in {1..10}; do
+            if curl -sf "${BACKEND_URL}/health" > /dev/null; then
+              echo "Backend is healthy"
+              exit 0
+            fi
+            echo "Waiting for backend... (attempt $i/10)"
+            sleep 5
+          done
+          echo "Backend health check failed"
+          exit 1
 
   deploy-frontend:
     needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
@@ -980,12 +844,37 @@ gcloud iam service-accounts add-iam-policy-binding \
 - [ ] Set up Workload Identity Federation
 - [ ] Create GitHub Actions workflow
 - [ ] Configure GitHub secrets
+- [ ] Create database migration Cloud Run Job
+
+### Rollback Procedure
+
+Cloud Run keeps previous revisions, making rollback straightforward:
+
+```bash
+# List recent revisions
+gcloud run revisions list --service=habitcraft-backend --region=us-central1
+
+# Rollback to a specific revision
+gcloud run services update-traffic habitcraft-backend \
+  --region=us-central1 \
+  --to-revisions=habitcraft-backend-00005-abc=100
+
+# Or rollback to the previous revision
+gcloud run services update-traffic habitcraft-backend \
+  --region=us-central1 \
+  --to-revisions=PREVIOUS_REVISION_NAME=100
+```
+
+**Important:** Database migrations are not automatically rolled back. If a migration causes issues:
+1. Rollback the Cloud Run service to the previous revision
+2. Manually revert the database migration if needed
+3. Fix the issue and redeploy
 
 ---
 
-## Part 10: Monitoring and Alerting
+## Part 9: Monitoring and Alerting
 
-**File:** `infrastructure/terraform/gcp/modules/monitoring/main.tf`
+Add to `infrastructure/terraform/gcp/prod/main.tf`:
 
 ```hcl
 # Notification channel (email)
@@ -1051,19 +940,43 @@ resource "google_monitoring_alert_policy" "high_latency" {
   notification_channels = [google_monitoring_notification_channel.email.id]
 }
 
-# Alert: Database connection failures
-resource "google_monitoring_alert_policy" "db_connection_failures" {
-  display_name = "Database Connection Failures"
+# Alert: Cloud SQL high CPU
+resource "google_monitoring_alert_policy" "db_high_cpu" {
+  display_name = "Database High CPU"
   combiner     = "OR"
 
   conditions {
-    display_name = "Cloud SQL connection failures"
+    display_name = "Cloud SQL CPU > 80%"
 
     condition_threshold {
-      filter          = "resource.type=\"cloudsql_database\" AND metric.type=\"cloudsql.googleapis.com/database/network/connections\""
+      filter          = "resource.type=\"cloudsql_database\" AND metric.type=\"cloudsql.googleapis.com/database/cpu/utilization\""
       duration        = "300s"
-      comparison      = "COMPARISON_LT"
-      threshold_value = 1
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0.8
+
+      aggregations {
+        alignment_period   = "60s"
+        per_series_aligner = "ALIGN_MEAN"
+      }
+    }
+  }
+
+  notification_channels = [google_monitoring_notification_channel.email.id]
+}
+
+# Alert: Cloud SQL disk usage
+resource "google_monitoring_alert_policy" "db_disk_usage" {
+  display_name = "Database Disk Usage High"
+  combiner     = "OR"
+
+  conditions {
+    display_name = "Cloud SQL disk > 80%"
+
+    condition_threshold {
+      filter          = "resource.type=\"cloudsql_database\" AND metric.type=\"cloudsql.googleapis.com/database/disk/utilization\""
+      duration        = "300s"
+      comparison      = "COMPARISON_GT"
+      threshold_value = 0.8
 
       aggregations {
         alignment_period   = "60s"
@@ -1101,6 +1014,7 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 - [ ] Create notification channels
 - [ ] Set up error rate alerting
 - [ ] Set up latency alerting
+- [ ] Set up Cloud SQL CPU and disk alerts
 - [ ] Configure uptime checks
 
 ---
@@ -1137,12 +1051,12 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 4. [ ] Verify database connectivity
 5. [ ] Run E2E tests against GCP environment
 
-### Phase 4: Load Balancer and DNS
+### Phase 4: Domain Mapping and DNS
 
-1. [ ] Create load balancer with SSL certificate
+1. [ ] Create Cloud Run domain mappings for all services
 2. [ ] Wait for SSL certificate provisioning (~15-30 min)
 3. [ ] Lower DNS TTL to 60 seconds (24 hours before cutover)
-4. [ ] Update DNS to point to GCP load balancer IP
+4. [ ] Update DNS CNAME records to point to Cloud Run
 5. [ ] Monitor traffic migration
 
 ### Phase 5: Cleanup
@@ -1164,29 +1078,39 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 | Cloud Run (Backend)     | ~$0-5        | Scale to zero, pay per request     |
 | Cloud Run (Frontend)    | ~$0-5        | Scale to zero, pay per request     |
 | Cloud SQL (db-f1-micro) | ~$9          | Smallest instance                  |
-| Load Balancer           | ~$3          | Minimum forwarding rule charge     |
+| Cloud SQL backups       | ~$1          | ~$0.08/GB/mo for PITR backups      |
 | Artifact Registry       | ~$0.50       | Storage for container images       |
-| Cloud Monitoring        | $0           | Free tier covers basic monitoring  |
+| Network egress          | ~$1-2        | Outbound traffic                   |
 | Secret Manager          | ~$0.10       | 6 secret versions, 10K accesses    |
-| **Total**               | **~$18-23**  |                                    |
+| Cloud Monitoring        | $0           | Free tier covers basic monitoring  |
+| **Total**               | **~$12-22**  |                                    |
 
 ### Medium Traffic Scenario (~10,000 requests/day)
 
 | Component               | Monthly Cost | Notes                              |
 | ----------------------- | ------------ | ---------------------------------- |
 | Cloud Run (Backend)     | ~$10-15      | Moderate request volume            |
-| Cloud Run (Frontend)    | ~$5-10       | With Cloud CDN caching             |
+| Cloud Run (Frontend)    | ~$5-10       | Static assets cached by browser    |
 | Cloud SQL (db-f1-micro) | ~$9          | May need db-g1-small (~$25) later  |
-| Load Balancer           | ~$5          | More traffic through LB            |
-| Cloud CDN               | ~$2          | Egress for cached content          |
-| **Total**               | **~$31-41**  |                                    |
+| Cloud SQL backups       | ~$1-2        | Grows with data size               |
+| Network egress          | ~$3-5        | More outbound traffic              |
+| **Total**               | **~$28-42**  |                                    |
+
+### If Cold Starts Become an Issue
+
+Add minimum instances to keep services warm:
+
+| Additional Cost         | Monthly Cost | Notes                              |
+| ----------------------- | ------------ | ---------------------------------- |
+| Backend min instance    | ~$15         | 1 always-on instance               |
+| Frontend min instance   | ~$15         | 1 always-on instance               |
 
 ### Cost Optimization Options
 
 1. **Committed Use Discounts**: 1-year commit for Cloud SQL saves ~25%
 2. **Cloud SQL Maintenance**: Stop database during known idle periods (dev only)
 3. **Regional vs Multi-region**: Stay single-region for cost savings
-4. **CPU Allocation**: Use `cpu_idle = true` for bursty workloads
+4. **CPU Allocation**: Use `cpu_idle = true` for bursty workloads (already enabled)
 
 ---
 
@@ -1194,7 +1118,7 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 
 | Factor                  | GCP Cloud Run | AWS Lightsail (Current) | AWS EC2 (Planned) |
 | ----------------------- | ------------- | ----------------------- | ----------------- |
-| Monthly cost (low traffic) | ~$18-23    | ~$27                    | ~$53              |
+| Monthly cost (low traffic) | ~$12-22    | ~$27                    | ~$53              |
 | Scale to zero           | Yes           | No                      | No                |
 | Cold starts             | ~500ms-2s     | None                    | None              |
 | Server management       | None          | Minimal                 | Full              |
@@ -1212,9 +1136,9 @@ resource "google_monitoring_uptime_check_config" "api_health" {
    - Automatic secret rotation possible
 
 2. **Network Security**
-   - Cloud SQL with private IP only (no public exposure)
-   - Cloud Run services behind load balancer
-   - All traffic over HTTPS
+   - Cloud SQL via Auth Proxy (IAM authentication, encrypted connection)
+   - Cloud Run with HTTPS-only domain mappings
+   - All traffic encrypted in transit
 
 3. **IAM Best Practices**
    - Dedicated service accounts per service
@@ -1242,9 +1166,10 @@ If issues arise during or after migration:
 
 | File                                                    | Purpose                       |
 | ------------------------------------------------------- | ----------------------------- |
-| `infrastructure/terraform/gcp/shared/backend.tf`        | GCS state backend             |
-| `infrastructure/terraform/gcp/modules/*/`               | Terraform modules             |
-| `infrastructure/terraform/gcp/environments/prod/*.tf`   | Production environment        |
+| `infrastructure/terraform/gcp/prod/main.tf`             | All GCP resources             |
+| `infrastructure/terraform/gcp/prod/variables.tf`        | Input variables               |
+| `infrastructure/terraform/gcp/prod/outputs.tf`          | Output values                 |
+| `infrastructure/terraform/gcp/prod/backend.tf`          | GCS state backend             |
 | `.github/workflows/deploy-gcp.yml`                      | GCP deployment workflow       |
 
 ## Files to Modify
@@ -1261,11 +1186,12 @@ If issues arise during or after migration:
 - [ ] Terraform plan shows expected resources
 - [ ] Images push to Artifact Registry successfully
 - [ ] Cloud Run services deploy and pass health checks
-- [ ] Backend connects to Cloud SQL
-- [ ] Load balancer routes traffic correctly
-- [ ] SSL certificate valid for all domains
-- [ ] DNS resolves to GCP load balancer
+- [ ] Backend connects to Cloud SQL via Auth Proxy
+- [ ] Domain mappings configured correctly
+- [ ] SSL certificates valid for all domains
+- [ ] DNS resolves to Cloud Run services
 - [ ] User registration and login work
 - [ ] Habit CRUD operations work
 - [ ] E2E tests pass against GCP environment
 - [ ] Monitoring alerts configured and tested
+- [ ] Database migrations run successfully
