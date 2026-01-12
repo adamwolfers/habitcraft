@@ -1312,9 +1312,18 @@ Before rolling back after go-live, verify:
 - [ ] DNS resolves to Cloud Run services
 - [x] User registration and login work
 - [x] Habit CRUD operations work
-- [ ] E2E tests pass against GCP environment
+- [ ] E2E tests pass against GCP environment (run after DNS cutover)
 - [x] Monitoring alerts configured and tested
 - [ ] Database migrations run successfully
+
+**Note on E2E Tests:** UI E2E tests cannot run before DNS cutover because:
+1. Frontend is built with `NEXT_PUBLIC_API_BASE_URL=https://api.habitcraft.org`
+2. Backend CORS only allows `https://www.habitcraft.org`
+
+GCP smoke tests are available at `frontends/nextjs/playwright.gcp.config.ts` for use after DNS cutover:
+```bash
+npx playwright test --config=playwright.gcp.config.ts
+```
 
 ---
 
