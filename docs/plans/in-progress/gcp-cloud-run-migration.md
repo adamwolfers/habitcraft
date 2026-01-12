@@ -1040,17 +1040,51 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 
 ### Phase 2: Database Migration 🔄
 
-**Option A: Parallel Database (Recommended for safety)**
+**Approach:** Maintenance Window (~30 min downtime)
 
-1. [x] Create Cloud SQL instance
-2. [ ] Export data from RDS: `pg_dump -h rds-host -U user habitcraft > backup.sql`
-3. [ ] Import to Cloud SQL: `psql -h cloud-sql-ip -U user habitcraft < backup.sql`
-4. [ ] Verify data integrity
+**Prerequisites:**
+- [x] Create Cloud SQL instance
+- [ ] Clean up test data from GCP database (test users created during validation)
 
-**Option B: Database Migration Service**
+**1. Preparation (before maintenance window)**
+- [ ] Announce scheduled maintenance to users (24-48h notice)
+- [ ] Lower DNS TTL to 60 seconds (24h before cutover)
+- [ ] Prepare rollback plan (see Rollback Plan section below)
 
-1. [ ] Use Google Database Migration Service for continuous replication
-2. [ ] Cutover when ready with minimal downtime
+**2. During maintenance window**
+- [ ] Put AWS backend in maintenance mode (return 503 to all requests)
+- [ ] Wait 1-2 minutes for in-flight requests to complete
+- [ ] Export data from RDS:
+  ```bash
+  pg_dump -h <rds-host> -U <user> -d habitcraft -F c -f habitcraft_backup.dump
+  ```
+- [ ] Keep a copy of the backup in a safe location (S3 or local)
+- [ ] Clean GCP database (remove test data):
+  ```bash
+  psql -h <cloud-sql-ip> -U habitcraft -d habitcraft \
+    -c "TRUNCATE users, habits, completions, refresh_tokens CASCADE;"
+  ```
+- [ ] Import to Cloud SQL:
+  ```bash
+  pg_restore -h <cloud-sql-ip> -U habitcraft -d habitcraft -c habitcraft_backup.dump
+  ```
+
+**3. Verification (before going live)**
+- [ ] Compare row counts per table:
+  ```sql
+  SELECT 'users' as table_name, COUNT(*) FROM users
+  UNION ALL SELECT 'habits', COUNT(*) FROM habits
+  UNION ALL SELECT 'completions', COUNT(*) FROM completions;
+  ```
+- [ ] Spot check: verify 2-3 specific user records match
+- [ ] Verify referential integrity (no orphaned records)
+- [ ] Test login with a known user account
+
+**4. Go live**
+- [ ] Update DNS to point to GCP Cloud Run
+- [ ] Verify GCP backend is receiving traffic
+- [ ] Monitor for errors in Cloud Logging
+- [ ] End maintenance window
 
 ### Phase 3: Deploy Application 🔄
 
@@ -1163,11 +1197,69 @@ Add minimum instances to keep services warm:
 
 ## Rollback Plan
 
-If issues arise during or after migration:
+**Goal:** Zero user data loss in all scenarios.
 
-1. **DNS Rollback**: Change DNS back to AWS Lightsail URLs (TTL dependent)
-2. **Keep AWS Running**: Don't delete AWS resources until GCP is verified stable
-3. **Database**: Keep RDS snapshot for point-in-time recovery
+### Prerequisites (before migration)
+
+- [ ] RDS instance remains running (do NOT stop or delete)
+- [ ] AWS Lightsail containers remain deployed
+- [ ] DNS TTL lowered to 60 seconds (24h before migration)
+- [ ] Keep copy of pre-migration RDS backup in S3
+
+### Scenario 1: Rollback DURING maintenance window (before DNS switch)
+
+No user data on GCP yet - simple abort.
+
+1. Abort the migration
+2. Restart AWS backend (remove maintenance mode)
+3. Verify AWS is healthy
+4. No DNS changes needed
+5. Investigate and reschedule
+
+### Scenario 2: Rollback AFTER go-live
+
+Users may have written data to GCP. **Requires a second maintenance window to preserve all data.**
+
+1. **Announce maintenance window** (or extend if issues found quickly)
+
+2. **Put GCP backend in maintenance mode** (stop new writes)
+
+3. **Export all data from Cloud SQL:**
+   ```bash
+   pg_dump -h <cloud-sql-ip> -U habitcraft -d habitcraft -F c -f gcp_backup.dump
+   ```
+
+4. **Merge GCP data into RDS:**
+   ```bash
+   # Import GCP data into RDS (--data-only to avoid schema conflicts)
+   # Use --disable-triggers to handle foreign keys
+   pg_restore -h <rds-host> -U <user> -d habitcraft \
+     --data-only --disable-triggers gcp_backup.dump
+   ```
+
+   Note: If there are conflicts (e.g., same user ID), resolve manually or use:
+   ```sql
+   -- Insert only new records (users created after migration)
+   INSERT INTO users SELECT * FROM gcp_users
+   WHERE created_at > '<migration_timestamp>'
+   ON CONFLICT (id) DO NOTHING;
+   ```
+
+5. **Verify RDS has all data** (row counts should be >= GCP counts)
+
+6. **Restart AWS Lightsail backend**
+
+7. **Update DNS to point back to AWS**
+
+8. **End maintenance window**
+
+### Rollback Decision Checklist
+
+Before rolling back after go-live, verify:
+- [ ] AWS Lightsail containers are still deployed
+- [ ] RDS instance is running and accessible
+- [ ] You have time for a maintenance window (~30-60 min)
+- [ ] Data export/merge scripts are ready
 
 ---
 
