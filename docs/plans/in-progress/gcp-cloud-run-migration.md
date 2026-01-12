@@ -606,16 +606,22 @@ scaling {
 Instead of a load balancer, use Cloud Run's built-in domain mapping:
 
 ```bash
-# Map custom domains (run after Cloud Run services are deployed)
-gcloud run domain-mappings create --service=habitcraft-backend \
+# Verify domain ownership first (opens browser)
+gcloud domains verify habitcraft.org
+
+# Map custom domains (requires beta command for fully managed Cloud Run)
+gcloud beta run domain-mappings create --service=habitcraft-backend \
   --domain=api.habitcraft.org --region=us-central1
 
-gcloud run domain-mappings create --service=habitcraft-frontend \
+gcloud beta run domain-mappings create --service=habitcraft-frontend \
   --domain=www.habitcraft.org --region=us-central1
 
 # Also map apex domain to frontend
-gcloud run domain-mappings create --service=habitcraft-frontend \
+gcloud beta run domain-mappings create --service=habitcraft-frontend \
   --domain=habitcraft.org --region=us-central1
+
+# Check mapping status
+gcloud beta run domain-mappings list --region=us-central1
 ```
 
 This provides:
@@ -635,7 +641,7 @@ This provides:
 - [x] Configure Cloud SQL connectivity
 - [x] Set up secrets access
 - [x] Configure public access (allUsers invoker)
-- [ ] Set up custom domain mappings
+- [x] Set up custom domain mappings
 - [ ] Update DNS records
 
 ---
@@ -1096,11 +1102,24 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 
 ### Phase 4: Domain Mapping and DNS
 
-1. [ ] Create Cloud Run domain mappings for all services
-2. [ ] Wait for SSL certificate provisioning (~15-30 min)
+1. [x] Create Cloud Run domain mappings for all services (2026-01-12 UTC)
+2. [ ] Wait for SSL certificate provisioning (~15-30 min after DNS update)
 3. [ ] Lower DNS TTL to 60 seconds (24 hours before cutover)
-4. [ ] Update DNS CNAME records to point to Cloud Run
+4. [ ] Update DNS records at IONOS (see DNS Records below)
 5. [ ] Monitor traffic migration
+
+**DNS Records to Configure at IONOS:**
+
+| Domain | Record Type | Value |
+|--------|-------------|-------|
+| `api.habitcraft.org` | CNAME | `ghs.googlehosted.com.` |
+| `www.habitcraft.org` | CNAME | `ghs.googlehosted.com.` |
+| `habitcraft.org` (apex) | A | `216.239.32.21` |
+| `habitcraft.org` (apex) | A | `216.239.34.21` |
+| `habitcraft.org` (apex) | A | `216.239.36.21` |
+| `habitcraft.org` (apex) | A | `216.239.38.21` |
+
+**Note:** Apex domain requires A records (CNAME not allowed at root). SSL certificates will provision automatically after DNS propagation.
 
 ### Phase 5: Cleanup
 
@@ -1288,8 +1307,8 @@ Before rolling back after go-live, verify:
 - [x] Images push to Artifact Registry successfully
 - [x] Cloud Run services deploy and pass health checks
 - [x] Backend connects to Cloud SQL via Auth Proxy
-- [ ] Domain mappings configured correctly
-- [ ] SSL certificates valid for all domains
+- [x] Domain mappings configured correctly
+- [ ] SSL certificates valid for all domains (pending DNS update)
 - [ ] DNS resolves to Cloud Run services
 - [x] User registration and login work
 - [x] Habit CRUD operations work
