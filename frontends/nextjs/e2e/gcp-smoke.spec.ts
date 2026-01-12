@@ -4,23 +4,46 @@ import { test, expect } from '@playwright/test';
  * GCP Smoke Tests
  *
  * These tests validate core functionality against the deployed GCP environment.
- * They use the test user created during GCP validation.
+ * Tests are fully self-sufficient - they create their own test user during setup,
+ * so they work regardless of database contents (e.g., after data migration).
  *
- * Test credentials:
- * - Email: gcptest12345@example.com
- * - Password: TestPass123
- *
- * These tests are designed to be non-destructive and create unique data
- * to avoid polluting the production database with test artifacts.
+ * Each test run creates a unique user to avoid conflicts.
  */
 
+// Generate unique test user for this test run
+const TEST_RUN_ID = Date.now();
 const GCP_TEST_USER = {
-  email: 'gcptest12345@example.com',
-  password: 'TestPass123',
-  name: 'GCP Test User',
+  email: `gcp-smoke-${TEST_RUN_ID}@example.com`,
+  password: 'TestPass123!',
+  name: 'GCP Smoke Test User',
 };
 
+// Track if user has been created
+let userCreated = false;
+
 test.describe('GCP Smoke Tests', () => {
+  // Setup: Create test user before running authenticated tests
+  test.describe('Setup', () => {
+    test('should create test user for this test run', async ({ page }) => {
+      await page.goto('/register');
+
+      await page.getByLabel(/name/i).fill(GCP_TEST_USER.name);
+      await page.getByLabel(/email/i).fill(GCP_TEST_USER.email);
+      await page.getByLabel(/^password$/i).fill(GCP_TEST_USER.password);
+      await page.getByLabel(/confirm password/i).fill(GCP_TEST_USER.password);
+      await page.getByRole('button', { name: /sign up/i }).click();
+
+      // Should redirect to dashboard after registration
+      await expect(page).toHaveURL('/dashboard');
+      userCreated = true;
+
+      // Logout so subsequent tests start fresh
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /log out/i }).click();
+      await expect(page).toHaveURL('/login');
+    });
+  });
+
   test.describe('Landing Page', () => {
     test('should load the landing page', async ({ page }) => {
       await page.goto('/');
