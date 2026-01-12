@@ -2,8 +2,8 @@
 
 **Status:** In Progress
 **Branch:** `master`
-**Created:** 2026-01-09
-**Last Updated:** 2026-01-11
+**Created:** 2026-01-09 (UTC)
+**Last Updated:** 2026-01-12 (UTC)
 
 ### Current Deployment
 
@@ -1038,7 +1038,7 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 4. [x] Set up Secret Manager with secrets
 5. [x] Create service accounts with IAM permissions
 
-### Phase 2: Database Migration ✅
+### Phase 2: Database Migration 🔄
 
 **Option A: Parallel Database (Recommended for safety)**
 
@@ -1056,8 +1056,8 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 
 1. [x] Push Docker images to Artifact Registry
 2. [x] Deploy Cloud Run services
-3. [ ] Test with Cloud Run URLs directly
-4. [ ] Verify database connectivity
+3. [x] Test with Cloud Run URLs directly
+4. [x] Verify database connectivity
 5. [ ] Run E2E tests against GCP environment
 
 ### Phase 4: Domain Mapping and DNS
@@ -1195,12 +1195,145 @@ If issues arise during or after migration:
 - [x] Terraform plan shows expected resources
 - [x] Images push to Artifact Registry successfully
 - [x] Cloud Run services deploy and pass health checks
-- [ ] Backend connects to Cloud SQL via Auth Proxy
+- [x] Backend connects to Cloud SQL via Auth Proxy
 - [ ] Domain mappings configured correctly
 - [ ] SSL certificates valid for all domains
 - [ ] DNS resolves to Cloud Run services
-- [ ] User registration and login work
-- [ ] Habit CRUD operations work
+- [x] User registration and login work
+- [x] Habit CRUD operations work
 - [ ] E2E tests pass against GCP environment
 - [x] Monitoring alerts configured and tested
 - [ ] Database migrations run successfully
+
+---
+
+## Manual Testing Results
+
+### Health Endpoint (2026-01-12 UTC)
+
+```bash
+curl -s https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/health
+```
+
+```json
+{
+  "service": "habittracker-api",
+  "version": "1.0.0",
+  "status": "healthy",
+  "timestamp": "2026-01-12T00:36:00.106Z",
+  "database": "connected"
+}
+```
+
+**Verified:**
+- Cloud Run backend is running
+- Cloud SQL Auth Proxy connectivity working
+- Database connection established
+
+### Authentication Endpoints (2026-01-12 UTC)
+
+**Registration** - `POST /api/v1/auth/register`
+
+```bash
+curl -s -X POST https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email": "gcptest12345@example.com", "password": "TestPass123", "name": "GCP Test User"}'
+```
+
+```json
+{
+  "user": {
+    "id": "1f4206b3-0310-4444-bffd-0bc7fa3b9cb3",
+    "email": "gcptest12345@example.com",
+    "name": "GCP Test User",
+    "createdAt": "2026-01-12T00:39:26.541Z"
+  }
+}
+```
+
+**Login** - `POST /api/v1/auth/login`
+
+```bash
+curl -s -X POST https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "gcptest12345@example.com", "password": "TestPass123"}'
+```
+
+Response includes:
+- User data in JSON body
+- `accessToken` cookie (15 min TTL, HttpOnly, Secure, SameSite=Strict)
+- `refreshToken` cookie (7 days TTL, HttpOnly, Secure, SameSite=Strict)
+- Rate limiting headers (`ratelimit-limit: 5` per 15 min window)
+
+**Security Headers Verified:**
+- `content-security-policy`: Restrictive CSP with `default-src 'self'`
+- `strict-transport-security`: HSTS enabled with `includeSubDomains`
+- `x-content-type-options`: `nosniff`
+- `x-frame-options`: `SAMEORIGIN`
+- `access-control-allow-origin`: `https://www.habitcraft.org`
+- `access-control-allow-credentials`: `true`
+
+### Habit CRUD Endpoints (2026-01-12 UTC)
+
+All tests performed with authenticated session (cookie-based JWT).
+
+| Operation | Endpoint | Result |
+|-----------|----------|--------|
+| **Create** | `POST /api/v1/habits` | ✅ Returns new habit with ID |
+| **Read (list)** | `GET /api/v1/habits` | ✅ Returns array of habits |
+| **Read (single)** | `GET /api/v1/habits/:id` | ❌ 404 (not implemented) |
+| **Update** | `PUT /api/v1/habits/:id` | ✅ Requires `frequency` field |
+| **Delete** | `DELETE /api/v1/habits/:id` | ✅ Returns 204 No Content |
+| **Completions** | `POST /api/v1/habits/:id/completions` | ✅ Records habit completion |
+
+**Create Habit:**
+
+```bash
+curl -s -b cookies.txt -X POST https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Morning Exercise", "description": "30 minutes of cardio", "frequency": "daily"}'
+```
+
+```json
+{
+  "id": "5c44d92e-383e-470d-8261-66b4d998efa9",
+  "userId": "1f4206b3-0310-4444-bffd-0bc7fa3b9cb3",
+  "name": "Morning Exercise",
+  "description": "30 minutes of cardio",
+  "frequency": "daily",
+  "targetDays": [],
+  "color": "#3B82F6",
+  "icon": "⭐",
+  "status": "active",
+  "createdAt": "2026-01-12T00:45:09.532Z",
+  "updatedAt": "2026-01-12T00:45:09.532Z"
+}
+```
+
+**Update Habit:**
+
+```bash
+curl -s -b cookies.txt -X PUT https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits/:id \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Morning Workout", "description": "45 minutes", "frequency": "daily"}'
+```
+
+**Record Completion:**
+
+```bash
+curl -s -b cookies.txt -X POST https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits/:id/completions \
+  -H "Content-Type: application/json" \
+  -d '{"date": "2026-01-12"}'
+```
+
+```json
+{
+  "id": "95833b21-7543-4cf6-82d1-056b00121709",
+  "habitId": "5c44d92e-383e-470d-8261-66b4d998efa9",
+  "date": "2026-01-12",
+  "notes": null,
+  "createdAt": "2026-01-12T00:46:20.630Z"
+}
+```
+
+**Note:** Single habit GET (`/api/v1/habits/:id`) returns 404 - this is by design as the frontend uses the list endpoint.
