@@ -189,10 +189,6 @@ resource "google_cloud_run_v2_service" "backend" {
         value = "production"
       }
       env {
-        name  = "PORT"
-        value = "3000"
-      }
-      env {
         name  = "DB_HOST"
         value = "/cloudsql/${google_sql_database_instance.main.connection_name}"
       }
