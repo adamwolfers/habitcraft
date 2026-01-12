@@ -1,8 +1,17 @@
 # Plan: Host HabitCraft on Google Cloud Platform
 
-**Status:** Pending
-**Branch:** `feature/gcp-hosting`
+**Status:** In Progress
+**Branch:** `master`
 **Created:** 2026-01-09
+**Last Updated:** 2026-01-11
+
+### Current Deployment
+
+| Resource | URL |
+|----------|-----|
+| Frontend | https://habitcraft-frontend-iz7ggma5ga-uc.a.run.app |
+| Backend | https://habitcraft-backend-iz7ggma5ga-uc.a.run.app |
+| Artifact Registry | us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers |
 
 ## Summary
 
@@ -123,9 +132,9 @@ gcloud services enable \
   logging.googleapis.com
 ```
 
-- [ ] Create GCP project
-- [ ] Enable required APIs
-- [ ] Set up billing account
+- [x] Create GCP project
+- [x] Enable required APIs
+- [x] Set up billing account
 
 ### Step 2: Create Service Accounts
 
@@ -157,8 +166,8 @@ gcloud projects add-iam-policy-binding habitcraft-prod \
 ```
 
 - [ ] Create CI/CD service account
-- [ ] Create Cloud Run service accounts
-- [ ] Configure IAM permissions
+- [x] Create Cloud Run service accounts
+- [x] Configure IAM permissions
 
 ---
 
@@ -225,8 +234,8 @@ resource "google_storage_bucket" "terraform_state" {
 }
 ```
 
-- [ ] Create GCS bucket for Terraform state
-- [ ] Enable versioning on state bucket
+- [x] Create GCS bucket for Terraform state
+- [x] Enable versioning on state bucket
 
 ---
 
@@ -255,8 +264,8 @@ output "repository_url" {
 }
 ```
 
-- [ ] Create Artifact Registry repository
-- [ ] Configure cleanup policies
+- [x] Create Artifact Registry repository
+- [x] Configure cleanup policies
 
 ---
 
@@ -295,8 +304,8 @@ resource "google_secret_manager_secret_iam_member" "backend_db" {
 }
 ```
 
-- [ ] Create secrets in Secret Manager
-- [ ] Grant Cloud Run access to secrets
+- [x] Create secrets in Secret Manager
+- [x] Grant Cloud Run access to secrets
 
 ---
 
@@ -368,8 +377,8 @@ We use the Auth Proxy approach (built into Cloud Run) rather than Private IP + V
 - **Encrypted connection** - TLS by default
 - **Works out of the box** - Cloud Run has native support via volume mounts
 
-- [ ] Create Cloud SQL PostgreSQL instance
-- [ ] Create database and user
+- [x] Create Cloud SQL PostgreSQL instance
+- [x] Create database and user
 
 ---
 
@@ -621,11 +630,11 @@ This provides:
 - Cloud Armor for WAF/DDoS protection
 - Multi-region deployment with global load balancing
 
-- [ ] Create backend Cloud Run service
-- [ ] Create frontend Cloud Run service
-- [ ] Configure Cloud SQL connectivity
-- [ ] Set up secrets access
-- [ ] Configure public access (allUsers invoker)
+- [x] Create backend Cloud Run service
+- [x] Create frontend Cloud Run service
+- [x] Configure Cloud SQL connectivity
+- [x] Set up secrets access
+- [x] Configure public access (allUsers invoker)
 - [ ] Set up custom domain mappings
 - [ ] Update DNS records
 
@@ -679,9 +688,9 @@ resource "google_cloud_scheduler_job" "process_reminders" {
 
 Cloud Tasks is useful for fan-out workloads (distributing work to many workers) or delayed task execution. For a simple "run every 5 minutes" job, Cloud Scheduler can invoke Cloud Run directly, which is simpler and has fewer moving parts.
 
-- [ ] Create scheduler service account
-- [ ] Grant invoker permissions
-- [ ] Create Cloud Scheduler job
+- [x] Create scheduler service account
+- [x] Grant invoker permissions
+- [x] Create Cloud Scheduler job
 
 ---
 
@@ -1011,29 +1020,29 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 }
 ```
 
-- [ ] Create notification channels
-- [ ] Set up error rate alerting
-- [ ] Set up latency alerting
-- [ ] Set up Cloud SQL CPU and disk alerts
-- [ ] Configure uptime checks
+- [x] Create notification channels
+- [x] Set up error rate alerting
+- [x] Set up latency alerting
+- [x] Set up Cloud SQL CPU and disk alerts
+- [x] Configure uptime checks
 
 ---
 
 ## Migration Strategy
 
-### Phase 1: Prepare (No Downtime)
+### Phase 1: Prepare (No Downtime) ✅
 
-1. [ ] Create GCP project and enable APIs
-2. [ ] Set up Terraform state backend (GCS)
-3. [ ] Create Artifact Registry repository
-4. [ ] Set up Secret Manager with secrets
-5. [ ] Create service accounts with IAM permissions
+1. [x] Create GCP project and enable APIs
+2. [x] Set up Terraform state backend (GCS)
+3. [x] Create Artifact Registry repository
+4. [x] Set up Secret Manager with secrets
+5. [x] Create service accounts with IAM permissions
 
-### Phase 2: Database Migration
+### Phase 2: Database Migration ✅
 
 **Option A: Parallel Database (Recommended for safety)**
 
-1. [ ] Create Cloud SQL instance
+1. [x] Create Cloud SQL instance
 2. [ ] Export data from RDS: `pg_dump -h rds-host -U user habitcraft > backup.sql`
 3. [ ] Import to Cloud SQL: `psql -h cloud-sql-ip -U user habitcraft < backup.sql`
 4. [ ] Verify data integrity
@@ -1043,10 +1052,10 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 1. [ ] Use Google Database Migration Service for continuous replication
 2. [ ] Cutover when ready with minimal downtime
 
-### Phase 3: Deploy Application
+### Phase 3: Deploy Application 🔄
 
-1. [ ] Push Docker images to Artifact Registry
-2. [ ] Deploy Cloud Run services
+1. [x] Push Docker images to Artifact Registry
+2. [x] Deploy Cloud Run services
 3. [ ] Test with Cloud Run URLs directly
 4. [ ] Verify database connectivity
 5. [ ] Run E2E tests against GCP environment
@@ -1183,9 +1192,9 @@ If issues arise during or after migration:
 
 ## Testing Checklist
 
-- [ ] Terraform plan shows expected resources
-- [ ] Images push to Artifact Registry successfully
-- [ ] Cloud Run services deploy and pass health checks
+- [x] Terraform plan shows expected resources
+- [x] Images push to Artifact Registry successfully
+- [x] Cloud Run services deploy and pass health checks
 - [ ] Backend connects to Cloud SQL via Auth Proxy
 - [ ] Domain mappings configured correctly
 - [ ] SSL certificates valid for all domains
@@ -1193,5 +1202,5 @@ If issues arise during or after migration:
 - [ ] User registration and login work
 - [ ] Habit CRUD operations work
 - [ ] E2E tests pass against GCP environment
-- [ ] Monitoring alerts configured and tested
+- [x] Monitoring alerts configured and tested
 - [ ] Database migrations run successfully
