@@ -1075,22 +1075,54 @@ resource "google_monitoring_uptime_check_config" "api_health" {
   pg_restore -h <cloud-sql-ip> -U habitcraft -d habitcraft -c habitcraft_backup.dump
   ```
 
-**3. Verification (before going live)**
+**3. Data Verification (before DNS cutover)**
+
+Verify migrated data via API calls to Cloud Run backend (bypasses frontend/CORS issues):
+
 - [ ] Compare row counts per table:
   ```sql
   SELECT 'users' as table_name, COUNT(*) FROM users
   UNION ALL SELECT 'habits', COUNT(*) FROM habits
   UNION ALL SELECT 'completions', COUNT(*) FROM completions;
   ```
-- [ ] Spot check: verify 2-3 specific user records match
-- [ ] Verify referential integrity (no orphaned records)
-- [ ] Test login with a known user account
+- [ ] Verify row counts match between RDS and Cloud SQL
 
-**4. Go live**
-- [ ] Update DNS to point to GCP Cloud Run
-- [ ] Verify GCP backend is receiving traffic
+- [ ] Test login with a known production user via API:
+  ```bash
+  # Login as a real user (replace with actual credentials)
+  curl -s -X POST https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email": "<real-user-email>", "password": "<password>"}' \
+    -c /tmp/prod-cookies.txt
+  ```
+
+- [ ] Verify user's habits were migrated:
+  ```bash
+  curl -s -b /tmp/prod-cookies.txt \
+    https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits | jq .
+  ```
+
+- [ ] Verify user's completions were migrated:
+  ```bash
+  curl -s -b /tmp/prod-cookies.txt \
+    "https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits/<habit-id>/completions" | jq .
+  ```
+
+- [ ] Spot check 2-3 different users to confirm data integrity
+
+**4. DNS Cutover**
+- [ ] Lower apex domain TTL to 300s at IONOS (1-2 hours before cutover)
+- [ ] Update DNS records at IONOS to point to GCP (see DNS Records table below)
+- [ ] Verify DNS propagation: `dig +short api.habitcraft.org`
+- [ ] Wait for SSL certificate provisioning (~15-30 min)
+- [ ] Verify site loads via custom domains
+
+**5. Post-Cutover Verification**
+- [ ] Verify GCP backend is receiving traffic (check Cloud Logging)
+- [ ] Run E2E smoke tests: `npx playwright test --config=playwright.gcp.config.ts`
 - [ ] Monitor for errors in Cloud Logging
 - [ ] End maintenance window
+- [ ] Notify users maintenance is complete
 
 ### Phase 3: Deploy Application 🔄
 
@@ -1103,10 +1135,13 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 ### Phase 4: Domain Mapping and DNS
 
 1. [x] Create Cloud Run domain mappings for all services (2026-01-12 UTC)
-2. [ ] Wait for SSL certificate provisioning (~15-30 min after DNS update)
-3. [ ] Lower DNS TTL to 60 seconds (24 hours before cutover)
+2. [x] Verify domain ownership with Google Search Console
+3. [ ] Lower apex domain TTL to 300s (1-2 hours before cutover - see note below)
 4. [ ] Update DNS records at IONOS (see DNS Records below)
-5. [ ] Monitor traffic migration
+5. [ ] Wait for SSL certificate provisioning (~15-30 min after DNS update)
+6. [ ] Monitor traffic migration
+
+**Note on TTL:** The `api` and `www` subdomains already have 300s TTL. Only the apex domain (`habitcraft.org`) has 3600s TTL and needs lowering. Do this 1-2 hours before cutover to avoid breaking the apex domain's IONOS redirect service prematurely.
 
 **DNS Records to Configure at IONOS:**
 
