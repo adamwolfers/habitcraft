@@ -1333,9 +1333,11 @@ Run a trial migration to validate the process and measure timing:
 | RDS | `localhost` | `5433` | `habituser` | `habitcraft` | SSH tunnel via bastion |
 | Cloud SQL | `localhost` | `5434` | `habitcraft` | `habitcraft` | Cloud SQL Auth Proxy |
 
+**Scheduled Maintenance Window:** Jan 14, 2026 10:00-11:59pm UTC
+
 **1. Preparation (before maintenance window)**
-- [ ] Announce scheduled maintenance to users (24-48h notice)
-- [ ] Lower DNS TTL to 60 seconds (24h before cutover)
+- [x] Announce scheduled maintenance to users (PostHog banner enabled 2026-01-13)
+- [ ] Lower apex domain TTL to 300s at IONOS (1-2h before cutover)
 - [ ] Prepare rollback plan (see Rollback Plan section below)
 
 **2. During maintenance window**
