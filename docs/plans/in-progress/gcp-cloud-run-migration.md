@@ -3,7 +3,7 @@
 **Status:** In Progress
 **Branch:** `master`
 **Created:** 2026-01-09 (UTC)
-**Last Updated:** 2026-01-12 (UTC)
+**Last Updated:** 2026-01-13 (UTC)
 
 ### Current Deployment
 
@@ -165,7 +165,7 @@ gcloud projects add-iam-policy-binding habitcraft-prod \
   --role="roles/secretmanager.secretAccessor"
 ```
 
-- [ ] Create CI/CD service account
+- [x] Create CI/CD service account
 - [x] Create Cloud Run service accounts
 - [x] Configure IAM permissions
 
@@ -856,10 +856,10 @@ gcloud iam service-accounts add-iam-policy-binding \
   --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/github-pool/attribute.repository/YOUR_ORG/habitcraft"
 ```
 
-- [ ] Set up Workload Identity Federation
-- [ ] Create GitHub Actions workflow
-- [ ] Configure GitHub secrets
-- [ ] Create database migration Cloud Run Job
+- [x] Set up Workload Identity Federation
+- [x] Create GitHub Actions workflow
+- [x] Configure GitHub secrets
+- [ ] Create database migration Cloud Run Job (optional - using schema in container)
 
 ### Rollback Procedure
 
