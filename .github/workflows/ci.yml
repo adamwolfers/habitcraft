@@ -281,8 +281,8 @@ jobs:
           path: frontends/nextjs/playwright-report/
           retention-days: 7
 
-  deploy-backend:
-    name: Deploy Backend
+  deploy-backend-aws:
+    name: Deploy Backend to AWS
     runs-on: ubuntu-latest
     needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
@@ -340,8 +340,8 @@ jobs:
               "healthCheck": {"path": "/health", "intervalSeconds": 30, "timeoutSeconds": 5}
             }'
 
-  deploy-frontend:
-    name: Deploy Frontend
+  deploy-frontend-aws:
+    name: Deploy Frontend to AWS
     runs-on: ubuntu-latest
     needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
