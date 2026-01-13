@@ -26,8 +26,43 @@ app.use(helmet({
 }));
 
 // Middleware
+// Parse allowed origins from FRONTEND_URL (comma-separated) or derive www/apex variants
+const parseAllowedOrigins = () => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3100';
+  // Support comma-separated list of origins
+  if (frontendUrl.includes(',')) {
+    return frontendUrl.split(',').map(url => url.trim());
+  }
+  // Auto-derive www/apex variants for production domains
+  try {
+    const url = new URL(frontendUrl);
+    if (url.hostname.startsWith('www.')) {
+      // www variant provided, also allow apex
+      const apex = `${url.protocol}//${url.hostname.slice(4)}`;
+      return [frontendUrl, apex];
+    } else if (!url.hostname.includes('.') || url.hostname === 'localhost') {
+      // localhost or simple hostname, just use as-is
+      return [frontendUrl];
+    } else {
+      // apex variant provided, also allow www
+      const www = `${url.protocol}//www.${url.hostname}`;
+      return [frontendUrl, www];
+    }
+  } catch {
+    return [frontendUrl];
+  }
+};
+const allowedOrigins = parseAllowedOrigins();
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3100',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('CORS not allowed'), false);
+  },
   credentials: true // Allow cookies to be sent cross-origin
 }));
 app.use(cookieParser());
