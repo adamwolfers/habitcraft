@@ -1050,7 +1050,288 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 
 **Prerequisites:**
 - [x] Create Cloud SQL instance
-- [ ] Clean up test data from GCP database (test users created during validation)
+- [x] Set up bastion host for RDS access (see below)
+- [x] Clean up test data from GCP database (replaced with production data during trial)
+- [x] Run trial migration to validate process and timing
+- [x] Store RDS password in AWS Secrets Manager (see Secure Credential Handling below)
+
+#### Secure Credential Handling
+
+**⚠️ Never put passwords directly in commands** - they will be stored in shell history.
+
+**Solution:** Retrieve passwords from Secrets Manager at runtime into environment variables.
+
+**One-time setup: Store RDS password in AWS Secrets Manager**
+
+```bash
+# Store the RDS password (only need to do this once)
+aws secretsmanager create-secret \
+  --name habitcraft/rds-password \
+  --description "HabitCraft RDS database password" \
+  --secret-string "<your-rds-password>" \
+  --region us-west-2
+```
+
+**At migration time: Load passwords into environment variables**
+
+```bash
+# Load RDS password from AWS Secrets Manager
+export RDS_PASSWORD=$(aws secretsmanager get-secret-value \
+  --secret-id habitcraft/rds-password \
+  --query 'SecretString' --output text \
+  --region us-west-2)
+
+# Load Cloud SQL password from GCP Secret Manager
+export GCP_PASSWORD=$(gcloud secrets versions access latest \
+  --secret=db-password \
+  --project=habitcraft-prod)
+
+# Verify (shows only first/last chars)
+echo "RDS_PASSWORD: ${RDS_PASSWORD:0:3}...${RDS_PASSWORD: -3}"
+echo "GCP_PASSWORD: ${GCP_PASSWORD:0:3}...${GCP_PASSWORD: -3}"
+```
+
+Now use `$RDS_PASSWORD` and `$GCP_PASSWORD` in commands instead of literal passwords.
+
+**Security notes:**
+- Environment variables are not saved to shell history
+- Close terminal after migration to clear env vars from memory
+- AWS Secrets Manager access is logged in CloudTrail for auditing
+
+#### Database Access via Bastion Host
+
+RDS is not publicly accessible (for security). To run `pg_dump` for the migration, use an EC2 bastion host in the same VPC.
+
+**One-time setup (~10 min):**
+
+```bash
+# 1. Get the VPC and subnet info from RDS
+aws rds describe-db-instances --db-instance-identifier habitcraft-db \
+  --query 'DBInstances[0].DBSubnetGroup.Subnets[0].{SubnetId:SubnetIdentifier,VpcId:SubnetAvailabilityZone}' \
+  --region us-west-2
+
+# 2. Create a key pair for SSH access
+aws ec2 create-key-pair --key-name habitcraft-bastion \
+  --query 'KeyMaterial' --output text --region us-west-2 > ~/.ssh/habitcraft-bastion.pem
+chmod 400 ~/.ssh/habitcraft-bastion.pem
+
+# 3. Create security group for bastion (SSH from your IP only)
+BASTION_SG=$(aws ec2 create-security-group \
+  --group-name habitcraft-bastion-sg \
+  --description "Bastion host for DB access" \
+  --vpc-id <vpc-id> \
+  --region us-west-2 \
+  --query 'GroupId' --output text)
+
+# 4. Allow SSH from your IP
+MY_IP=$(curl -s ifconfig.me)
+aws ec2 authorize-security-group-ingress \
+  --group-id $BASTION_SG \
+  --protocol tcp --port 22 \
+  --cidr ${MY_IP}/32 \
+  --region us-west-2
+
+# 5. Allow bastion to connect to RDS (add to RDS security group)
+aws ec2 authorize-security-group-ingress \
+  --group-id sg-012c04e0fae1b10de \
+  --protocol tcp --port 5432 \
+  --source-group $BASTION_SG \
+  --region us-west-2
+
+# 6. Launch bastion instance (Amazon Linux 2023, t3.micro = free tier eligible)
+aws ec2 run-instances \
+  --image-id ami-0c55b159cbfafe1f0 \
+  --instance-type t3.micro \
+  --key-name habitcraft-bastion \
+  --security-group-ids $BASTION_SG \
+  --subnet-id <subnet-id> \
+  --associate-public-ip-address \
+  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=habitcraft-bastion}]' \
+  --region us-west-2
+
+# 7. Wait for instance to be running, then get public IP
+aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=habitcraft-bastion" "Name=instance-state-name,Values=running" \
+  --query 'Reservations[0].Instances[0].PublicIpAddress' \
+  --output text --region us-west-2
+```
+
+**Using the bastion for database operations:**
+
+```bash
+# SSH tunnel: forward local port 5433 to RDS port 5432
+ssh -i ~/.ssh/habitcraft-bastion.pem \
+  -L 5433:habitcraft-db.cb40wqc283y5.us-west-2.rds.amazonaws.com:5432 \
+  -N ec2-user@<bastion-public-ip> &
+
+# Now connect to RDS via localhost:5433
+PGPASSWORD='<password>' psql -h localhost -p 5433 -U habituser -d habitcraft
+
+# Export data via the tunnel
+PGPASSWORD='<password>' pg_dump -h localhost -p 5433 -U habituser -d habitcraft \
+  -F c -f habitcraft_backup.dump
+```
+
+**Cleanup after migration:**
+
+```bash
+# Terminate bastion instance
+INSTANCE_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=habitcraft-bastion" \
+  --query 'Reservations[0].Instances[0].InstanceId' \
+  --output text --region us-west-2)
+aws ec2 terminate-instances --instance-ids $INSTANCE_ID --region us-west-2
+
+# Delete security group (after instance terminates)
+aws ec2 delete-security-group --group-id $BASTION_SG --region us-west-2
+
+# Remove bastion access from RDS security group
+aws ec2 revoke-security-group-ingress \
+  --group-id sg-012c04e0fae1b10de \
+  --protocol tcp --port 5432 \
+  --source-group $BASTION_SG \
+  --region us-west-2
+
+# Delete key pair
+aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
+rm ~/.ssh/habitcraft-bastion.pem
+```
+
+#### Cloud SQL Access via Auth Proxy
+
+Cloud SQL is not publicly accessible (for security). Use the Cloud SQL Auth Proxy for secure local access.
+
+**Why Auth Proxy instead of Authorized Networks?**
+
+| Approach | Security | Setup |
+|----------|----------|-------|
+| **Auth Proxy** (recommended) | No network exposure, uses IAM auth, auto-encrypted | Install proxy, run locally |
+| **Authorized Networks** | Opens DB to your IP, same risks as public RDS | Quick but risky |
+
+**One-time setup (~5 min):**
+
+```bash
+# 1. Install Cloud SQL Auth Proxy (macOS)
+brew install cloud-sql-proxy
+
+# Or download directly:
+curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.darwin.arm64
+chmod +x cloud-sql-proxy
+sudo mv cloud-sql-proxy /usr/local/bin/
+
+# 2. Ensure you're authenticated with gcloud
+gcloud auth application-default login
+```
+
+**Using the Auth Proxy for database operations:**
+
+```bash
+# Start proxy in background (local port 5434 -> Cloud SQL)
+cloud-sql-proxy --port 5434 habitcraft-prod:us-central1:habitcraft-db &
+
+# Now connect to Cloud SQL via localhost:5434
+PGPASSWORD='<password>' psql -h localhost -p 5434 -U habitcraft -d habitcraft
+```
+
+**Get Cloud SQL password from Secret Manager:**
+
+```bash
+gcloud secrets versions access latest --secret=db-password --project=habitcraft-prod
+```
+
+#### Data Migration Approach
+
+**⚠️ Important: `pg_restore --disable-triggers` does not work on Cloud SQL**
+
+Cloud SQL is a managed service that restricts superuser privileges. The `--disable-triggers` flag fails with "permission denied: system trigger" errors, causing foreign key constraint violations when tables are restored in the wrong order.
+
+**Solution: Export/import tables using COPY in foreign key order**
+
+Tables must be imported in this order to satisfy foreign key constraints:
+1. `users` (no dependencies)
+2. `habits` (depends on users)
+3. `completions` (depends on habits)
+4. `refresh_tokens` (depends on users)
+
+**Export from RDS (via bastion tunnel on port 5433):**
+
+```bash
+# Export each table as CSV (uses $RDS_PASSWORD from Secrets Manager)
+PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+  -c "COPY users TO STDOUT WITH CSV HEADER" > tmp/users.csv
+
+PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+  -c "COPY habits TO STDOUT WITH CSV HEADER" > tmp/habits.csv
+
+PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+  -c "COPY completions TO STDOUT WITH CSV HEADER" > tmp/completions.csv
+
+PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+  -c "COPY refresh_tokens TO STDOUT WITH CSV HEADER" > tmp/refresh_tokens.csv
+```
+
+**Import to Cloud SQL (via Auth Proxy on port 5434):**
+
+```bash
+# Truncate existing data first (uses $GCP_PASSWORD from Secret Manager)
+PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+  -c "TRUNCATE users, habits, completions, refresh_tokens CASCADE;"
+
+# Import in foreign key order
+PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+  -c "COPY users FROM STDIN WITH CSV HEADER" < tmp/users.csv
+
+PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+  -c "COPY habits FROM STDIN WITH CSV HEADER" < tmp/habits.csv
+
+PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+  -c "COPY completions FROM STDIN WITH CSV HEADER" < tmp/completions.csv
+
+PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+  -c "COPY refresh_tokens FROM STDIN WITH CSV HEADER" < tmp/refresh_tokens.csv
+```
+
+#### Trial Migration (before maintenance window)
+
+Run a trial migration to validate the process and measure timing:
+
+1. [x] Set up bastion host for RDS access (one-time)
+2. [x] Install Cloud SQL Auth Proxy (one-time)
+3. [x] Start SSH tunnel to RDS (port 5433)
+4. [x] Start Cloud SQL Auth Proxy (port 5434)
+5. [x] Export tables from RDS as CSV (in order)
+6. [x] Record export time: **6 seconds** (31KB total)
+7. [x] Truncate Cloud SQL tables
+8. [x] Import tables to Cloud SQL (in foreign key order)
+9. [x] Record import time: **4 seconds**
+10. [x] Verify row counts match between RDS and Cloud SQL
+11. [x] Test API calls against GCP backend
+12. [x] Document total time: **~10 seconds** (data transfer only)
+
+**Trial Migration Results (2026-01-12):**
+
+| Metric | Value |
+|--------|-------|
+| Export time | 6 seconds |
+| Import time | 4 seconds |
+| Data size | 31KB (4 CSV files) |
+| Users migrated | 8 |
+| Habits migrated | 24 |
+| Completions migrated | 133 |
+| Refresh tokens migrated | 100 |
+
+**Notes:**
+- CSV export/import approach works around Cloud SQL's superuser restrictions
+- Tables must be imported in foreign key order: users → habits → completions, refresh_tokens
+- GCP backend successfully queries migrated data (verified via health check and login endpoint)
+- Bastion host IP: `34.219.2.26` (instance: `i-015cb43f2f75f8ee9`)
+
+**Connection Details:**
+
+| Database | Host | Port | User | Database | Access Method |
+|----------|------|------|------|----------|---------------|
+| RDS | `localhost` | `5433` | `habituser` | `habitcraft` | SSH tunnel via bastion |
+| Cloud SQL | `localhost` | `5434` | `habitcraft` | `habitcraft` | Cloud SQL Auth Proxy |
 
 **1. Preparation (before maintenance window)**
 - [ ] Announce scheduled maintenance to users (24-48h notice)
@@ -1058,34 +1339,69 @@ resource "google_monitoring_uptime_check_config" "api_health" {
 - [ ] Prepare rollback plan (see Rollback Plan section below)
 
 **2. During maintenance window**
+
 - [ ] Put AWS backend in maintenance mode (return 503 to all requests)
 - [ ] Wait 1-2 minutes for in-flight requests to complete
-- [ ] Export data from RDS:
+- [ ] Start SSH tunnel to RDS (via bastion at `34.219.2.26`):
   ```bash
-  pg_dump -h <rds-host> -U <user> -d habitcraft -F c -f habitcraft_backup.dump
+  ssh -i ~/.ssh/habitcraft-bastion.pem \
+    -L 5433:habitcraft-db.cb40wqc283y5.us-west-2.rds.amazonaws.com:5432 \
+    -N -f ec2-user@34.219.2.26
   ```
-- [ ] Keep a copy of the backup in a safe location (S3 or local)
-- [ ] Clean GCP database (remove test data):
+- [ ] Start Cloud SQL Auth Proxy:
   ```bash
-  psql -h <cloud-sql-ip> -U habitcraft -d habitcraft \
+  cloud-sql-proxy --port 5434 habitcraft-prod:us-central1:habitcraft-db &
+  ```
+- [ ] Load credentials from Secrets Manager (see Secure Credential Handling above):
+  ```bash
+  export RDS_PASSWORD=$(aws secretsmanager get-secret-value \
+    --secret-id habitcraft/rds-password --query 'SecretString' --output text --region us-west-2)
+  export GCP_PASSWORD=$(gcloud secrets versions access latest \
+    --secret=db-password --project=habitcraft-prod)
+  ```
+- [ ] Export data from RDS as CSV (via tunnel on port 5433):
+  ```bash
+  PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+    -c "COPY users TO STDOUT WITH CSV HEADER" > tmp/users.csv
+  PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+    -c "COPY habits TO STDOUT WITH CSV HEADER" > tmp/habits.csv
+  PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+    -c "COPY completions TO STDOUT WITH CSV HEADER" > tmp/completions.csv
+  PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+    -c "COPY refresh_tokens TO STDOUT WITH CSV HEADER" > tmp/refresh_tokens.csv
+  ```
+- [ ] Keep a copy of the CSV files in a safe location
+- [ ] Truncate Cloud SQL tables (via Auth Proxy on port 5434):
+  ```bash
+  PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
     -c "TRUNCATE users, habits, completions, refresh_tokens CASCADE;"
   ```
-- [ ] Import to Cloud SQL:
+- [ ] Import to Cloud SQL in foreign key order:
   ```bash
-  pg_restore -h <cloud-sql-ip> -U habitcraft -d habitcraft -c habitcraft_backup.dump
+  PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+    -c "COPY users FROM STDIN WITH CSV HEADER" < tmp/users.csv
+  PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+    -c "COPY habits FROM STDIN WITH CSV HEADER" < tmp/habits.csv
+  PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+    -c "COPY completions FROM STDIN WITH CSV HEADER" < tmp/completions.csv
+  PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+    -c "COPY refresh_tokens FROM STDIN WITH CSV HEADER" < tmp/refresh_tokens.csv
   ```
 
 **3. Data Verification (before DNS cutover)**
 
-Verify migrated data via API calls to Cloud Run backend (bypasses frontend/CORS issues):
+Verify migrated data via direct database queries (tunnels still open):
 
-- [ ] Compare row counts per table:
+- [ ] Compare row counts per table (run on both ports 5433 and 5434):
   ```sql
   SELECT 'users' as table_name, COUNT(*) FROM users
   UNION ALL SELECT 'habits', COUNT(*) FROM habits
-  UNION ALL SELECT 'completions', COUNT(*) FROM completions;
+  UNION ALL SELECT 'completions', COUNT(*) FROM completions
+  UNION ALL SELECT 'refresh_tokens', COUNT(*) FROM refresh_tokens
+  ORDER BY table_name;
   ```
-- [ ] Verify row counts match between RDS and Cloud SQL
+- [ ] Verify row counts match between RDS (port 5433) and Cloud SQL (port 5434)
+- [ ] Expected counts from trial: users=8, habits=24, completions=133, refresh_tokens=100
 
 - [ ] Test login with a known production user via API:
   ```bash
@@ -1162,7 +1478,27 @@ Verify migrated data via API calls to Cloud Run backend (bypasses frontend/CORS 
 2. [ ] Keep AWS running for 1 week as rollback
 3. [ ] Delete Lightsail container services
 4. [ ] Delete RDS instance (after confirming GCP stable)
-5. [ ] Update documentation
+5. [ ] Terminate bastion host and cleanup AWS resources:
+   ```bash
+   # Terminate bastion instance
+   aws ec2 terminate-instances --instance-ids i-015cb43f2f75f8ee9 --region us-west-2
+
+   # Wait for termination, then delete security group
+   aws ec2 delete-security-group --group-id sg-0c00ab3f9774369d1 --region us-west-2
+
+   # Remove bastion access from RDS security group
+   aws ec2 revoke-security-group-ingress \
+     --group-id sg-012c04e0fae1b10de \
+     --protocol tcp --port 5432 \
+     --source-group sg-0c00ab3f9774369d1 \
+     --region us-west-2
+
+   # Delete key pair
+   aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
+   rm ~/.ssh/habitcraft-bastion.pem
+   ```
+6. [ ] Delete local tmp/ folder with CSV exports
+7. [ ] Update documentation
 
 ---
 
@@ -1259,6 +1595,9 @@ Add minimum instances to keep services warm:
 - [ ] AWS Lightsail containers remain deployed
 - [ ] DNS TTL lowered to 60 seconds (24h before migration)
 - [ ] Keep copy of pre-migration RDS backup in S3
+- [ ] Bastion host remains running (instance: `i-015cb43f2f75f8ee9`, IP: `34.219.2.26`)
+- [ ] SSH key available at `~/.ssh/habitcraft-bastion.pem`
+- [ ] Cloud SQL Auth Proxy installed locally
 
 ### Scenario 1: Rollback DURING maintenance window (before DNS switch)
 
@@ -1278,34 +1617,55 @@ Users may have written data to GCP. **Requires a second maintenance window to pr
 
 2. **Put GCP backend in maintenance mode** (stop new writes)
 
-3. **Export all data from Cloud SQL:**
+3. **Start tunnels and load credentials**:
    ```bash
-   pg_dump -h <cloud-sql-ip> -U habitcraft -d habitcraft -F c -f gcp_backup.dump
+   # SSH tunnel to RDS via bastion
+   ssh -i ~/.ssh/habitcraft-bastion.pem \
+     -L 5433:habitcraft-db.cb40wqc283y5.us-west-2.rds.amazonaws.com:5432 \
+     -N -f ec2-user@34.219.2.26
+
+   # Cloud SQL Auth Proxy
+   cloud-sql-proxy --port 5434 habitcraft-prod:us-central1:habitcraft-db &
+
+   # Load credentials from Secrets Manager
+   export RDS_PASSWORD=$(aws secretsmanager get-secret-value \
+     --secret-id habitcraft/rds-password --query 'SecretString' --output text --region us-west-2)
+   export GCP_PASSWORD=$(gcloud secrets versions access latest \
+     --secret=db-password --project=habitcraft-prod)
    ```
 
-4. **Merge GCP data into RDS:**
+4. **Export all data from Cloud SQL as CSV** (via Auth Proxy on port 5434):
    ```bash
-   # Import GCP data into RDS (--data-only to avoid schema conflicts)
-   # Use --disable-triggers to handle foreign keys
-   pg_restore -h <rds-host> -U <user> -d habitcraft \
-     --data-only --disable-triggers gcp_backup.dump
+   PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+     -c "COPY users TO STDOUT WITH CSV HEADER" > tmp/gcp_users.csv
+   PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+     -c "COPY habits TO STDOUT WITH CSV HEADER" > tmp/gcp_habits.csv
+   PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+     -c "COPY completions TO STDOUT WITH CSV HEADER" > tmp/gcp_completions.csv
+   PGPASSWORD="$GCP_PASSWORD" psql -h localhost -p 5434 -U habitcraft -d habitcraft \
+     -c "COPY refresh_tokens TO STDOUT WITH CSV HEADER" > tmp/gcp_refresh_tokens.csv
    ```
 
-   Note: If there are conflicts (e.g., same user ID), resolve manually or use:
-   ```sql
-   -- Insert only new records (users created after migration)
-   INSERT INTO users SELECT * FROM gcp_users
-   WHERE created_at > '<migration_timestamp>'
-   ON CONFLICT (id) DO NOTHING;
+5. **Merge GCP data into RDS** (via tunnel on port 5433):
+
+   For new records created after migration, use INSERT with ON CONFLICT:
+   ```bash
+   # Import users (skip existing)
+   PGPASSWORD="$RDS_PASSWORD" psql -h localhost -p 5433 -U habituser -d habitcraft \
+     -c "CREATE TEMP TABLE tmp_users (LIKE users); COPY tmp_users FROM STDIN WITH CSV HEADER; INSERT INTO users SELECT * FROM tmp_users ON CONFLICT (id) DO NOTHING;" < tmp/gcp_users.csv
+
+   # Repeat for other tables...
    ```
 
-5. **Verify RDS has all data** (row counts should be >= GCP counts)
+   Or manually compare and merge if data volumes are small.
 
-6. **Restart AWS Lightsail backend**
+6. **Verify RDS has all data** (row counts should be >= GCP counts)
 
-7. **Update DNS to point back to AWS**
+7. **Restart AWS Lightsail backend**
 
-8. **End maintenance window**
+8. **Update DNS to point back to AWS**
+
+9. **End maintenance window**
 
 ### Rollback Decision Checklist
 
