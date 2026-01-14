@@ -7,7 +7,7 @@ const shouldSkip = () => process.env.SKIP_RATE_LIMIT === 'true';
 // Rate limiter for login endpoint - strict to prevent brute force attacks
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 attempts per window
+  max: 15, // 15 attempts per window
   message: {
     error: 'Too many login attempts',
     message: 'Too many login attempts from this IP, please try again after 15 minutes',
