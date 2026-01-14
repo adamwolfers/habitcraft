@@ -38,6 +38,7 @@ coverage/
 
 # Playwright
 playwright-results/
+playwright-results-gcp/
 playwright-report/
 blob-report/
 test-results/
