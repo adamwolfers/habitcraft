@@ -9,6 +9,10 @@ const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const app = express();
 
+// Trust proxy headers (required for Cloud Run / load balancers)
+// This enables express-rate-limit to correctly identify clients via X-Forwarded-For
+app.set('trust proxy', true);
+
 // Security headers (helmet)
 app.use(helmet({
   contentSecurityPolicy: {
