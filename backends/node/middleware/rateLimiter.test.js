@@ -46,15 +46,15 @@ describe('Rate Limiting', () => {
         password: 'wrongpassword'
       };
 
-      // Make 5 requests (within limit) - these should return 401 (invalid credentials)
-      for (let i = 0; i < 5; i++) {
+      // Make 15 requests (within limit) - these should return 401 (invalid credentials)
+      for (let i = 0; i < 15; i++) {
         const response = await request(app)
           .post('/api/v1/auth/login')
           .send(loginData);
         expect(response.status).toBe(401);
       }
 
-      // 6th request should be rate limited (429)
+      // 16th request should be rate limited (429)
       const rateLimitedResponse = await request(app)
         .post('/api/v1/auth/login')
         .send(loginData);
