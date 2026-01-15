@@ -585,4 +585,189 @@ describe('Users API', () => {
       expect(tokenService.revokeAllUserTokens).toHaveBeenCalledWith(mockUserId);
     });
   });
+
+  describe('DELETE /api/v1/users/me', () => {
+    let mockClient;
+
+    beforeEach(() => {
+      // Create mock client for transaction
+      mockClient = {
+        query: jest.fn(),
+        release: jest.fn()
+      };
+      pool.connect = jest.fn().mockResolvedValue(mockClient);
+      bcrypt.compare.mockReset();
+      logSecurityEvent.mockReset();
+    });
+
+    it('should return 401 without authentication token', async () => {
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .send({ password: 'TestPass123!' });
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should return 400 if password not provided', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Password confirmation required');
+    });
+
+    it('should return 404 if user not found', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }); // SELECT user - not found
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('User not found');
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+
+    it('should return 401 if password is incorrect', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'test@example.com', password_hash: 'hashed' }] }); // SELECT user
+
+      bcrypt.compare.mockResolvedValueOnce(false); // Password doesn't match
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'WrongPassword!' });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Invalid password');
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+
+    it('should delete user and all related data successfully', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'test@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockResolvedValueOnce({}) // DELETE completions
+        .mockResolvedValueOnce({}) // DELETE habits
+        .mockResolvedValueOnce({}) // DELETE refresh_tokens
+        .mockResolvedValueOnce({}) // DELETE user
+        .mockResolvedValueOnce({}); // COMMIT
+
+      bcrypt.compare.mockResolvedValueOnce(true); // Password matches
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(response.status).toBe(204);
+      expect(mockClient.query).toHaveBeenCalledWith('BEGIN');
+      expect(mockClient.query).toHaveBeenCalledWith('COMMIT');
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+
+    it('should delete data in correct foreign key order', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'test@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockResolvedValueOnce({}) // DELETE completions
+        .mockResolvedValueOnce({}) // DELETE habits
+        .mockResolvedValueOnce({}) // DELETE refresh_tokens
+        .mockResolvedValueOnce({}) // DELETE user
+        .mockResolvedValueOnce({}); // COMMIT
+
+      bcrypt.compare.mockResolvedValueOnce(true);
+
+      await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      const calls = mockClient.query.mock.calls;
+      // Find the order of DELETE calls
+      const deleteCompletionsIndex = calls.findIndex(c =>
+        typeof c[0] === 'string' && c[0].includes('DELETE FROM completions'));
+      const deleteHabitsIndex = calls.findIndex(c =>
+        typeof c[0] === 'string' && c[0].includes('DELETE FROM habits'));
+      const deleteRefreshTokensIndex = calls.findIndex(c =>
+        typeof c[0] === 'string' && c[0].includes('DELETE FROM refresh_tokens'));
+      const deleteUserIndex = calls.findIndex(c =>
+        typeof c[0] === 'string' && c[0].includes('DELETE FROM users'));
+
+      // Completions must be deleted before habits (FK constraint)
+      expect(deleteCompletionsIndex).toBeLessThan(deleteHabitsIndex);
+      // Habits and refresh_tokens before user
+      expect(deleteHabitsIndex).toBeLessThan(deleteUserIndex);
+      expect(deleteRefreshTokensIndex).toBeLessThan(deleteUserIndex);
+    });
+
+    it('should log ACCOUNT_DELETED security event on success', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'deleted@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockResolvedValueOnce({}) // DELETE completions
+        .mockResolvedValueOnce({}) // DELETE habits
+        .mockResolvedValueOnce({}) // DELETE refresh_tokens
+        .mockResolvedValueOnce({}) // DELETE user
+        .mockResolvedValueOnce({}); // COMMIT
+
+      bcrypt.compare.mockResolvedValueOnce(true);
+
+      await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(logSecurityEvent).toHaveBeenCalledWith(
+        SECURITY_EVENTS.ACCOUNT_DELETED,
+        expect.any(Object),
+        expect.objectContaining({
+          userId: mockUserId,
+          email: 'deleted@example.com'
+        })
+      );
+    });
+
+    it('should rollback transaction on database error', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'test@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockRejectedValueOnce(new Error('Database error')); // DELETE completions fails
+
+      bcrypt.compare.mockResolvedValueOnce(true);
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal server error');
+      expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+  });
 });

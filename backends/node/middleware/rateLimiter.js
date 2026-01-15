@@ -60,9 +60,24 @@ const passwordChangeLimiter = rateLimit({
   skip: shouldSkip
 });
 
+// Rate limiter for account deletion - strict to prevent abuse
+const accountDeleteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // 5 attempts per window
+  message: {
+    error: 'Too many deletion attempts',
+    message: 'Too many account deletion attempts from this IP, please try again after 15 minutes',
+    statusCode: 429
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: shouldSkip
+});
+
 module.exports = {
   loginLimiter,
   registerLimiter,
   refreshLimiter,
-  passwordChangeLimiter
+  passwordChangeLimiter,
+  accountDeleteLimiter
 };
