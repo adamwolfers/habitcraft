@@ -3,6 +3,7 @@
 - Verify that you're in the expected branch and directory before running terminal commands
 - All tests can be run sequentially using scripts/test-all.sh
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
+- See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
 
 ## Development Principles
 
