@@ -26,6 +26,17 @@ npm test -- Header.test.tsx
 npm test -- --testPathPattern="Header.test.tsx"
 ```
 
+**Gotcha:** `npm test -- <pattern>` may run more test files than expected if the pattern is broad. To verify you're running only the intended tests, use jest directly:
+
+```bash
+# Run a specific test file in isolation (backend)
+cd backends/node && npx jest routes/users.test.js --no-coverage
+
+# Check test count matches expectations before trusting "all passed"
+```
+
+This is especially important during TDD - if you expect tests to fail but see "all passed", the tests may not be running.
+
 ## Testing Patterns
 
 ### Extract Logic to Utility Functions

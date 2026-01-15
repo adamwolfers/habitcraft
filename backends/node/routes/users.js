@@ -3,7 +3,7 @@ const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcrypt');
 const pool = require('../db/pool');
 const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
-const { passwordChangeLimiter } = require('../middleware/rateLimiter');
+const { passwordChangeLimiter, accountDeleteLimiter } = require('../middleware/rateLimiter');
 const { sanitizeBody } = require('../middleware/sanitize');
 const tokenService = require('../services/tokenService');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
@@ -119,6 +119,64 @@ router.put('/me', jwtAuthMiddleware, updateProfileValidation, async (req, res) =
   } catch (error) {
     console.error('Error updating user profile:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// DELETE /api/v1/users/me
+router.delete('/me', jwtAuthMiddleware, accountDeleteLimiter, async (req, res) => {
+  const { password } = req.body;
+
+  if (!password) {
+    return res.status(400).json({ error: 'Password confirmation required' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Get user with password hash for verification
+    const userResult = await client.query(
+      'SELECT email, password_hash FROM users WHERE id = $1',
+      [req.userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userResult.rows[0];
+
+    // Verify password before deletion
+    const validPassword = await bcrypt.compare(password, user.password_hash);
+    if (!validPassword) {
+      await client.query('ROLLBACK');
+      return res.status(401).json({ error: 'Invalid password' });
+    }
+
+    // Delete in foreign key order: completions -> habits -> refresh_tokens -> user
+    await client.query(
+      'DELETE FROM completions WHERE habit_id IN (SELECT id FROM habits WHERE user_id = $1)',
+      [req.userId]
+    );
+    await client.query('DELETE FROM habits WHERE user_id = $1', [req.userId]);
+    await client.query('DELETE FROM refresh_tokens WHERE user_id = $1', [req.userId]);
+    await client.query('DELETE FROM users WHERE id = $1', [req.userId]);
+
+    await client.query('COMMIT');
+
+    logSecurityEvent(SECURITY_EVENTS.ACCOUNT_DELETED, req, {
+      userId: req.userId,
+      email: user.email
+    });
+
+    res.status(204).send();
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error deleting user account:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    client.release();
   }
 });
 

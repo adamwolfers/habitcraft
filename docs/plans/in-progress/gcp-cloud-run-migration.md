@@ -1504,6 +1504,39 @@ Verify migrated data via direct database queries (tunnels still open):
 6. [ ] Delete local tmp/ folder with CSV exports
 7. [ ] Update documentation
 
+### Phase 6: Smoke Test Cleanup ✅
+
+The GCP smoke tests create orphan test users that accumulate in production and cause rate limit failures.
+
+**Problem:**
+- Tests create `gcp-smoke-{timestamp}@example.com` users each run
+- Users are NOT deleted afterward
+- Registration rate limit (10/hour) is hit after multiple runs
+
+**Solution:** Make tests self-sufficient by adding a DELETE endpoint and cleanup hook.
+
+**Backend Changes:**
+1. [x] Add `DELETE /api/v1/users/me` endpoint
+   - Requires authentication and password confirmation
+   - Deletes user's completions, habits, refresh_tokens, then user
+   - Uses transaction for atomicity
+   - Add `ACCOUNT_DELETED` security event
+   - Rate limited (5 attempts per 15 minutes)
+2. [x] Add tests for the new endpoint
+
+**E2E Changes:**
+3. [x] Add `test.afterAll` cleanup hook to `gcp-smoke.spec.ts`
+   - Track whether user was created
+   - Login and call DELETE endpoint in afterAll
+   - Handle case where user wasn't created (test failed early)
+
+**Files Modified:**
+- `backends/node/routes/users.js` - Add DELETE endpoint
+- `backends/node/routes/users.test.js` - Add tests
+- `backends/node/utils/securityLogger.js` - Add ACCOUNT_DELETED event
+- `backends/node/middleware/rateLimiter.js` - Add accountDeleteLimiter
+- `frontends/nextjs/e2e/gcp-smoke.spec.ts` - Add cleanup hook
+
 ---
 
 ## Cost Estimate

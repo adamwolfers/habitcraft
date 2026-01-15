@@ -4,8 +4,8 @@ import { test, expect } from '@playwright/test';
  * GCP Smoke Tests
  *
  * These tests validate core functionality against the deployed GCP environment.
- * Tests are fully self-sufficient - they create their own test user during setup,
- * so they work regardless of database contents (e.g., after data migration).
+ * Tests are fully self-sufficient - they create their own test user during setup
+ * and clean up after themselves by deleting the test user.
  *
  * Each test run creates a unique user to avoid conflicts.
  */
@@ -18,7 +18,48 @@ const GCP_TEST_USER = {
   name: 'GCP Smoke Test User',
 };
 
+// Track whether user was created (for cleanup)
+let testUserCreated = false;
+
 test.describe('GCP Smoke Tests', () => {
+  // Cleanup: Delete test user after all tests complete
+  test.afterAll(async ({ request }) => {
+    if (!testUserCreated) {
+      console.log('Test user was not created, skipping cleanup');
+      return;
+    }
+
+    try {
+      // Login to get auth cookies
+      const loginResponse = await request.post('/api/v1/auth/login', {
+        data: {
+          email: GCP_TEST_USER.email,
+          password: GCP_TEST_USER.password,
+        },
+      });
+
+      if (!loginResponse.ok()) {
+        console.log('Could not login for cleanup - user may already be deleted');
+        return;
+      }
+
+      // Delete the test user (requires password confirmation)
+      const deleteResponse = await request.delete('/api/v1/users/me', {
+        data: {
+          password: GCP_TEST_USER.password,
+        },
+      });
+
+      if (deleteResponse.status() === 204) {
+        console.log(`Cleaned up test user: ${GCP_TEST_USER.email}`);
+      } else {
+        console.log(`Failed to delete test user: ${deleteResponse.status()}`);
+      }
+    } catch (error) {
+      console.log('Error during cleanup:', error);
+    }
+  });
+
   // Setup: Create test user before running authenticated tests
   test.describe('Setup', () => {
     test('should create test user for this test run', async ({ page }) => {
@@ -32,6 +73,9 @@ test.describe('GCP Smoke Tests', () => {
 
       // Should redirect to dashboard after registration
       await expect(page).toHaveURL('/dashboard');
+
+      // Mark user as created for cleanup
+      testUserCreated = true;
 
       // Logout so subsequent tests start fresh
       await page.getByRole('button', { name: /profile/i }).click();
