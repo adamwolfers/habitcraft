@@ -11,6 +11,7 @@ on:
     branches: ['**']
     paths-ignore:
       - '**/*.md'
+      - '.beads/**'
       - 'docs/**'
       - 'infrastructure/**'
       - 'LICENSE'
@@ -19,6 +20,7 @@ on:
     branches: [main, master]
     paths-ignore:
       - '**/*.md'
+      - '.beads/**'
       - 'docs/**'
       - 'infrastructure/**'
       - 'LICENSE'
