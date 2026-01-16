@@ -1,13 +1,20 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'path';
 
 /**
  * Playwright E2E Test Configuration for GCP Production
  *
  * This config runs tests against the deployed GCP environment.
  *
- * Test credentials (created during GCP validation):
- * - Email: gcptest12345@example.com
- * - Password: TestPass123
+ * Architecture:
+ * - Setup project: Creates a unique test user and saves auth state
+ * - Smoke tests: Run with the saved auth state (minimizes login attempts)
+ * - Teardown project: Deletes the test user
+ *
+ * Rate Limiting Note:
+ * The backend has rate limiting on login endpoints (5 attempts per 15 minutes).
+ * These tests are designed for running once per deployment, not repeatedly.
+ * If you hit rate limits during development, wait 15 minutes before retrying.
  *
  * Usage:
  *   # After DNS cutover (uses custom domains):
@@ -29,6 +36,9 @@ const GCP_FRONTEND_URL = USE_CLOUDRUN_URLS
 const GCP_BACKEND_URL = USE_CLOUDRUN_URLS
   ? 'https://habitcraft-backend-iz7ggma5ga-uc.a.run.app'
   : 'https://api.habitcraft.org';
+
+// Auth state file path (shared between setup, tests, and teardown)
+const AUTH_STATE_PATH = path.join(__dirname, 'e2e/.auth/gcp-user.json');
 
 export default defineConfig({
   // Directory containing E2E tests
@@ -70,11 +80,29 @@ export default defineConfig({
     navigationTimeout: 30000,
   },
 
-  // Configure projects
+  // Configure projects using setup pattern for auth
   projects: [
+    // Setup: Creates test user and saves auth state
+    {
+      name: 'setup',
+      testMatch: /gcp-auth\.setup\.ts/,
+    },
+    // Main tests: Use saved auth state for authenticated tests
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        // Use stored auth state for all tests
+        storageState: AUTH_STATE_PATH,
+      },
+      testMatch: /gcp-smoke\.spec\.ts/,
+      dependencies: ['setup'],
+    },
+    // Teardown: Delete test user after all tests complete
+    {
+      name: 'teardown',
+      testMatch: /gcp-auth\.teardown\.ts/,
+      dependencies: ['chromium'],
     },
   ],
 
