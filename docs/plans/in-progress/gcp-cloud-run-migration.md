@@ -3,7 +3,7 @@
 **Status:** Complete (Cutover 2026-01-14 UTC, AWS cleanup in progress)
 **Branch:** `master`
 **Created:** 2026-01-09 (UTC)
-**Last Updated:** 2026-01-15 (UTC)
+**Last Updated:** 2026-01-16 (UTC)
 
 ### Current Deployment
 
@@ -1516,9 +1516,11 @@ The GCP smoke tests create orphan test users that accumulate in production and c
 **Problem:**
 - Tests create `gcp-smoke-{timestamp}@example.com` users each run
 - Users are NOT deleted afterward
-- Registration rate limit (10/hour) is hit after multiple runs
+- Login rate limit (5/15min) is hit after multiple test runs
 
-**Solution:** Make tests self-sufficient by adding a DELETE endpoint and cleanup hook.
+**Solution:** Implemented in two phases:
+
+#### Phase 6a: DELETE Endpoint (2026-01-15)
 
 **Backend Changes:**
 1. [x] Add `DELETE /api/v1/users/me` endpoint
@@ -1529,18 +1531,54 @@ The GCP smoke tests create orphan test users that accumulate in production and c
    - Rate limited (5 attempts per 15 minutes)
 2. [x] Add tests for the new endpoint
 
-**E2E Changes:**
-3. [x] Add `test.afterAll` cleanup hook to `gcp-smoke.spec.ts`
-   - Track whether user was created
-   - Login and call DELETE endpoint in afterAll
-   - Handle case where user wasn't created (test failed early)
-
 **Files Modified:**
 - `backends/node/routes/users.js` - Add DELETE endpoint
 - `backends/node/routes/users.test.js` - Add tests
 - `backends/node/utils/securityLogger.js` - Add ACCOUNT_DELETED event
 - `backends/node/middleware/rateLimiter.js` - Add accountDeleteLimiter
-- `frontends/nextjs/e2e/gcp-smoke.spec.ts` - Add cleanup hook
+
+#### Phase 6b: Playwright Setup Project Pattern (2026-01-16)
+
+Refactored tests to use Playwright's recommended setup project pattern, which:
+- Runs setup once before all tests (creates user, saves auth state)
+- Uses stored auth state for authenticated tests (no repeated logins)
+- Runs teardown after all tests (deletes user via API)
+- Reduces login attempts from ~8 to ~2 per test run
+
+**Architecture:**
+```
+[setup] → create user, save auth state
+    ↓
+[chromium] → run tests with stored auth state
+    ↓
+[teardown] → delete user via API
+```
+
+**E2E Changes:**
+1. [x] Create `gcp-auth.setup.ts` - Creates test user and saves auth state
+2. [x] Create `gcp-auth.teardown.ts` - Deletes test user with JWT auth
+3. [x] Update `playwright.gcp.config.ts` - Setup/teardown project pattern
+4. [x] Refactor `gcp-smoke.spec.ts`:
+   - Unauthenticated tests use `storageState: { cookies: [], origins: [] }`
+   - Authenticated tests use stored auth state from setup
+   - Fixed habit card selectors (use heading + xpath instead of article)
+   - Combined login/logout into single test to reduce login attempts
+5. [x] Add `.auth/` to `.gitignore`
+
+**Files Created:**
+- `frontends/nextjs/e2e/gcp-auth.setup.ts`
+- `frontends/nextjs/e2e/gcp-auth.teardown.ts`
+
+**Files Modified:**
+- `frontends/nextjs/playwright.gcp.config.ts`
+- `frontends/nextjs/playwright.config.ts` (exclude new files)
+- `frontends/nextjs/e2e/gcp-smoke.spec.ts`
+- `.gitignore`
+
+**Rate Limiting Note:**
+The backend has rate limiting on login endpoints (5 attempts per 15 minutes).
+These tests are designed for running once per deployment, not repeatedly.
+If you hit rate limits during development, wait 15 minutes before retrying.
 
 ---
 
