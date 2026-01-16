@@ -1476,13 +1476,17 @@ Verify migrated data via direct database queries (tunnels still open):
 
 **Note:** Apex domain requires A records (CNAME not allowed at root). SSL certificates will provision automatically after DNS propagation.
 
-### Phase 5: Cleanup
+### Phase 5: Cleanup 🔄
 
-1. [ ] Verify all traffic on GCP (check AWS logs)
-2. [ ] Keep AWS running for 1 week as rollback
-3. [ ] Delete Lightsail container services
-4. [ ] Delete RDS instance (after confirming GCP stable)
-5. [ ] Terminate bastion host and cleanup AWS resources:
+1. [x] Verify GCP services healthy (2026-01-14 UTC)
+   - Cloud Run backend/frontend: Ready, 200-300ms response times
+   - Cloud SQL: RUNNABLE, automated backups enabled
+   - No errors in Cloud Logging
+2. [x] Delete Lightsail container services (2026-01-14 UTC)
+   - Deleted habitcraft-backend and habitcraft-frontend
+   - GCP Cloud SQL has automated daily backups with 7-day retention
+3. [ ] Delete RDS instance (after confirming GCP stable ~1 week)
+4. [ ] Terminate bastion host and cleanup AWS resources:
    ```bash
    # Terminate bastion instance
    aws ec2 terminate-instances --instance-ids i-015cb43f2f75f8ee9 --region us-west-2
@@ -1501,8 +1505,8 @@ Verify migrated data via direct database queries (tunnels still open):
    aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
    rm ~/.ssh/habitcraft-bastion.pem
    ```
-6. [ ] Delete local tmp/ folder with CSV exports
-7. [ ] Update documentation
+5. [ ] Delete local tmp/ folder with CSV exports
+6. [ ] Update documentation
 
 ### Phase 6: Smoke Test Cleanup ✅
 
