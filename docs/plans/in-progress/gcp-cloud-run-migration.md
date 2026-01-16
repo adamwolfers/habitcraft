@@ -1,9 +1,9 @@
 # Plan: Host HabitCraft on Google Cloud Platform
 
-**Status:** Complete (Cutover successful 2026-01-14 UTC)
+**Status:** Complete (Cutover 2026-01-14 UTC, AWS cleanup in progress)
 **Branch:** `master`
 **Created:** 2026-01-09 (UTC)
-**Last Updated:** 2026-01-14 (UTC)
+**Last Updated:** 2026-01-15 (UTC)
 
 ### Current Deployment
 
@@ -1478,15 +1478,16 @@ Verify migrated data via direct database queries (tunnels still open):
 
 ### Phase 5: Cleanup 🔄
 
-1. [x] Verify GCP services healthy (2026-01-14 UTC)
+1. [x] Verify GCP services healthy (2026-01-15 UTC)
    - Cloud Run backend/frontend: Ready, 200-300ms response times
-   - Cloud SQL: RUNNABLE, automated backups enabled
+   - Cloud SQL: RUNNABLE, automated backups enabled (daily, 7-day retention)
    - No errors in Cloud Logging
-2. [x] Delete Lightsail container services (2026-01-14 UTC)
+2. [x] Delete Lightsail container services (2026-01-15 UTC)
    - Deleted habitcraft-backend and habitcraft-frontend
-   - GCP Cloud SQL has automated daily backups with 7-day retention
-3. [ ] Delete RDS instance (after confirming GCP stable ~1 week)
-4. [ ] Terminate bastion host and cleanup AWS resources:
+3. [x] Remove AWS deployment from CI pipeline (2026-01-15 UTC)
+   - CI now only deploys to GCP Cloud Run
+4. [ ] Delete RDS instance (after confirming GCP stable ~1 week)
+5. [ ] Terminate bastion host and cleanup AWS resources:
    ```bash
    # Terminate bastion instance
    aws ec2 terminate-instances --instance-ids i-015cb43f2f75f8ee9 --region us-west-2
@@ -1505,8 +1506,8 @@ Verify migrated data via direct database queries (tunnels still open):
    aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
    rm ~/.ssh/habitcraft-bastion.pem
    ```
-5. [ ] Delete local tmp/ folder with CSV exports
-6. [ ] Update documentation
+6. [ ] Delete local tmp/ folder with CSV exports
+7. [ ] Update documentation
 
 ### Phase 6: Smoke Test Cleanup ✅
 
