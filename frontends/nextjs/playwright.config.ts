@@ -21,7 +21,7 @@ export default defineConfig({
   testDir: './e2e',
 
   // Exclude GCP smoke tests - those run separately via playwright.gcp.config.ts
-  testIgnore: ['**/gcp-smoke.spec.ts', '**/gcp-global-setup.ts'],
+  testIgnore: ['**/gcp-smoke.spec.ts', '**/gcp-global-setup.ts', '**/gcp-auth.setup.ts', '**/gcp-auth.teardown.ts'],
 
   // Run tests serially - E2E tests share database state and can interfere
   fullyParallel: false,
