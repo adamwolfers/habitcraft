@@ -452,6 +452,24 @@ describe('Users API', () => {
       expect(response.body.errors[0].msg).toContain('8 characters');
     });
 
+    it('should return 400 for newPassword exceeding 72 characters', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const longPassword = 'a'.repeat(73);
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({
+          currentPassword: 'OldPass123!',
+          newPassword: longPassword,
+          confirmPassword: longPassword
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toContain('72');
+    });
+
     it('should return 400 when passwords do not match', async () => {
       const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
 
