@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { v4 as uuidv4 } from 'uuid';
 import { habitsApi } from '@/lib/habits';
-import { Habit, HabitFrequency } from '@/types';
+import { mutationQueue, networkStatus } from '@/lib/offline';
+import { Habit, HabitFrequency, HabitWithStats } from '@/types';
 
 const HABITS_QUERY_KEY = ['habits'];
 
-interface CreateHabitData {
+export interface CreateHabitData {
   name: string;
   description?: string;
   icon: string;
@@ -13,7 +15,7 @@ interface CreateHabitData {
   target_days?: number[];
 }
 
-interface UpdateHabitData {
+export interface UpdateHabitData {
   name?: string;
   description?: string;
   icon?: string;
@@ -23,7 +25,7 @@ interface UpdateHabitData {
   is_archived?: boolean;
 }
 
-interface CompleteHabitData {
+export interface CompleteHabitData {
   completed_date: string;
   note?: string;
 }
@@ -47,9 +49,57 @@ export function useCreateHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: CreateHabitData) => habitsApi.createHabit(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+    mutationFn: async (data: CreateHabitData) => {
+      const isOnline = await networkStatus.isOnline();
+
+      if (!isOnline) {
+        // Generate temp ID and queue mutation
+        const tempId = `temp-${uuidv4()}`;
+        await mutationQueue.add('createHabit', data, tempId);
+
+        // Return optimistic habit
+        const optimisticHabit: Habit = {
+          id: tempId,
+          user_id: 'pending',
+          name: data.name,
+          description: data.description,
+          icon: data.icon,
+          color: data.color,
+          frequency: data.frequency,
+          target_days: data.target_days,
+          is_archived: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        return optimisticHabit;
+      }
+
+      return habitsApi.createHabit(data);
+    },
+    onMutate: async (newHabit) => {
+      await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
+
+      const previousHabits = queryClient.getQueryData<HabitWithStats[]>(HABITS_QUERY_KEY);
+
+      // Optimistic update happens via mutationFn return value
+      return { previousHabits };
+    },
+    onSuccess: (newHabit) => {
+      queryClient.setQueryData<HabitWithStats[]>(HABITS_QUERY_KEY, (old) => {
+        if (!old) return [newHabit as HabitWithStats];
+        return [...old, newHabit as HabitWithStats];
+      });
+    },
+    onError: (_err, _newHabit, context) => {
+      if (context?.previousHabits) {
+        queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
+      }
+    },
+    onSettled: async () => {
+      const isOnline = await networkStatus.isOnline();
+      if (isOnline) {
+        queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+      }
     },
   });
 }
@@ -58,11 +108,50 @@ export function useUpdateHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdateHabitData }) =>
-      habitsApi.updateHabit(id, data),
+    mutationFn: async ({ id, data }: { id: string; data: UpdateHabitData }) => {
+      const isOnline = await networkStatus.isOnline();
+
+      if (!isOnline) {
+        await mutationQueue.add('updateHabit', { id, data });
+        // Return optimistic result
+        const currentHabits = queryClient.getQueryData<HabitWithStats[]>(HABITS_QUERY_KEY);
+        const existingHabit = currentHabits?.find((h) => h.id === id);
+        if (existingHabit) {
+          return { ...existingHabit, ...data, updated_at: new Date().toISOString() };
+        }
+        throw new Error('Habit not found in cache');
+      }
+
+      return habitsApi.updateHabit(id, data);
+    },
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
+
+      const previousHabits = queryClient.getQueryData<HabitWithStats[]>(HABITS_QUERY_KEY);
+
+      // Optimistic update
+      queryClient.setQueryData<HabitWithStats[]>(HABITS_QUERY_KEY, (old) => {
+        if (!old) return old;
+        return old.map((habit) =>
+          habit.id === id ? { ...habit, ...data, updated_at: new Date().toISOString() } : habit
+        );
+      });
+
+      return { previousHabits };
+    },
     onSuccess: (updatedHabit) => {
-      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
       queryClient.setQueryData([...HABITS_QUERY_KEY, updatedHabit.id], updatedHabit);
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousHabits) {
+        queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
+      }
+    },
+    onSettled: async () => {
+      const isOnline = await networkStatus.isOnline();
+      if (isOnline) {
+        queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+      }
     },
   });
 }
@@ -71,9 +160,39 @@ export function useDeleteHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => habitsApi.deleteHabit(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+    mutationFn: async (id: string) => {
+      const isOnline = await networkStatus.isOnline();
+
+      if (!isOnline) {
+        await mutationQueue.add('deleteHabit', { id });
+        return;
+      }
+
+      return habitsApi.deleteHabit(id);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
+
+      const previousHabits = queryClient.getQueryData<HabitWithStats[]>(HABITS_QUERY_KEY);
+
+      // Optimistic update - remove habit
+      queryClient.setQueryData<HabitWithStats[]>(HABITS_QUERY_KEY, (old) => {
+        if (!old) return old;
+        return old.filter((habit) => habit.id !== id);
+      });
+
+      return { previousHabits };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previousHabits) {
+        queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
+      }
+    },
+    onSettled: async () => {
+      const isOnline = await networkStatus.isOnline();
+      if (isOnline) {
+        queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+      }
     },
   });
 }
@@ -82,10 +201,28 @@ export function useCompleteHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: CompleteHabitData }) =>
-      habitsApi.completeHabit(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+    mutationFn: async ({ id, data }: { id: string; data: CompleteHabitData }) => {
+      const isOnline = await networkStatus.isOnline();
+
+      if (!isOnline) {
+        await mutationQueue.add('completeHabit', { id, data });
+        // Return optimistic completion
+        return {
+          id: `temp-completion-${uuidv4()}`,
+          habit_id: id,
+          completed_date: data.completed_date,
+          note: data.note,
+          created_at: new Date().toISOString(),
+        };
+      }
+
+      return habitsApi.completeHabit(id, data);
+    },
+    onSettled: async () => {
+      const isOnline = await networkStatus.isOnline();
+      if (isOnline) {
+        queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+      }
     },
   });
 }
@@ -94,10 +231,21 @@ export function useUncompleteHabit() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, completedDate }: { id: string; completedDate: string }) =>
-      habitsApi.uncompleteHabit(id, completedDate),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+    mutationFn: async ({ id, completedDate }: { id: string; completedDate: string }) => {
+      const isOnline = await networkStatus.isOnline();
+
+      if (!isOnline) {
+        await mutationQueue.add('uncompleteHabit', { id, completedDate });
+        return;
+      }
+
+      return habitsApi.uncompleteHabit(id, completedDate);
+    },
+    onSettled: async () => {
+      const isOnline = await networkStatus.isOnline();
+      if (isOnline) {
+        queryClient.invalidateQueries({ queryKey: HABITS_QUERY_KEY });
+      }
     },
   });
 }

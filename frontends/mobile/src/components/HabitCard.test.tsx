@@ -102,4 +102,22 @@ describe('HabitCard', () => {
 
     expect(getByText('Daily')).toBeTruthy();
   });
+
+  it('shows pending badge for habits with temp IDs', () => {
+    const pendingHabit = { ...mockHabit, id: 'temp-123-456' };
+    const { getByTestId, getByText } = render(
+      <HabitCard habit={pendingHabit} onPress={mockOnPress} onComplete={mockOnComplete} />
+    );
+
+    expect(getByTestId('pending-badge')).toBeTruthy();
+    expect(getByText('Pending sync')).toBeTruthy();
+  });
+
+  it('does not show pending badge for synced habits', () => {
+    const { queryByTestId } = render(
+      <HabitCard habit={mockHabit} onPress={mockOnPress} onComplete={mockOnComplete} />
+    );
+
+    expect(queryByTestId('pending-badge')).toBeNull();
+  });
 });

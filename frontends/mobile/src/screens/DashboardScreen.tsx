@@ -13,7 +13,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { colors, spacing, typography } from '@/theme';
 import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
-import { HabitCard } from '@/components';
+import { HabitCard, OfflineBanner, SyncIndicator } from '@/components';
 import { Habit, MainStackParamList } from '@/types';
 
 type DashboardNavigationProp = StackNavigationProp<MainStackParamList>;
@@ -67,8 +67,12 @@ export function DashboardScreen() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       <View style={styles.header}>
-        <Text style={styles.title}>Today</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Today</Text>
+          <SyncIndicator />
+        </View>
         <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
       </View>
 
@@ -125,6 +129,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   title: {
     ...typography.h1,

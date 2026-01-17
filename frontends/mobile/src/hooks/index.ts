@@ -7,3 +7,4 @@ export {
   useCompleteHabit,
   useUncompleteHabit,
 } from './useHabits';
+export { usePendingMutations } from './usePendingMutations';

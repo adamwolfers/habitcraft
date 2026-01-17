@@ -24,8 +24,22 @@ jest.mock('@/lib/storage', () => ({
   },
 }));
 
+// Mock offline modules
+jest.mock('@/lib/offline', () => ({
+  mutationQueue: {
+    clear: jest.fn(),
+  },
+  offlineStorage: {
+    remove: jest.fn(),
+  },
+}));
+
+import { mutationQueue, offlineStorage } from '@/lib/offline';
+
 const mockAuthApi = authApi as jest.Mocked<typeof authApi>;
 const mockStorage = storage as jest.Mocked<typeof storage>;
+const mockMutationQueue = mutationQueue as jest.Mocked<typeof mutationQueue>;
+const mockOfflineStorage = offlineStorage as jest.Mocked<typeof offlineStorage>;
 
 // Test component that uses the context
 const TestConsumer: React.FC = () => {
@@ -292,6 +306,33 @@ describe('AuthContext', () => {
       await waitFor(() => {
         expect(getByTestId('authenticated').props.children).toBe('no');
         expect(getByTestId('user').props.children).toBe('no-user');
+      });
+    });
+
+    it('clears mutation queue and offline cache on logout', async () => {
+      mockStorage.hasTokens.mockResolvedValue(true);
+      mockAuthApi.getCurrentUser.mockResolvedValue(mockUser);
+      mockAuthApi.logout.mockResolvedValue(undefined);
+      mockMutationQueue.clear.mockResolvedValue(undefined);
+      mockOfflineStorage.remove.mockResolvedValue(undefined);
+
+      const { getByTestId } = render(
+        <AuthProvider>
+          <LogoutTestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(getByTestId('authenticated').props.children).toBe('yes');
+      });
+
+      await act(async () => {
+        getByTestId('logout-button').props.onPress();
+      });
+
+      await waitFor(() => {
+        expect(mockMutationQueue.clear).toHaveBeenCalled();
+        expect(mockOfflineStorage.remove).toHaveBeenCalledWith('query-cache');
       });
     });
   });

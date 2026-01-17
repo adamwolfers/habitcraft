@@ -5,6 +5,29 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }));
 
+// Mock expo-file-system
+jest.mock(
+  'expo-file-system',
+  () => ({
+    documentDirectory: '/mock/documents/',
+    getInfoAsync: jest.fn(),
+    readAsStringAsync: jest.fn(),
+    writeAsStringAsync: jest.fn(),
+    deleteAsync: jest.fn(),
+  }),
+  { virtual: true }
+);
+
+// Mock @react-native-community/netinfo
+jest.mock(
+  '@react-native-community/netinfo',
+  () => ({
+    addEventListener: jest.fn(() => jest.fn()),
+    fetch: jest.fn(),
+  }),
+  { virtual: true }
+);
+
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');

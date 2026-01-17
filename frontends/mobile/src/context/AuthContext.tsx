@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User, LoginCredentials, RegisterData } from '@/types';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
+import { mutationQueue, offlineStorage } from '@/lib/offline';
 
 interface AuthContextType {
   user: User | null;
@@ -71,6 +72,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await authApi.logout();
     } finally {
+      // Clear offline data on logout
+      await mutationQueue.clear();
+      await offlineStorage.remove('query-cache');
       setUser(null);
     }
   }, []);
