@@ -112,7 +112,7 @@ Build native mobile applications for iOS and Android that provide the full Habit
 ## Project Structure
 
 ```
-/mobile
+frontends/mobile/
 ├── package.json
 ├── app.json                    # Expo configuration
 ├── App.tsx                     # Root component
@@ -120,8 +120,8 @@ Build native mobile applications for iOS and Android that provide the full Habit
 ├── tsconfig.json
 ├── eas.json                    # EAS Build configuration
 │
-├── /src
-│   ├── /components             # Reusable UI components
+├── src/
+│   ├── components/             # Reusable UI components
 │   │   ├── HabitCard.tsx
 │   │   ├── HabitCard.test.tsx
 │   │   ├── CompletionButton.tsx
@@ -129,7 +129,7 @@ Build native mobile applications for iOS and Android that provide the full Habit
 │   │   ├── NoteModal.tsx
 │   │   └── ...
 │   │
-│   ├── /screens                # Screen components
+│   ├── screens/                # Screen components
 │   │   ├── LoginScreen.tsx
 │   │   ├── RegisterScreen.tsx
 │   │   ├── DashboardScreen.tsx
@@ -139,37 +139,37 @@ Build native mobile applications for iOS and Android that provide the full Habit
 │   │   ├── ProfileScreen.tsx
 │   │   └── ...
 │   │
-│   ├── /navigation             # React Navigation setup
+│   ├── navigation/             # React Navigation setup
 │   │   ├── RootNavigator.tsx
 │   │   ├── AuthNavigator.tsx
 │   │   └── MainNavigator.tsx
 │   │
-│   ├── /hooks                  # Custom React hooks
+│   ├── hooks/                  # Custom React hooks
 │   │   ├── useAuth.ts
 │   │   ├── useHabits.ts
 │   │   └── useOfflineSync.ts
 │   │
-│   ├── /lib                    # Utilities and API
+│   ├── lib/                    # Utilities and API
 │   │   ├── api.ts              # API client
 │   │   ├── storage.ts          # Secure storage wrapper
 │   │   └── analytics.ts
 │   │
-│   ├── /types                  # TypeScript types
+│   ├── types/                  # TypeScript types
 │   │   └── index.ts            # Re-export from shared
 │   │
-│   ├── /context                # React context providers
+│   ├── context/                # React context providers
 │   │   ├── AuthContext.tsx
 │   │   └── HabitsContext.tsx
 │   │
-│   └── /theme                  # Styling and theming
+│   └── theme/                  # Styling and theming
 │       ├── colors.ts
 │       ├── spacing.ts
 │       └── typography.ts
 │
-├── /ios                        # iOS-specific native code
-├── /android                    # Android-specific native code
+├── ios/                        # iOS-specific native code
+├── android/                    # Android-specific native code
 │
-└── /__tests__                  # Integration tests
+└── __tests__/                  # Integration tests
     └── ...
 ```
 
