@@ -30,7 +30,8 @@ const changePasswordValidation = [
   body('currentPassword')
     .notEmpty().withMessage('Current password is required'),
   body('newPassword')
-    .isLength({ min: 8 }).withMessage('New password must be at least 8 characters'),
+    .isLength({ min: 8 }).withMessage('New password must be at least 8 characters')
+    .isLength({ max: 72 }).withMessage('New password must be 72 characters or less'),
   body('confirmPassword')
     .custom((value, { req }) => {
       if (value !== req.body.newPassword) {

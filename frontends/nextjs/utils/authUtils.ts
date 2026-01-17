@@ -18,6 +18,10 @@ export function validateRegistrationForm(data: RegistrationFormData): string | n
     return "Password must be at least 8 characters";
   }
 
+  if (data.password.length > 72) {
+    return "Password must be 72 characters or less";
+  }
+
   if (data.password !== data.confirmPassword) {
     return "Passwords do not match";
   }
@@ -36,6 +40,10 @@ export function validatePasswordChange(data: PasswordChangeFormData): string | n
 
   if (data.newPassword.length < 8) {
     return "New password must be at least 8 characters";
+  }
+
+  if (data.newPassword.length > 72) {
+    return "New password must be 72 characters or less";
   }
 
   if (data.newPassword !== data.confirmPassword) {
