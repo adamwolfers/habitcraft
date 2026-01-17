@@ -124,7 +124,10 @@ router.post('/register', registerLimiter, sanitizeBody, sanitizeEmail, registerV
         email: user.email,
         name: user.name,
         createdAt: user.createdAt
-      }
+      },
+      // Include tokens in body for mobile clients (web uses HttpOnly cookies)
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
     });
   } catch (error) {
     console.error('Error registering user:', error);
@@ -188,7 +191,10 @@ router.post('/login', loginLimiter, sanitizeBody, sanitizeEmail, loginValidation
         email: user.email,
         name: user.name,
         createdAt: user.createdAt
-      }
+      },
+      // Include tokens in body for mobile clients (web uses HttpOnly cookies)
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken
     });
   } catch (error) {
     console.error('Error logging in:', error);
@@ -244,7 +250,11 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       userId: decoded.userId
     });
 
-    res.json({ accessToken: tokens.accessToken });
+    res.json({
+      accessToken: tokens.accessToken,
+      // Include refreshToken in body for mobile clients (web uses HttpOnly cookies)
+      refreshToken: tokens.refreshToken
+    });
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {

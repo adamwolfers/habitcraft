@@ -104,7 +104,7 @@ export const authApi = {
     }
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/auth/me`, {
+      const response = await axios.get(`${API_BASE_URL}/users/me`, {
         headers: { Authorization: `Bearer ${tokens.accessToken}` },
       });
       return response.data;
