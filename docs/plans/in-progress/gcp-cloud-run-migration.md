@@ -1337,7 +1337,7 @@ Run a trial migration to validate the process and measure timing:
 **1. Preparation (before maintenance window)**
 - [x] Announce scheduled maintenance to users (PostHog banner enabled 2026-01-13)
 - [x] Lower apex domain TTL to 300s at IONOS (1-2h before cutover)
-- [x] Prepare rollback plan (see Rollback Plan section below)
+- [ ] Prepare rollback plan (see Rollback Plan section below)
 
 **2. During maintenance window**
 
@@ -1482,11 +1482,8 @@ Verify migrated data via direct database queries (tunnels still open):
    aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
    rm ~/.ssh/habitcraft-bastion.pem
    ```
-6. [x] Delete local tmp/ folder with CSV exports (2026-01-17)
-7. [x] Update documentation (2026-01-17)
-   - Updated README.md with GCP references
-   - Added deprecation note to AWS_ARCHITECTURE.md
-   - Deleted obsolete EC2 Terraform migration plan
+6. [ ] Delete local tmp/ folder with CSV exports
+7. [ ] Update documentation
 
 ### Phase 6: Smoke Test Cleanup ✅
 
@@ -1726,35 +1723,6 @@ Users may have written data to GCP. **Requires a second maintenance window to pr
 
 9. **End maintenance window**
 
-### Scenario 3: Return to AWS (after RDS deletion)
-
-If RDS was deleted during Phase 5 cleanup, restore from snapshot first:
-
-1. **Restore RDS from snapshot**:
-   ```bash
-   aws rds restore-db-instance-from-db-snapshot \
-     --db-instance-identifier habitcraft-db \
-     --db-snapshot-identifier rds:habitcraft-db-2026-01-14-06-42 \
-     --db-instance-class db.t4g.micro \
-     --region us-west-2
-
-   # Wait for instance to be available (~10-15 min)
-   aws rds wait db-instance-available --db-instance-identifier habitcraft-db
-   ```
-
-2. **Recreate bastion host** (if terminated):
-   - Launch new EC2 instance in the same VPC
-   - Configure security group to allow SSH and RDS access
-   - Update security group rules to allow bastion → RDS traffic
-
-3. **Redeploy Lightsail containers** (if deleted):
-   - Follow AWS_ARCHITECTURE.md setup guide
-   - Or restore from container images if still in registry
-
-4. **Follow Scenario 2 steps 3-9** to merge GCP data into restored RDS
-
-**Note:** RDS snapshots preserve all configuration (VPC, security groups, encryption settings), so the restored instance will have the same network setup as the original.
-
 ### Rollback Decision Checklist
 
 Before rolling back after go-live, verify:
@@ -1795,7 +1763,7 @@ Before rolling back after go-live, verify:
 - [x] DNS resolves to Cloud Run services
 - [x] User registration and login work
 - [x] Habit CRUD operations work
-- [x] E2E tests pass against GCP environment
+- [ ] E2E tests pass against GCP environment (some failing due to rate limits - see smoke-test-cleanup.md)
 - [x] Monitoring alerts configured and tested
 - [x] Database migrations run successfully (data migrated via CSV export/import)
 
