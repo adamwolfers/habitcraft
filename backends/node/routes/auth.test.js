@@ -70,7 +70,13 @@ describe('Auth API', () => {
       });
       expect(response.body.user.password).toBeUndefined();
 
-      // Check HttpOnly cookies are set
+      // Check tokens are in response body (for mobile clients)
+      expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      expect(typeof response.body.accessToken).toBe('string');
+      expect(typeof response.body.refreshToken).toBe('string');
+
+      // Check HttpOnly cookies are set (for web clients)
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
       expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
@@ -179,7 +185,13 @@ describe('Auth API', () => {
       });
       expect(response.body.user.password).toBeUndefined();
 
-      // Check HttpOnly cookies are set
+      // Check tokens are in response body (for mobile clients)
+      expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      expect(typeof response.body.accessToken).toBe('string');
+      expect(typeof response.body.refreshToken).toBe('string');
+
+      // Check HttpOnly cookies are set (for web clients)
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
       expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
@@ -235,7 +247,7 @@ describe('Auth API', () => {
   describe('POST /api/v1/auth/refresh', () => {
     const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
-    it('should return new access token with valid refresh token', async () => {
+    it('should return new tokens with valid refresh token', async () => {
       const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
 
       const response = await request(app)
@@ -243,7 +255,11 @@ describe('Auth API', () => {
         .send({ refreshToken });
 
       expect(response.status).toBe(200);
+      // Both tokens in body for mobile clients
       expect(response.body.accessToken).toBeDefined();
+      expect(response.body.refreshToken).toBeDefined();
+      expect(typeof response.body.accessToken).toBe('string');
+      expect(typeof response.body.refreshToken).toBe('string');
     });
 
     it('should return 401 for expired refresh token', async () => {

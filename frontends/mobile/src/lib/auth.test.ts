@@ -260,7 +260,7 @@ describe('authApi', () => {
   });
 
   describe('getCurrentUser', () => {
-    it('makes GET request to /auth/me with auth header', async () => {
+    it('makes GET request to /users/me with auth header', async () => {
       const mockUser = { id: '1', email: 'test@example.com', created_at: '2024-01-01' };
       mockStorage.getTokens.mockResolvedValueOnce({
         accessToken: 'token',
@@ -271,7 +271,7 @@ describe('authApi', () => {
       await authApi.getCurrentUser();
 
       expect(mockAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/auth/me'),
+        expect.stringContaining('/users/me'),
         expect.objectContaining({
           headers: { Authorization: 'Bearer token' },
         })
