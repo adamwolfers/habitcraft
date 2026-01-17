@@ -25,6 +25,24 @@ describe("validateRegistrationForm", () => {
       });
       expect(result).toBeNull();
     });
+
+    it("returns error when password exceeds 72 characters", () => {
+      const longPassword = "a".repeat(73);
+      const result = validateRegistrationForm({
+        password: longPassword,
+        confirmPassword: longPassword,
+      });
+      expect(result).toBe("Password must be 72 characters or less");
+    });
+
+    it("accepts password with exactly 72 characters", () => {
+      const maxPassword = "a".repeat(72);
+      const result = validateRegistrationForm({
+        password: maxPassword,
+        confirmPassword: maxPassword,
+      });
+      expect(result).toBeNull();
+    });
   });
 
   describe("password match validation", () => {
@@ -93,6 +111,26 @@ describe("validatePasswordChange", () => {
         currentPassword: "currentpass",
         newPassword: "12345678",
         confirmPassword: "12345678",
+      });
+      expect(result).toBeNull();
+    });
+
+    it("returns error when new password exceeds 72 characters", () => {
+      const longPassword = "a".repeat(73);
+      const result = validatePasswordChange({
+        currentPassword: "currentpass",
+        newPassword: longPassword,
+        confirmPassword: longPassword,
+      });
+      expect(result).toBe("New password must be 72 characters or less");
+    });
+
+    it("accepts new password with exactly 72 characters", () => {
+      const maxPassword = "a".repeat(72);
+      const result = validatePasswordChange({
+        currentPassword: "currentpass",
+        newPassword: maxPassword,
+        confirmPassword: maxPassword,
       });
       expect(result).toBeNull();
     });

@@ -57,7 +57,9 @@ function generateTokens(userId) {
 // Validation middleware
 const registerValidation = [
   body('email').isEmail().withMessage('Valid email is required'),
-  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  body('password')
+    .isLength({ min: 8 }).withMessage('Password must be at least 8 characters')
+    .isLength({ max: 72 }).withMessage('Password must be 72 characters or less'),
   body('name').notEmpty().withMessage('Name is required')
 ];
 

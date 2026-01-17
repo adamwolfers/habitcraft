@@ -118,6 +118,17 @@ describe('Auth API', () => {
       expect(response.body.errors).toBeDefined();
     });
 
+    it('should return 400 if password exceeds 72 characters', async () => {
+      const longPassword = 'a'.repeat(73);
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: 'test@example.com', password: longPassword, name: 'Test' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toContain('72');
+    });
+
     it('should return 400 if name is missing', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')
