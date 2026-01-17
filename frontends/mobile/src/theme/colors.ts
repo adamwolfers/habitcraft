@@ -10,6 +10,7 @@ export const colors = {
   secondaryDark: '#d97706',
 
   // Neutral colors
+  white: '#ffffff',
   background: '#ffffff',
   surface: '#f9fafb',
   card: '#ffffff',

@@ -1,5 +1,3 @@
-import '@testing-library/react-native/extend-expect';
-
 // Mock expo-secure-store
 jest.mock('expo-secure-store', () => ({
   getItemAsync: jest.fn(),
@@ -46,9 +44,6 @@ jest.mock('react-native-gesture-handler', () => ({
   TouchableWithoutFeedback: 'TouchableWithoutFeedback',
   Directions: {},
 }));
-
-// Silence the warning: Animated: `useNativeDriver` is not supported
-jest.mock('react-native/Libraries/Animated/NativeAnimatedHelper');
 
 // Mock expo-splash-screen
 jest.mock('expo-splash-screen', () => ({

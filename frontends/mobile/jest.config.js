@@ -15,11 +15,7 @@ module.exports = {
     '^@/theme/(.*)$': '<rootDir>/src/theme/$1',
     '^@/types/(.*)$': '<rootDir>/src/types/$1',
   },
-  collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/index.ts',
-  ],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
   coverageThreshold: {
     global: {
       branches: 80,

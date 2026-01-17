@@ -18,16 +18,17 @@ function isValidEmail(email: string): boolean {
   return emailRegex.test(email);
 }
 
-export function LoginScreen() {
+export function RegisterScreen() {
   const navigation = useNavigation();
-  const { login, error: authError } = useAuthContext();
+  const { register, error: authError } = useAuthContext();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
+  const handleRegister = async () => {
     setValidationError(null);
 
     // Validate email
@@ -47,9 +48,20 @@ export function LoginScreen() {
       return;
     }
 
+    if (password.length < 6) {
+      setValidationError('Password must be at least 6 characters');
+      return;
+    }
+
+    // Validate confirm password
+    if (password !== confirmPassword) {
+      setValidationError('Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await login({ email: email.trim(), password });
+      await register({ email: email.trim(), password });
     } catch {
       // Error is handled by AuthContext
     } finally {
@@ -57,8 +69,8 @@ export function LoginScreen() {
     }
   };
 
-  const handleSignUpPress = () => {
-    navigation.navigate('Register' as never);
+  const handleLoginPress = () => {
+    navigation.goBack();
   };
 
   const displayError = validationError || authError;
@@ -69,8 +81,8 @@ export function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>HabitCraft</Text>
-        <Text style={styles.subtitle}>Track your habits, build your future</Text>
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>Join HabitCraft and start building better habits</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -95,24 +107,34 @@ export function LoginScreen() {
             editable={!isLoading}
           />
 
+          <TextInput
+            style={styles.input}
+            placeholder="Confirm Password"
+            placeholderTextColor={colors.textMuted}
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            editable={!isLoading}
+          />
+
           {displayError && <Text style={styles.error}>{displayError}</Text>}
 
           <TouchableOpacity
-            testID="login-button"
+            testID="register-button"
             style={[styles.button, isLoading && styles.buttonDisabled]}
-            onPress={handleLogin}
+            onPress={handleRegister}
             disabled={isLoading}
           >
             {isLoading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={styles.buttonText}>Log In</Text>
+              <Text style={styles.buttonText}>Sign Up</Text>
             )}
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={handleSignUpPress} disabled={isLoading}>
-          <Text style={styles.signUpLink}>Don't have an account? Sign up</Text>
+        <TouchableOpacity onPress={handleLoginPress} disabled={isLoading}>
+          <Text style={styles.loginLink}>Already have an account? Log in</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -176,11 +198,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
-  signUpLink: {
+  loginLink: {
     ...typography.body,
     color: colors.primary,
     marginTop: spacing.lg,
   },
 });
 
-export default LoginScreen;
+export default RegisterScreen;
