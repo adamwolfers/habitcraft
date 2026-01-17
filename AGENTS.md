@@ -9,7 +9,18 @@ bd ready              # Find available work
 bd show <id>          # View issue details
 bd update <id> --status in_progress  # Claim work
 bd close <id>         # Complete work
-bd sync               # Sync with git
+bd sync --no-pull     # Sync beads (safe - won't overwrite local changes)
+```
+
+## Important: Beads Sync Safety
+
+**Always commit your code changes BEFORE running `bd sync`.**
+
+`bd sync` does a `git pull` which can overwrite uncommitted changes. Safe pattern:
+```bash
+git add <files> && git commit -m "..."   # Commit your changes FIRST
+git push                                  # Push your changes
+bd sync --no-pull                         # Then sync beads (--no-pull is safer)
 ```
 
 ## Landing the Plane (Session Completion)
@@ -23,9 +34,9 @@ bd sync               # Sync with git
 3. **Update issue status** - Close finished work, update in-progress items
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
-   git pull --rebase
-   bd sync
-   git push
+   git add <files> && git commit -m "..."  # Commit changes FIRST
+   git push                                 # Push code changes
+   bd sync --no-pull                        # Sync beads (after push!)
    git status  # MUST show "up to date with origin"
    ```
 5. **Clean up** - Clear stashes, prune remote branches
