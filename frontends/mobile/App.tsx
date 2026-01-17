@@ -8,7 +8,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import Toast from 'react-native-toast-message';
 import { StyleSheet } from 'react-native';
 
-import { LoginScreen } from './src/screens';
+import { AuthProvider } from './src/context';
+import { RootNavigator } from './src/navigation';
 
 // Create a client for React Query
 const queryClient = new QueryClient({
@@ -21,16 +22,17 @@ const queryClient = new QueryClient({
 });
 
 export default function App() {
-  // TODO: Replace with proper navigation setup once auth context is implemented
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
-          <NavigationContainer>
-            <StatusBar style="auto" />
-            <LoginScreen />
-            <Toast />
-          </NavigationContainer>
+          <AuthProvider>
+            <NavigationContainer>
+              <StatusBar style="auto" />
+              <RootNavigator />
+              <Toast />
+            </NavigationContainer>
+          </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
