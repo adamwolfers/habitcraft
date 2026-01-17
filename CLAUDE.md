@@ -5,6 +5,27 @@
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
 - See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
 
+## Git Worktree Workflow
+
+This project uses **git worktrees**. The main branch is `master` (not `main`).
+
+| Location | Branch | Purpose |
+|----------|--------|---------|
+| `/Users/afw/github/habitcraft` | `master` | Main worktree - merges and pushes happen here |
+| `/Users/afw/github/habitcraft-*` | feature branches | Ephemeral worktrees for development |
+
+**CRITICAL: Never run `git checkout main` or `git checkout master` from a feature worktree.** This can create a divergent local branch. Instead, merge via the main worktree:
+
+```bash
+# From feature worktree: commit your changes
+git add <files> && git commit -m "..."
+
+# Go to main worktree to merge (don't checkout!)
+cd /Users/afw/github/habitcraft
+git merge <feature-branch-name>
+git push
+```
+
 ## Development Principles
 
 1. **Security First** - Never compromise on authentication and authorization
