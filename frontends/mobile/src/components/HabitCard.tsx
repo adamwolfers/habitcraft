@@ -14,6 +14,10 @@ function formatFrequency(frequency: string): string {
   return frequency.charAt(0).toUpperCase() + frequency.slice(1);
 }
 
+function isPendingSync(habitId: string): boolean {
+  return habitId.startsWith('temp-');
+}
+
 export function HabitCard({
   habit,
   onPress,
@@ -62,6 +66,11 @@ export function HabitCard({
               {formatFrequency(habit.frequency)}
             </Text>
           </View>
+          {isPendingSync(habit.id) && (
+            <View style={styles.pendingBadge} testID="pending-badge">
+              <Text style={styles.pendingText}>Pending sync</Text>
+            </View>
+          )}
         </View>
       </View>
     </TouchableOpacity>
@@ -133,5 +142,17 @@ const styles = StyleSheet.create({
   frequencyText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  pendingBadge: {
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
+    borderRadius: 4,
+    backgroundColor: colors.warningLight,
+  },
+  pendingText: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: colors.warning,
   },
 });

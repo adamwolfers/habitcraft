@@ -120,4 +120,40 @@ api.interceptors.response.use(
   }
 );
 
+// Offline error detection
+export function isNetworkError(error: unknown): boolean {
+  if (error instanceof AxiosError) {
+    // No response means network failure
+    if (!error.response) {
+      return true;
+    }
+    // Some status codes indicate network issues
+    if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+      return true;
+    }
+  }
+  // Check for generic network error messages
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase();
+    return (
+      message.includes('network') ||
+      message.includes('timeout') ||
+      message.includes('connection')
+    );
+  }
+  return false;
+}
+
+export function isRetryableError(error: unknown): boolean {
+  if (isNetworkError(error)) {
+    return true;
+  }
+  if (error instanceof AxiosError && error.response) {
+    // Server errors are retryable, client errors are not
+    const status = error.response.status;
+    return status >= 500 && status < 600;
+  }
+  return false;
+}
+
 export default api;
