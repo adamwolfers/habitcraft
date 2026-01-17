@@ -1650,10 +1650,10 @@ Add minimum instances to keep services warm:
 - [x] RDS instance remains running (do NOT stop or delete)
 - [x] AWS Lightsail containers remain deployed
 - [x] DNS TTL lowered to 60 seconds (24h before migration)
-- [ ] Keep copy of pre-migration RDS backup in S3
+- [x] RDS automated snapshot available (`rds:habitcraft-db-2026-01-14-06-42`)
 - [x] Bastion host remains running (instance: `i-015cb43f2f75f8ee9`, IP: `34.219.2.26`)
-- [ ] SSH key available at `~/.ssh/habitcraft-bastion.pem`
-- [ ] Cloud SQL Auth Proxy installed locally
+- [x] SSH key available at `~/.ssh/habitcraft-bastion.pem`
+- [x] Cloud SQL Auth Proxy installed locally
 
 ### Scenario 1: Rollback DURING maintenance window (before DNS switch)
 
