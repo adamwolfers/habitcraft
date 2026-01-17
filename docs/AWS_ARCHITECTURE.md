@@ -1,5 +1,9 @@
 # HabitCraft AWS Architecture (Lightsail Containers + RDS)
 
+> **⚠️ DEPRECATED:** Production was migrated to GCP Cloud Run on 2026-01-14.
+> See [GCP_ARCHITECTURE.md](./GCP_ARCHITECTURE.md) for the current production setup.
+> This document is retained for historical reference.
+
 Simple, cost-effective deployment using AWS Lightsail Container Service and RDS PostgreSQL.
 
 ## Current Deployment
