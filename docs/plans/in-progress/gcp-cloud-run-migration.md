@@ -1723,6 +1723,35 @@ Users may have written data to GCP. **Requires a second maintenance window to pr
 
 9. **End maintenance window**
 
+### Scenario 3: Return to AWS (after RDS deletion)
+
+If RDS was deleted during Phase 5 cleanup, restore from snapshot first:
+
+1. **Restore RDS from snapshot**:
+   ```bash
+   aws rds restore-db-instance-from-db-snapshot \
+     --db-instance-identifier habitcraft-db \
+     --db-snapshot-identifier rds:habitcraft-db-2026-01-14-06-42 \
+     --db-instance-class db.t4g.micro \
+     --region us-west-2
+
+   # Wait for instance to be available (~10-15 min)
+   aws rds wait db-instance-available --db-instance-identifier habitcraft-db
+   ```
+
+2. **Recreate bastion host** (if terminated):
+   - Launch new EC2 instance in the same VPC
+   - Configure security group to allow SSH and RDS access
+   - Update security group rules to allow bastion → RDS traffic
+
+3. **Redeploy Lightsail containers** (if deleted):
+   - Follow AWS_ARCHITECTURE.md setup guide
+   - Or restore from container images if still in registry
+
+4. **Follow Scenario 2 steps 3-9** to merge GCP data into restored RDS
+
+**Note:** RDS snapshots preserve all configuration (VPC, security groups, encryption settings), so the restored instance will have the same network setup as the original.
+
 ### Rollback Decision Checklist
 
 Before rolling back after go-live, verify:
