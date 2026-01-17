@@ -1482,7 +1482,7 @@ Verify migrated data via direct database queries (tunnels still open):
    aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
    rm ~/.ssh/habitcraft-bastion.pem
    ```
-6. [ ] Delete local tmp/ folder with CSV exports
+6. [x] Delete local tmp/ folder with CSV exports (2026-01-17)
 7. [ ] Update documentation
 
 ### Phase 6: Smoke Test Cleanup ✅
