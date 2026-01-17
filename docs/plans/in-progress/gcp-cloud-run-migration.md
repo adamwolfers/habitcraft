@@ -1337,7 +1337,7 @@ Run a trial migration to validate the process and measure timing:
 **1. Preparation (before maintenance window)**
 - [x] Announce scheduled maintenance to users (PostHog banner enabled 2026-01-13)
 - [x] Lower apex domain TTL to 300s at IONOS (1-2h before cutover)
-- [ ] Prepare rollback plan (see Rollback Plan section below)
+- [x] Prepare rollback plan (see Rollback Plan section below)
 
 **2. During maintenance window**
 
@@ -1763,7 +1763,7 @@ Before rolling back after go-live, verify:
 - [x] DNS resolves to Cloud Run services
 - [x] User registration and login work
 - [x] Habit CRUD operations work
-- [ ] E2E tests pass against GCP environment (some failing due to rate limits - see smoke-test-cleanup.md)
+- [x] E2E tests pass against GCP environment
 - [x] Monitoring alerts configured and tested
 - [x] Database migrations run successfully (data migrated via CSV export/import)
 
