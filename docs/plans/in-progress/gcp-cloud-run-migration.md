@@ -859,7 +859,6 @@ gcloud iam service-accounts add-iam-policy-binding \
 - [x] Set up Workload Identity Federation
 - [x] Create GitHub Actions workflow
 - [x] Configure GitHub secrets
-- [ ] Create database migration Cloud Run Job (optional - using schema in container)
 
 ### Rollback Procedure
 
@@ -1337,7 +1336,7 @@ Run a trial migration to validate the process and measure timing:
 
 **1. Preparation (before maintenance window)**
 - [x] Announce scheduled maintenance to users (PostHog banner enabled 2026-01-13)
-- [ ] Lower apex domain TTL to 300s at IONOS (1-2h before cutover)
+- [x] Lower apex domain TTL to 300s at IONOS (1-2h before cutover)
 - [ ] Prepare rollback plan (see Rollback Plan section below)
 
 **2. During maintenance window**
@@ -1403,29 +1402,6 @@ Verify migrated data via direct database queries (tunnels still open):
   ```
 - [x] Verify row counts match between RDS (port 5433) and Cloud SQL (port 5434)
 - [x] Actual counts at cutover: users=8, habits=24, completions=137, refresh_tokens=105
-
-- [ ] Test login with a known production user via API:
-  ```bash
-  # Login as a real user (replace with actual credentials)
-  curl -s -X POST https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/auth/login \
-    -H "Content-Type: application/json" \
-    -d '{"email": "<real-user-email>", "password": "<password>"}' \
-    -c /tmp/prod-cookies.txt
-  ```
-
-- [ ] Verify user's habits were migrated:
-  ```bash
-  curl -s -b /tmp/prod-cookies.txt \
-    https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits | jq .
-  ```
-
-- [ ] Verify user's completions were migrated:
-  ```bash
-  curl -s -b /tmp/prod-cookies.txt \
-    "https://habitcraft-backend-iz7ggma5ga-uc.a.run.app/api/v1/habits/<habit-id>/completions" | jq .
-  ```
-
-- [ ] Spot check 2-3 different users to confirm data integrity
 
 **4. DNS Cutover**
 - [x] Lower apex domain TTL to 300s at IONOS (1-2 hours before cutover)
@@ -1671,11 +1647,11 @@ Add minimum instances to keep services warm:
 
 ### Prerequisites (before migration)
 
-- [ ] RDS instance remains running (do NOT stop or delete)
-- [ ] AWS Lightsail containers remain deployed
-- [ ] DNS TTL lowered to 60 seconds (24h before migration)
+- [x] RDS instance remains running (do NOT stop or delete)
+- [x] AWS Lightsail containers remain deployed
+- [x] DNS TTL lowered to 60 seconds (24h before migration)
 - [ ] Keep copy of pre-migration RDS backup in S3
-- [ ] Bastion host remains running (instance: `i-015cb43f2f75f8ee9`, IP: `34.219.2.26`)
+- [x] Bastion host remains running (instance: `i-015cb43f2f75f8ee9`, IP: `34.219.2.26`)
 - [ ] SSH key available at `~/.ssh/habitcraft-bastion.pem`
 - [ ] Cloud SQL Auth Proxy installed locally
 
