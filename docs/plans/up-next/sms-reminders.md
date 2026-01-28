@@ -40,7 +40,7 @@ Implement SMS reminder functionality allowing users to receive periodic reminder
                                ▼
                         ┌──────────────────┐
                         │  SMS Service     │
-                        │  (AWS SNS)       │
+                        │  (Twilio)        │
                         └──────────────────┘
 ```
 
@@ -48,9 +48,9 @@ Implement SMS reminder functionality allowing users to receive periodic reminder
 
 | Component | Recommendation | Rationale |
 |-----------|----------------|-----------|
-| SMS Service | AWS SNS | Fits existing AWS infrastructure (Lightsail), cost-effective, reliable delivery |
+| SMS Service | Twilio | Industry standard, excellent developer experience, reliable delivery |
 | Job Scheduler | `node-cron` + custom queue | Lightweight, no Redis dependency needed for MVP |
-| Phone Verification | Custom OTP via SNS | Simple 6-digit code sent via SMS, no additional service needed |
+| Phone Verification | Custom OTP via Twilio | Simple 6-digit code sent via SMS, no additional service needed |
 
 ---
 
@@ -142,18 +142,17 @@ CREATE INDEX idx_sms_log_status ON sms_send_log(status);
 
 **Add to `.env.example`:**
 ```bash
-# AWS SNS Configuration
-AWS_SNS_REGION=us-east-1
-AWS_SNS_ACCESS_KEY_ID=
-AWS_SNS_SECRET_ACCESS_KEY=
-SMS_SENDER_ID=HabitCraft  # Alphanumeric sender ID (where supported) or origination number
+# Twilio Configuration
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+TWILIO_PHONE_NUMBER=  # Your Twilio phone number for sending SMS
 ```
 
 ### Step 2: Install Dependencies
 
 ```bash
 cd backends/node
-npm install @aws-sdk/client-sns
+npm install twilio
 ```
 
 ### Step 3: SMS Service (TDD)
@@ -163,10 +162,10 @@ npm install @aws-sdk/client-sns
 - `backends/node/services/smsService.test.js`
 
 #### 3a. Write tests first
-- [ ] Test: `sendSms()` calls SNS PublishCommand with correct params
-- [ ] Test: `sendSms()` handles SNS errors gracefully
-- [ ] Test: `sendSms()` returns message ID on success
-- [ ] Test: `sendSms()` sets SMS attributes (SMSType: Transactional)
+- [ ] Test: `sendSms()` calls Twilio API with correct params
+- [ ] Test: `sendSms()` handles Twilio errors gracefully
+- [ ] Test: `sendSms()` returns message SID on success
+- [ ] Test: `sendSms()` formats phone numbers correctly
 - [ ] Test: `sendHabitReminder()` generates correct SMS content
 - [ ] Test: `sendHabitReminder()` includes habit name and streak info
 - [ ] Test: `sendVerificationCode()` generates and sends 6-digit code
@@ -558,13 +557,13 @@ function generateVerificationSms({ code }) {
 ### Backend
 | File | Changes |
 |------|---------|
-| `.env.example` | Add AWS SNS configuration |
-| `backends/node/package.json` | Add @aws-sdk/client-sns |
-| `backends/node/services/smsService.js` | New - SNS SMS sending service |
+| `.env.example` | Add Twilio configuration |
+| `backends/node/package.json` | Add twilio |
+| `backends/node/services/smsService.js` | New - Twilio SMS sending service |
 | `backends/node/services/smsService.test.js` | New - SMS service tests |
 | `backends/node/services/smsReminderService.js` | New - reminder calculation logic |
 | `backends/node/services/smsReminderService.test.js` | New - reminder service tests |
-| `backends/node/services/smsDeliveryStatusService.js` | New - CloudWatch delivery status sync (optional) |
+| `backends/node/services/smsDeliveryStatusService.js` | New - Twilio delivery status webhook (optional) |
 | `backends/node/services/smsDeliveryStatusService.test.js` | New - delivery status tests |
 | `backends/node/routes/smsPreferences.js` | New - user preferences API |
 | `backends/node/routes/smsPreferences.test.js` | New - preferences API tests |
@@ -632,13 +631,12 @@ function generateVerificationSms({ code }) {
    - Include opt-out instructions in messages
    - Maintain opt-out list in database
    - Follow TCPA/carrier guidelines
-   - Note: SNS handles carrier-level opt-outs automatically
+   - Note: Twilio handles carrier-level opt-outs automatically
 
-6. **AWS Security**
-   - Use IAM roles with least-privilege access
-   - Store credentials securely (environment variables, not code)
-   - Enable CloudWatch logging for audit trail
-   - Use VPC endpoints for SNS if in private subnet
+6. **Twilio Security**
+   - Store credentials in GCP Secret Manager
+   - Enable Twilio request validation to verify webhooks
+   - Set up Twilio account alerts for suspicious activity
 
 7. **Data Privacy**
    - Don't log SMS content, only metadata
@@ -683,39 +681,36 @@ function generateVerificationSms({ code }) {
 - [ ] Test timezone handling (set timezone different from server)
 - [ ] Test reminder for habit with streak info
 - [ ] Verify SMS length stays under 160 chars when possible
-- [ ] Verify CloudWatch logs show delivery status
+- [ ] Verify Twilio logs show delivery status
 
 ---
 
 ## Deployment Considerations
 
 1. **Environment Variables**
-   - Add AWS SNS credentials to AWS Lightsail environment
-   - Configure different AWS accounts/regions for staging vs production
-   - Use SNS sandbox mode for development (requires verified numbers)
+   - Add Twilio credentials to GCP Secret Manager
+   - Configure different Twilio subaccounts for staging vs production
+   - Use Twilio test credentials for development
 
-2. **AWS SNS Setup**
-   - Request production access (move out of SMS sandbox)
-   - Configure SMS preferences in SNS console (default sender ID, message type)
-   - Set up IAM user/role with `sns:Publish` permission
-   - Enable delivery status logging to CloudWatch
+2. **Twilio Setup**
+   - Purchase a Twilio phone number for sending
+   - Configure messaging service (optional, for scaling)
+   - Set up status callback webhook for delivery tracking
    - Configure spend limit to prevent runaway costs
 
 3. **Worker Process**
    - Run SMS reminder worker alongside email worker
-   - Consider AWS Lambda for scheduled SMS jobs (alternative)
+   - Consider GCP Cloud Scheduler + Cloud Run Jobs for scheduled SMS jobs (alternative)
 
 4. **Monitoring**
-   - Add SMS send success/failure metrics via CloudWatch
-   - Set up CloudWatch alarms for delivery failures
-   - Monitor `NumberOfMessagesPublished` and `NumberOfNotificationsFailed` metrics
-   - Track SMS spend via AWS Cost Explorer
+   - Add SMS send success/failure metrics via GCP Cloud Monitoring
+   - Set up alerts for delivery failures
+   - Track SMS spend via Twilio console
 
 5. **Cost Management**
-   - SMS pricing: ~$0.00645/message (US), varies by country
-   - Set monthly spend limit in SNS console
-   - Set up AWS Budget alerts for SMS costs
-   - Consider using SNS topics for bulk sends (if needed)
+   - SMS pricing: ~$0.0079/message (US), varies by country
+   - Set monthly spend limit in Twilio console
+   - Set up GCP Budget alerts tied to Twilio costs
 
 ---
 
@@ -723,11 +718,11 @@ function generateVerificationSms({ code }) {
 
 1. **International Numbers** - Support for non-US phone numbers with country code selection
 2. **Quiet Hours** - Don't send SMS during user-defined quiet hours
-3. **Two-Way SMS** - Use Amazon Pinpoint for two-way messaging (reply to mark habit complete)
-4. **Carrier Lookup** - Use SNS phone number validation to detect landlines
-5. **Dedicated Origination Numbers** - Purchase dedicated long codes or short codes via AWS
-6. **WhatsApp Integration** - Alternative to SMS for international users (via Amazon Pinpoint)
-7. **Push Notifications** - Use SNS mobile push as alternative to SMS
+3. **Two-Way SMS** - Use Twilio for two-way messaging (reply to mark habit complete)
+4. **Carrier Lookup** - Use Twilio Lookup API to detect landlines
+5. **Dedicated Origination Numbers** - Purchase dedicated long codes or short codes via Twilio
+6. **WhatsApp Integration** - Alternative to SMS for international users (via Twilio WhatsApp API)
+7. **Push Notifications** - Use Firebase Cloud Messaging as alternative to SMS
 
 ---
 

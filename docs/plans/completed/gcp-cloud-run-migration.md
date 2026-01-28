@@ -1,9 +1,9 @@
 # Plan: Host HabitCraft on Google Cloud Platform
 
-**Status:** Complete (Cutover 2026-01-14 UTC, AWS cleanup in progress)
+**Status:** Complete (Cutover 2026-01-14 UTC, AWS cleanup completed 2026-01-28)
 **Branch:** `master`
 **Created:** 2026-01-09 (UTC)
-**Last Updated:** 2026-01-16 (UTC)
+**Last Updated:** 2026-01-28 (UTC)
 
 ### Current Deployment
 
@@ -1462,8 +1462,8 @@ Verify migrated data via direct database queries (tunnels still open):
    - Deleted habitcraft-backend and habitcraft-frontend
 3. [x] Remove AWS deployment from CI pipeline (2026-01-15 UTC)
    - CI now only deploys to GCP Cloud Run
-4. [ ] Delete RDS instance (after confirming GCP stable ~1 week)
-5. [ ] Terminate bastion host and cleanup AWS resources:
+4. [x] Delete RDS instance (2026-01-28, final snapshot: habitcraft-db-final-2026-01-28)
+5. [x] Terminate bastion host and cleanup AWS resources (2026-01-28)
    ```bash
    # Terminate bastion instance
    aws ec2 terminate-instances --instance-ids i-015cb43f2f75f8ee9 --region us-west-2
@@ -1482,8 +1482,8 @@ Verify migrated data via direct database queries (tunnels still open):
    aws ec2 delete-key-pair --key-name habitcraft-bastion --region us-west-2
    rm ~/.ssh/habitcraft-bastion.pem
    ```
-6. [ ] Delete local tmp/ folder with CSV exports
-7. [ ] Update documentation
+6. [x] Delete local tmp/ folder with CSV exports
+7. [x] Update documentation (2026-01-28) - Created GCP_ARCHITECTURE.md, archived AWS doc
 
 ### Phase 6: Smoke Test Cleanup ✅
 

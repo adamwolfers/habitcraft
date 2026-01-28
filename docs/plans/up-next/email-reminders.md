@@ -48,7 +48,7 @@ Implement email reminder functionality allowing users to receive periodic remind
 
 | Component | Recommendation | Rationale |
 |-----------|----------------|-----------|
-| Email Service | SendGrid or AWS SES | Both work well; SES fits AWS infrastructure, SendGrid has better dev experience |
+| Email Service | SendGrid | Good developer experience, reliable delivery, easy integration |
 | Job Scheduler | `node-cron` + custom queue | Lightweight, no Redis dependency needed for MVP |
 | Email Templates | Handlebars or inline HTML | Simple, maintainable email templates |
 
@@ -593,12 +593,12 @@ interface HabitReminderSettings {
 ## Deployment Considerations
 
 1. **Environment Variables**
-   - Add email service credentials to AWS Lightsail environment
+   - Add email service credentials to GCP Secret Manager
    - Configure different email settings for staging vs production
 
 2. **Worker Process**
    - Run reminder worker as separate process or within main app
-   - Consider AWS Lambda for scheduled email jobs (alternative)
+   - Consider GCP Cloud Scheduler + Cloud Run Jobs for scheduled email jobs (alternative)
 
 3. **Email Service Setup**
    - Verify domain for sending (SPF, DKIM, DMARC)
