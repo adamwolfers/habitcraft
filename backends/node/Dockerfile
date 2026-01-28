@@ -14,9 +14,6 @@ RUN npm ci --omit=dev
 # Copy application code
 COPY . .
 
-# Copy schema for migrations (copied from shared/database during build)
-COPY schema.sql ./
-
 # Make entrypoint executable
 RUN chmod +x entrypoint.sh
 
