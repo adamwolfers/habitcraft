@@ -10,7 +10,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - **Backend:** Node.js with Express, JavaScript
 - **Database:** PostgreSQL 14+
 - **Testing:** Jest + Supertest (Backend), Jest + React Testing Library (Frontend), Playwright (E2E)
-- **Deployment:** Docker Compose (dev), Lightsail Containers + RDS on AWS (prod)
+- **Deployment:** Docker Compose (dev), GCP Cloud Run + Cloud SQL (prod)
 
 ## Version 1.0 Goals
 
@@ -113,7 +113,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] **GETTING_STARTED.md** - JWT auth setup, quick start instructions
 - [x] **OpenAPI Spec** - Complete API documentation with auth endpoints and examples
 - [x] **Backend/Frontend READMEs** - Current endpoints, component structure, test examples
-- [x] **AWS Architecture** (`docs/AWS_ARCHITECTURE.md`) - Lightsail + RDS setup, CI/CD, security checklist, backup procedures
+- [x] **GCP Architecture** (`docs/GCP_ARCHITECTURE.md`) - Cloud Run + Cloud SQL setup, CI/CD, security checklist, backup procedures
 - [ ] **User Guide** - Registration, habit management, troubleshooting
 
 ### Security & Deployment
@@ -130,12 +130,12 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 #### Production Configuration
 
 - [x] **Dockerfiles** - Production-optimized with health checks and standalone output
-- [x] **AWS Lightsail** - Frontend + Backend containers, RDS PostgreSQL, VPC peering
+- [x] **GCP Cloud Run** - Frontend + Backend containers, Cloud SQL PostgreSQL, VPC connector
 - [x] **Environment** - Secure JWT_SECRET (64+ bytes), automatic HTTPS, production rate limits
 
 #### Custom Domain (habitcraft.org)
 
-- [x] DNS (IONOS) with CNAME records, Lightsail SSL certificates
+- [x] DNS (IONOS) with CNAME records, Google-managed SSL certificates
 - [x] Verified HTTPS/cookie functionality across `www.habitcraft.org` and `api.habitcraft.org`
 
 ---
@@ -167,7 +167,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 - [x] Application runs in Docker with docker-compose
 - [x] Environment variables properly configured
 - [x] Database migrations work correctly
-- [x] Production deployment complete (AWS Lightsail + RDS)
+- [x] Production deployment complete (GCP Cloud Run + Cloud SQL)
 - [x] Custom domain configured (habitcraft.org)
 
 ---
@@ -382,7 +382,7 @@ See [docs/plans/code-quality-testability-refactors.md](docs/plans/code-quality-t
   - [ ] Linting on commit (ESLint)
   - [ ] Document setup in GETTING_STARTED.md
 - **CI/CD Pipelines**
-  - [x] GitHub Actions workflows with automated testing, linting, Codecov coverage, and AWS Lightsail deployment
+  - [x] GitHub Actions workflows with automated testing, linting, Codecov coverage, and GCP Cloud Run deployment
   - [x] Integration/E2E tests depend on unit tests passing first
   - [ ] **Path-Based Deployment Filtering**
     - [ ] Add `dorny/paths-filter` action to detect changed paths
@@ -411,7 +411,7 @@ See [docs/plans/code-quality-testability-refactors.md](docs/plans/code-quality-t
     - Named volumes to prevent stale node_modules issues
 
 - **Cloud Deployment**
-  - [x] AWS deployment (Lightsail Containers, RDS PostgreSQL)
+  - [x] GCP deployment (Cloud Run, Cloud SQL PostgreSQL)
 - **Infrastructure as Code**
   - [x] AWS CLI deployment scripts
   - [x] GitHub Actions CI/CD workflows
@@ -420,7 +420,7 @@ See [docs/plans/code-quality-testability-refactors.md](docs/plans/code-quality-t
 - **Monitoring & Observability**
   - CloudWatch Alarms (AWS-native)
     - SNS topic for email notifications (`habitcraft-alerts`)
-    - Lightsail alarms: Backend/Frontend CPU high (>80%), sustained load (>60%)
+    - Cloud Run alarms: Backend/Frontend CPU high (>80%), error rates, latency
     - RDS alarms: CPU, connections, storage, read/write latency
     - Setup scripts in `infrastructure/monitoring/`
   - Application monitoring (Datadog, New Relic)
@@ -458,7 +458,7 @@ See [docs/plans/code-quality-testability-refactors.md](docs/plans/code-quality-t
 - **Getting Started:** `/GETTING_STARTED.md`
 - **Authentication Guide:** `/AUTHENTICATION.md`
 - **Testing Guide:** `/docs/TESTING.md`
-- **AWS Architecture:** `/docs/AWS_ARCHITECTURE.md`
+- **GCP Architecture:** `/docs/GCP_ARCHITECTURE.md`
 - **Main README:** `/README.md`
 - **API Specification:** `/shared/api-spec/openapi.yaml`
 - **Database Schema:** `/shared/database/schema.sql`

@@ -1,8 +1,11 @@
 # Plan: Migrate Backend to EC2 with Terraform
 
-**Status:** Pending
+**Status:** Cancelled
 **Branch:** `feature/ec2-terraform`
 **Created:** 2026-01-03
+**Cancelled:** 2026-01-28
+
+> **⚠️ CANCELLED:** This plan was superseded by the GCP Cloud Run migration. HabitCraft now runs on GCP instead of AWS. See [GCP_ARCHITECTURE.md](../../GCP_ARCHITECTURE.md) for the current production setup.
 
 ## Summary
 

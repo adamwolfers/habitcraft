@@ -1,5 +1,7 @@
 # HabitCraft CloudWatch Monitoring
 
+> **⚠️ ARCHIVED:** This document describes AWS CloudWatch monitoring for the legacy AWS deployment which was decommissioned on 2026-01-28. HabitCraft now runs on GCP Cloud Run with Cloud Monitoring. See [GCP_ARCHITECTURE.md](../../docs/GCP_ARCHITECTURE.md) for the current monitoring setup.
+
 Scripts to set up CloudWatch Alarms for HabitCraft infrastructure.
 
 ## Quick Start

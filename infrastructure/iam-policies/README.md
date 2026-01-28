@@ -1,5 +1,7 @@
 # HabitCraft IAM Policies
 
+> **⚠️ ARCHIVED:** This document describes AWS IAM policies for the legacy AWS deployment which was decommissioned on 2026-01-28. HabitCraft now runs on GCP Cloud Run with GCP IAM. See [GCP_ARCHITECTURE.md](../../docs/GCP_ARCHITECTURE.md) for the current setup.
+
 AWS IAM policies for the HabitCraft application following the principle of least privilege.
 
 ## Policies

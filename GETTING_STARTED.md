@@ -2,9 +2,9 @@
 
 Quick start guide for running HabitCraft locally.
 
-> **Live Demo:** https://www.habitcraft.org/
+> **Live Application:** https://www.habitcraft.org/
 >
-> For production deployment, see [AWS Architecture Guide](docs/AWS_ARCHITECTURE.md).
+> For production deployment, see [GCP Architecture Guide](docs/GCP_ARCHITECTURE.md).
 
 ## Quick Start
 
@@ -249,7 +249,7 @@ The OpenAPI specification is available at:
 
 - **[PROJECT_PLAN.md](PROJECT_PLAN.md)** - Complete development roadmap and task list
 - **[AUTHENTICATION.md](AUTHENTICATION.md)** - JWT authentication implementation guide
-- **[AWS Architecture](docs/AWS_ARCHITECTURE.md)** - Production deployment guide (Lightsail + RDS)
+- **[GCP Architecture](docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[README.md](README.md)** - Project overview
 - **[backends/node/README.md](backends/node/README.md)** - Backend setup and API reference
 - **[shared/api-spec/openapi.yaml](shared/api-spec/openapi.yaml)** - OpenAPI specification
