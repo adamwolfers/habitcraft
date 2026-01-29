@@ -35,13 +35,14 @@ services:
     command: ["--wait", "--wait-timeout", "60s", "up"]
 
   # Seed data for development (run manually: docker compose run --rm db-seed)
+  # Uses test-fixtures.sql for consistency with CI/test environments
   db-seed:
     image: postgres:14-alpine
     container_name: habitcraft-db-seed
     environment:
       PGPASSWORD: ${DB_PASSWORD:-habitpass}
     volumes:
-      - ./shared/database/seed.sql:/seed.sql:ro
+      - ./shared/database/test-fixtures.sql:/seed.sql:ro
     depends_on:
       db-migrate:
         condition: service_completed_successfully

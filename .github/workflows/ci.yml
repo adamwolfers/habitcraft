@@ -104,21 +104,39 @@ jobs:
         env:
           DATABASE_URL: postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable
           PGPASSWORD: habitpass
+          MIGRATIONS_DIR: ${{ github.workspace }}/db/migrations
+          FIXTURES_FILE: ${{ github.workspace }}/shared/database/test-fixtures.sql
         run: |
-          echo "=== Pending migrations ==="
-          dbmate --migrations-dir ../../db/migrations status
+          set -e  # Fail fast on any error
+
+          echo "=== Pre-flight check: dbmate status ==="
+          if ! dbmate --migrations-dir "$MIGRATIONS_DIR" status; then
+            echo "ERROR: dbmate status failed - check database connection and migration files"
+            exit 1
+          fi
           echo ""
+
           echo "=== Applying migrations ==="
-          dbmate --migrations-dir ../../db/migrations up
+          dbmate --migrations-dir "$MIGRATIONS_DIR" up
           echo ""
-          echo "=== Verifying migrations ==="
-          dbmate --migrations-dir ../../db/migrations status
+
+          echo "=== Post-migration verification ==="
+          STATUS_OUTPUT=$(dbmate --migrations-dir "$MIGRATIONS_DIR" status)
+          echo "$STATUS_OUTPUT"
+          if echo "$STATUS_OUTPUT" | grep -q "\[ \]"; then
+            echo ""
+            echo "ERROR: Pending migrations found after 'dbmate up' - this should not happen"
+            exit 1
+          fi
+          echo "All migrations applied successfully"
           echo ""
+
           echo "=== Verifying schema ==="
           psql -h localhost -p 5433 -U habituser -d habitcraft_test -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;"
           echo ""
+
           echo "=== Loading test fixtures ==="
-          psql -h localhost -p 5433 -U habituser -d habitcraft_test -f ../../shared/database/test-fixtures.sql
+          psql -h localhost -p 5433 -U habituser -d habitcraft_test -f "$FIXTURES_FILE"
 
       - name: Run integration tests
         env:
