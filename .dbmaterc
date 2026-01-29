@@ -1,0 +1,20 @@
+# dbmate configuration
+# https://github.com/amacneil/dbmate
+
+# Migration files location
+--migrations-dir=db/migrations
+
+# Schema dump file (auto-generated after each migration)
+--schema-file=db/schema.sql
+
+# Table to track applied migrations
+--migrations-table=schema_migrations
+
+# Wait for database to be ready before running migrations
+--wait
+
+# Timeout for waiting (in seconds)
+--wait-timeout=60s
+
+# Don't dump schema after migrations (we'll do this explicitly)
+--no-dump-schema

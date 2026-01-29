@@ -15,22 +15,16 @@ if ! docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-
     exit 1
 fi
 
-# Drop and recreate all tables
-echo "Dropping existing tables..."
-docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test psql -U habituser -d habitcraft_test << 'EOF'
--- Drop tables in correct order (respecting foreign keys)
-DROP TABLE IF EXISTS completions CASCADE;
-DROP TABLE IF EXISTS habits CASCADE;
-DROP TABLE IF EXISTS refresh_tokens CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-EOF
+# Database URL for test environment
+DATABASE_URL="postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable"
 
-# Recreate schema
-echo "Recreating schema..."
-docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test psql -U habituser -d habitcraft_test -f /docker-entrypoint-initdb.d/01-schema.sql
+# Drop and recreate database using dbmate
+echo "Dropping and recreating database..."
+DATABASE_URL="$DATABASE_URL" dbmate drop || true  # Ignore error if DB doesn't exist
+DATABASE_URL="$DATABASE_URL" dbmate up
 
 # Load test fixtures
 echo "Loading test fixtures..."
-docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test psql -U habituser -d habitcraft_test -f /docker-entrypoint-initdb.d/02-test-fixtures.sql
+PGPASSWORD=habitpass psql -h localhost -p 5433 -U habituser -d habitcraft_test -f "$PROJECT_ROOT/shared/database/test-fixtures.sql"
 
 echo "Test database reset complete!"

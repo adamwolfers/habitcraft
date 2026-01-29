@@ -11,8 +11,6 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./shared/database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
-      - ./shared/database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     networks:
       - habitcraft-network
     healthcheck:
@@ -20,6 +18,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # Database Migrations (runs once before backends start)
+  db-migrate:
+    image: ghcr.io/amacneil/dbmate:2
+    container_name: habitcraft-db-migrate
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-habituser}:${DB_PASSWORD:-habitpass}@postgres:5432/${DB_NAME:-habitcraft}?sslmode=disable
+    volumes:
+      - ./db/migrations:/db/migrations:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - habitcraft-network
+    command: ["--wait", "--wait-timeout", "60s", "up"]
+
+  # Seed data for development (run manually: docker compose run --rm db-seed)
+  # Uses test-fixtures.sql for consistency with CI/test environments
+  db-seed:
+    image: postgres:14-alpine
+    container_name: habitcraft-db-seed
+    environment:
+      PGPASSWORD: ${DB_PASSWORD:-habitpass}
+    volumes:
+      - ./shared/database/test-fixtures.sql:/seed.sql:ro
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - habitcraft-network
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        psql -h postgres -U ${DB_USER:-habituser} -d ${DB_NAME:-habitcraft} -f /seed.sql
+    profiles:
+      - seed
 
   # Node.js Backend
   backend-node:
@@ -43,8 +77,8 @@ services:
       - ./backends/node:/app
       - backend_node_modules:/app/node_modules
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - habitcraft-network
     command: npm run dev
@@ -65,8 +99,8 @@ services:
     volumes:
       - ./backends/python:/app
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - habitcraft-network
     command: uvicorn main:app --host 0.0.0.0 --port 3001 --reload
@@ -87,8 +121,8 @@ services:
     volumes:
       - ./backends/golang:/app
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - habitcraft-network
 
@@ -110,8 +144,8 @@ services:
     volumes:
       - ./backends/java:/app
     depends_on:
-      postgres:
-        condition: service_healthy
+      db-migrate:
+        condition: service_completed_successfully
     networks:
       - habitcraft-network
 
