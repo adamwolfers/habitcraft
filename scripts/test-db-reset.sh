@@ -15,16 +15,20 @@ if ! docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-
     exit 1
 fi
 
-# Database URL for test environment
-DATABASE_URL="postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable"
-
-# Drop and recreate database using dbmate
+# Drop and recreate database via psql (must connect to 'postgres' db to drop 'habitcraft_test')
 echo "Dropping and recreating database..."
-DATABASE_URL="$DATABASE_URL" dbmate drop || true  # Ignore error if DB doesn't exist
-DATABASE_URL="$DATABASE_URL" dbmate up
 
-# Load test fixtures
-echo "Loading test fixtures..."
-PGPASSWORD=habitpass psql -h localhost -p 5433 -U habituser -d habitcraft_test -f "$PROJECT_ROOT/shared/database/test-fixtures.sql"
+# Terminate existing connections to allow drop
+docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test \
+    psql -U habituser -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'habitcraft_test' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+
+docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test \
+    psql -U habituser -d postgres -c "DROP DATABASE IF EXISTS habitcraft_test"
+docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test \
+    psql -U habituser -d postgres -c "CREATE DATABASE habitcraft_test"
+
+# Run migrations and load fixtures via db-migrate-test service
+echo "Running migrations and loading fixtures..."
+docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" run --rm db-migrate-test
 
 echo "Test database reset complete!"
