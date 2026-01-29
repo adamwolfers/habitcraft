@@ -131,3 +131,39 @@ it("logs error when habit not found", async () => {
 - Defensive code branches that can't be triggered through UI
 - Logic that depends on component state captured in closures
 - Any pure logic that would benefit from isolated unit tests
+
+
+## Database Migrations
+
+We use [dbmate](https://github.com/amacneil/dbmate) for database migrations. Migrations are pure SQL files in `db/migrations/`.
+
+### Quick Commands
+
+```bash
+# Create a new migration
+dbmate new add_feature_name
+
+# Run migrations (local, non-Docker)
+DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable" dbmate up
+
+# Check status
+DATABASE_URL="..." dbmate status
+```
+
+### Local Development
+
+Migrations run automatically via Docker Compose. Just run:
+```bash
+docker compose up -d
+```
+
+### Creating Migrations
+
+1. `dbmate new migration_name` - creates timestamped file
+2. Add SQL to `-- migrate:up` section
+3. Leave `-- migrate:down` as comment (forward-only strategy)
+4. Test: `docker compose down -v && docker compose up -d`
+
+### Forward-Only Strategy
+
+We don't rollback migrations. If something breaks, fix forward with a new migration. See `db/README.md` for rationale.
