@@ -1,4 +1,5 @@
 name: CI
+# CI/CD pipeline with Workload Identity Federation (Terraform-managed)
 
 on:
   workflow_dispatch:
