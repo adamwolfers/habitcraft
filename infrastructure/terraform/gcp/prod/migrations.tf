@@ -87,4 +87,11 @@ resource "google_cloud_run_v2_job" "migrations" {
       template[0].template[0].containers[0].image,
     ]
   }
+
+  # Ensure IAM bindings exist before creating the job
+  # (Cloud Run validates secret access at creation time)
+  depends_on = [
+    google_secret_manager_secret_iam_member.migrations_db,
+    google_project_iam_member.migrations_cloudsql,
+  ]
 }
