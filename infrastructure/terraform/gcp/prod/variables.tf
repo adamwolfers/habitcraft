@@ -49,3 +49,9 @@ variable "apex_domain" {
   type        = string
   default     = "habitcraft.org"
 }
+
+variable "github_repository" {
+  description = "GitHub repository in owner/repo format for Workload Identity Federation"
+  type        = string
+  default     = "adamwolfers/habitcraft"
+}
