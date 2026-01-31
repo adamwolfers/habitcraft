@@ -11,11 +11,19 @@ export function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View testID="profile-screen" style={styles.container}>
       <Text style={styles.title}>Profile</Text>
-      {user && <Text style={styles.email}>{user.email}</Text>}
+      {user && (
+        <Text testID="profile-email" style={styles.email}>
+          {user.email}
+        </Text>
+      )}
 
-      <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+      <TouchableOpacity
+        testID="logout-button"
+        style={styles.logoutButton}
+        onPress={handleLogout}
+      >
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>
     </View>

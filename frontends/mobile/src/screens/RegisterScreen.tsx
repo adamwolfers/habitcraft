@@ -86,6 +86,7 @@ export function RegisterScreen() {
 
         <View style={styles.form}>
           <TextInput
+            testID="register-email-input"
             style={styles.input}
             placeholder="Email"
             placeholderTextColor={colors.textMuted}
@@ -98,6 +99,7 @@ export function RegisterScreen() {
           />
 
           <TextInput
+            testID="register-password-input"
             style={styles.input}
             placeholder="Password"
             placeholderTextColor={colors.textMuted}
@@ -108,6 +110,7 @@ export function RegisterScreen() {
           />
 
           <TextInput
+            testID="register-confirm-password-input"
             style={styles.input}
             placeholder="Confirm Password"
             placeholderTextColor={colors.textMuted}
@@ -117,7 +120,11 @@ export function RegisterScreen() {
             editable={!isLoading}
           />
 
-          {displayError && <Text style={styles.error}>{displayError}</Text>}
+          {displayError && (
+            <Text testID="register-error" style={styles.error}>
+              {displayError}
+            </Text>
+          )}
 
           <TouchableOpacity
             testID="register-button"
@@ -133,7 +140,11 @@ export function RegisterScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={handleLoginPress} disabled={isLoading}>
+        <TouchableOpacity
+          testID="register-login-link"
+          onPress={handleLoginPress}
+          disabled={isLoading}
+        >
           <Text style={styles.loginLink}>Already have an account? Log in</Text>
         </TouchableOpacity>
       </View>

@@ -74,6 +74,7 @@ export function LoginScreen() {
 
         <View style={styles.form}>
           <TextInput
+            testID="login-email-input"
             style={styles.input}
             placeholder="Email"
             placeholderTextColor={colors.textMuted}
@@ -86,6 +87,7 @@ export function LoginScreen() {
           />
 
           <TextInput
+            testID="login-password-input"
             style={styles.input}
             placeholder="Password"
             placeholderTextColor={colors.textMuted}
@@ -95,7 +97,11 @@ export function LoginScreen() {
             editable={!isLoading}
           />
 
-          {displayError && <Text style={styles.error}>{displayError}</Text>}
+          {displayError && (
+            <Text testID="login-error" style={styles.error}>
+              {displayError}
+            </Text>
+          )}
 
           <TouchableOpacity
             testID="login-button"
@@ -111,7 +117,11 @@ export function LoginScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={handleSignUpPress} disabled={isLoading}>
+        <TouchableOpacity
+          testID="login-signup-link"
+          onPress={handleSignUpPress}
+          disabled={isLoading}
+        >
           <Text style={styles.signUpLink}>Don't have an account? Sign up</Text>
         </TouchableOpacity>
       </View>
