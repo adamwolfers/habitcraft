@@ -66,7 +66,7 @@ export function DashboardScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View testID="dashboard-screen" style={styles.container}>
       <OfflineBanner />
       <View style={styles.header}>
         <View style={styles.headerRow}>
@@ -77,6 +77,7 @@ export function DashboardScreen() {
       </View>
 
       <FlatList
+        testID="habit-list"
         data={habits?.filter((h) => !h.is_archived) || []}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
@@ -97,7 +98,7 @@ export function DashboardScreen() {
           />
         }
         ListEmptyComponent={
-          <View style={styles.empty}>
+          <View testID="empty-state" style={styles.empty}>
             <Text style={styles.emptyIcon}>🎯</Text>
             <Text style={styles.emptyTitle}>No habits yet</Text>
             <Text style={styles.emptyText}>
@@ -107,7 +108,11 @@ export function DashboardScreen() {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={handleCreateHabit}>
+      <TouchableOpacity
+        testID="create-habit-fab"
+        style={styles.fab}
+        onPress={handleCreateHabit}
+      >
         <Text style={styles.fabIcon}>+</Text>
       </TouchableOpacity>
     </View>

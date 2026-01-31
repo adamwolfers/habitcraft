@@ -69,6 +69,7 @@ export function CreateHabitScreen() {
       <View style={styles.field}>
         <Text style={styles.label}>Name</Text>
         <TextInput
+          testID="habit-name-input"
           style={styles.input}
           placeholder="e.g., Morning Exercise"
           placeholderTextColor={colors.textMuted}
@@ -81,6 +82,7 @@ export function CreateHabitScreen() {
       <View style={styles.field}>
         <Text style={styles.label}>Description (optional)</Text>
         <TextInput
+          testID="habit-description-input"
           style={[styles.input, styles.textArea]}
           placeholder="What's this habit about?"
           placeholderTextColor={colors.textMuted}
@@ -154,9 +156,14 @@ export function CreateHabitScreen() {
         </View>
       </View>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && (
+        <Text testID="create-habit-error" style={styles.error}>
+          {error}
+        </Text>
+      )}
 
       <TouchableOpacity
+        testID="create-habit-button"
         style={[styles.createButton, createHabit.isPending && styles.buttonDisabled]}
         onPress={handleCreate}
         disabled={createHabit.isPending}

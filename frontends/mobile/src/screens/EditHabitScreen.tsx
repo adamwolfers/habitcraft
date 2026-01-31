@@ -205,6 +205,7 @@ export function EditHabitScreen() {
       {error && <Text style={styles.error}>{error}</Text>}
 
       <TouchableOpacity
+        testID="save-habit-button"
         style={[styles.updateButton, updateHabit.isPending && styles.buttonDisabled]}
         onPress={handleUpdate}
         disabled={updateHabit.isPending}
@@ -217,6 +218,7 @@ export function EditHabitScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
+        testID="delete-habit-button"
         style={[styles.deleteButton, deleteHabit.isPending && styles.buttonDisabled]}
         onPress={handleDelete}
         disabled={deleteHabit.isPending}
