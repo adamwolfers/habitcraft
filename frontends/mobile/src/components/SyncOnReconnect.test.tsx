@@ -23,7 +23,9 @@ describe('SyncOnReconnect', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseQueryClient.mockReturnValue(mockQueryClient as ReturnType<typeof useQueryClient>);
+    mockUseQueryClient.mockReturnValue(
+      mockQueryClient as unknown as ReturnType<typeof useQueryClient>
+    );
   });
 
   it('syncs when coming back online', async () => {

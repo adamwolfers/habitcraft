@@ -52,10 +52,7 @@ describe('networkStatus', () => {
         isConnected: false,
         isInternetReachable: false,
       });
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'networkStatus.fetch error:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('networkStatus.fetch error:', expect.any(Error));
       consoleSpy.mockRestore();
     });
   });

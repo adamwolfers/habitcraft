@@ -19,7 +19,9 @@ function TestConsumer() {
 
 describe('NetworkContext', () => {
   let mockUnsubscribe: jest.Mock;
-  let capturedCallback: ((state: { isConnected: boolean; isInternetReachable: boolean | null }) => void) | null;
+  let capturedCallback:
+    | ((state: { isConnected: boolean; isInternetReachable: boolean | null }) => void)
+    | null;
 
   beforeEach(() => {
     jest.clearAllMocks();

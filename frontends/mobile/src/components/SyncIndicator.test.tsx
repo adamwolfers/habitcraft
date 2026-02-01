@@ -5,7 +5,9 @@ import { usePendingMutations } from '@/hooks/usePendingMutations';
 
 jest.mock('@/hooks/usePendingMutations');
 
-const mockUsePendingMutations = usePendingMutations as jest.MockedFunction<typeof usePendingMutations>;
+const mockUsePendingMutations = usePendingMutations as jest.MockedFunction<
+  typeof usePendingMutations
+>;
 
 describe('SyncIndicator', () => {
   beforeEach(() => {

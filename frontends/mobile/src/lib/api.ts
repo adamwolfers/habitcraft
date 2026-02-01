@@ -136,9 +136,7 @@ export function isNetworkError(error: unknown): boolean {
   if (error instanceof Error) {
     const message = error.message.toLowerCase();
     return (
-      message.includes('network') ||
-      message.includes('timeout') ||
-      message.includes('connection')
+      message.includes('network') || message.includes('timeout') || message.includes('connection')
     );
   }
   return false;

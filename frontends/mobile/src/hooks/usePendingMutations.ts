@@ -20,6 +20,8 @@ export function usePendingMutations(): UsePendingMutationsResult {
   }, []);
 
   useEffect(() => {
+    // Initial fetch on mount - valid initialization pattern
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
   }, [refresh]);
 

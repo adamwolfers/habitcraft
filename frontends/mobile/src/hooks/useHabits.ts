@@ -77,7 +77,7 @@ export function useCreateHabit() {
 
       return habitsApi.createHabit(data);
     },
-    onMutate: async (newHabit) => {
+    onMutate: async (_newHabit) => {
       await queryClient.cancelQueries({ queryKey: HABITS_QUERY_KEY });
 
       const previousHabits = queryClient.getQueryData<HabitWithStats[]>(HABITS_QUERY_KEY);

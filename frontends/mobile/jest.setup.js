@@ -18,6 +18,19 @@ jest.mock(
   { virtual: true }
 );
 
+// Mock expo-file-system/legacy
+jest.mock(
+  'expo-file-system/legacy',
+  () => ({
+    documentDirectory: '/mock/documents/',
+    getInfoAsync: jest.fn(),
+    readAsStringAsync: jest.fn(),
+    writeAsStringAsync: jest.fn(),
+    deleteAsync: jest.fn(),
+  }),
+  { virtual: true }
+);
+
 // Mock @react-native-community/netinfo
 jest.mock(
   '@react-native-community/netinfo',

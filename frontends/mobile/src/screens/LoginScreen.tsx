@@ -137,7 +137,7 @@ export function LoginScreen() {
           accessibilityLabel="Don't have an account? Sign up"
           accessibilityHint="Double tap to create a new account"
         >
-          <Text style={styles.signUpLink}>Don't have an account? Sign up</Text>
+          <Text style={styles.signUpLink}>Don&apos;t have an account? Sign up</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

@@ -17,11 +17,7 @@ export function MainStackNavigator() {
         headerTintColor: colors.text,
       }}
     >
-      <Stack.Screen
-        name="Tabs"
-        component={MainTabNavigator}
-        options={{ headerShown: false }}
-      />
+      <Stack.Screen name="Tabs" component={MainTabNavigator} options={{ headerShown: false }} />
       <Stack.Screen
         name="CreateHabit"
         component={CreateHabitScreen}

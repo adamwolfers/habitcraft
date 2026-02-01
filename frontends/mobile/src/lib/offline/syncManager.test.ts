@@ -245,8 +245,20 @@ describe('syncManager', () => {
     it('processes mutations in order', async () => {
       mockNetworkStatus.isOnline.mockResolvedValue(true);
       const mutations: QueuedMutation[] = [
-        { id: 'mut-1', type: 'createHabit', payload: { name: 'First' }, timestamp: 1000, retryCount: 0 },
-        { id: 'mut-2', type: 'createHabit', payload: { name: 'Second' }, timestamp: 2000, retryCount: 0 },
+        {
+          id: 'mut-1',
+          type: 'createHabit',
+          payload: { name: 'First' },
+          timestamp: 1000,
+          retryCount: 0,
+        },
+        {
+          id: 'mut-2',
+          type: 'createHabit',
+          payload: { name: 'Second' },
+          timestamp: 2000,
+          retryCount: 0,
+        },
       ];
       mockMutationQueue.getAll.mockResolvedValue(mutations);
       mockHabitsApi.createHabit.mockResolvedValue({

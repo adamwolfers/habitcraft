@@ -50,9 +50,10 @@ export function EditHabitScreen() {
   const [selectedFrequency, setSelectedFrequency] = useState<HabitFrequency>('daily');
   const [error, setError] = useState<string | null>(null);
 
-  // Populate form when habit loads
+  // Populate form when habit loads - valid sync pattern
   useEffect(() => {
     if (habit) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(habit.name);
       setDescription(habit.description || '');
       setSelectedIcon(habit.icon);
@@ -150,10 +151,7 @@ export function EditHabitScreen() {
           {ICONS.map((icon) => (
             <TouchableOpacity
               key={icon}
-              style={[
-                styles.iconButton,
-                selectedIcon === icon && styles.iconButtonSelected,
-              ]}
+              style={[styles.iconButton, selectedIcon === icon && styles.iconButtonSelected]}
               onPress={() => setSelectedIcon(icon)}
             >
               <Text style={styles.iconText}>{icon}</Text>
@@ -207,11 +205,7 @@ export function EditHabitScreen() {
       </View>
 
       {error && (
-        <Text
-          style={styles.error}
-          accessibilityRole="alert"
-          accessibilityLiveRegion="polite"
-        >
+        <Text style={styles.error} accessibilityRole="alert" accessibilityLiveRegion="polite">
           {error}
         </Text>
       )}

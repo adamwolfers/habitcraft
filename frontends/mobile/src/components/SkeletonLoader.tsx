@@ -35,12 +35,7 @@ function SkeletonBox({
 
   return (
     <Animated.View
-      style={[
-        styles.skeleton,
-        { width, height, borderRadius },
-        animatedStyle,
-        style,
-      ]}
+      style={[styles.skeleton, { width, height, borderRadius }, animatedStyle, style]}
     />
   );
 }
@@ -50,11 +45,7 @@ function SkeletonBox({
  */
 export function HabitCardSkeleton() {
   return (
-    <View
-      style={styles.card}
-      accessibilityLabel="Loading habit"
-      accessibilityRole="none"
-    >
+    <View style={styles.card} accessibilityLabel="Loading habit" accessibilityRole="none">
       {/* Checkbox */}
       <SkeletonBox width={32} height={32} borderRadius={16} />
 
@@ -63,19 +54,11 @@ export function HabitCardSkeleton() {
         {/* Header row with icon and name */}
         <View style={styles.header}>
           <SkeletonBox width={24} height={24} borderRadius={4} />
-          <SkeletonBox
-            width="70%"
-            height={20}
-            style={{ marginLeft: spacing.sm }}
-          />
+          <SkeletonBox width="70%" height={20} style={{ marginLeft: spacing.sm }} />
         </View>
 
         {/* Description */}
-        <SkeletonBox
-          width="90%"
-          height={14}
-          style={{ marginTop: spacing.xs }}
-        />
+        <SkeletonBox width="90%" height={14} style={{ marginTop: spacing.xs }} />
 
         {/* Footer with frequency badge */}
         <View style={styles.footer}>
@@ -91,11 +74,7 @@ export function HabitCardSkeleton() {
  */
 export function DashboardSkeleton() {
   return (
-    <View
-      style={styles.dashboard}
-      accessibilityLabel="Loading habits"
-      accessibilityRole="none"
-    >
+    <View style={styles.dashboard} accessibilityLabel="Loading habits" accessibilityRole="none">
       <HabitCardSkeleton />
       <HabitCardSkeleton />
       <HabitCardSkeleton />
