@@ -84,6 +84,8 @@ export function LoginScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             editable={!isLoading}
+            accessibilityLabel="Email address"
+            accessibilityHint="Enter your email address"
           />
 
           <TextInput
@@ -95,10 +97,17 @@ export function LoginScreen() {
             onChangeText={setPassword}
             secureTextEntry
             editable={!isLoading}
+            accessibilityLabel="Password"
+            accessibilityHint="Enter your password"
           />
 
           {displayError && (
-            <Text testID="login-error" style={styles.error}>
+            <Text
+              testID="login-error"
+              style={styles.error}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
               {displayError}
             </Text>
           )}
@@ -108,6 +117,9 @@ export function LoginScreen() {
             style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={isLoading ? 'Logging in' : 'Log in'}
+            accessibilityState={{ disabled: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color={colors.white} />
@@ -121,6 +133,9 @@ export function LoginScreen() {
           testID="login-signup-link"
           onPress={handleSignUpPress}
           disabled={isLoading}
+          accessibilityRole="link"
+          accessibilityLabel="Don't have an account? Sign up"
+          accessibilityHint="Double tap to create a new account"
         >
           <Text style={styles.signUpLink}>Don't have an account? Sign up</Text>
         </TouchableOpacity>

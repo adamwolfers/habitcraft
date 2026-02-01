@@ -11,7 +11,12 @@ export function OfflineBanner(): React.ReactElement | null {
   }
 
   return (
-    <View style={styles.container} testID="offline-banner">
+    <View
+      style={styles.container}
+      testID="offline-banner"
+      accessibilityRole="alert"
+      accessibilityLabel="You're offline. Changes will sync when you reconnect."
+    >
       <Text style={styles.title}>You're offline</Text>
       <Text style={styles.subtitle}>Changes will sync when you reconnect</Text>
     </View>

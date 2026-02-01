@@ -76,6 +76,8 @@ export function CreateHabitScreen() {
           value={name}
           onChangeText={setName}
           maxLength={50}
+          accessibilityLabel="Habit name"
+          accessibilityHint="Enter a name for your habit"
         />
       </View>
 
@@ -91,6 +93,8 @@ export function CreateHabitScreen() {
           multiline
           numberOfLines={3}
           maxLength={200}
+          accessibilityLabel="Habit description, optional"
+          accessibilityHint="Enter a description for your habit"
         />
       </View>
 
@@ -157,7 +161,12 @@ export function CreateHabitScreen() {
       </View>
 
       {error && (
-        <Text testID="create-habit-error" style={styles.error}>
+        <Text
+          testID="create-habit-error"
+          style={styles.error}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
           {error}
         </Text>
       )}
@@ -167,6 +176,9 @@ export function CreateHabitScreen() {
         style={[styles.createButton, createHabit.isPending && styles.buttonDisabled]}
         onPress={handleCreate}
         disabled={createHabit.isPending}
+        accessibilityRole="button"
+        accessibilityLabel={createHabit.isPending ? 'Creating habit' : 'Create habit'}
+        accessibilityState={{ disabled: createHabit.isPending }}
       >
         {createHabit.isPending ? (
           <ActivityIndicator color={colors.white} />

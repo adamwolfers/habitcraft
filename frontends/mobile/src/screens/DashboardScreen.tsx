@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { colors, spacing, typography } from '@/theme';
 import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
 import { HabitCard, OfflineBanner, SyncIndicator } from '@/components';
+import { DashboardSkeleton } from '@/components/SkeletonLoader';
 import { Habit, MainStackParamList } from '@/types';
 
 type DashboardNavigationProp = StackNavigationProp<MainStackParamList>;
@@ -48,17 +49,27 @@ export function DashboardScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Today</Text>
+          <Text style={styles.date}>{format(new Date(), 'EEEE, MMMM d')}</Text>
+        </View>
+        <DashboardSkeleton />
       </View>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.centered}>
+      <View style={styles.centered} accessibilityRole="alert">
         <Text style={styles.errorText}>Failed to load habits</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={() => refetch()}
+          accessibilityRole="button"
+          accessibilityLabel="Try again"
+          accessibilityHint="Double tap to reload habits"
+        >
           <Text style={styles.retryText}>Try Again</Text>
         </TouchableOpacity>
       </View>
@@ -112,8 +123,11 @@ export function DashboardScreen() {
         testID="create-habit-fab"
         style={styles.fab}
         onPress={handleCreateHabit}
+        accessibilityRole="button"
+        accessibilityLabel="Create new habit"
+        accessibilityHint="Double tap to add a new habit"
       >
-        <Text style={styles.fabIcon}>+</Text>
+        <Text style={styles.fabIcon} accessibilityElementsHidden>+</Text>
       </TouchableOpacity>
     </View>
   );

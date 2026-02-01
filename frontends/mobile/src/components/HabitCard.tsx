@@ -30,6 +30,9 @@ export function HabitCard({
       style={[styles.card, { borderLeftColor: habit.color }]}
       onPress={() => onPress(habit)}
       activeOpacity={0.7}
+      accessibilityRole="button"
+      accessibilityLabel={`${habit.name} habit, ${formatFrequency(habit.frequency)}`}
+      accessibilityHint="Double tap to view details"
     >
       <TouchableOpacity
         testID="complete-button"
@@ -39,7 +42,10 @@ export function HabitCard({
           { borderColor: habit.color },
         ]}
         onPress={() => onComplete(habit.id)}
+        accessibilityRole="checkbox"
         accessibilityState={{ checked: isCompletedToday }}
+        accessibilityLabel={`Mark ${habit.name} as ${isCompletedToday ? 'incomplete' : 'complete'}`}
+        accessibilityHint={isCompletedToday ? 'Double tap to uncheck' : 'Double tap to check'}
       >
         {isCompletedToday && (
           <Text style={[styles.checkmark, { color: habit.color }]}>✓</Text>
@@ -67,7 +73,12 @@ export function HabitCard({
             </Text>
           </View>
           {isPendingSync(habit.id) && (
-            <View style={styles.pendingBadge} testID="pending-badge">
+            <View
+              style={styles.pendingBadge}
+              testID="pending-badge"
+              accessibilityLabel="Pending sync"
+              accessibilityRole="text"
+            >
               <Text style={styles.pendingText}>Pending sync</Text>
             </View>
           )}

@@ -123,6 +123,8 @@ export function EditHabitScreen() {
           value={name}
           onChangeText={setName}
           maxLength={50}
+          accessibilityLabel="Habit name"
+          accessibilityHint="Edit the name of your habit"
         />
       </View>
 
@@ -137,6 +139,8 @@ export function EditHabitScreen() {
           multiline
           numberOfLines={3}
           maxLength={200}
+          accessibilityLabel="Habit description, optional"
+          accessibilityHint="Edit the description of your habit"
         />
       </View>
 
@@ -202,13 +206,24 @@ export function EditHabitScreen() {
         </View>
       </View>
 
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error && (
+        <Text
+          style={styles.error}
+          accessibilityRole="alert"
+          accessibilityLiveRegion="polite"
+        >
+          {error}
+        </Text>
+      )}
 
       <TouchableOpacity
         testID="save-habit-button"
         style={[styles.updateButton, updateHabit.isPending && styles.buttonDisabled]}
         onPress={handleUpdate}
         disabled={updateHabit.isPending}
+        accessibilityRole="button"
+        accessibilityLabel={updateHabit.isPending ? 'Saving changes' : 'Save changes'}
+        accessibilityState={{ disabled: updateHabit.isPending }}
       >
         {updateHabit.isPending ? (
           <ActivityIndicator color={colors.white} />
@@ -222,6 +237,10 @@ export function EditHabitScreen() {
         style={[styles.deleteButton, deleteHabit.isPending && styles.buttonDisabled]}
         onPress={handleDelete}
         disabled={deleteHabit.isPending}
+        accessibilityRole="button"
+        accessibilityLabel="Delete habit"
+        accessibilityHint="Double tap to permanently delete this habit"
+        accessibilityState={{ disabled: deleteHabit.isPending }}
       >
         <Text style={styles.deleteButtonText}>Delete Habit</Text>
       </TouchableOpacity>

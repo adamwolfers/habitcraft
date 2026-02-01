@@ -96,6 +96,8 @@ export function RegisterScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             editable={!isLoading}
+            accessibilityLabel="Email address"
+            accessibilityHint="Enter your email address"
           />
 
           <TextInput
@@ -107,6 +109,8 @@ export function RegisterScreen() {
             onChangeText={setPassword}
             secureTextEntry
             editable={!isLoading}
+            accessibilityLabel="Password"
+            accessibilityHint="Enter a password with at least 6 characters"
           />
 
           <TextInput
@@ -118,10 +122,17 @@ export function RegisterScreen() {
             onChangeText={setConfirmPassword}
             secureTextEntry
             editable={!isLoading}
+            accessibilityLabel="Confirm password"
+            accessibilityHint="Re-enter your password to confirm"
           />
 
           {displayError && (
-            <Text testID="register-error" style={styles.error}>
+            <Text
+              testID="register-error"
+              style={styles.error}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
               {displayError}
             </Text>
           )}
@@ -131,6 +142,9 @@ export function RegisterScreen() {
             style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleRegister}
             disabled={isLoading}
+            accessibilityRole="button"
+            accessibilityLabel={isLoading ? 'Creating account' : 'Sign up'}
+            accessibilityState={{ disabled: isLoading }}
           >
             {isLoading ? (
               <ActivityIndicator color={colors.white} />
@@ -144,6 +158,9 @@ export function RegisterScreen() {
           testID="register-login-link"
           onPress={handleLoginPress}
           disabled={isLoading}
+          accessibilityRole="link"
+          accessibilityLabel="Already have an account? Log in"
+          accessibilityHint="Double tap to go to the login screen"
         >
           <Text style={styles.loginLink}>Already have an account? Log in</Text>
         </TouchableOpacity>
