@@ -17,11 +17,7 @@ async function saveQueue(queue: QueuedMutation[]): Promise<void> {
   await offlineStorage.saveMutationQueue(queue);
 }
 
-async function add(
-  type: MutationType,
-  payload: unknown,
-  tempId?: string
-): Promise<QueuedMutation> {
+async function add(type: MutationType, payload: unknown, tempId?: string): Promise<QueuedMutation> {
   const queue = await loadQueue();
 
   const mutation: QueuedMutation = {

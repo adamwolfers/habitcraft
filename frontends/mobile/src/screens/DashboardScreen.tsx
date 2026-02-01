@@ -1,18 +1,10 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-} from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { colors, spacing, typography } from '@/theme';
-import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
+import { useHabits, useCompleteHabit } from '@/hooks';
 import { HabitCard, OfflineBanner, SyncIndicator } from '@/components';
 import { DashboardSkeleton } from '@/components/SkeletonLoader';
 import { Habit, MainStackParamList } from '@/types';
@@ -27,7 +19,6 @@ export function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
   const { data: habits, isLoading, error, refetch, isRefetching } = useHabits();
   const completeHabit = useCompleteHabit();
-  const uncompleteHabit = useUncompleteHabit();
 
   const today = getTodayDateString();
 
@@ -127,7 +118,9 @@ export function DashboardScreen() {
         accessibilityLabel="Create new habit"
         accessibilityHint="Double tap to add a new habit"
       >
-        <Text style={styles.fabIcon} accessibilityElementsHidden>+</Text>
+        <Text style={styles.fabIcon} accessibilityElementsHidden>
+          +
+        </Text>
       </TouchableOpacity>
     </View>
   );

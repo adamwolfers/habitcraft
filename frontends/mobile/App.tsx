@@ -41,10 +41,7 @@ export default function App() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaProvider>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={persistOptions}
-        >
+        <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
           <NetworkProvider>
             <SyncOnReconnect />
             <AuthProvider>

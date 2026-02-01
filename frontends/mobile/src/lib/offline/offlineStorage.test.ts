@@ -1,8 +1,8 @@
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { offlineStorage } from './offlineStorage';
 import { QueuedMutation } from './types';
 
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: '/mock/documents/',
   getInfoAsync: jest.fn(),
   readAsStringAsync: jest.fn(),
@@ -19,7 +19,10 @@ describe('offlineStorage', () => {
 
   describe('read', () => {
     it('returns null when file does not exist', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: false } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: false,
+        isDirectory: false,
+      } as FileSystem.FileInfo);
 
       const result = await offlineStorage.read('test-key');
 
@@ -31,7 +34,13 @@ describe('offlineStorage', () => {
 
     it('reads and parses JSON from file', async () => {
       const testData = { foo: 'bar', count: 42 };
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.readAsStringAsync.mockResolvedValue(JSON.stringify(testData));
 
       const result = await offlineStorage.read('test-key');
@@ -43,22 +52,31 @@ describe('offlineStorage', () => {
     });
 
     it('returns null and logs error on read failure', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.readAsStringAsync.mockRejectedValue(new Error('Read failed'));
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       const result = await offlineStorage.read('test-key');
 
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'offlineStorage.read error:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('offlineStorage.read error:', expect.any(Error));
       consoleSpy.mockRestore();
     });
 
     it('returns null on invalid JSON', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.readAsStringAsync.mockResolvedValue('not valid json');
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
@@ -89,17 +107,20 @@ describe('offlineStorage', () => {
 
       await offlineStorage.write('test-key', { data: 'test' });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'offlineStorage.write error:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('offlineStorage.write error:', expect.any(Error));
       consoleSpy.mockRestore();
     });
   });
 
   describe('remove', () => {
     it('deletes file when it exists', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.deleteAsync.mockResolvedValue(undefined);
 
       await offlineStorage.remove('test-key');
@@ -110,7 +131,10 @@ describe('offlineStorage', () => {
     });
 
     it('does nothing when file does not exist', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: false } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: false,
+        isDirectory: false,
+      } as FileSystem.FileInfo);
 
       await offlineStorage.remove('test-key');
 
@@ -118,23 +142,29 @@ describe('offlineStorage', () => {
     });
 
     it('logs error on delete failure', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.deleteAsync.mockRejectedValue(new Error('Delete failed'));
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
       await offlineStorage.remove('test-key');
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'offlineStorage.remove error:',
-        expect.any(Error)
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('offlineStorage.remove error:', expect.any(Error));
       consoleSpy.mockRestore();
     });
   });
 
   describe('getMutationQueue', () => {
     it('returns empty array when no queue exists', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: false } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: false,
+        isDirectory: false,
+      } as FileSystem.FileInfo);
 
       const result = await offlineStorage.getMutationQueue();
 
@@ -151,7 +181,13 @@ describe('offlineStorage', () => {
           retryCount: 0,
         },
       ];
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.readAsStringAsync.mockResolvedValue(JSON.stringify(mockQueue));
 
       const result = await offlineStorage.getMutationQueue();
@@ -184,7 +220,13 @@ describe('offlineStorage', () => {
 
   describe('clearMutationQueue', () => {
     it('removes mutation queue file', async () => {
-      mockFileSystem.getInfoAsync.mockResolvedValue({ exists: true } as FileSystem.FileInfo);
+      mockFileSystem.getInfoAsync.mockResolvedValue({
+        exists: true,
+        isDirectory: false,
+        uri: '',
+        size: 0,
+        modificationTime: 0,
+      } as FileSystem.FileInfo);
       mockFileSystem.deleteAsync.mockResolvedValue(undefined);
 
       await offlineStorage.clearMutationQueue();

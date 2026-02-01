@@ -47,9 +47,7 @@ export function HabitCard({
         accessibilityLabel={`Mark ${habit.name} as ${isCompletedToday ? 'incomplete' : 'complete'}`}
         accessibilityHint={isCompletedToday ? 'Double tap to uncheck' : 'Double tap to check'}
       >
-        {isCompletedToday && (
-          <Text style={[styles.checkmark, { color: habit.color }]}>✓</Text>
-        )}
+        {isCompletedToday && <Text style={[styles.checkmark, { color: habit.color }]}>✓</Text>}
       </TouchableOpacity>
 
       <View style={styles.content}>

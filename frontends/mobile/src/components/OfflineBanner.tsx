@@ -17,7 +17,7 @@ export function OfflineBanner(): React.ReactElement | null {
       accessibilityRole="alert"
       accessibilityLabel="You're offline. Changes will sync when you reconnect."
     >
-      <Text style={styles.title}>You're offline</Text>
+      <Text style={styles.title}>You&apos;re offline</Text>
       <Text style={styles.subtitle}>Changes will sync when you reconnect</Text>
     </View>
   );

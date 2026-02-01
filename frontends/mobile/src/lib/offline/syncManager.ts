@@ -29,12 +29,15 @@ async function processMutation(mutation: QueuedMutation): Promise<{ serverId?: s
   switch (mutation.type) {
     case 'createHabit': {
       const result = await habitsApi.createHabit(
-        payload as Parameters<typeof habitsApi.createHabit>[0]
+        payload as unknown as Parameters<typeof habitsApi.createHabit>[0]
       );
       return { serverId: result.id };
     }
     case 'updateHabit': {
-      const { id, data } = payload as { id: string; data: Parameters<typeof habitsApi.updateHabit>[1] };
+      const { id, data } = payload as {
+        id: string;
+        data: Parameters<typeof habitsApi.updateHabit>[1];
+      };
       await habitsApi.updateHabit(id, data);
       return {};
     }
@@ -44,7 +47,10 @@ async function processMutation(mutation: QueuedMutation): Promise<{ serverId?: s
       return {};
     }
     case 'completeHabit': {
-      const { id, data } = payload as { id: string; data: Parameters<typeof habitsApi.completeHabit>[1] };
+      const { id, data } = payload as {
+        id: string;
+        data: Parameters<typeof habitsApi.completeHabit>[1];
+      };
       await habitsApi.completeHabit(id, data);
       return {};
     }

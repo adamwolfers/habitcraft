@@ -25,4 +25,5 @@ module.exports = {
     },
   },
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
+  testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
 };

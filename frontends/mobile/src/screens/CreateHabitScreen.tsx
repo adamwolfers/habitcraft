@@ -104,10 +104,7 @@ export function CreateHabitScreen() {
           {ICONS.map((icon) => (
             <TouchableOpacity
               key={icon}
-              style={[
-                styles.iconButton,
-                selectedIcon === icon && styles.iconButtonSelected,
-              ]}
+              style={[styles.iconButton, selectedIcon === icon && styles.iconButtonSelected]}
               onPress={() => setSelectedIcon(icon)}
             >
               <Text style={styles.iconText}>{icon}</Text>

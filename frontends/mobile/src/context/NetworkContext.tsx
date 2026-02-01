@@ -26,7 +26,8 @@ export function NetworkProvider({ children }: NetworkProviderProps) {
   }, []);
 
   useEffect(() => {
-    // Fetch initial state
+    // Fetch initial state - valid initialization pattern
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
 
     // Subscribe to changes
@@ -47,9 +48,7 @@ export function NetworkProvider({ children }: NetworkProviderProps) {
     refresh,
   };
 
-  return (
-    <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>
-  );
+  return <NetworkContext.Provider value={value}>{children}</NetworkContext.Provider>;
 }
 
 export function useNetwork(): NetworkContextValue {

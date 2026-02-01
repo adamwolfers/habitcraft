@@ -204,10 +204,9 @@ describe('authApi', () => {
 
       await authApi.refreshToken('old-refresh-token');
 
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        expect.stringContaining('/auth/refresh'),
-        { refreshToken: 'old-refresh-token' }
-      );
+      expect(mockAxios.post).toHaveBeenCalledWith(expect.stringContaining('/auth/refresh'), {
+        refreshToken: 'old-refresh-token',
+      });
     });
 
     it('saves new tokens on successful refresh', async () => {
@@ -253,9 +252,7 @@ describe('authApi', () => {
       };
       mockAxios.post.mockRejectedValueOnce(error);
 
-      await expect(authApi.refreshToken('invalid-token')).rejects.toThrow(
-        'Invalid refresh token'
-      );
+      await expect(authApi.refreshToken('invalid-token')).rejects.toThrow('Invalid refresh token');
     });
   });
 

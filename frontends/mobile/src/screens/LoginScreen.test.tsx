@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { LoginScreen } from './LoginScreen';
-import { AuthProvider, useAuthContext } from '@/context/AuthContext';
+import { AuthProvider } from '@/context/AuthContext';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
 
@@ -223,8 +223,7 @@ describe('LoginScreen', () => {
         const button = getByTestId('login-button');
         // TouchableOpacity uses accessibilityState for disabled
         expect(
-          button.props.disabled === true ||
-          button.props.accessibilityState?.disabled === true
+          button.props.disabled === true || button.props.accessibilityState?.disabled === true
         ).toBe(true);
       });
     });

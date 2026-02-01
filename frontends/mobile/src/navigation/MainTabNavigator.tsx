@@ -14,11 +14,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     Profile: '👤',
   };
 
-  return (
-    <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>
-      {icons[name] || '•'}
-    </Text>
-  );
+  return <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.5 }}>{icons[name] || '•'}</Text>;
 }
 
 export function MainTabNavigator() {

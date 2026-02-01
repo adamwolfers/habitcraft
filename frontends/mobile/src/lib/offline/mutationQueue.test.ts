@@ -1,6 +1,6 @@
 import { mutationQueue } from './mutationQueue';
 import { offlineStorage } from './offlineStorage';
-import { QueuedMutation, MutationType } from './types';
+import { QueuedMutation } from './types';
 
 jest.mock('./offlineStorage');
 jest.mock('uuid', () => ({
