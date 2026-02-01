@@ -23,6 +23,9 @@ export function ProfileScreen() {
         testID="logout-button"
         style={styles.logoutButton}
         onPress={handleLogout}
+        accessibilityRole="button"
+        accessibilityLabel="Log out"
+        accessibilityHint="Double tap to sign out of your account"
       >
         <Text style={styles.logoutText}>Log Out</Text>
       </TouchableOpacity>

@@ -11,7 +11,12 @@ export function SyncIndicator(): React.ReactElement | null {
   }
 
   return (
-    <View style={styles.container} testID="sync-indicator">
+    <View
+      style={styles.container}
+      testID="sync-indicator"
+      accessibilityRole="text"
+      accessibilityLabel={`${count} ${count === 1 ? 'change' : 'changes'} pending sync`}
+    >
       <View style={styles.badge}>
         <Text style={styles.text}>{count} pending</Text>
       </View>

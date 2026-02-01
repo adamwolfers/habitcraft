@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
+import Toast from 'react-native-toast-message';
 import { habitsApi } from '@/lib/habits';
 import { mutationQueue, networkStatus } from '@/lib/offline';
 import { Habit, HabitFrequency, HabitWithStats } from '@/types';
@@ -89,11 +90,23 @@ export function useCreateHabit() {
         if (!old) return [newHabit as HabitWithStats];
         return [...old, newHabit as HabitWithStats];
       });
+      Toast.show({
+        type: 'success',
+        text1: 'Habit created',
+        text2: newHabit.name,
+        visibilityTime: 2000,
+      });
     },
     onError: (_err, _newHabit, context) => {
       if (context?.previousHabits) {
         queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
       }
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to create habit',
+        text2: 'Please try again',
+        visibilityTime: 3000,
+      });
     },
     onSettled: async () => {
       const isOnline = await networkStatus.isOnline();
@@ -141,11 +154,22 @@ export function useUpdateHabit() {
     },
     onSuccess: (updatedHabit) => {
       queryClient.setQueryData([...HABITS_QUERY_KEY, updatedHabit.id], updatedHabit);
+      Toast.show({
+        type: 'success',
+        text1: 'Habit updated',
+        visibilityTime: 2000,
+      });
     },
     onError: (_err, _variables, context) => {
       if (context?.previousHabits) {
         queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
       }
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to update habit',
+        text2: 'Please try again',
+        visibilityTime: 3000,
+      });
     },
     onSettled: async () => {
       const isOnline = await networkStatus.isOnline();
@@ -183,10 +207,23 @@ export function useDeleteHabit() {
 
       return { previousHabits };
     },
+    onSuccess: () => {
+      Toast.show({
+        type: 'success',
+        text1: 'Habit deleted',
+        visibilityTime: 2000,
+      });
+    },
     onError: (_err, _id, context) => {
       if (context?.previousHabits) {
         queryClient.setQueryData(HABITS_QUERY_KEY, context.previousHabits);
       }
+      Toast.show({
+        type: 'error',
+        text1: 'Failed to delete habit',
+        text2: 'Please try again',
+        visibilityTime: 3000,
+      });
     },
     onSettled: async () => {
       const isOnline = await networkStatus.isOnline();
