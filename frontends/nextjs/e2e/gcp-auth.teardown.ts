@@ -1,4 +1,4 @@
-import { test as teardown, expect, request } from '@playwright/test';
+import { test as teardown, request } from '@playwright/test';
 import path from 'path';
 import fs from 'fs';
 
