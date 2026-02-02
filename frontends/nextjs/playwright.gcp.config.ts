@@ -33,9 +33,6 @@ const USE_CLOUDRUN_URLS = process.env.USE_CLOUDRUN_URLS === '1';
 const GCP_FRONTEND_URL = USE_CLOUDRUN_URLS
   ? 'https://habitcraft-frontend-iz7ggma5ga-uc.a.run.app'
   : 'https://www.habitcraft.org';
-const GCP_BACKEND_URL = USE_CLOUDRUN_URLS
-  ? 'https://habitcraft-backend-iz7ggma5ga-uc.a.run.app'
-  : 'https://api.habitcraft.org';
 
 // Auth state file path (shared between setup, tests, and teardown)
 const AUTH_STATE_PATH = path.join(__dirname, 'e2e/.auth/gcp-user.json');
