@@ -14,6 +14,7 @@ import {
 import { habitsApi } from '@/lib/habits';
 import { mutationQueue, networkStatus } from '@/lib/offline';
 import { HabitWithStats } from '@/types';
+import { QueuedMutation } from '@/lib/offline/types';
 
 jest.mock('@/lib/habits');
 jest.mock('@/lib/offline/mutationQueue');
@@ -30,6 +31,14 @@ const mockMutationQueue = mutationQueue as jest.Mocked<typeof mutationQueue>;
 const mockNetworkStatus = networkStatus as jest.Mocked<typeof networkStatus>;
 const mockToast = Toast as jest.Mocked<typeof Toast>;
 
+const mockQueuedMutation: QueuedMutation = {
+  id: 'mutation-1',
+  type: 'createHabit',
+  payload: {},
+  timestamp: Date.now(),
+  retryCount: 0,
+};
+
 const mockHabit: HabitWithStats = {
   id: 'habit-1',
   user_id: 'user-1',
@@ -38,14 +47,12 @@ const mockHabit: HabitWithStats = {
   icon: '💪',
   color: '#10b981',
   frequency: 'daily',
-  target_days: null,
+  target_days: undefined,
   is_archived: false,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
   current_streak: 5,
-  longest_streak: 10,
-  total_completions: 50,
-  completion_rate: 0.85,
+  best_streak: 10,
   completions: [],
 };
 
@@ -57,14 +64,12 @@ const mockHabit2: HabitWithStats = {
   icon: '📚',
   color: '#6366f1',
   frequency: 'daily',
-  target_days: null,
+  target_days: undefined,
   is_archived: false,
   created_at: '2024-01-02T00:00:00Z',
   updated_at: '2024-01-02T00:00:00Z',
   current_streak: 3,
-  longest_streak: 7,
-  total_completions: 20,
-  completion_rate: 0.7,
+  best_streak: 7,
   completions: [],
 };
 
@@ -85,11 +90,7 @@ function createTestQueryClient() {
 function createWrapper() {
   const queryClient = createTestQueryClient();
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return React.createElement(
-      QueryClientProvider,
-      { client: queryClient },
-      children
-    );
+    return React.createElement(QueryClientProvider, { client: queryClient }, children);
   };
 }
 
@@ -191,7 +192,7 @@ describe('useHabits', () => {
 
     it('queues mutation when offline', async () => {
       mockNetworkStatus.isOnline.mockResolvedValue(false);
-      mockMutationQueue.add.mockResolvedValue(undefined);
+      mockMutationQueue.add.mockResolvedValue(mockQueuedMutation);
 
       const { result } = renderHook(() => useCreateHabit(), {
         wrapper: createWrapper(),
@@ -273,7 +274,7 @@ describe('useHabits', () => {
 
     it('queues mutation when offline with cached habit', async () => {
       mockNetworkStatus.isOnline.mockResolvedValue(false);
-      mockMutationQueue.add.mockResolvedValue(undefined);
+      mockMutationQueue.add.mockResolvedValue(mockQueuedMutation);
 
       // First, populate the cache
       const queryClient = createTestQueryClient();
@@ -358,7 +359,7 @@ describe('useHabits', () => {
 
     it('queues mutation when offline', async () => {
       mockNetworkStatus.isOnline.mockResolvedValue(false);
-      mockMutationQueue.add.mockResolvedValue(undefined);
+      mockMutationQueue.add.mockResolvedValue(mockQueuedMutation);
 
       const { result } = renderHook(() => useDeleteHabit(), {
         wrapper: createWrapper(),
@@ -427,15 +428,12 @@ describe('useHabits', () => {
         await result.current.mutateAsync(completeData);
       });
 
-      expect(mockHabitsApi.completeHabit).toHaveBeenCalledWith(
-        'habit-1',
-        completeData.data
-      );
+      expect(mockHabitsApi.completeHabit).toHaveBeenCalledWith('habit-1', completeData.data);
     });
 
     it('queues mutation when offline', async () => {
       mockNetworkStatus.isOnline.mockResolvedValue(false);
-      mockMutationQueue.add.mockResolvedValue(undefined);
+      mockMutationQueue.add.mockResolvedValue(mockQueuedMutation);
 
       const { result } = renderHook(() => useCompleteHabit(), {
         wrapper: createWrapper(),
@@ -446,10 +444,7 @@ describe('useHabits', () => {
         completion = await result.current.mutateAsync(completeData);
       });
 
-      expect(mockMutationQueue.add).toHaveBeenCalledWith(
-        'completeHabit',
-        completeData
-      );
+      expect(mockMutationQueue.add).toHaveBeenCalledWith('completeHabit', completeData);
       expect(mockHabitsApi.completeHabit).not.toHaveBeenCalled();
       expect(completion).toMatchObject({
         id: 'temp-completion-mock-uuid',
@@ -477,15 +472,12 @@ describe('useHabits', () => {
         await result.current.mutateAsync(uncompleteData);
       });
 
-      expect(mockHabitsApi.uncompleteHabit).toHaveBeenCalledWith(
-        'habit-1',
-        '2024-01-15'
-      );
+      expect(mockHabitsApi.uncompleteHabit).toHaveBeenCalledWith('habit-1', '2024-01-15');
     });
 
     it('queues mutation when offline', async () => {
       mockNetworkStatus.isOnline.mockResolvedValue(false);
-      mockMutationQueue.add.mockResolvedValue(undefined);
+      mockMutationQueue.add.mockResolvedValue(mockQueuedMutation);
 
       const { result } = renderHook(() => useUncompleteHabit(), {
         wrapper: createWrapper(),
@@ -495,10 +487,7 @@ describe('useHabits', () => {
         await result.current.mutateAsync(uncompleteData);
       });
 
-      expect(mockMutationQueue.add).toHaveBeenCalledWith(
-        'uncompleteHabit',
-        uncompleteData
-      );
+      expect(mockMutationQueue.add).toHaveBeenCalledWith('uncompleteHabit', uncompleteData);
       expect(mockHabitsApi.uncompleteHabit).not.toHaveBeenCalled();
     });
   });

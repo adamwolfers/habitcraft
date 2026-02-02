@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosHeaders } from 'axios';
+import { AxiosError, AxiosHeaders } from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { api, tokenManager, isNetworkError, isRetryableError } from './api';
 

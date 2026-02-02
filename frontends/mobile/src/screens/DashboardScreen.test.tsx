@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { DashboardScreen } from './DashboardScreen';
 import { useHabits, useCompleteHabit } from '@/hooks';
 import { HabitWithStats } from '@/types';
@@ -16,7 +16,15 @@ jest.mock('@react-navigation/native', () => ({
 }));
 
 jest.mock('@/components', () => ({
-  HabitCard: ({ habit, onPress, onComplete }: { habit: { id: string; name: string }; onPress: (h: { id: string }) => void; onComplete: (id: string) => void }) => {
+  HabitCard: ({
+    habit,
+    onPress,
+    onComplete,
+  }: {
+    habit: { id: string; name: string };
+    onPress: (h: { id: string }) => void;
+    onComplete: (id: string) => void;
+  }) => {
     const { TouchableOpacity, Text } = require('react-native');
     return (
       <TouchableOpacity testID={`habit-card-${habit.id}`} onPress={() => onPress(habit)}>
@@ -50,14 +58,12 @@ const mockHabit: HabitWithStats = {
   icon: '💪',
   color: '#10b981',
   frequency: 'daily',
-  target_days: null,
+  target_days: undefined,
   is_archived: false,
   created_at: '2024-01-01T00:00:00Z',
   updated_at: '2024-01-01T00:00:00Z',
   current_streak: 5,
-  longest_streak: 10,
-  total_completions: 50,
-  completion_rate: 0.85,
+  best_streak: 10,
   completions: [],
 };
 
@@ -157,7 +163,12 @@ describe('DashboardScreen', () => {
   });
 
   it('filters out archived habits', () => {
-    const archivedHabit = { ...mockHabit, id: 'habit-archived', name: 'Archived', is_archived: true };
+    const archivedHabit = {
+      ...mockHabit,
+      id: 'habit-archived',
+      name: 'Archived',
+      is_archived: true,
+    };
     mockUseHabits.mockReturnValue({
       data: [mockHabit, archivedHabit],
       isLoading: false,
