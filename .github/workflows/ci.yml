@@ -28,9 +28,57 @@ on:
       - '.gitignore'
 
 jobs:
+  # ===========================================
+  # Path Detection (runs first to determine which jobs to run)
+  # ===========================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+      mobile: ${{ steps.filter.outputs.mobile }}
+      db: ${{ steps.filter.outputs.db }}
+      shared: ${{ steps.filter.outputs.shared }}
+      e2e-infra: ${{ steps.filter.outputs.e2e-infra }}
+      workflow: ${{ steps.filter.outputs.workflow }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backends/node/**'
+            frontend:
+              - 'frontends/nextjs/**'
+            mobile:
+              - 'frontends/mobile/**'
+            db:
+              - 'db/**'
+            shared:
+              - 'shared/**'
+            e2e-infra:
+              - 'docker-compose*.yml'
+              - 'docker-bake*.hcl'
+              - '**/Dockerfile*'
+            workflow:
+              - '.github/workflows/ci.yml'
+
+  # ===========================================
+  # Unit Tests
+  # ===========================================
   backend-unit-tests:
     name: Backend Unit Tests
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.backend == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
         working-directory: backends/node
@@ -63,7 +111,19 @@ jobs:
   backend-integration-tests:
     name: Backend Integration Tests
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, frontend-unit-tests]
+    needs: [detect-changes, backend-unit-tests, frontend-unit-tests]
+    # Use always() to run even when upstream jobs are skipped (due to path filtering)
+    if: |
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (
+        needs.detect-changes.outputs.backend == 'true' ||
+        needs.detect-changes.outputs.frontend == 'true' ||
+        needs.detect-changes.outputs.db == 'true' ||
+        needs.detect-changes.outputs.shared == 'true' ||
+        needs.detect-changes.outputs.workflow == 'true'
+      )
     defaults:
       run:
         working-directory: backends/node
@@ -155,6 +215,11 @@ jobs:
   frontend-unit-tests:
     name: Frontend Unit Tests
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.frontend == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
         working-directory: frontends/nextjs
@@ -190,6 +255,11 @@ jobs:
   mobile-unit-tests:
     name: Mobile Unit Tests
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.mobile == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
         working-directory: frontends/mobile
@@ -228,7 +298,19 @@ jobs:
   e2e-tests:
     name: E2E Tests (Shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    needs: [backend-integration-tests]
+    needs: [detect-changes, backend-integration-tests]
+    if: |
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (
+        needs.detect-changes.outputs.backend == 'true' ||
+        needs.detect-changes.outputs.frontend == 'true' ||
+        needs.detect-changes.outputs.db == 'true' ||
+        needs.detect-changes.outputs.shared == 'true' ||
+        needs.detect-changes.outputs.e2e-infra == 'true' ||
+        needs.detect-changes.outputs.workflow == 'true'
+      )
     strategy:
       fail-fast: false
       matrix:
@@ -327,7 +409,8 @@ jobs:
     name: Merge E2E Reports
     runs-on: ubuntu-latest
     needs: [e2e-tests]
-    if: always()
+    # Only run if e2e-tests actually ran (not skipped)
+    if: always() && needs.e2e-tests.result != 'skipped'
     steps:
       - uses: actions/checkout@v4
 
@@ -365,8 +448,15 @@ jobs:
   run-migrations-gcp:
     name: Run Database Migrations
     runs-on: ubuntu-latest
-    needs: [backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [detect-changes, backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
+    # Only run migrations when db/ changed
+    if: |
+      github.ref == 'refs/heads/master' &&
+      github.event_name == 'push' &&
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      needs.detect-changes.outputs.db == 'true'
 
     permissions:
       contents: read
@@ -431,8 +521,19 @@ jobs:
   deploy-backend-gcp:
     name: Deploy Backend to GCP
     runs-on: ubuntu-latest
-    needs: [run-migrations-gcp]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [detect-changes, run-migrations-gcp]
+    # Deploy when backend, db, or shared changed (migrations may be skipped if no db changes)
+    if: |
+      github.ref == 'refs/heads/master' &&
+      github.event_name == 'push' &&
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (
+        needs.detect-changes.outputs.backend == 'true' ||
+        needs.detect-changes.outputs.db == 'true' ||
+        needs.detect-changes.outputs.shared == 'true'
+      )
 
     permissions:
       contents: read
@@ -485,8 +586,18 @@ jobs:
   deploy-frontend-gcp:
     name: Deploy Frontend to GCP
     runs-on: ubuntu-latest
-    needs: [run-migrations-gcp]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [detect-changes, run-migrations-gcp]
+    # Deploy when frontend or shared changed (migrations may be skipped if no db changes)
+    if: |
+      github.ref == 'refs/heads/master' &&
+      github.event_name == 'push' &&
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (
+        needs.detect-changes.outputs.frontend == 'true' ||
+        needs.detect-changes.outputs.shared == 'true'
+      )
 
     permissions:
       contents: read
