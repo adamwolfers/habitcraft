@@ -1,3 +1,6 @@
+/**
+ * Animation utilities for React Native Reanimated
+ */
 import {
   withSpring,
   withTiming,
