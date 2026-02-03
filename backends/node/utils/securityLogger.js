@@ -1,3 +1,6 @@
+/**
+ * Security event logging utility for authentication and authorization events
+ */
 const SECURITY_EVENTS = {
   LOGIN_SUCCESS: 'LOGIN_SUCCESS',
   LOGIN_FAILURE: 'LOGIN_FAILURE',
