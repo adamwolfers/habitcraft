@@ -247,6 +247,54 @@ describe('Registration Page - Form Validation', () => {
     });
   });
 
+  describe('Email Length Validation', () => {
+    it('should show error when email exceeds 255 characters', async () => {
+      const user = userEvent.setup();
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      const longEmail = 'a'.repeat(244) + '@example.com';
+      await user.type(nameInput, 'Test User');
+      await user.type(emailInput, longEmail);
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText(/email must be 255 characters or less/i)).toBeInTheDocument();
+      expect(mockRegister).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Name Length Validation', () => {
+    it('should show error when name exceeds 100 characters', async () => {
+      const user = userEvent.setup();
+      render(<RegisterPage />);
+
+      const nameInput = screen.getByLabelText(/name/i);
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/^password$/i);
+      const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+
+      const longName = 'a'.repeat(101);
+      await user.type(nameInput, longName);
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.type(confirmPasswordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /sign up/i });
+      await user.click(submitButton);
+
+      expect(await screen.findByText(/name must be 100 characters or less/i)).toBeInTheDocument();
+      expect(mockRegister).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Minimum Password Length Validation', () => {
     it('should show error when password is less than 8 characters', async () => {
       const user = userEvent.setup();

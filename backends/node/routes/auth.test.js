@@ -135,6 +135,33 @@ describe('Auth API', () => {
       expect(response.body.errors[0].msg).toContain('72');
     });
 
+    it('should return 400 if email exceeds 255 characters', async () => {
+      const longEmail = 'a'.repeat(64) + '@' + 'b'.repeat(186) + '.com'; // 256 chars
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: longEmail, password: 'SecurePass123!', name: 'Test' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      // May fail on isEmail or isLength, either is acceptable
+      const errorMsgs = response.body.errors.map(e => e.msg);
+      const hasLengthOrFormatError = errorMsgs.some(
+        msg => msg.includes('255') || msg.includes('email')
+      );
+      expect(hasLengthOrFormatError).toBe(true);
+    });
+
+    it('should return 400 if name exceeds 100 characters', async () => {
+      const longName = 'a'.repeat(101);
+      const response = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: 'test@example.com', password: 'SecurePass123!', name: longName });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      expect(response.body.errors[0].msg).toContain('100');
+    });
+
     it('should return 400 if name is missing', async () => {
       const response = await request(app)
         .post('/api/v1/auth/register')

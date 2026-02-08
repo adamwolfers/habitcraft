@@ -63,7 +63,70 @@ describe("validateRegistrationForm", () => {
     });
   });
 
+  describe("email length validation", () => {
+    it("returns error when email exceeds 255 characters", () => {
+      const longEmail = "a".repeat(244) + "@example.com";
+      const result = validateRegistrationForm({
+        email: longEmail,
+        password: "validpass123",
+        confirmPassword: "validpass123",
+      });
+      expect(result).toBe("Email must be 255 characters or less");
+    });
+
+    it("accepts email with exactly 255 characters", () => {
+      const email = "a".repeat(243) + "@example.com"; // 255 chars
+      const result = validateRegistrationForm({
+        email,
+        password: "validpass123",
+        confirmPassword: "validpass123",
+      });
+      expect(result).toBeNull();
+    });
+  });
+
+  describe("name length validation", () => {
+    it("returns error when name exceeds 100 characters", () => {
+      const longName = "a".repeat(101);
+      const result = validateRegistrationForm({
+        name: longName,
+        password: "validpass123",
+        confirmPassword: "validpass123",
+      });
+      expect(result).toBe("Name must be 100 characters or less");
+    });
+
+    it("accepts name with exactly 100 characters", () => {
+      const name = "a".repeat(100);
+      const result = validateRegistrationForm({
+        name,
+        password: "validpass123",
+        confirmPassword: "validpass123",
+      });
+      expect(result).toBeNull();
+    });
+  });
+
   describe("validation order", () => {
+    it("checks email length before name length", () => {
+      const result = validateRegistrationForm({
+        email: "a".repeat(256) + "@test.com",
+        name: "a".repeat(101),
+        password: "validpass123",
+        confirmPassword: "validpass123",
+      });
+      expect(result).toBe("Email must be 255 characters or less");
+    });
+
+    it("checks name length before password length", () => {
+      const result = validateRegistrationForm({
+        name: "a".repeat(101),
+        password: "short",
+        confirmPassword: "short",
+      });
+      expect(result).toBe("Name must be 100 characters or less");
+    });
+
     it("checks password length before password match", () => {
       // Both validations fail, but length should be checked first
       const result = validateRegistrationForm({

@@ -16,9 +16,11 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
   const [description, setDescription] = useState(defaults.description);
   const [color, setColor] = useState(defaults.color);
   const [icon, setIcon] = useState(defaults.icon);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     if (name.trim()) {
       try {
         await onAdd({
@@ -35,8 +37,11 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
         setColor(resetValues.color);
         setIcon(resetValues.icon);
         setIsOpen(false);
-      } catch (error) {
-        console.error('Error adding habit:', error);
+      } catch (err) {
+        console.error('Error adding habit:', err);
+        if (err instanceof Error && err.message) {
+          setError(err.message);
+        }
         // Form stays open so user can retry
       }
     }
@@ -55,6 +60,11 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-gray-800 rounded-lg p-6 space-y-4">
+      {error && (
+        <div className="bg-red-500/10 border border-red-500 text-red-500 px-4 py-3 rounded">
+          {error}
+        </div>
+      )}
       <div>
         <label htmlFor="name" className="block text-sm font-medium mb-2">
           Habit Name *
@@ -63,7 +73,7 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           type="text"
           id="name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); setError(''); }}
           placeholder="e.g., Morning Exercise"
           className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required

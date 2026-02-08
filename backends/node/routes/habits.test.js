@@ -40,7 +40,9 @@ describe('POST /api/v1/habits', () => {
       updatedAt: new Date().toISOString()
     };
 
-    query.mockResolvedValue({ rows: [mockHabit] });
+    // Mock COUNT query (habit limit check) then INSERT
+    query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    query.mockResolvedValueOnce({ rows: [mockHabit] });
 
     const habitData = {
       name: 'Morning Exercise',
@@ -64,8 +66,12 @@ describe('POST /api/v1/habits', () => {
     expect(response.body).toHaveProperty('createdAt');
     expect(response.body).toHaveProperty('updatedAt');
 
-    // Verify the database query was called correctly
-    expect(query).toHaveBeenCalledTimes(1);
+    // Verify the database queries were called correctly (COUNT + INSERT)
+    expect(query).toHaveBeenCalledTimes(2);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('SELECT COUNT'),
+      [TEST_USER_ID]
+    );
     expect(query).toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO habits'),
       [TEST_USER_ID, 'Morning Exercise', null, 'daily', [], '#3B82F6', '⭐']
@@ -87,7 +93,8 @@ describe('POST /api/v1/habits', () => {
       updatedAt: new Date().toISOString()
     };
 
-    query.mockResolvedValue({ rows: [mockHabit] });
+    query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    query.mockResolvedValueOnce({ rows: [mockHabit] });
 
     const habitData = {
       name: 'Read Books',
@@ -224,7 +231,8 @@ describe('POST /api/v1/habits', () => {
       updatedAt: new Date().toISOString()
     };
 
-    query.mockResolvedValue({ rows: [mockHabit] });
+    query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+    query.mockResolvedValueOnce({ rows: [mockHabit] });
 
     const habitData = {
       name: 'Simple Habit',
@@ -240,6 +248,65 @@ describe('POST /api/v1/habits', () => {
     expect(response.body.color).toBe('#3B82F6');
     expect(response.body.icon).toBe('⭐');
     expect(response.body.targetDays).toEqual([]);
+  });
+});
+
+describe('POST /api/v1/habits - Habit Limit', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    await closePool();
+  });
+
+  it('should return 403 when user has reached the maximum habit limit', async () => {
+    // Mock COUNT query returning 50 (at limit)
+    query.mockResolvedValueOnce({ rows: [{ count: '50' }] });
+
+    const response = await request(app)
+      .post('/api/v1/habits')
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
+      .send({ name: 'One Too Many', frequency: 'daily' })
+      .expect(403);
+
+    expect(response.body.error).toBe('Habit limit reached');
+    expect(response.body.message).toContain('50');
+    // Should NOT have called INSERT
+    expect(query).toHaveBeenCalledTimes(1);
+    expect(query).toHaveBeenCalledWith(
+      expect.stringContaining('SELECT COUNT'),
+      [TEST_USER_ID]
+    );
+  });
+
+  it('should allow creating habit when under the limit', async () => {
+    const mockHabit = {
+      id: 'habit-new',
+      userId: TEST_USER_ID,
+      name: 'Under Limit',
+      description: null,
+      frequency: 'daily',
+      targetDays: [],
+      color: '#3B82F6',
+      icon: '⭐',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // Mock COUNT query returning 49 (under limit)
+    query.mockResolvedValueOnce({ rows: [{ count: '49' }] });
+    query.mockResolvedValueOnce({ rows: [mockHabit] });
+
+    const response = await request(app)
+      .post('/api/v1/habits')
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
+      .send({ name: 'Under Limit', frequency: 'daily' })
+      .expect(201);
+
+    expect(response.body.name).toBe('Under Limit');
+    expect(query).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -839,7 +906,8 @@ describe('Input sanitization', () => {
         updatedAt: new Date().toISOString()
       };
 
-      query.mockResolvedValue({ rows: [mockHabit] });
+      query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      query.mockResolvedValueOnce({ rows: [mockHabit] });
 
       await request(app)
         .post('/api/v1/habits')
@@ -849,8 +917,8 @@ describe('Input sanitization', () => {
           frequency: 'daily'
         });
 
-      // Check that the INSERT query was called with sanitized name
-      const insertCall = query.mock.calls[0];
+      // Check that the INSERT query was called with sanitized name (index 1, after COUNT)
+      const insertCall = query.mock.calls[1];
       const insertedName = insertCall[1][1]; // second param is name (userId, name, description, ...)
       expect(insertedName).toBe('Exercise');
       expect(insertedName).not.toContain('<script>');
@@ -871,7 +939,8 @@ describe('Input sanitization', () => {
         updatedAt: new Date().toISOString()
       };
 
-      query.mockResolvedValue({ rows: [mockHabit] });
+      query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      query.mockResolvedValueOnce({ rows: [mockHabit] });
 
       await request(app)
         .post('/api/v1/habits')
@@ -882,7 +951,7 @@ describe('Input sanitization', () => {
           frequency: 'daily'
         });
 
-      const insertCall = query.mock.calls[0];
+      const insertCall = query.mock.calls[1]; // index 1, after COUNT
       const insertedDescription = insertCall[1][2]; // third param is description
       expect(insertedDescription).not.toContain('onerror');
       expect(insertedDescription).toContain('My workout routine');
@@ -903,7 +972,8 @@ describe('Input sanitization', () => {
         updatedAt: new Date().toISOString()
       };
 
-      query.mockResolvedValue({ rows: [mockHabit] });
+      query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      query.mockResolvedValueOnce({ rows: [mockHabit] });
 
       await request(app)
         .post('/api/v1/habits')
@@ -913,7 +983,7 @@ describe('Input sanitization', () => {
           frequency: 'daily'
         });
 
-      const insertCall = query.mock.calls[0];
+      const insertCall = query.mock.calls[1]; // index 1, after COUNT
       const insertedName = insertCall[1][1];
       expect(insertedName).toBe('Exercise');
     });

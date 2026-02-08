@@ -231,6 +231,25 @@ describe('Users API', () => {
       expect(response.body.email).toBe('newemail@example.com');
     });
 
+    it('should return 400 for email exceeding 255 characters', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const longEmail = 'a'.repeat(64) + '@' + 'b'.repeat(186) + '.com'; // 256 chars
+
+      const response = await request(app)
+        .put('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ email: longEmail });
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+      // May fail on isEmail or isLength, either is acceptable
+      const errorMsgs = response.body.errors.map(e => e.msg);
+      const hasLengthOrFormatError = errorMsgs.some(
+        msg => msg.includes('255') || msg.includes('email') || msg.includes('Email')
+      );
+      expect(hasLengthOrFormatError).toBe(true);
+    });
+
     it('should return 400 for invalid email format', async () => {
       const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
 

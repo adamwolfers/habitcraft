@@ -153,6 +153,10 @@ export async function createHabit(
   });
 
   if (!response.ok) {
+    if (response.status === 403) {
+      const data = await response.json();
+      throw new Error(data.message || 'Habit limit reached');
+    }
     throw new Error(`Failed to create habit: ${response.status}`);
   }
 
