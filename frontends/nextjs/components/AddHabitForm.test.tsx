@@ -349,4 +349,57 @@ describe('AddHabitForm', () => {
 
     consoleErrorSpy.mockRestore();
   });
+
+  it('should display error message when onAdd fails with habit limit error', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const user = userEvent.setup();
+
+    const mockOnAddWithError = jest.fn().mockRejectedValue(
+      new Error('You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.')
+    );
+    render(<AddHabitForm onAdd={mockOnAddWithError} />);
+
+    // Open form
+    await user.click(screen.getByText('+ Add New Habit'));
+
+    // Fill in form
+    const nameInput = screen.getByLabelText(/habit name/i);
+    await user.type(nameInput, 'One Too Many');
+
+    // Submit form
+    await user.click(screen.getByText('Add Habit'));
+
+    // Error should be displayed in the form
+    expect(await screen.findByText(/maximum of 50 habits/i)).toBeInTheDocument();
+
+    // Form should stay open
+    expect(screen.getByLabelText(/habit name/i)).toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('should clear error message when user types in name field', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+    const user = userEvent.setup();
+
+    const mockOnAddWithError = jest.fn().mockRejectedValue(new Error('Habit limit reached'));
+    render(<AddHabitForm onAdd={mockOnAddWithError} />);
+
+    // Open form
+    await user.click(screen.getByText('+ Add New Habit'));
+
+    // Fill and submit
+    const nameInput = screen.getByLabelText(/habit name/i);
+    await user.type(nameInput, 'Test');
+    await user.click(screen.getByText('Add Habit'));
+
+    // Wait for error
+    expect(await screen.findByText('Habit limit reached')).toBeInTheDocument();
+
+    // Type in name field should clear error
+    await user.type(nameInput, ' 2');
+    expect(screen.queryByText('Habit limit reached')).not.toBeInTheDocument();
+
+    consoleErrorSpy.mockRestore();
+  });
 });

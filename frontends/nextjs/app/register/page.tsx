@@ -30,7 +30,7 @@ export default function RegisterPage() {
     setValidationError('');
     setApiError('');
 
-    const validationError = validateRegistrationForm({ password, confirmPassword });
+    const validationError = validateRegistrationForm({ email, name, password, confirmPassword });
     if (validationError) {
       setValidationError(validationError);
       return;

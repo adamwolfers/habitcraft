@@ -153,6 +153,50 @@ describe('fetchHabits', () => {
   });
 });
 
+describe('createHabit - Habit Limit', () => {
+  const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should throw error with server message when habit limit is reached (403)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 403,
+      json: async () => ({
+        error: 'Habit limit reached',
+        message: 'You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.'
+      })
+    });
+
+    await expect(
+      createHabit(mockUserId, { name: 'Test', frequency: 'daily' })
+    ).rejects.toThrow('You have reached the maximum of 50 habits');
+  });
+
+  it('should throw generic error for non-403 failures', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'Internal server error' })
+    });
+
+    await expect(
+      createHabit(mockUserId, { name: 'Test', frequency: 'daily' })
+    ).rejects.toThrow('Failed to create habit: 500');
+  });
+});
+
 describe('fetchCompletions', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
   const mockHabitId = 'habit-123';

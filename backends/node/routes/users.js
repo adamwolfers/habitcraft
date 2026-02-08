@@ -24,6 +24,7 @@ const updateProfileValidation = [
     .toLowerCase()
     .notEmpty().withMessage('Email is required')
     .isEmail().withMessage('Invalid email format')
+    .isLength({ max: 255 }).withMessage('Email must be 255 characters or less')
 ];
 
 const changePasswordValidation = [

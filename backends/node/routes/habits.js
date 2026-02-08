@@ -7,6 +7,8 @@ const completionsRouter = require('./completions');
 
 const router = express.Router();
 
+const MAX_HABITS_PER_USER = 50;
+
 /**
  * GET /api/v1/habits
  * Get all habits for the authenticated user
@@ -63,6 +65,15 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req
   try {
     const { name, description, frequency, targetDays, color, icon } = req.body;
     const userId = req.userId; // Set by jwtAuthMiddleware
+
+    // Check habit count limit
+    const countResult = await query('SELECT COUNT(*) FROM habits WHERE user_id = $1', [userId]);
+    if (parseInt(countResult.rows[0].count, 10) >= MAX_HABITS_PER_USER) {
+      return res.status(403).json({
+        error: 'Habit limit reached',
+        message: `You have reached the maximum of ${MAX_HABITS_PER_USER} habits. Please delete or archive existing habits before creating new ones.`
+      });
+    }
 
     // Insert habit into database
     const result = await query(
