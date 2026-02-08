@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "HabitCraft",
+    "slug": "habitcraft",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -28,13 +28,14 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "extra": {
-      "eas": {
-        "projectId": "<EAS_PROJECT_ID>"
-      }
-    },
     "plugins": [
       "expo-secure-store"
-    ]
+    ],
+    "owner": "adamwolfers",
+    "extra": {
+      "eas": {
+        "projectId": "121aeb8d-2ec6-4a18-90fb-cda4363d3793"
+      }
+    }
   }
 }
