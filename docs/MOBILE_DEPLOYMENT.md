@@ -23,7 +23,7 @@ Triggers on push to `master` when `frontends/mobile/` or `shared/` changes. Requ
 ### Production Builds (Manual)
 
 Triggered via:
-- **Manual dispatch**: Use GitHub Actions "Run workflow" button
+- **Manual dispatch**: Use GitHub Actions "Run workflow" button and check the `build_mobile_production` option
 - **Tag push**: Push a tag matching `mobile-v*` (e.g., `git tag mobile-v1.0.0 && git push --tags`)
 
 This job:

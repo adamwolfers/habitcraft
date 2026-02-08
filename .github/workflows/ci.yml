@@ -8,6 +8,10 @@ on:
         description: 'Force rebuild E2E test containers (bypass BuildKit cache)'
         type: boolean
         default: false
+      build_mobile_production:
+        description: 'Build and submit mobile app to app stores'
+        type: boolean
+        default: false
   push:
     branches: ['**']
     tags:
@@ -697,7 +701,7 @@ jobs:
     name: Build & Submit Mobile Production
     runs-on: ubuntu-latest
     if: |
-      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'workflow_dispatch' && inputs.build_mobile_production) ||
       (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/mobile-v'))
     defaults:
       run:
