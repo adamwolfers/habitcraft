@@ -692,8 +692,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build preview (iOS + Android)
-        run: npx eas-cli build --profile preview --platform all --non-interactive --no-wait
+      - name: Build preview (Android only until iOS credentials configured)
+        run: npx eas-cli build --profile preview --platform android --non-interactive --no-wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
