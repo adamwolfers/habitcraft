@@ -16,7 +16,7 @@ The HabitCraft mobile app uses [EAS Build](https://docs.expo.dev/build/introduct
 
 Triggers on push to `master` when `frontends/mobile/` or `shared/` changes. Requires `mobile-unit-tests` to pass first.
 
-- Runs `eas build --profile preview --platform all --non-interactive --no-wait`
+- Runs `eas build --profile preview --platform android --non-interactive --no-wait` (Android-only until iOS credentials are configured)
 - Uses `--no-wait` so CI doesn't block on EAS cloud build completion
 - Builds are available in the Expo dashboard for internal testing
 
