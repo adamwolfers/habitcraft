@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { storage } from './storage';
-import { Habit, HabitCompletion, HabitFrequency } from '@/types';
+import { Habit, HabitCompletion, HabitFrequency, HabitWithStats } from '@/types';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
@@ -37,13 +37,13 @@ async function getAuthHeaders(): Promise<{ Authorization: string }> {
 }
 
 export const habitsApi = {
-  async getHabits(): Promise<Habit[]> {
+  async getHabits(): Promise<HabitWithStats[]> {
     const headers = await getAuthHeaders();
     const response = await axios.get(`${API_BASE_URL}/habits`, { headers });
     return response.data;
   },
 
-  async getHabit(id: string): Promise<Habit> {
+  async getHabit(id: string): Promise<HabitWithStats> {
     const headers = await getAuthHeaders();
     const response = await axios.get(`${API_BASE_URL}/habits/${id}`, { headers });
     return response.data;
