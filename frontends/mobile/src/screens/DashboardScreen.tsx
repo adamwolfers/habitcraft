@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { format } from 'date-fns';
 import { colors, spacing, typography } from '@/theme';
-import { useHabits, useCompleteHabit } from '@/hooks';
+import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
 import { HabitCard, OfflineBanner, SyncIndicator } from '@/components';
 import { DashboardSkeleton } from '@/components/SkeletonLoader';
 import { Habit, MainStackParamList } from '@/types';
@@ -19,6 +19,7 @@ export function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
   const { data: habits, isLoading, error, refetch, isRefetching } = useHabits();
   const completeHabit = useCompleteHabit();
+  const uncompleteHabit = useUncompleteHabit();
 
   const today = getTodayDateString();
 
@@ -27,11 +28,13 @@ export function DashboardScreen() {
   };
 
   const handleComplete = (habitId: string) => {
-    // For now, just toggle - in a real app we'd check current completion state
-    completeHabit.mutate({
-      id: habitId,
-      data: { completed_date: today },
-    });
+    const habit = habits?.find((h) => h.id === habitId);
+    const isCompleted = habit?.completions.some((c) => c.completed_date === today);
+    if (isCompleted) {
+      uncompleteHabit.mutate({ id: habitId, completedDate: today });
+    } else {
+      completeHabit.mutate({ id: habitId, data: { completed_date: today } });
+    }
   };
 
   const handleCreateHabit = () => {
@@ -87,7 +90,9 @@ export function DashboardScreen() {
             habit={item}
             onPress={handleHabitPress}
             onComplete={handleComplete}
-            isCompletedToday={false} // TODO: Check actual completion status
+            isCompletedToday={item.completions.some(
+              (c) => c.completed_date === today
+            )}
           />
         )}
         contentContainerStyle={styles.list}
