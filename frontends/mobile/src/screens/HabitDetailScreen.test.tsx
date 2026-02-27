@@ -148,9 +148,7 @@ describe('HabitDetailScreen', () => {
 
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];
     const buttons = alertCall[2];
-    const deleteButton = buttons.find(
-      (btn: { style: string }) => btn.style === 'destructive'
-    );
+    const deleteButton = buttons.find((btn: { style: string }) => btn.style === 'destructive');
 
     await deleteButton.onPress();
 

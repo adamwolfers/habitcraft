@@ -90,9 +90,7 @@ export function DashboardScreen() {
             habit={item}
             onPress={handleHabitPress}
             onComplete={handleComplete}
-            isCompletedToday={item.completions.some(
-              (c) => c.completed_date === today
-            )}
+            isCompletedToday={item.completions.some((c) => c.completed_date === today)}
           />
         )}
         contentContainerStyle={styles.list}
