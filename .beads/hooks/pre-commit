@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Run lint-staged for mobile app formatting
+# This script is invoked by bd hook chaining (chain_strategy: after)
+
+# Only run if lint-staged is available in the mobile project
+MOBILE_DIR="$(git rev-parse --show-toplevel)/frontends/mobile"
+if [ -f "$MOBILE_DIR/node_modules/.bin/lint-staged" ]; then
+  cd "$MOBILE_DIR" && npx lint-staged
+fi

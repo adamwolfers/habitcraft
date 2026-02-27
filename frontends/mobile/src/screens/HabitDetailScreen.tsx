@@ -69,7 +69,11 @@ export function HabitDetailScreen() {
     return (
       <View testID="error-state" style={styles.centered}>
         <Text style={styles.errorText}>Failed to load habit</Text>
-        <TouchableOpacity testID="retry-button" style={styles.retryButton} onPress={() => refetch()}>
+        <TouchableOpacity
+          testID="retry-button"
+          style={styles.retryButton}
+          onPress={() => refetch()}
+        >
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
