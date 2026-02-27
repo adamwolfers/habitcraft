@@ -247,7 +247,14 @@ describe('DashboardScreen', () => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const completedHabit: HabitWithStats = {
       ...mockHabit,
-      completions: [{ id: 'comp-1', habit_id: 'habit-1', completed_date: today, created_at: '2024-01-01T00:00:00Z' }],
+      completions: [
+        {
+          id: 'comp-1',
+          habit_id: 'habit-1',
+          completed_date: today,
+          created_at: '2024-01-01T00:00:00Z',
+        },
+      ],
     };
     mockUseHabits.mockReturnValue({
       data: [completedHabit],
@@ -266,7 +273,14 @@ describe('DashboardScreen', () => {
     const today = format(new Date(), 'yyyy-MM-dd');
     const completedHabit: HabitWithStats = {
       ...mockHabit,
-      completions: [{ id: 'comp-1', habit_id: 'habit-1', completed_date: today, created_at: '2024-01-01T00:00:00Z' }],
+      completions: [
+        {
+          id: 'comp-1',
+          habit_id: 'habit-1',
+          completed_date: today,
+          created_at: '2024-01-01T00:00:00Z',
+        },
+      ],
     };
     mockUseHabits.mockReturnValue({
       data: [completedHabit],
