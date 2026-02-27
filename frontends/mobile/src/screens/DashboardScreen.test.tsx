@@ -1,12 +1,14 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { DashboardScreen } from './DashboardScreen';
-import { useHabits, useCompleteHabit } from '@/hooks';
+import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
 import { HabitWithStats } from '@/types';
+import { format } from 'date-fns';
 
 jest.mock('@/hooks', () => ({
   useHabits: jest.fn(),
   useCompleteHabit: jest.fn(),
+  useUncompleteHabit: jest.fn(),
 }));
 
 jest.mock('@react-navigation/native', () => ({
@@ -20,15 +22,18 @@ jest.mock('@/components', () => ({
     habit,
     onPress,
     onComplete,
+    isCompletedToday,
   }: {
     habit: { id: string; name: string };
     onPress: (h: { id: string }) => void;
     onComplete: (id: string) => void;
+    isCompletedToday: boolean;
   }) => {
     const { TouchableOpacity, Text } = require('react-native');
     return (
       <TouchableOpacity testID={`habit-card-${habit.id}`} onPress={() => onPress(habit)}>
         <Text>{habit.name}</Text>
+        {isCompletedToday && <Text testID={`completed-${habit.id}`}>Completed</Text>}
         <TouchableOpacity testID={`complete-${habit.id}`} onPress={() => onComplete(habit.id)}>
           <Text>Complete</Text>
         </TouchableOpacity>
@@ -49,6 +54,7 @@ jest.mock('@/components/SkeletonLoader', () => ({
 const mockNavigate = jest.fn();
 const mockUseHabits = useHabits as jest.Mock;
 const mockUseCompleteHabit = useCompleteHabit as jest.Mock;
+const mockUseUncompleteHabit = useUncompleteHabit as jest.Mock;
 
 const mockHabit: HabitWithStats = {
   id: 'habit-1',
@@ -78,9 +84,12 @@ describe('DashboardScreen', () => {
   const mockMutate = jest.fn();
   const mockRefetch = jest.fn();
 
+  const mockUncompleteMutate = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockUseCompleteHabit.mockReturnValue({ mutate: mockMutate });
+    mockUseUncompleteHabit.mockReturnValue({ mutate: mockUncompleteMutate });
   });
 
   it('renders loading state with skeleton', () => {
@@ -215,7 +224,7 @@ describe('DashboardScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('CreateHabit');
   });
 
-  it('calls completeHabit mutation when complete is pressed', () => {
+  it('calls completeHabit mutation when complete is pressed on non-completed habit', () => {
     mockUseHabits.mockReturnValue({
       data: [mockHabit],
       isLoading: false,
@@ -232,5 +241,49 @@ describe('DashboardScreen', () => {
       id: 'habit-1',
       data: expect.objectContaining({ completed_date: expect.any(String) }),
     });
+  });
+
+  it('passes isCompletedToday=true when habit has completion for today', () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const completedHabit: HabitWithStats = {
+      ...mockHabit,
+      completions: [{ completed_date: today }],
+    };
+    mockUseHabits.mockReturnValue({
+      data: [completedHabit],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: false,
+    });
+
+    const { getByTestId } = render(<DashboardScreen />);
+
+    expect(getByTestId('completed-habit-1')).toBeTruthy();
+  });
+
+  it('calls uncompleteHabit mutation when complete is pressed on completed habit', () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const completedHabit: HabitWithStats = {
+      ...mockHabit,
+      completions: [{ completed_date: today }],
+    };
+    mockUseHabits.mockReturnValue({
+      data: [completedHabit],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: false,
+    });
+
+    const { getByTestId } = render(<DashboardScreen />);
+
+    fireEvent.press(getByTestId('complete-habit-1'));
+
+    expect(mockUncompleteMutate).toHaveBeenCalledWith({
+      id: 'habit-1',
+      completedDate: today,
+    });
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 });
