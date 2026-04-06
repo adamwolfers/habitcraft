@@ -1,4 +1,7 @@
 {
-  "database": "beads.db",
-  "jsonl_export": "issues.jsonl"
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "habitcraft",
+  "project_id": "931952f4-04fe-4de8-9d54-e26eb0bf91b7"
 }
