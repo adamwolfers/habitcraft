@@ -32,10 +32,6 @@ export const colors = {
   info: '#3b82f6',
   infoLight: '#dbeafe',
 
-  // Streak colors
-  streak: '#f59e0b',
-  streakFire: '#ef4444',
-
   // Habit completion
   completed: '#10b981',
   incomplete: '#e5e7eb',
