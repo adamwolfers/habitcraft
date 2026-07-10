@@ -21,29 +21,44 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
     // Build query based on filter
     let queryText = `
       SELECT
-        id,
-        user_id as "userId",
-        name,
-        description,
-        frequency,
-        target_days as "targetDays",
-        color,
-        icon,
-        status,
-        created_at as "createdAt",
-        updated_at as "updatedAt"
-      FROM habits
-      WHERE user_id = $1
+        h.id,
+        h.user_id as "userId",
+        h.name,
+        h.description,
+        h.frequency,
+        h.target_days as "targetDays",
+        h.color,
+        h.icon,
+        h.status,
+        h.created_at as "createdAt",
+        h.updated_at as "updatedAt",
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'id', c.id,
+              'habit_id', c.habit_id,
+              'completed_date', TO_CHAR(c.date, 'YYYY-MM-DD'),
+              'note', c.notes,
+              'created_at', c.created_at
+            )
+          ) FILTER (WHERE c.id IS NOT NULL),
+          '[]'
+        ) as completions
+      FROM habits h
+      LEFT JOIN completions c ON h.id = c.habit_id
+      WHERE h.user_id = $1
     `;
     const queryParams = [userId];
 
     // Add status filter if provided
     if (status) {
-      queryText += ' AND status = $2';
+      queryText += ' AND h.status = $2';
       queryParams.push(status);
     }
 
-    queryText += ' ORDER BY created_at ASC';
+    queryText += ` GROUP BY h.id, h.user_id, h.name, h.description, h.frequency,
+      h.target_days, h.color, h.icon, h.status, h.created_at, h.updated_at
+      ORDER BY h.created_at ASC`;
 
     const result = await query(queryText, queryParams);
     res.status(200).json(result.rows);
