@@ -351,7 +351,8 @@ describe('GET /api/v1/habits', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        completions: []
       },
       {
         id: 'habit-2',
@@ -364,7 +365,8 @@ describe('GET /api/v1/habits', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        completions: []
       }
     ];
 
@@ -388,6 +390,55 @@ describe('GET /api/v1/habits', () => {
       userId: TEST_USER_ID,
       status: 'active'
     });
+  });
+
+  it('should include completions array on each habit', async () => {
+    const mockHabits = [
+      {
+        id: 'habit-1',
+        userId: TEST_USER_ID,
+        name: 'Morning Exercise',
+        description: null,
+        frequency: 'daily',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completions: [
+          { id: 'c-1', habit_id: 'habit-1', completed_date: '2026-07-10', note: null, created_at: new Date().toISOString() }
+        ]
+      },
+      {
+        id: 'habit-2',
+        userId: TEST_USER_ID,
+        name: 'Read Books',
+        description: null,
+        frequency: 'weekly',
+        targetDays: [],
+        color: '#3B82F6',
+        icon: '⭐',
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completions: []
+      }
+    ];
+
+    query.mockResolvedValue({ rows: mockHabits });
+
+    const response = await request(app)
+      .get('/api/v1/habits')
+      .set('Authorization', `Bearer ${TEST_TOKEN}`)
+      .expect(200);
+
+    expect(response.body[0].completions).toHaveLength(1);
+    expect(response.body[0].completions[0]).toMatchObject({
+      habit_id: 'habit-1',
+      completed_date: '2026-07-10'
+    });
+    expect(response.body[1].completions).toEqual([]);
   });
 
   it('should only return habits belonging to the authenticated user', async () => {
@@ -420,7 +471,7 @@ describe('GET /api/v1/habits', () => {
 
     // Verify the query was called with the user ID
     expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE user_id = $1'),
+      expect.stringContaining('WHERE h.user_id = $1'),
       [TEST_USER_ID]
     );
   });
@@ -455,7 +506,7 @@ describe('GET /api/v1/habits', () => {
 
     // Verify the query includes the status filter
     expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('AND status = $2'),
+      expect.stringContaining('AND h.status = $2'),
       [TEST_USER_ID, 'active']
     );
   });
@@ -490,7 +541,7 @@ describe('GET /api/v1/habits', () => {
 
     // Verify the query includes the status filter
     expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('AND status = $2'),
+      expect.stringContaining('AND h.status = $2'),
       [TEST_USER_ID, 'archived']
     );
   });
