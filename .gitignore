@@ -83,3 +83,4 @@ mobile-app/
 .dolt/
 *.db
 .beads-credential-key
+.beads-backup/
