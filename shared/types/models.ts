@@ -66,8 +66,6 @@ export interface Completion {
 // Statistics types
 export interface HabitStatistics {
   habitId: string;
-  currentStreak: number;
-  longestStreak: number;
   totalCompletions: number;
   completionRate: number; // Percentage (0-100)
   lastCompletedDate?: string; // ISO date string

@@ -47,8 +47,6 @@ export interface HabitCompletion {
 }
 
 export interface HabitWithStats extends Habit {
-  current_streak: number;
-  best_streak: number;
   completions: HabitCompletion[];
 }
 
