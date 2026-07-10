@@ -169,11 +169,11 @@ describe('habitsApi', () => {
 
   describe('completeHabit', () => {
     const completionData = {
-      completed_date: '2024-01-15',
-      note: 'Great workout today!',
+      date: '2024-01-15',
+      notes: 'Great workout today!',
     };
 
-    it('makes POST request to /habits/:id/complete', async () => {
+    it('makes POST request to /habits/:id/completions', async () => {
       mockAxios.post.mockResolvedValueOnce({
         data: { id: 'completion-1', habit_id: '1', ...completionData },
       });
@@ -181,7 +181,7 @@ describe('habitsApi', () => {
       await habitsApi.completeHabit('1', completionData);
 
       expect(mockAxios.post).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1/complete'),
+        expect.stringContaining('/habits/1/completions'),
         completionData,
         expect.objectContaining({
           headers: { Authorization: 'Bearer test-token' },
@@ -205,18 +205,19 @@ describe('habitsApi', () => {
   });
 
   describe('uncompleteHabit', () => {
-    it('makes DELETE request to /habits/:id/complete with date', async () => {
+    it('makes DELETE request to /habits/:id/completions/:date with no body', async () => {
       mockAxios.delete.mockResolvedValueOnce({ data: {} });
 
       await habitsApi.uncompleteHabit('1', '2024-01-15');
 
       expect(mockAxios.delete).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1/complete'),
+        expect.stringContaining('/habits/1/completions/2024-01-15'),
         expect.objectContaining({
           headers: { Authorization: 'Bearer test-token' },
-          data: { completed_date: '2024-01-15' },
         })
       );
+      const [, options] = mockAxios.delete.mock.calls[0];
+      expect(options).not.toHaveProperty('data');
     });
   });
 });

@@ -24,8 +24,8 @@ interface UpdateHabitData {
 }
 
 interface CompleteHabitData {
-  completed_date: string;
-  note?: string;
+  date: string;
+  notes?: string;
 }
 
 async function getAuthHeaders(): Promise<{ Authorization: string }> {
@@ -68,7 +68,7 @@ export const habitsApi = {
 
   async completeHabit(id: string, data: CompleteHabitData): Promise<HabitCompletion> {
     const headers = await getAuthHeaders();
-    const response = await axios.post(`${API_BASE_URL}/habits/${id}/complete`, data, {
+    const response = await axios.post(`${API_BASE_URL}/habits/${id}/completions`, data, {
       headers,
     });
     return response.data;
@@ -76,9 +76,8 @@ export const habitsApi = {
 
   async uncompleteHabit(id: string, completedDate: string): Promise<void> {
     const headers = await getAuthHeaders();
-    await axios.delete(`${API_BASE_URL}/habits/${id}/complete`, {
+    await axios.delete(`${API_BASE_URL}/habits/${id}/completions/${completedDate}`, {
       headers,
-      data: { completed_date: completedDate },
     });
   },
 };

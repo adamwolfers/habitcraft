@@ -27,8 +27,8 @@ export interface UpdateHabitData {
 }
 
 export interface CompleteHabitData {
-  completed_date: string;
-  note?: string;
+  date: string;
+  notes?: string;
 }
 
 export function useHabits() {
@@ -247,8 +247,8 @@ export function useCompleteHabit() {
         return {
           id: `temp-completion-${uuidv4()}`,
           habit_id: id,
-          completed_date: data.completed_date,
-          note: data.note,
+          completed_date: data.date,
+          note: data.notes,
           created_at: new Date().toISOString(),
         };
       }
