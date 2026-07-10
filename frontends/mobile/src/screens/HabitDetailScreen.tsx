@@ -99,7 +99,7 @@ export function HabitDetailScreen() {
       ) : null}
 
       <Text style={styles.createdAt}>
-        Created {new Date(habit.created_at).toLocaleDateString()}
+        Created {new Date(habit.createdAt).toLocaleDateString()}
       </Text>
 
       <TouchableOpacity

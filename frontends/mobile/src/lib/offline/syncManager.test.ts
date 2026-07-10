@@ -59,14 +59,14 @@ describe('syncManager', () => {
       mockMutationQueue.getAll.mockResolvedValue([mutation]);
       mockHabitsApi.createHabit.mockResolvedValue({
         id: 'real-456',
-        user_id: 'user-1',
+        userId: 'user-1',
         name: 'Test Habit',
         icon: '🏃',
         color: '#FF0000',
         frequency: 'daily',
-        is_archived: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       mockMutationQueue.remove.mockResolvedValue(undefined);
       mockMutationQueue.updateTempId.mockResolvedValue(undefined);
@@ -92,14 +92,14 @@ describe('syncManager', () => {
       mockMutationQueue.getAll.mockResolvedValue([mutation]);
       mockHabitsApi.updateHabit.mockResolvedValue({
         id: 'habit-1',
-        user_id: 'user-1',
+        userId: 'user-1',
         name: 'Updated Habit',
         icon: '🏃',
         color: '#FF0000',
         frequency: 'daily',
-        is_archived: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       mockMutationQueue.remove.mockResolvedValue(undefined);
 
@@ -263,14 +263,14 @@ describe('syncManager', () => {
       mockMutationQueue.getAll.mockResolvedValue(mutations);
       mockHabitsApi.createHabit.mockResolvedValue({
         id: 'new-id',
-        user_id: 'user-1',
+        userId: 'user-1',
         name: 'Test',
         icon: '🏃',
         color: '#FF0000',
         frequency: 'daily',
-        is_archived: false,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        status: 'active',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
       mockMutationQueue.remove.mockResolvedValue(undefined);
 

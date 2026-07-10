@@ -28,15 +28,15 @@ const mockUseDeleteHabit = useDeleteHabit as jest.Mock;
 
 const mockHabit = {
   id: 'habit-123',
-  user_id: 'user-1',
+  userId: 'user-1',
   name: 'Exercise',
   description: 'Daily workout routine',
   icon: '💪',
   color: '#10b981',
   frequency: 'daily' as const,
-  is_archived: false,
-  created_at: '2025-01-15T10:00:00.000Z',
-  updated_at: '2025-01-15T10:00:00.000Z',
+  status: 'active' as const,
+  createdAt: '2025-01-15T10:00:00.000Z',
+  updatedAt: '2025-01-15T10:00:00.000Z',
 };
 
 describe('HabitDetailScreen', () => {
@@ -78,6 +78,8 @@ describe('HabitDetailScreen', () => {
     expect(getByText(mockHabit.description)).toBeTruthy();
     expect(getByTestId('edit-habit-button')).toBeTruthy();
     expect(getByTestId('delete-habit-button')).toBeTruthy();
+    expect(getByText(/Created/)).toBeTruthy();
+    expect(() => getByText(/Invalid Date/)).toThrow();
   });
 
   it('hides description element when habit has no description', () => {
