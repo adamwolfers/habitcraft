@@ -12,6 +12,7 @@ import { StyleSheet } from 'react-native';
 import { AuthProvider, NetworkProvider } from './src/context';
 import { RootNavigator } from './src/navigation';
 import { createFilePersister } from './src/lib/offline';
+import { CACHE_BUSTER } from './src/lib/cacheSchema';
 import { SyncOnReconnect } from './src/components';
 
 // Create a client for React Query with offline support
@@ -35,6 +36,7 @@ const persister = createFilePersister('query-cache');
 const persistOptions = {
   persister,
   maxAge: 1000 * 60 * 60 * 24, // 24 hours
+  buster: CACHE_BUSTER,
 };
 
 export default function App() {
