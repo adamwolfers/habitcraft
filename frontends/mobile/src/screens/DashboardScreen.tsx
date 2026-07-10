@@ -33,7 +33,7 @@ export function DashboardScreen() {
     if (isCompleted) {
       uncompleteHabit.mutate({ id: habitId, completedDate: today });
     } else {
-      completeHabit.mutate({ id: habitId, data: { completed_date: today } });
+      completeHabit.mutate({ id: habitId, data: { date: today } });
     }
   };
 

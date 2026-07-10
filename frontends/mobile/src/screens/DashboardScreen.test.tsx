@@ -239,7 +239,7 @@ describe('DashboardScreen', () => {
 
     expect(mockMutate).toHaveBeenCalledWith({
       id: 'habit-1',
-      data: expect.objectContaining({ completed_date: expect.any(String) }),
+      data: expect.objectContaining({ date: expect.any(String) }),
     });
   });
 

@@ -404,8 +404,8 @@ describe('useHabits', () => {
     const completeData = {
       id: 'habit-1',
       data: {
-        completed_date: '2024-01-15',
-        note: 'Great workout!',
+        date: '2024-01-15',
+        notes: 'Great workout!',
       },
     };
 
