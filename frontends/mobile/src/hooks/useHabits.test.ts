@@ -13,7 +13,7 @@ import {
 } from './useHabits';
 import { habitsApi } from '@/lib/habits';
 import { mutationQueue, networkStatus } from '@/lib/offline';
-import { HabitWithStats } from '@/types';
+import { Habit, HabitWithStats } from '@/types';
 import { QueuedMutation } from '@/lib/offline/types';
 
 jest.mock('@/lib/habits');
@@ -88,6 +88,13 @@ function createWrapper() {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return React.createElement(QueryClientProvider, { client: queryClient }, children);
   };
+}
+
+function createWrapperWithClient() {
+  const queryClient = createTestQueryClient();
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
+  return { Wrapper, queryClient };
 }
 
 describe('useHabits', () => {
@@ -211,6 +218,52 @@ describe('useHabits', () => {
         icon: createData.icon,
         color: createData.color,
       });
+    });
+
+    it('adds completions: [] to the cache when the server response omits it', async () => {
+      mockNetworkStatus.isOnline.mockResolvedValue(true);
+      // Real POST /habits response is a plain Habit — no completions field.
+      const serverHabit: Habit = {
+        id: 'new-habit-id',
+        user_id: 'user-1',
+        name: createData.name,
+        description: createData.description,
+        icon: createData.icon,
+        color: createData.color,
+        frequency: createData.frequency,
+        target_days: undefined,
+        is_archived: false,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      };
+      mockHabitsApi.createHabit.mockResolvedValue(serverHabit);
+
+      const { Wrapper, queryClient } = createWrapperWithClient();
+      const { result } = renderHook(() => useCreateHabit(), { wrapper: Wrapper });
+
+      await act(async () => {
+        await result.current.mutateAsync(createData);
+      });
+
+      const cached = queryClient.getQueryData<HabitWithStats[]>(['habits']);
+      expect(cached).toHaveLength(1);
+      expect(cached?.[0].completions).toEqual([]);
+    });
+
+    it('adds completions: [] to the cache for the offline optimistic habit', async () => {
+      mockNetworkStatus.isOnline.mockResolvedValue(false);
+      mockMutationQueue.add.mockResolvedValue(mockQueuedMutation);
+
+      const { Wrapper, queryClient } = createWrapperWithClient();
+      const { result } = renderHook(() => useCreateHabit(), { wrapper: Wrapper });
+
+      await act(async () => {
+        await result.current.mutateAsync(createData);
+      });
+
+      const cached = queryClient.getQueryData<HabitWithStats[]>(['habits']);
+      expect(cached).toHaveLength(1);
+      expect(cached?.[0].completions).toEqual([]);
     });
 
     it('shows error toast on failure', async () => {

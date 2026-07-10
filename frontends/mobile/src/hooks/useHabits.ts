@@ -86,9 +86,13 @@ export function useCreateHabit() {
       return { previousHabits };
     },
     onSuccess: (newHabit) => {
+      const habitWithStats: HabitWithStats = {
+        ...newHabit,
+        completions: (newHabit as Partial<HabitWithStats>).completions ?? [],
+      };
       queryClient.setQueryData<HabitWithStats[]>(HABITS_QUERY_KEY, (old) => {
-        if (!old) return [newHabit as HabitWithStats];
-        return [...old, newHabit as HabitWithStats];
+        if (!old) return [habitWithStats];
+        return [...old, habitWithStats];
       });
       Toast.show({
         type: 'success',
