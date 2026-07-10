@@ -6,16 +6,16 @@ import { Habit } from '@/types';
 describe('HabitCard', () => {
   const mockHabit: Habit = {
     id: '1',
-    user_id: 'user-1',
+    userId: 'user-1',
     name: 'Morning Exercise',
     description: 'Do 30 minutes of exercise',
     icon: '🏃',
     color: '#10b981',
     frequency: 'daily',
     target_days: [1, 2, 3, 4, 5],
-    is_archived: false,
-    created_at: '2024-01-01T00:00:00Z',
-    updated_at: '2024-01-01T00:00:00Z',
+    status: 'active',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
   };
 
   const mockOnPress = jest.fn();

@@ -20,7 +20,7 @@ interface UpdateHabitData {
   color?: string;
   frequency?: HabitFrequency;
   target_days?: number[];
-  is_archived?: boolean;
+  status?: 'active' | 'archived';
 }
 
 interface CompleteHabitData {

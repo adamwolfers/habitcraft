@@ -24,16 +24,16 @@ export interface RegisterData {
 // Habit types
 export interface Habit {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
   description?: string;
   icon: string;
   color: string;
   frequency: HabitFrequency;
   target_days?: number[];
-  is_archived: boolean;
-  created_at: string;
-  updated_at: string;
+  status: 'active' | 'archived';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type HabitFrequency = 'daily' | 'weekly' | 'custom';

@@ -83,7 +83,7 @@ export function DashboardScreen() {
 
       <FlatList
         testID="habit-list"
-        data={habits?.filter((h) => !h.is_archived) || []}
+        data={habits?.filter((h) => h.status !== 'archived') || []}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <HabitCard

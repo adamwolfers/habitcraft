@@ -23,7 +23,7 @@ export interface UpdateHabitData {
   color?: string;
   frequency?: HabitFrequency;
   target_days?: number[];
-  is_archived?: boolean;
+  status?: 'active' | 'archived';
 }
 
 export interface CompleteHabitData {
@@ -61,16 +61,16 @@ export function useCreateHabit() {
         // Return optimistic habit
         const optimisticHabit: Habit = {
           id: tempId,
-          user_id: 'pending',
+          userId: 'pending',
           name: data.name,
           description: data.description,
           icon: data.icon,
           color: data.color,
           frequency: data.frequency,
           target_days: data.target_days,
-          is_archived: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          status: 'active',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
         };
         return optimisticHabit;
       }

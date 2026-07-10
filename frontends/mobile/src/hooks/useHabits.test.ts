@@ -41,31 +41,31 @@ const mockQueuedMutation: QueuedMutation = {
 
 const mockHabit: HabitWithStats = {
   id: 'habit-1',
-  user_id: 'user-1',
+  userId: 'user-1',
   name: 'Exercise',
   description: 'Daily workout',
   icon: '💪',
   color: '#10b981',
   frequency: 'daily',
   target_days: undefined,
-  is_archived: false,
-  created_at: '2024-01-01T00:00:00Z',
-  updated_at: '2024-01-01T00:00:00Z',
+  status: 'active',
+  createdAt: '2024-01-01T00:00:00Z',
+  updatedAt: '2024-01-01T00:00:00Z',
   completions: [],
 };
 
 const mockHabit2: HabitWithStats = {
   id: 'habit-2',
-  user_id: 'user-1',
+  userId: 'user-1',
   name: 'Read',
   description: 'Read a book',
   icon: '📚',
   color: '#6366f1',
   frequency: 'daily',
   target_days: undefined,
-  is_archived: false,
-  created_at: '2024-01-02T00:00:00Z',
-  updated_at: '2024-01-02T00:00:00Z',
+  status: 'active',
+  createdAt: '2024-01-02T00:00:00Z',
+  updatedAt: '2024-01-02T00:00:00Z',
   completions: [],
 };
 
@@ -225,16 +225,16 @@ describe('useHabits', () => {
       // Real POST /habits response is a plain Habit — no completions field.
       const serverHabit: Habit = {
         id: 'new-habit-id',
-        user_id: 'user-1',
+        userId: 'user-1',
         name: createData.name,
         description: createData.description,
         icon: createData.icon,
         color: createData.color,
         frequency: createData.frequency,
         target_days: undefined,
-        is_archived: false,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
+        status: 'active',
+        createdAt: '2024-01-01T00:00:00Z',
+        updatedAt: '2024-01-01T00:00:00Z',
       };
       mockHabitsApi.createHabit.mockResolvedValue(serverHabit);
 
