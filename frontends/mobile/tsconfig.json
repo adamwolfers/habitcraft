@@ -4,17 +4,41 @@
     "strict": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@/components/*": ["src/components/*"],
-      "@/screens/*": ["src/screens/*"],
-      "@/hooks/*": ["src/hooks/*"],
-      "@/lib/*": ["src/lib/*"],
-      "@/context/*": ["src/context/*"],
-      "@/navigation/*": ["src/navigation/*"],
-      "@/theme/*": ["src/theme/*"],
-      "@/types/*": ["src/types/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@/components/*": [
+        "src/components/*"
+      ],
+      "@/screens/*": [
+        "src/screens/*"
+      ],
+      "@/hooks/*": [
+        "src/hooks/*"
+      ],
+      "@/lib/*": [
+        "src/lib/*"
+      ],
+      "@/context/*": [
+        "src/context/*"
+      ],
+      "@/navigation/*": [
+        "src/navigation/*"
+      ],
+      "@/theme/*": [
+        "src/theme/*"
+      ],
+      "@/types/*": [
+        "src/types/*"
+      ]
     },
-    "types": ["jest", "@testing-library/react-native"]
+    "types": [
+      "jest",
+      "@testing-library/react-native"
+    ]
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ]
 }
