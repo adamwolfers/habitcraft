@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { api } from './api';
 import { storage } from './storage';
 import { User, AuthTokens, LoginCredentials, RegisterData } from '@/types';
 
@@ -104,9 +105,7 @@ export const authApi = {
     }
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/users/me`, {
-        headers: { Authorization: `Bearer ${tokens.accessToken}` },
-      });
+      const response = await api.get('/users/me');
       return response.data;
     } catch (error) {
       throw new Error(extractErrorMessage(error));

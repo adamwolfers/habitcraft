@@ -1,8 +1,5 @@
-import axios from 'axios';
-import { storage } from './storage';
+import { api } from './api';
 import { Habit, HabitCompletion, HabitFrequency, HabitWithStats } from '@/types';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
 interface CreateHabitData {
   name: string;
@@ -28,50 +25,32 @@ interface CompleteHabitData {
   notes?: string;
 }
 
-async function getAuthHeaders(): Promise<{ Authorization: string }> {
-  const tokens = await storage.getTokens();
-  if (!tokens) {
-    throw new Error('Not authenticated');
-  }
-  return { Authorization: `Bearer ${tokens.accessToken}` };
-}
-
 export const habitsApi = {
   async getHabits(): Promise<HabitWithStats[]> {
-    const headers = await getAuthHeaders();
-    const response = await axios.get(`${API_BASE_URL}/habits`, { headers });
+    const response = await api.get('/habits');
     return response.data;
   },
 
   async createHabit(data: CreateHabitData): Promise<Habit> {
-    const headers = await getAuthHeaders();
-    const response = await axios.post(`${API_BASE_URL}/habits`, data, { headers });
+    const response = await api.post('/habits', data);
     return response.data;
   },
 
   async updateHabit(id: string, data: UpdateHabitData): Promise<Habit> {
-    const headers = await getAuthHeaders();
-    const response = await axios.put(`${API_BASE_URL}/habits/${id}`, data, { headers });
+    const response = await api.put(`/habits/${id}`, data);
     return response.data;
   },
 
   async deleteHabit(id: string): Promise<void> {
-    const headers = await getAuthHeaders();
-    await axios.delete(`${API_BASE_URL}/habits/${id}`, { headers });
+    await api.delete(`/habits/${id}`);
   },
 
   async completeHabit(id: string, data: CompleteHabitData): Promise<HabitCompletion> {
-    const headers = await getAuthHeaders();
-    const response = await axios.post(`${API_BASE_URL}/habits/${id}/completions`, data, {
-      headers,
-    });
+    const response = await api.post(`/habits/${id}/completions`, data);
     return response.data;
   },
 
   async uncompleteHabit(id: string, completedDate: string): Promise<void> {
-    const headers = await getAuthHeaders();
-    await axios.delete(`${API_BASE_URL}/habits/${id}/completions/${completedDate}`, {
-      headers,
-    });
+    await api.delete(`/habits/${id}/completions/${completedDate}`);
   },
 };

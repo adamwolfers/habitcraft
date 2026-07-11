@@ -1,24 +1,19 @@
-import axios from 'axios';
+import { api } from './api';
 import { habitsApi } from './habits';
-import { storage } from './storage';
 import { Habit, HabitFrequency } from '@/types';
 
-// Mock axios
-jest.mock('axios');
-const mockAxios = axios as jest.Mocked<typeof axios>;
-
-// Mock storage
-jest.mock('./storage', () => ({
-  storage: {
-    getTokens: jest.fn(),
+jest.mock('./api', () => ({
+  api: {
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
-const mockStorage = storage as jest.Mocked<typeof storage>;
+const mockApi = api as jest.Mocked<typeof api>;
 
 describe('habitsApi', () => {
-  const mockTokens = { accessToken: 'test-token', refreshToken: 'refresh' };
-
   const mockHabit: Habit = {
     id: '1',
     userId: 'user-1',
@@ -35,35 +30,23 @@ describe('habitsApi', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockStorage.getTokens.mockResolvedValue(mockTokens);
   });
 
   describe('getHabits', () => {
-    it('makes GET request to /habits with auth header', async () => {
-      mockAxios.get.mockResolvedValueOnce({ data: [mockHabit] });
+    it('makes GET request to /habits via the shared api instance', async () => {
+      mockApi.get.mockResolvedValueOnce({ data: [mockHabit] });
 
       await habitsApi.getHabits();
 
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/habits'),
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
+      expect(mockApi.get).toHaveBeenCalledWith('/habits');
     });
 
     it('returns list of habits', async () => {
-      mockAxios.get.mockResolvedValueOnce({ data: [mockHabit] });
+      mockApi.get.mockResolvedValueOnce({ data: [mockHabit] });
 
       const result = await habitsApi.getHabits();
 
       expect(result).toEqual([mockHabit]);
-    });
-
-    it('throws error when not authenticated', async () => {
-      mockStorage.getTokens.mockResolvedValueOnce(null);
-
-      await expect(habitsApi.getHabits()).rejects.toThrow('Not authenticated');
     });
   });
 
@@ -77,22 +60,16 @@ describe('habitsApi', () => {
     };
 
     it('makes POST request to /habits with data', async () => {
-      mockAxios.post.mockResolvedValueOnce({ data: { ...mockHabit, ...newHabitData } });
+      mockApi.post.mockResolvedValueOnce({ data: { ...mockHabit, ...newHabitData } });
 
       await habitsApi.createHabit(newHabitData);
 
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        expect.stringContaining('/habits'),
-        newHabitData,
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
+      expect(mockApi.post).toHaveBeenCalledWith('/habits', newHabitData);
     });
 
     it('returns created habit', async () => {
       const createdHabit = { ...mockHabit, ...newHabitData };
-      mockAxios.post.mockResolvedValueOnce({ data: createdHabit });
+      mockApi.post.mockResolvedValueOnce({ data: createdHabit });
 
       const result = await habitsApi.createHabit(newHabitData);
 
@@ -106,22 +83,16 @@ describe('habitsApi', () => {
     };
 
     it('makes PUT request to /habits/:id with data', async () => {
-      mockAxios.put.mockResolvedValueOnce({ data: { ...mockHabit, ...updateData } });
+      mockApi.put.mockResolvedValueOnce({ data: { ...mockHabit, ...updateData } });
 
       await habitsApi.updateHabit('1', updateData);
 
-      expect(mockAxios.put).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1'),
-        updateData,
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
+      expect(mockApi.put).toHaveBeenCalledWith('/habits/1', updateData);
     });
 
     it('returns updated habit', async () => {
       const updatedHabit = { ...mockHabit, ...updateData };
-      mockAxios.put.mockResolvedValueOnce({ data: updatedHabit });
+      mockApi.put.mockResolvedValueOnce({ data: updatedHabit });
 
       const result = await habitsApi.updateHabit('1', updateData);
 
@@ -131,16 +102,11 @@ describe('habitsApi', () => {
 
   describe('deleteHabit', () => {
     it('makes DELETE request to /habits/:id', async () => {
-      mockAxios.delete.mockResolvedValueOnce({ data: {} });
+      mockApi.delete.mockResolvedValueOnce({ data: {} });
 
       await habitsApi.deleteHabit('1');
 
-      expect(mockAxios.delete).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1'),
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
+      expect(mockApi.delete).toHaveBeenCalledWith('/habits/1');
     });
   });
 
@@ -151,19 +117,13 @@ describe('habitsApi', () => {
     };
 
     it('makes POST request to /habits/:id/completions', async () => {
-      mockAxios.post.mockResolvedValueOnce({
+      mockApi.post.mockResolvedValueOnce({
         data: { id: 'completion-1', habit_id: '1', ...completionData },
       });
 
       await habitsApi.completeHabit('1', completionData);
 
-      expect(mockAxios.post).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1/completions'),
-        completionData,
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
+      expect(mockApi.post).toHaveBeenCalledWith('/habits/1/completions', completionData);
     });
 
     it('returns completion data', async () => {
@@ -173,7 +133,7 @@ describe('habitsApi', () => {
         ...completionData,
         created_at: '2024-01-15T00:00:00Z',
       };
-      mockAxios.post.mockResolvedValueOnce({ data: completion });
+      mockApi.post.mockResolvedValueOnce({ data: completion });
 
       const result = await habitsApi.completeHabit('1', completionData);
 
@@ -183,18 +143,11 @@ describe('habitsApi', () => {
 
   describe('uncompleteHabit', () => {
     it('makes DELETE request to /habits/:id/completions/:date with no body', async () => {
-      mockAxios.delete.mockResolvedValueOnce({ data: {} });
+      mockApi.delete.mockResolvedValueOnce({ data: {} });
 
       await habitsApi.uncompleteHabit('1', '2024-01-15');
 
-      expect(mockAxios.delete).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1/completions/2024-01-15'),
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
-      const [, options] = mockAxios.delete.mock.calls[0];
-      expect(options).not.toHaveProperty('data');
+      expect(mockApi.delete).toHaveBeenCalledWith('/habits/1/completions/2024-01-15');
     });
   });
 });
