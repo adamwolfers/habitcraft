@@ -169,6 +169,21 @@ describe('DashboardScreen', () => {
     expect(getByText('Read')).toBeTruthy();
   });
 
+  it('renders without crashing when a cached habit is missing completions', () => {
+    const staleHabit = { ...mockHabit, id: 'habit-stale', completions: undefined };
+    mockUseHabits.mockReturnValue({
+      data: [staleHabit],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: false,
+    });
+
+    const { getByTestId } = render(<DashboardScreen />);
+
+    expect(getByTestId('dashboard-screen')).toBeTruthy();
+  });
+
   it('filters out archived habits', () => {
     const archivedHabit = {
       ...mockHabit,
