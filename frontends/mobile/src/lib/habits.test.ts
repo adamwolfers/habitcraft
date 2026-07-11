@@ -67,29 +67,6 @@ describe('habitsApi', () => {
     });
   });
 
-  describe('getHabit', () => {
-    it('makes GET request to /habits/:id with auth header', async () => {
-      mockAxios.get.mockResolvedValueOnce({ data: mockHabit });
-
-      await habitsApi.getHabit('1');
-
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/habits/1'),
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer test-token' },
-        })
-      );
-    });
-
-    it('returns habit data', async () => {
-      mockAxios.get.mockResolvedValueOnce({ data: mockHabit });
-
-      const result = await habitsApi.getHabit('1');
-
-      expect(result).toEqual(mockHabit);
-    });
-  });
-
   describe('createHabit', () => {
     const newHabitData = {
       name: 'Read Books',

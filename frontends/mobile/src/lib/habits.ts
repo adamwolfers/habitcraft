@@ -43,12 +43,6 @@ export const habitsApi = {
     return response.data;
   },
 
-  async getHabit(id: string): Promise<HabitWithStats> {
-    const headers = await getAuthHeaders();
-    const response = await axios.get(`${API_BASE_URL}/habits/${id}`, { headers });
-    return response.data;
-  },
-
   async createHabit(data: CreateHabitData): Promise<Habit> {
     const headers = await getAuthHeaders();
     const response = await axios.post(`${API_BASE_URL}/habits`, data, { headers });

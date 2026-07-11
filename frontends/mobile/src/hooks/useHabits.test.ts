@@ -137,28 +137,59 @@ describe('useHabits', () => {
   });
 
   describe('useHabit query', () => {
-    it('fetches single habit successfully', async () => {
-      mockHabitsApi.getHabit.mockResolvedValue(mockHabit);
+    it('finds the habit from the already-fetched habits list', async () => {
+      mockHabitsApi.getHabits.mockResolvedValue([mockHabit, mockHabit2]);
 
       const { result } = renderHook(() => useHabit('habit-1'), {
         wrapper: createWrapper(),
       });
 
       await waitFor(() => {
-        expect(result.current.isSuccess).toBe(true);
+        expect(result.current.isLoading).toBe(false);
       });
 
       expect(result.current.data).toEqual(mockHabit);
-      expect(mockHabitsApi.getHabit).toHaveBeenCalledWith('habit-1');
+      expect(mockHabitsApi.getHabits).toHaveBeenCalledTimes(1);
+      expect(mockHabitsApi.createHabit).not.toHaveBeenCalled();
     });
 
-    it('does not fetch when id is empty', () => {
-      const { result } = renderHook(() => useHabit(''), {
+    it('sets isError when the habit is not in the list', async () => {
+      mockHabitsApi.getHabits.mockResolvedValue([mockHabit2]);
+
+      const { result } = renderHook(() => useHabit('missing-habit'), {
         wrapper: createWrapper(),
       });
 
-      expect(result.current.fetchStatus).toBe('idle');
-      expect(mockHabitsApi.getHabit).not.toHaveBeenCalled();
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.data).toBeUndefined();
+      expect(result.current.isError).toBe(true);
+    });
+
+    it('is loading while the underlying habits list is loading', async () => {
+      let resolveHabits: (habits: HabitWithStats[]) => void = () => {};
+      mockHabitsApi.getHabits.mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveHabits = resolve;
+          })
+      );
+
+      const { result, unmount } = renderHook(() => useHabit('habit-1'), {
+        wrapper: createWrapper(),
+      });
+
+      expect(result.current.isLoading).toBe(true);
+      expect(result.current.data).toBeUndefined();
+      expect(result.current.isError).toBe(false);
+
+      await act(async () => {
+        resolveHabits([mockHabit]);
+        await Promise.resolve();
+      });
+      unmount();
     });
   });
 
