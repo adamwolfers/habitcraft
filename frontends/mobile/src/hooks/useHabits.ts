@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Toast from 'react-native-toast-message';
 import { habitsApi } from '@/lib/habits';
 import { mutationQueue, networkStatus } from '@/lib/offline';
+import { findHabitById } from '@/utils/habitUtils';
 import { Habit, HabitFrequency, HabitWithStats } from '@/types';
 
 const HABITS_QUERY_KEY = ['habits'];
@@ -39,11 +40,16 @@ export function useHabits() {
 }
 
 export function useHabit(id: string) {
-  return useQuery({
-    queryKey: [...HABITS_QUERY_KEY, id],
-    queryFn: () => habitsApi.getHabit(id),
-    enabled: !!id,
-  });
+  const habitsQuery = useHabits();
+  const habit = habitsQuery.data ? findHabitById(habitsQuery.data, id) : undefined;
+
+  return {
+    data: habit,
+    isLoading: habitsQuery.isLoading,
+    isError: habitsQuery.isError || (!habitsQuery.isLoading && !!id && !habit),
+    error: habitsQuery.error,
+    refetch: habitsQuery.refetch,
+  };
 }
 
 export function useCreateHabit() {
