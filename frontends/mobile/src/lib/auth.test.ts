@@ -1,10 +1,19 @@
 import axios from 'axios';
 import { authApi } from './auth';
 import { storage } from './storage';
+import { api } from './api';
 
 // Mock axios
 jest.mock('axios');
 const mockAxios = axios as jest.Mocked<typeof axios>;
+
+// Mock the shared api instance (used for authenticated calls that need token refresh)
+jest.mock('./api', () => ({
+  api: {
+    get: jest.fn(),
+  },
+}));
+const mockApi = api as jest.Mocked<typeof api>;
 
 // Mock storage
 jest.mock('./storage', () => ({
@@ -257,22 +266,17 @@ describe('authApi', () => {
   });
 
   describe('getCurrentUser', () => {
-    it('makes GET request to /users/me with auth header', async () => {
+    it('makes GET request to /users/me via the shared api instance', async () => {
       const mockUser = { id: '1', email: 'test@example.com', created_at: '2024-01-01' };
       mockStorage.getTokens.mockResolvedValueOnce({
         accessToken: 'token',
         refreshToken: 'refresh',
       });
-      mockAxios.get.mockResolvedValueOnce({ data: mockUser });
+      mockApi.get.mockResolvedValueOnce({ data: mockUser });
 
       await authApi.getCurrentUser();
 
-      expect(mockAxios.get).toHaveBeenCalledWith(
-        expect.stringContaining('/users/me'),
-        expect.objectContaining({
-          headers: { Authorization: 'Bearer token' },
-        })
-      );
+      expect(mockApi.get).toHaveBeenCalledWith('/users/me');
     });
 
     it('returns user data', async () => {
@@ -281,7 +285,7 @@ describe('authApi', () => {
         accessToken: 'token',
         refreshToken: 'refresh',
       });
-      mockAxios.get.mockResolvedValueOnce({ data: mockUser });
+      mockApi.get.mockResolvedValueOnce({ data: mockUser });
 
       const result = await authApi.getCurrentUser();
 
@@ -294,7 +298,7 @@ describe('authApi', () => {
       const result = await authApi.getCurrentUser();
 
       expect(result).toBeNull();
-      expect(mockAxios.get).not.toHaveBeenCalled();
+      expect(mockApi.get).not.toHaveBeenCalled();
     });
   });
 });
