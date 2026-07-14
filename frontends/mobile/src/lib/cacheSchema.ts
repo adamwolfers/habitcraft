@@ -7,9 +7,18 @@
 export const CACHE_SCHEMA = {
   habits: {
     fields: [
-      'id', 'userId', 'name', 'description', 'frequency',
-      'targetDays', 'color', 'icon', 'status', 'createdAt',
-      'updatedAt', 'completions',
+      'id',
+      'userId',
+      'name',
+      'description',
+      'frequency',
+      'targetDays',
+      'color',
+      'icon',
+      'status',
+      'createdAt',
+      'updatedAt',
+      'completions',
     ],
     completions: ['id', 'habit_id', 'completed_date', 'note', 'created_at'],
   },

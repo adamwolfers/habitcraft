@@ -98,9 +98,7 @@ export function HabitDetailScreen() {
         </Text>
       ) : null}
 
-      <Text style={styles.createdAt}>
-        Created {new Date(habit.createdAt).toLocaleDateString()}
-      </Text>
+      <Text style={styles.createdAt}>Created {new Date(habit.createdAt).toLocaleDateString()}</Text>
 
       <TouchableOpacity
         testID="edit-habit-button"

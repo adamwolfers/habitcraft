@@ -20,7 +20,12 @@ describe('CACHE_BUSTER', () => {
     const original = CACHE_BUSTER;
     // Simulate a schema change by hashing different content
     const { hashString } = require('./cacheSchema');
-    const modified = hashString(JSON.stringify({ ...CACHE_SCHEMA, habits: { ...CACHE_SCHEMA.habits, fields: [...CACHE_SCHEMA.habits.fields, 'newField'] } }));
+    const modified = hashString(
+      JSON.stringify({
+        ...CACHE_SCHEMA,
+        habits: { ...CACHE_SCHEMA.habits, fields: [...CACHE_SCHEMA.habits.fields, 'newField'] },
+      })
+    );
     expect(modified).not.toBe(original);
   });
 
