@@ -58,7 +58,7 @@ jobs:
         with:
           filters: |
             backend:
-              - 'backends/node/**'
+              - 'backend/**'
             frontend:
               - 'frontends/nextjs/**'
             mobile:
@@ -87,7 +87,7 @@ jobs:
       needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
-        working-directory: backends/node
+        working-directory: backend
 
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: backends/node/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -108,7 +108,7 @@ jobs:
       - name: Upload backend coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          directory: backends/node/coverage
+          directory: backend/coverage
           flags: backend
           name: backend-coverage
           fail_ci_if_error: false
@@ -132,7 +132,7 @@ jobs:
       )
     defaults:
       run:
-        working-directory: backends/node
+        working-directory: backend
 
     services:
       postgres:
@@ -157,7 +157,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: backends/node/package-lock.json
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -343,7 +343,7 @@ jobs:
             exit 0
           fi
 
-          BACKEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'backends/node/package-lock.json' | wc -l)
+          BACKEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'backend/package-lock.json' | wc -l)
           FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontends/nextjs/package-lock.json' | wc -l)
 
           if [ "$BACKEND_DEPS" -gt 0 ] || [ "$FRONTEND_DEPS" -gt 0 ]; then
@@ -562,7 +562,7 @@ jobs:
 
       - name: Build and push backend image
         run: |
-          docker build -t us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/backend:${{ github.sha }} ./backends/node
+          docker build -t us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/backend:${{ github.sha }} ./backend
           docker tag us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/backend:${{ github.sha }} us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/backend:latest
           docker push us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/backend:${{ github.sha }}
           docker push us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/backend:latest

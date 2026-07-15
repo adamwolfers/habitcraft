@@ -9,7 +9,7 @@ services:
   backend-node:
     build:
       context: .
-      dockerfile: backends/node/Dockerfile.dev
+      dockerfile: backend/Dockerfile.dev
 
   frontend-nextjs:
     build:

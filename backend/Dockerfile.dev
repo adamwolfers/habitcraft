@@ -6,13 +6,13 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package files
-COPY backends/node/package*.json ./
+COPY backend/package*.json ./
 
 # Install all dependencies including devDependencies
 RUN npm ci
 
 # Copy application code
-COPY backends/node/ .
+COPY backend/ .
 
 # Copy schema for migrations from shared database
 COPY shared/database/schema.sql ./

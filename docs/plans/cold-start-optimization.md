@@ -20,7 +20,7 @@ scaling {
 **Impact:** Eliminates most cold starts entirely
 
 ### 2. Pre-warm database pool at startup (free)
-**File:** `backends/node/db/pool.js`
+**File:** `backend/db/pool.js`
 ```javascript
 async function warmPool() {
   const client = await pool.connect();
@@ -32,7 +32,7 @@ async function warmPool() {
 **Impact:** Saves 1-3s when cold starts do occur
 
 ### 3. Add fast readiness endpoint (free)
-**File:** `backends/node/app.js`
+**File:** `backend/app.js`
 ```javascript
 app.get('/ready', (req, res) => res.status(200).json({ status: 'ready' }));
 ```

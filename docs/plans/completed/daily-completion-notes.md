@@ -15,7 +15,7 @@ The backend infrastructure already exists:
 
 1. **Database schema** (`shared/database/schema.sql:40-48`): The `completions` table has a `notes` column (TEXT, nullable)
 2. **TypeScript types** (`frontends/nextjs/types/habit.ts:15-20`): `Completion` interface includes `notes: string | null`
-3. **API endpoint** (`backends/node/routes/completions.js:41-99`): POST accepts optional `notes` in request body
+3. **API endpoint** (`backend/routes/completions.js:41-99`): POST accepts optional `notes` in request body
 4. **API client** (`frontends/nextjs/lib/api.ts:205-231`): `createCompletion()` accepts optional `notes` parameter
 
 **What's missing:** Frontend UI to capture, display, and edit notes.
@@ -70,7 +70,7 @@ Two UX options for capturing notes:
 ### Part 2: Update Completion API to Support Note Updates
 
 #### Step 3: Add PUT Endpoint for Updating Notes (Backend)
-**Files:** `backends/node/routes/completions.js`, `backends/node/routes/completions.test.js`
+**Files:** `backend/routes/completions.js`, `backend/routes/completions.test.js`
 
 ##### 3a. Write backend unit tests
 - [x] Test: 401 without authentication
@@ -200,8 +200,8 @@ Two UX options for capturing notes:
 ### Modified Files
 | File | Changes |
 |------|---------|
-| `backends/node/routes/completions.js` | Add PUT endpoint for updating notes |
-| `backends/node/routes/completions.test.js` | Add tests for PUT endpoint |
+| `backend/routes/completions.js` | Add PUT endpoint for updating notes |
+| `backend/routes/completions.test.js` | Add tests for PUT endpoint |
 | `shared/api-spec/openapi.yaml` | Add PUT endpoint spec |
 | `frontends/nextjs/lib/api.ts` | Add `updateCompletionNote()` function |
 | `frontends/nextjs/lib/api.test.ts` | Add tests for new API function |

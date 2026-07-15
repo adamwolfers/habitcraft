@@ -49,7 +49,7 @@ Login at http://localhost:3100/login to start tracking habits!
 ### Manual Development Setup
 
 For local development without Docker, see the individual setup guides:
-- **[Backend Setup](backends/node/README.md)** - Node.js + Express backend
+- **[Backend Setup](backend/README.md)** - Node.js + Express backend
 - **[Frontend Setup](frontends/nextjs/README.md)** - Next.js frontend
 
 Note: You'll need to run PostgreSQL, backend, and frontend simultaneously for the application to work.
@@ -58,7 +58,7 @@ Note: You'll need to run PostgreSQL, backend, and frontend simultaneously for th
 
 ```
 habittracker_fullstack/
-├── backends/node/        # Node.js + Express backend
+├── backend/        # Node.js + Express backend
 ├── frontends/nextjs/     # Next.js frontend
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI specification
@@ -169,7 +169,7 @@ When adding new npm packages while using Docker, the containers need to be updat
 docker-compose down
 
 # 2. Install the package locally (updates package.json and package-lock.json)
-cd backends/node
+cd backend
 npm install <package-name>
 
 # 3. Rebuild and restart containers
@@ -205,7 +205,7 @@ docker-compose up -d backend-node
 
 ```bash
 # Node.js backend unit tests
-cd backends/node
+cd backend
 npm test
 
 # Run specific test file
@@ -231,7 +231,7 @@ Integration tests run against a real test database:
 ./scripts/test-db-start.sh
 
 # Run backend integration tests
-cd backends/node
+cd backend
 npm run test:integration
 
 # Stop the test database when done
@@ -251,7 +251,7 @@ The OpenAPI specification is available at:
 - **[AUTHENTICATION.md](AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[README.md](README.md)** - Project overview
-- **[backends/node/README.md](backends/node/README.md)** - Backend setup and API reference
+- **[backend/README.md](backend/README.md)** - Backend setup and API reference
 - **[shared/api-spec/openapi.yaml](shared/api-spec/openapi.yaml)** - OpenAPI specification
 
 ## Common Issues

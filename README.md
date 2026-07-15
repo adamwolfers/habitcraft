@@ -21,7 +21,7 @@ HabitCraft helps users build and track daily habits with an intuitive calendar-b
 
 ```
 habittracker_fullstack/
-├── backends/node/        # Node.js + Express backend
+├── backend/        # Node.js + Express backend
 ├── frontends/nextjs/     # Next.js frontend
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI specification
@@ -139,12 +139,12 @@ See the [OpenAPI specification](./shared/api-spec/openapi.yaml) for complete API
 ./scripts/test-all.sh
 
 # Backend unit tests
-cd backends/node
+cd backend
 npm test
 
 # Backend integration tests (requires test database)
 ./scripts/test-db-start.sh
-cd backends/node && npm run test:integration
+cd backend && npm run test:integration
 ./scripts/test-db-stop.sh
 
 # Frontend unit tests

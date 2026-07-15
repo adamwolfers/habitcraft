@@ -6,8 +6,8 @@ This document covers the testing infrastructure, conventions, and isolation stra
 
 | Type | Framework | Location | Purpose |
 |------|-----------|----------|---------|
-| Backend Unit | Jest + Supertest | `backends/node/tests/` | API endpoint and middleware testing |
-| Backend Integration | Jest + Supertest | `backends/node/tests/integration/` | Full database workflows |
+| Backend Unit | Jest + Supertest | `backend/tests/` | API endpoint and middleware testing |
+| Backend Integration | Jest + Supertest | `backend/tests/integration/` | Full database workflows |
 | Frontend Unit | Jest + RTL | `frontends/nextjs/**/*.test.tsx` | Component and hook testing |
 | E2E | Playwright | `frontends/nextjs/e2e/` | Full user journey testing |
 
@@ -50,7 +50,7 @@ Both users have sample habits with predictable UUIDs and sample completions.
 
 | File | Purpose |
 |------|---------|
-| `backends/node/.env.test` | Test database connection, test JWT secret |
+| `backend/.env.test` | Test database connection, test JWT secret |
 | `frontends/nextjs/.env.test` | Test API URL |
 
 ## Running Tests
@@ -65,7 +65,7 @@ scripts/test-all.sh --rebuild # Rebuild containers first
 ### Backend
 
 ```bash
-cd backends/node
+cd backend
 npm test                      # Unit tests
 npm run test:integration      # Integration tests (requires test db)
 ```
@@ -165,7 +165,7 @@ test('should show error when email already taken', async ({ page }) => {
 
 ## Backend Integration Tests
 
-Located in `backends/node/tests/integration/`:
+Located in `backend/tests/integration/`:
 
 ### `auth.test.js` — Authentication Flows
 - Register → Login → Access Protected Route
@@ -240,7 +240,7 @@ Run coverage reports:
 
 ```bash
 # Backend
-cd backends/node && npm test -- --coverage
+cd backend && npm test -- --coverage
 
 # Frontend
 cd frontends/nextjs && npm test -- --coverage
