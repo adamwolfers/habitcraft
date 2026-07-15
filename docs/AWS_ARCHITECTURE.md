@@ -164,7 +164,7 @@ Update your RDS security group to allow inbound from Lightsail's CIDR (172.26.0.
 **Backend:**
 
 ```bash
-cd backends/node
+cd backend
 
 # Build the image
 docker build -t habitcraft-backend .
@@ -395,7 +395,7 @@ See `.github/workflows/ci.yml` for the complete workflow.
 
 ## Dockerfiles
 
-### Backend (backends/node/Dockerfile)
+### Backend (backend/Dockerfile)
 
 ```dockerfile
 FROM node:20-alpine
@@ -423,7 +423,7 @@ CMD ["./entrypoint.sh"]
 
 **Note:** Before building, copy the schema file:
 ```bash
-cp shared/database/schema.sql backends/node/
+cp shared/database/schema.sql backend/
 ```
 
 ### Frontend (frontends/nextjs/Dockerfile)

@@ -70,7 +70,7 @@ echo "----------------------------------------------"
 cd "$PROJECT_ROOT"
 
 # Check if dependencies have changed since last successful run
-CURRENT_HASH=$(cat backends/node/package-lock.json frontends/nextjs/package-lock.json 2>/dev/null | md5 -q 2>/dev/null || cat backends/node/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
+CURRENT_HASH=$(cat backend/package-lock.json frontends/nextjs/package-lock.json 2>/dev/null | md5 -q 2>/dev/null || cat backend/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
 
 if [ "$FORCE_REBUILD" = false ] && [ -f "$LOCK_HASH_FILE" ]; then
     SAVED_HASH=$(cat "$LOCK_HASH_FILE")
@@ -127,7 +127,7 @@ echo ""
 # 1. Backend Unit Tests
 echo "📦 [1/4] Backend Unit Tests"
 echo "----------------------------------------------"
-cd "$PROJECT_ROOT/backends/node"
+cd "$PROJECT_ROOT/backend"
 if npm test; then
     BACKEND_UNIT=1
     echo "✅ Backend unit tests passed"
@@ -151,7 +151,7 @@ echo ""
 # 3. Backend Integration Tests
 echo "🔗 [3/4] Backend Integration Tests"
 echo "----------------------------------------------"
-cd "$PROJECT_ROOT/backends/node"
+cd "$PROJECT_ROOT/backend"
 if npm run test:integration; then
     INTEGRATION=1
     echo "✅ Integration tests passed"

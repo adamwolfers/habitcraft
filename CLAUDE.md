@@ -52,7 +52,7 @@ npm test -- --testPathPattern="Header.test.tsx"
 
 ```bash
 # Run a specific test file in isolation (backend)
-cd backends/node && npx jest routes/users.test.js --no-coverage
+cd backend && npx jest routes/users.test.js --no-coverage
 
 # Check test count matches expectations before trusting "all passed"
 ```

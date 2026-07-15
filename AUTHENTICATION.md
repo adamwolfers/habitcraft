@@ -367,7 +367,7 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete security and deployment 
 - [Getting Started Guide](GETTING_STARTED.md)
 - [API Specification](shared/api-spec/openapi.yaml)
 - [Database Schema](shared/database/schema.sql)
-- [Backend README](backends/node/README.md)
+- [Backend README](backend/README.md)
 - [Frontend README](frontends/nextjs/README.md)
 
 ## Questions & Troubleshooting

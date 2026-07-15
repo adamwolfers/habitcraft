@@ -14,7 +14,7 @@ group "default" {
 
 target "backend-node-test" {
   context = "."
-  dockerfile = "./backends/node/Dockerfile.dev"
+  dockerfile = "./backend/Dockerfile.dev"
   tags = ["habitcraft-backend-node-test:latest"]
 }
 

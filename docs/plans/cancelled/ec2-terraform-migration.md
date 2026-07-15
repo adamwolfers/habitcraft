@@ -1221,7 +1221,7 @@ deploy-backend:
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Copy schema for migrations
-      run: cp shared/database/schema.sql backends/node/
+      run: cp shared/database/schema.sql backend/
 
     - name: Build, tag, and push backend image
       env:
@@ -1229,7 +1229,7 @@ deploy-backend:
         ECR_REPOSITORY: habitcraft-backend
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        cd backends/node
+        cd backend
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
         docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

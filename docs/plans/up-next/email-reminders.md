@@ -156,7 +156,7 @@ SMTP_PASS=
 ### Step 2: Install Dependencies
 
 ```bash
-cd backends/node
+cd backend
 npm install @sendgrid/mail node-cron handlebars
 npm install --save-dev @types/node-cron
 ```
@@ -164,8 +164,8 @@ npm install --save-dev @types/node-cron
 ### Step 3: Email Service (TDD)
 
 **Files:**
-- `backends/node/services/emailService.js`
-- `backends/node/services/emailService.test.js`
+- `backend/services/emailService.js`
+- `backend/services/emailService.test.js`
 
 #### 3a. Write tests first
 - [ ] Test: `sendEmail()` calls SendGrid API with correct params
@@ -184,8 +184,8 @@ npm install --save-dev @types/node-cron
 ### Step 4: Reminder Scheduling Service (TDD)
 
 **Files:**
-- `backends/node/services/reminderService.js`
-- `backends/node/services/reminderService.test.js`
+- `backend/services/reminderService.js`
+- `backend/services/reminderService.test.js`
 
 #### 4a. Write tests first
 - [ ] Test: `calculateNextSendTime()` for daily frequency at specific time
@@ -209,8 +209,8 @@ npm install --save-dev @types/node-cron
 ### Step 5: User Email Preferences API (TDD)
 
 **Files:**
-- `backends/node/routes/emailPreferences.js`
-- `backends/node/routes/emailPreferences.test.js`
+- `backend/routes/emailPreferences.js`
+- `backend/routes/emailPreferences.test.js`
 
 #### Endpoints:
 - `GET /api/v1/users/me/email-preferences` - Get user's email preferences
@@ -233,8 +233,8 @@ npm install --save-dev @types/node-cron
 ### Step 6: Habit Reminder Settings API (TDD)
 
 **Files:**
-- `backends/node/routes/habitReminders.js`
-- `backends/node/routes/habitReminders.test.js`
+- `backend/routes/habitReminders.js`
+- `backend/routes/habitReminders.test.js`
 
 #### Endpoints:
 - `GET /api/v1/habits/:id/reminder` - Get reminder settings for a habit
@@ -266,8 +266,8 @@ npm install --save-dev @types/node-cron
 ### Step 7: Background Worker
 
 **Files:**
-- `backends/node/workers/reminderWorker.js`
-- `backends/node/workers/reminderWorker.test.js`
+- `backend/workers/reminderWorker.js`
+- `backend/workers/reminderWorker.test.js`
 
 #### 7a. Write tests first
 - [ ] Test: worker runs on schedule (mock node-cron)
@@ -283,7 +283,7 @@ npm install --save-dev @types/node-cron
 
 ### Step 8: Integration Tests
 
-**File:** `backends/node/integration/emailReminders.test.js`
+**File:** `backend/integration/emailReminders.test.js`
 
 - [ ] Test: Full flow - set preferences, set reminder, verify next_send_at calculated
 - [ ] Test: Worker processes reminder and updates database
@@ -439,7 +439,7 @@ interface HabitReminderSettings {
 
 ### Template Files
 
-**Directory:** `backends/node/templates/emails/`
+**Directory:** `backend/templates/emails/`
 
 #### `habitReminder.hbs`
 ```handlebars
@@ -490,20 +490,20 @@ interface HabitReminderSettings {
 | File | Changes |
 |------|---------|
 | `.env.example` | Add email service configuration |
-| `backends/node/package.json` | Add @sendgrid/mail, node-cron, handlebars |
-| `backends/node/services/emailService.js` | New - email sending abstraction |
-| `backends/node/services/emailService.test.js` | New - email service tests |
-| `backends/node/services/reminderService.js` | New - reminder calculation logic |
-| `backends/node/services/reminderService.test.js` | New - reminder service tests |
-| `backends/node/routes/emailPreferences.js` | New - user preferences API |
-| `backends/node/routes/emailPreferences.test.js` | New - preferences API tests |
-| `backends/node/routes/habitReminders.js` | New - habit reminder API |
-| `backends/node/routes/habitReminders.test.js` | New - habit reminder API tests |
-| `backends/node/workers/reminderWorker.js` | New - background job processor |
-| `backends/node/workers/reminderWorker.test.js` | New - worker tests |
-| `backends/node/templates/emails/habitReminder.hbs` | New - email template |
-| `backends/node/integration/emailReminders.test.js` | New - integration tests |
-| `backends/node/app.js` | Register new routes |
+| `backend/package.json` | Add @sendgrid/mail, node-cron, handlebars |
+| `backend/services/emailService.js` | New - email sending abstraction |
+| `backend/services/emailService.test.js` | New - email service tests |
+| `backend/services/reminderService.js` | New - reminder calculation logic |
+| `backend/services/reminderService.test.js` | New - reminder service tests |
+| `backend/routes/emailPreferences.js` | New - user preferences API |
+| `backend/routes/emailPreferences.test.js` | New - preferences API tests |
+| `backend/routes/habitReminders.js` | New - habit reminder API |
+| `backend/routes/habitReminders.test.js` | New - habit reminder API tests |
+| `backend/workers/reminderWorker.js` | New - background job processor |
+| `backend/workers/reminderWorker.test.js` | New - worker tests |
+| `backend/templates/emails/habitReminder.hbs` | New - email template |
+| `backend/integration/emailReminders.test.js` | New - integration tests |
+| `backend/app.js` | Register new routes |
 | `shared/api-spec/openapi.yaml` | Add new endpoints |
 
 ### Frontend

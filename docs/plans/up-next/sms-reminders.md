@@ -151,15 +151,15 @@ TWILIO_PHONE_NUMBER=  # Your Twilio phone number for sending SMS
 ### Step 2: Install Dependencies
 
 ```bash
-cd backends/node
+cd backend
 npm install twilio
 ```
 
 ### Step 3: SMS Service (TDD)
 
 **Files:**
-- `backends/node/services/smsService.js`
-- `backends/node/services/smsService.test.js`
+- `backend/services/smsService.js`
+- `backend/services/smsService.test.js`
 
 #### 3a. Write tests first
 - [ ] Test: `sendSms()` calls Twilio API with correct params
@@ -183,8 +183,8 @@ npm install twilio
 ### Step 4: SMS Reminder Scheduling Service (TDD)
 
 **Files:**
-- `backends/node/services/smsReminderService.js`
-- `backends/node/services/smsReminderService.test.js`
+- `backend/services/smsReminderService.js`
+- `backend/services/smsReminderService.test.js`
 
 #### 4a. Write tests first
 - [ ] Test: `calculateNextSendTime()` for daily frequency at specific time
@@ -209,8 +209,8 @@ npm install twilio
 ### Step 5: User SMS Preferences API (TDD)
 
 **Files:**
-- `backends/node/routes/smsPreferences.js`
-- `backends/node/routes/smsPreferences.test.js`
+- `backend/routes/smsPreferences.js`
+- `backend/routes/smsPreferences.test.js`
 
 #### Endpoints:
 - `GET /api/v1/users/me/sms-preferences` - Get user's SMS preferences
@@ -245,8 +245,8 @@ npm install twilio
 ### Step 6: Habit SMS Reminder Settings API (TDD)
 
 **Files:**
-- `backends/node/routes/habitSmsReminders.js`
-- `backends/node/routes/habitSmsReminders.test.js`
+- `backend/routes/habitSmsReminders.js`
+- `backend/routes/habitSmsReminders.test.js`
 
 #### Endpoints:
 - `GET /api/v1/habits/:id/sms-reminder` - Get SMS reminder settings for a habit
@@ -279,8 +279,8 @@ npm install twilio
 ### Step 7: Background Worker
 
 **Files:**
-- `backends/node/workers/smsReminderWorker.js`
-- `backends/node/workers/smsReminderWorker.test.js`
+- `backend/workers/smsReminderWorker.js`
+- `backend/workers/smsReminderWorker.test.js`
 
 #### 7a. Write tests first
 - [ ] Test: worker runs on schedule (mock node-cron)
@@ -307,8 +307,8 @@ SNS provides delivery status logging via CloudWatch Logs rather than webhooks.
 #### 8b. Implement Status Sync Service (Optional)
 
 **Files:**
-- `backends/node/services/smsDeliveryStatusService.js`
-- `backends/node/services/smsDeliveryStatusService.test.js`
+- `backend/services/smsDeliveryStatusService.js`
+- `backend/services/smsDeliveryStatusService.test.js`
 
 - [ ] Test: `syncDeliveryStatus()` queries CloudWatch Logs for recent deliveries
 - [ ] Test: `syncDeliveryStatus()` updates sms_send_log status
@@ -318,7 +318,7 @@ SNS provides delivery status logging via CloudWatch Logs rather than webhooks.
 
 ### Step 9: Integration Tests
 
-**File:** `backends/node/integration/smsReminders.test.js`
+**File:** `backend/integration/smsReminders.test.js`
 
 - [ ] Test: Full flow - verify phone, set preferences, set reminder, verify next_send_at calculated
 - [ ] Test: Worker processes reminder and updates database
@@ -512,7 +512,7 @@ interface HabitSmsReminderSettings {
 
 ### Message Templates
 
-**Directory:** `backends/node/templates/sms/`
+**Directory:** `backend/templates/sms/`
 
 #### `habitReminder.js`
 ```javascript
@@ -558,23 +558,23 @@ function generateVerificationSms({ code }) {
 | File | Changes |
 |------|---------|
 | `.env.example` | Add Twilio configuration |
-| `backends/node/package.json` | Add twilio |
-| `backends/node/services/smsService.js` | New - Twilio SMS sending service |
-| `backends/node/services/smsService.test.js` | New - SMS service tests |
-| `backends/node/services/smsReminderService.js` | New - reminder calculation logic |
-| `backends/node/services/smsReminderService.test.js` | New - reminder service tests |
-| `backends/node/services/smsDeliveryStatusService.js` | New - Twilio delivery status webhook (optional) |
-| `backends/node/services/smsDeliveryStatusService.test.js` | New - delivery status tests |
-| `backends/node/routes/smsPreferences.js` | New - user preferences API |
-| `backends/node/routes/smsPreferences.test.js` | New - preferences API tests |
-| `backends/node/routes/habitSmsReminders.js` | New - habit reminder API |
-| `backends/node/routes/habitSmsReminders.test.js` | New - habit reminder API tests |
-| `backends/node/workers/smsReminderWorker.js` | New - background job processor |
-| `backends/node/workers/smsReminderWorker.test.js` | New - worker tests |
-| `backends/node/templates/sms/habitReminder.js` | New - SMS template |
-| `backends/node/templates/sms/verification.js` | New - verification template |
-| `backends/node/integration/smsReminders.test.js` | New - integration tests |
-| `backends/node/app.js` | Register new routes |
+| `backend/package.json` | Add twilio |
+| `backend/services/smsService.js` | New - Twilio SMS sending service |
+| `backend/services/smsService.test.js` | New - SMS service tests |
+| `backend/services/smsReminderService.js` | New - reminder calculation logic |
+| `backend/services/smsReminderService.test.js` | New - reminder service tests |
+| `backend/services/smsDeliveryStatusService.js` | New - Twilio delivery status webhook (optional) |
+| `backend/services/smsDeliveryStatusService.test.js` | New - delivery status tests |
+| `backend/routes/smsPreferences.js` | New - user preferences API |
+| `backend/routes/smsPreferences.test.js` | New - preferences API tests |
+| `backend/routes/habitSmsReminders.js` | New - habit reminder API |
+| `backend/routes/habitSmsReminders.test.js` | New - habit reminder API tests |
+| `backend/workers/smsReminderWorker.js` | New - background job processor |
+| `backend/workers/smsReminderWorker.test.js` | New - worker tests |
+| `backend/templates/sms/habitReminder.js` | New - SMS template |
+| `backend/templates/sms/verification.js` | New - verification template |
+| `backend/integration/smsReminders.test.js` | New - integration tests |
+| `backend/app.js` | Register new routes |
 | `shared/api-spec/openapi.yaml` | Add new endpoints |
 
 ### Frontend

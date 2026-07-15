@@ -21,11 +21,11 @@ Implement full change password functionality:
 
 **All backend steps completed:**
 - OpenAPI spec updated: `shared/api-spec/openapi.yaml:355-462`
-- Security events added: `backends/node/utils/securityLogger.js:9-10`
-- Rate limiter added: `backends/node/middleware/rateLimiter.js:49-61`
-- Unit tests written: 10 tests in `backends/node/routes/users.test.js:383-587`
-- Endpoint implemented: `backends/node/routes/users.js:125-179`
-- Integration tests written: 3 tests in `backends/node/integration/auth.test.js:657-791`
+- Security events added: `backend/utils/securityLogger.js:9-10`
+- Rate limiter added: `backend/middleware/rateLimiter.js:49-61`
+- Unit tests written: 10 tests in `backend/routes/users.test.js:383-587`
+- Endpoint implemented: `backend/routes/users.js:125-179`
+- Integration tests written: 3 tests in `backend/integration/auth.test.js:657-791`
 - All tests pass: 243 unit + 381 frontend + 61 integration + 70 E2E = 755 total
 
 ### Backend Steps (TDD) ✅
@@ -63,7 +63,7 @@ Implement full change password functionality:
 - [x] Implement handler logic
 
 #### Step 6: Run Unit Tests ✅
-- [x] Run `npm test -- users.test.js` in backends/node (31 tests pass)
+- [x] Run `npm test -- users.test.js` in backend (31 tests pass)
 - [x] Run full test suite (243 tests pass)
 
 #### Step 7: Write Integration Tests ✅
@@ -187,11 +187,11 @@ Implement full change password functionality:
 | File | Changes |
 |------|---------|
 | `shared/api-spec/openapi.yaml` | Add PUT /users/me/password endpoint spec |
-| `backends/node/utils/securityLogger.js` | Add PASSWORD_CHANGE events |
-| `backends/node/middleware/rateLimiter.js` | Add passwordChangeLimiter |
-| `backends/node/routes/users.test.js` | Add unit tests |
-| `backends/node/routes/users.js` | Add PUT /me/password endpoint |
-| `backends/node/integration/auth.test.js` | Add integration tests |
+| `backend/utils/securityLogger.js` | Add PASSWORD_CHANGE events |
+| `backend/middleware/rateLimiter.js` | Add passwordChangeLimiter |
+| `backend/routes/users.test.js` | Add unit tests |
+| `backend/routes/users.js` | Add PUT /me/password endpoint |
+| `backend/integration/auth.test.js` | Add integration tests |
 
 ### Frontend (In Progress)
 | File | Changes |

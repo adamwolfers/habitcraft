@@ -748,11 +748,11 @@ jobs:
         run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
 
       - name: Copy schema for migrations
-        run: cp shared/database/schema.sql backends/node/
+        run: cp shared/database/schema.sql backend/
 
       - name: Build and push backend image
         run: |
-          cd backends/node
+          cd backend
           docker build -t ${{ env.ARTIFACT_REGISTRY }}/backend:${{ github.sha }} .
           docker tag ${{ env.ARTIFACT_REGISTRY }}/backend:${{ github.sha }} ${{ env.ARTIFACT_REGISTRY }}/backend:latest
           docker push ${{ env.ARTIFACT_REGISTRY }}/backend:${{ github.sha }}
@@ -1508,10 +1508,10 @@ The GCP smoke tests create orphan test users that accumulate in production and c
 2. [x] Add tests for the new endpoint
 
 **Files Modified:**
-- `backends/node/routes/users.js` - Add DELETE endpoint
-- `backends/node/routes/users.test.js` - Add tests
-- `backends/node/utils/securityLogger.js` - Add ACCOUNT_DELETED event
-- `backends/node/middleware/rateLimiter.js` - Add accountDeleteLimiter
+- `backend/routes/users.js` - Add DELETE endpoint
+- `backend/routes/users.test.js` - Add tests
+- `backend/utils/securityLogger.js` - Add ACCOUNT_DELETED event
+- `backend/middleware/rateLimiter.js` - Add accountDeleteLimiter
 
 #### Phase 6b: Playwright Setup Project Pattern (2026-01-16)
 

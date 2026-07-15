@@ -107,7 +107,7 @@ See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for complete
 ## Project Structure
 
 ```
-backends/node/
+backend/
 ├── app.js                          # Express app configuration
 ├── server.js                       # Server entry point
 ├── app.test.js                     # App-level tests
