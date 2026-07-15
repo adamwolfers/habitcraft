@@ -15,6 +15,23 @@
 const { Pool } = require('pg');
 const { execSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
+
+/**
+ * Locate the repo root by walking up from a starting dir until a known
+ * root marker is found. Robust to moving this file or the backend/ dir
+ * (unlike counting `../` levels, which breaks silently on relocation).
+ */
+function findProjectRoot(startDir) {
+  let dir = startDir;
+  while (dir !== path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'docker-compose.test.yml'))) {
+      return dir;
+    }
+    dir = path.dirname(dir);
+  }
+  throw new Error('Could not locate project root (no docker-compose.test.yml found)');
+}
 
 // Test database configuration (from .env.test)
 const testDbConfig = {
@@ -90,7 +107,7 @@ async function resetTestDatabase() {
   }
 
   // Locally, use the docker-compose based script
-  const projectRoot = path.resolve(__dirname, '../../..');
+  const projectRoot = findProjectRoot(__dirname);
   const scriptPath = path.join(projectRoot, 'scripts', 'test-db-reset.sh');
 
   try {

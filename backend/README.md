@@ -19,7 +19,7 @@ Node.js + Express implementation of the HabitCraft API.
 - Security event logging (failed logins, auth failures, token refresh)
 - TDD approach with comprehensive test coverage
 
-See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
+See [PROJECT_PLAN.md](../PROJECT_PLAN.md) for the complete project roadmap.
 
 ## Tech Stack
 
@@ -102,7 +102,7 @@ JWT_SECRET=your-secret-key-change-in-production
 ### Users
 - `GET /api/v1/users/me` - Get current user profile
 
-See the [OpenAPI specification](../../shared/api-spec/openapi.yaml) for complete API documentation.
+See the [OpenAPI specification](../shared/api-spec/openapi.yaml) for complete API documentation.
 
 ## Project Structure
 
@@ -206,7 +206,7 @@ docker run -p 3000:3000 \
   habitcraft-node
 
 # Or use docker-compose from root
-cd ../..
+cd ..
 docker-compose up backend-node
 ```
 
@@ -217,4 +217,4 @@ This project follows TDD:
 2. Implement minimum code to pass the test
 3. Refactor if needed
 
-For the complete development roadmap, see [PROJECT_PLAN.md](../../PROJECT_PLAN.md).
+For the complete development roadmap, see [PROJECT_PLAN.md](../PROJECT_PLAN.md).
