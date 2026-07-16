@@ -438,7 +438,7 @@ jobs:
 
       - name: Merge reports
         working-directory: frontends/nextjs
-        run: npx playwright merge-reports --reporter html ../../all-blob-reports
+        run: npx playwright merge-reports --reporter html "$GITHUB_WORKSPACE/all-blob-reports"
 
       - name: Upload merged report
         uses: actions/upload-artifact@v4
