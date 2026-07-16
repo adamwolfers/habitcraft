@@ -1,5 +1,5 @@
 import { execSync } from 'child_process';
-import { resolve } from 'path';
+import { findProjectRoot } from './find-project-root';
 
 /**
  * Global setup for Playwright E2E tests
@@ -14,8 +14,7 @@ import { resolve } from 'path';
 async function globalSetup() {
   console.log('\n🚀 Setting up E2E tests...\n');
 
-  // Path from frontends/nextjs/e2e/ up to project root
-  const projectRoot = resolve(__dirname, '../../..');
+  const projectRoot = findProjectRoot(__dirname);
 
   // Skip DB reset if SKIP_E2E_SETUP is set (used by test-all.sh for parallel shards)
   if (process.env.SKIP_E2E_SETUP) {
