@@ -82,7 +82,9 @@ test.describe('Authentication', () => {
       await expect(page).toHaveURL('/login');
     });
 
-    test('should redirect to login when accessing protected route without auth', async ({ page }) => {
+    test('should redirect to login when accessing protected route without auth', async ({
+      page,
+    }) => {
       // Try to access dashboard without being logged in
       await page.goto('/dashboard');
 
@@ -423,7 +425,10 @@ test.describe('Authentication', () => {
       await page.getByRole('button', { name: /profile/i }).click();
       await page.getByRole('button', { name: /edit profile/i }).click();
       await expect(page.getByRole('dialog').getByLabel(/name/i)).toHaveValue('Updated Via Modal');
-      await page.getByRole('dialog').getByRole('button', { name: /cancel/i }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: /cancel/i })
+        .click();
 
       // Verify persistence after reload
       await page.reload();
@@ -468,7 +473,10 @@ test.describe('Authentication', () => {
   });
 
   test.describe('Token Refresh', () => {
-    test('should refresh token automatically when access token expires', async ({ page, context }) => {
+    test('should refresh token automatically when access token expires', async ({
+      page,
+      context,
+    }) => {
       // Login first
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
@@ -482,7 +490,7 @@ test.describe('Authentication', () => {
       // Simulate access token expiration by clearing only the access token cookie
       // The refresh token remains intact
       const cookies = await context.cookies();
-      const refreshToken = cookies.find(c => c.name === 'refreshToken');
+      const refreshToken = cookies.find((c) => c.name === 'refreshToken');
 
       // Clear all cookies and restore only the refresh token
       await context.clearCookies();
@@ -500,7 +508,10 @@ test.describe('Authentication', () => {
       await expect(page.getByText('Morning Exercise')).toBeVisible();
     });
 
-    test('should redirect to login when refresh token is also expired', async ({ page, context }) => {
+    test('should redirect to login when refresh token is also expired', async ({
+      page,
+      context,
+    }) => {
       // Login first
       await page.goto('/login');
       await page.getByLabel(/email/i).fill('test@example.com');
@@ -547,7 +558,9 @@ test.describe('Authentication', () => {
       const confirmPasswordInput = page.getByLabel(/confirm.*password/i);
 
       // Get toggle buttons (should be 3 in the password change section)
-      const toggleButtons = page.getByRole('dialog').getByRole('button', { name: /show password/i });
+      const toggleButtons = page
+        .getByRole('dialog')
+        .getByRole('button', { name: /show password/i });
       await expect(toggleButtons).toHaveCount(3);
 
       // All should start hidden

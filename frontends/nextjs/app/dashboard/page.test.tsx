@@ -36,27 +36,62 @@ jest.mock('@/utils/habitUtils', () => ({
     color: formValues.color,
     icon: formValues.icon,
   })),
-  getDateButtonFutureClasses: jest.fn().mockImplementation((isFuture) =>
-    isFuture ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700'
-  ),
+  getDateButtonFutureClasses: jest
+    .fn()
+    .mockImplementation((isFuture) =>
+      isFuture ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700'
+    ),
   getDateCircleStyle: jest.fn().mockImplementation((isCompleted, color) => ({
     backgroundColor: isCompleted ? color : 'transparent',
   })),
   PRESET_COLORS: [
-    '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
-    '#8b5cf6', '#ec4899', '#06b6d4', '#f97316',
+    '#3b82f6',
+    '#10b981',
+    '#f59e0b',
+    '#ef4444',
+    '#8b5cf6',
+    '#ec4899',
+    '#06b6d4',
+    '#f97316',
   ],
   PRESET_ICONS: [
-    '🏃', '📚', '🧘', '💧', '🥗', '💪', '🎯', '✍️',
-    '😴', '🚶', '🎨', '🎵', '🧹', '💻', '🌱', '🙏',
-    '☕', '🚫', '📱', '🎮', '🧠', '💊', '🦷', '🌙',
+    '🏃',
+    '📚',
+    '🧘',
+    '💧',
+    '🥗',
+    '💪',
+    '🎯',
+    '✍️',
+    '😴',
+    '🚶',
+    '🎨',
+    '🎵',
+    '🧹',
+    '💻',
+    '🌱',
+    '🙏',
+    '☕',
+    '🚫',
+    '📱',
+    '🎮',
+    '🧠',
+    '💊',
+    '🦷',
+    '🌙',
   ],
 }));
 
-const mockFindHabitById = habitUtilsModule.findHabitById as jest.MockedFunction<typeof habitUtilsModule.findHabitById>;
+const mockFindHabitById = habitUtilsModule.findHabitById as jest.MockedFunction<
+  typeof habitUtilsModule.findHabitById
+>;
 
-const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
-const mockUseHabits = useHabitsModule.useHabits as jest.MockedFunction<typeof useHabitsModule.useHabits>;
+const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<
+  typeof authContextModule.useAuth
+>;
+const mockUseHabits = useHabitsModule.useHabits as jest.MockedFunction<
+  typeof useHabitsModule.useHabits
+>;
 
 describe('Dashboard Page - Delete Functionality', () => {
   const mockHabits: Habit[] = [
@@ -71,7 +106,7 @@ describe('Dashboard Page - Delete Functionality', () => {
       icon: '🏃',
       status: 'active',
       createdAt: '2025-01-01T00:00:00.000Z',
-      updatedAt: '2025-01-01T00:00:00.000Z'
+      updatedAt: '2025-01-01T00:00:00.000Z',
     },
     {
       id: 'habit-2',
@@ -84,8 +119,8 @@ describe('Dashboard Page - Delete Functionality', () => {
       icon: '📚',
       status: 'active',
       createdAt: '2025-01-02T00:00:00.000Z',
-      updatedAt: '2025-01-02T00:00:00.000Z'
-    }
+      updatedAt: '2025-01-02T00:00:00.000Z',
+    },
   ];
 
   const mockCreateHabit = jest.fn();
@@ -100,9 +135,7 @@ describe('Dashboard Page - Delete Functionality', () => {
     jest.clearAllMocks();
 
     // Default: findHabitById returns the habit that matches
-    mockFindHabitById.mockImplementation((habits, id) =>
-      habits.find(h => h.id === id)
-    );
+    mockFindHabitById.mockImplementation((habits, id) => habits.find((h) => h.id === id));
 
     // Mock authenticated user
     mockUseAuth.mockReturnValue({
@@ -182,8 +215,8 @@ describe('Dashboard Page - Delete Functionality', () => {
         icon: '🏃',
         status: 'active',
         createdAt: '2025-01-01T00:00:00.000Z',
-        updatedAt: '2025-01-01T00:00:00.000Z'
-      }
+        updatedAt: '2025-01-01T00:00:00.000Z',
+      },
     ];
 
     mockUseHabits.mockReturnValue({
@@ -320,7 +353,9 @@ describe('Dashboard Page - Delete Functionality', () => {
 
     render(<Dashboard />);
 
-    expect(screen.getByText('No habits yet. Add your first habit to get started!')).toBeInTheDocument();
+    expect(
+      screen.getByText('No habits yet. Add your first habit to get started!')
+    ).toBeInTheDocument();
   });
 
   it('should call createHabit when adding a new habit through the form', async () => {
@@ -380,8 +415,8 @@ describe('Dashboard Page - Edit Functionality', () => {
       icon: '🏃',
       status: 'active',
       createdAt: '2025-01-01T00:00:00.000Z',
-      updatedAt: '2025-01-01T00:00:00.000Z'
-    }
+      updatedAt: '2025-01-01T00:00:00.000Z',
+    },
   ];
 
   const mockCreateHabit = jest.fn();
@@ -396,9 +431,7 @@ describe('Dashboard Page - Edit Functionality', () => {
     jest.clearAllMocks();
 
     // Default: findHabitById returns the habit that matches
-    mockFindHabitById.mockImplementation((habits, id) =>
-      habits.find(h => h.id === id)
-    );
+    mockFindHabitById.mockImplementation((habits, id) => habits.find((h) => h.id === id));
 
     mockUseAuth.mockReturnValue({
       user: {
@@ -562,9 +595,12 @@ describe('Dashboard Page - Edit Functionality', () => {
 
     // Verify updateHabit was called with correct arguments
     await waitFor(() => {
-      expect(mockUpdateHabit).toHaveBeenCalledWith('habit-1', expect.objectContaining({
-        name: 'Updated Exercise Name',
-      }));
+      expect(mockUpdateHabit).toHaveBeenCalledWith(
+        'habit-1',
+        expect.objectContaining({
+          name: 'Updated Exercise Name',
+        })
+      );
     });
 
     // Modal should close after successful update

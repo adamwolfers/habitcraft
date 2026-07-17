@@ -75,11 +75,7 @@ async function fetchWithAuth(
   const response = await fetch(url, options);
 
   // If not a 401, or this is already a retry, or it's the refresh endpoint, just return
-  if (
-    response.status !== 401 ||
-    isRetry ||
-    url.includes('/auth/refresh')
-  ) {
+  if (response.status !== 401 || isRetry || url.includes('/auth/refresh')) {
     return response;
   }
 
@@ -121,8 +117,8 @@ export async function fetchHabits(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId
-    }
+      'X-User-Id': userId,
+    },
   });
 
   if (!response.ok) {
@@ -138,18 +134,15 @@ export async function fetchHabits(
  * @param habitData - The habit data to create
  * @returns Promise<Habit> - The created habit
  */
-export async function createHabit(
-  userId: string,
-  habitData: HabitFormData
-): Promise<Habit> {
+export async function createHabit(userId: string, habitData: HabitFormData): Promise<Habit> {
   const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits`, {
     method: 'POST',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId
+      'X-User-Id': userId,
     },
-    body: JSON.stringify(habitData)
+    body: JSON.stringify(habitData),
   });
 
   if (!response.ok) {
@@ -190,8 +183,8 @@ export async function fetchCompletions(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId
-    }
+      'X-User-Id': userId,
+    },
   });
 
   if (!response.ok) {
@@ -225,9 +218,9 @@ export async function createCompletion(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId
+      'X-User-Id': userId,
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -248,14 +241,17 @@ export async function deleteCompletion(
   habitId: string,
   date: string
 ): Promise<void> {
-  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`, {
-    method: 'DELETE',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': userId
+  const response = await fetchWithAuth(
+    `${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`,
+    {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': userId,
+      },
     }
-  });
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to delete completion: ${response.status}`);
@@ -276,15 +272,18 @@ export async function updateCompletionNote(
   date: string,
   notes: string | null
 ): Promise<Completion> {
-  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`, {
-    method: 'PUT',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-User-Id': userId
-    },
-    body: JSON.stringify({ notes })
-  });
+  const response = await fetchWithAuth(
+    `${API_BASE_URL}/api/v1/habits/${habitId}/completions/${date}`,
+    {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': userId,
+      },
+      body: JSON.stringify({ notes }),
+    }
+  );
 
   if (!response.ok) {
     throw new Error(`Failed to update completion note: ${response.status}`);
@@ -308,9 +307,9 @@ export async function updateHabit(
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId
+      'X-User-Id': userId,
     },
-    body: JSON.stringify(updates)
+    body: JSON.stringify(updates),
   });
 
   if (!response.ok) {
@@ -320,17 +319,14 @@ export async function updateHabit(
   return response.json();
 }
 
-export async function deleteHabit(
-  userId: string,
-  habitId: string
-): Promise<void> {
+export async function deleteHabit(userId: string, habitId: string): Promise<void> {
   const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}`, {
     method: 'DELETE',
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      'X-User-Id': userId
-    }
+      'X-User-Id': userId,
+    },
   });
 
   if (!response.ok) {
@@ -355,9 +351,9 @@ export async function updateUserName(name: string): Promise<User> {
     method: 'PUT',
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name })
+    body: JSON.stringify({ name }),
   });
 
   if (!response.ok) {
@@ -382,9 +378,9 @@ export async function changePassword(
     method: 'PUT',
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ currentPassword, newPassword, confirmPassword })
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
   });
 
   if (!response.ok) {

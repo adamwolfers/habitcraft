@@ -17,10 +17,20 @@ interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (updates: { name?: string; email?: string }) => Promise<void>;
-  onChangePassword?: (currentPassword: string, newPassword: string, confirmPassword: string) => Promise<void>;
+  onChangePassword?: (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ) => Promise<void>;
 }
 
-export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChangePassword }: ProfileModalProps) {
+export default function ProfileModal({
+  user,
+  isOpen,
+  onClose,
+  onUpdate,
+  onChangePassword,
+}: ProfileModalProps) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +54,6 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
     setPasswordSuccess(false);
     onClose();
   };
-
 
   const trimmedName = name.trim();
   const trimmedEmail = email.trim();
@@ -138,7 +147,12 @@ export default function ProfileModal({ user, isOpen, onClose, onUpdate, onChange
             aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>

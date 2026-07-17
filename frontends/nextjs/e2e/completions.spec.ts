@@ -22,7 +22,7 @@ import { test, expect, Page, Locator } from '@playwright/test';
  */
 function getHabitCard(page: Page, habitName: string) {
   return page.locator('div.bg-gray-800').filter({
-    has: page.locator('h3', { hasText: habitName })
+    has: page.locator('h3', { hasText: habitName }),
   });
 }
 
@@ -31,7 +31,7 @@ function getHabitCard(page: Page, habitName: string) {
  */
 async function isCompleted(dayButton: Locator) {
   const checkmark = dayButton.locator('svg path[d="M5 13l4 4L19 7"]');
-  return await checkmark.count() > 0;
+  return (await checkmark.count()) > 0;
 }
 
 /**
@@ -205,7 +205,7 @@ test.describe('Completion Tracking', () => {
 
       // Click and wait for the API request to complete
       const responsePromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.status() < 400
+        (resp) => resp.url().includes('/completions') && resp.status() < 400
       );
       await targetButton!.click();
       await responsePromise;
@@ -222,14 +222,20 @@ test.describe('Completion Tracking', () => {
 
       // Get the button again after reload
       const reloadedCard = getHabitCard(page, habitName);
-      const reloadedButton = reloadedCard.locator('.grid-cols-7 > div').nth(targetIndex).locator('button').first();
+      const reloadedButton = reloadedCard
+        .locator('.grid-cols-7 > div')
+        .nth(targetIndex)
+        .locator('button')
+        .first();
 
       // Verify state persisted - use poll() to retry until completions render
       // (multiple habits fetch completions concurrently, so we need to wait for this specific one)
-      await expect.poll(
-        async () => await isCompleted(reloadedButton),
-        { timeout: 5000, message: 'Completion state should persist after reload' }
-      ).toBe(true);
+      await expect
+        .poll(async () => await isCompleted(reloadedButton), {
+          timeout: 5000,
+          message: 'Completion state should persist after reload',
+        })
+        .toBe(true);
     });
   });
 
@@ -402,8 +408,10 @@ test.describe('Completion Tracking', () => {
       let readingCompletions = 0;
 
       for (let i = 0; i < 7; i++) {
-        if (await isCompleted(exerciseColumns.nth(i).locator('button').first())) exerciseCompletions++;
-        if (await isCompleted(readingColumns.nth(i).locator('button').first())) readingCompletions++;
+        if (await isCompleted(exerciseColumns.nth(i).locator('button').first()))
+          exerciseCompletions++;
+        if (await isCompleted(readingColumns.nth(i).locator('button').first()))
+          readingCompletions++;
       }
 
       // Both habits should have some completions (from fixtures)
@@ -602,7 +610,9 @@ test.describe('Completion Tracking', () => {
       await habitCard.getByRole('button', { name: /monthly view/i }).click();
 
       // Wait for monthly view to render - look for month name pattern (e.g., "January 2026")
-      await expect(habitCard.locator('span.font-bold').filter({ hasText: /\w+ \d{4}/ })).toBeVisible();
+      await expect(
+        habitCard.locator('span.font-bold').filter({ hasText: /\w+ \d{4}/ })
+      ).toBeVisible();
 
       // The completion should still be visible in the monthly view
       // (the same date should show as completed)
@@ -614,7 +624,9 @@ test.describe('Completion Tracking', () => {
       await habitCard.getByRole('button', { name: /weekly view/i }).click();
 
       // Wait for weekly view to render - look for date range pattern (e.g., "Dec 22 - Dec 28")
-      await expect(habitCard.locator('span.font-bold').filter({ hasText: /\w{3} \d+ - \w{3} \d+/ })).toBeVisible();
+      await expect(
+        habitCard.locator('span.font-bold').filter({ hasText: /\w{3} \d+ - \w{3} \d+/ })
+      ).toBeVisible();
 
       // The completion should still be there
       expect(await isCompleted(targetButton!)).toBe(true);
@@ -631,7 +643,9 @@ test.describe('Completion Tracking', () => {
       await habitCard.getByRole('button', { name: /monthly view/i }).click();
 
       // Wait for and verify monthly view is showing current month
-      await expect(habitCard.locator('span.font-bold').filter({ hasText: /\w+ \d{4}/ })).toBeVisible();
+      await expect(
+        habitCard.locator('span.font-bold').filter({ hasText: /\w+ \d{4}/ })
+      ).toBeVisible();
 
       // Navigate to previous month
       await habitCard.getByRole('button', { name: /previous month/i }).click();
@@ -730,8 +744,8 @@ test.describe('Completion Tracking', () => {
         if (await isCompleted(btn)) {
           // The completion circle should have the habit's color as background
           const circle = btn.locator('div.rounded-full');
-          const bgColor = await circle.evaluate(el =>
-            window.getComputedStyle(el).backgroundColor
+          const bgColor = await circle.evaluate(
+            (el) => window.getComputedStyle(el).backgroundColor
           );
           // Should have a non-transparent background (the habit color)
           expect(bgColor).not.toBe('rgba(0, 0, 0, 0)');
@@ -754,8 +768,8 @@ test.describe('Completion Tracking', () => {
         if (!(await isCompleted(btn))) {
           // The circle should have a transparent background
           const circle = btn.locator('div.rounded-full');
-          const bgColor = await circle.evaluate(el =>
-            window.getComputedStyle(el).backgroundColor
+          const bgColor = await circle.evaluate(
+            (el) => window.getComputedStyle(el).backgroundColor
           );
           // Should be transparent
           expect(bgColor === 'rgba(0, 0, 0, 0)' || bgColor === 'transparent').toBe(true);
@@ -891,7 +905,7 @@ test.describe('Completion Tracking', () => {
 
       // Wait for API and click Save
       const responsePromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+        (resp) => resp.url().includes('/completions') && resp.request().method() === 'PUT'
       );
       await modal.getByRole('button', { name: /save/i }).click();
       await responsePromise;
@@ -940,7 +954,7 @@ test.describe('Completion Tracking', () => {
       await modal.getByRole('textbox').fill('Original note');
 
       let responsePromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+        (resp) => resp.url().includes('/completions') && resp.request().method() === 'PUT'
       );
       await modal.getByRole('button', { name: /save/i }).click();
       await responsePromise;
@@ -963,7 +977,7 @@ test.describe('Completion Tracking', () => {
       await textarea.fill('Updated note content');
 
       responsePromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+        (resp) => resp.url().includes('/completions') && resp.request().method() === 'PUT'
       );
       await modal.getByRole('button', { name: /save/i }).click();
       await responsePromise;
@@ -1015,7 +1029,7 @@ test.describe('Completion Tracking', () => {
       await modal.getByRole('textbox').fill('Note to be deleted');
 
       let responsePromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+        (resp) => resp.url().includes('/completions') && resp.request().method() === 'PUT'
       );
       await modal.getByRole('button', { name: /save/i }).click();
       await responsePromise;
@@ -1035,7 +1049,7 @@ test.describe('Completion Tracking', () => {
 
       // Delete the note
       responsePromise = page.waitForResponse(
-        resp => resp.url().includes('/completions') && resp.request().method() === 'PUT'
+        (resp) => resp.url().includes('/completions') && resp.request().method() === 'PUT'
       );
       await deleteButton.click();
       await responsePromise;

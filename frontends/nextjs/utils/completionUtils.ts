@@ -1,4 +1,4 @@
-import { Completion } from "@/types/habit";
+import { Completion } from '@/types/habit';
 
 /**
  * Filters completions by date, either including or excluding matches.
@@ -12,12 +12,12 @@ import { Completion } from "@/types/habit";
 export function filterCompletionsByDate(
   completions: Completion[],
   dateString: string,
-  mode: "include" | "exclude"
+  mode: 'include' | 'exclude'
 ): Completion[] {
   return completions.filter((completion) => {
     // Strip timestamp from completion.date if it exists
-    const completionDate = completion.date.split("T")[0];
+    const completionDate = completion.date.split('T')[0];
     const matches = completionDate === dateString;
-    return mode === "include" ? matches : !matches;
+    return mode === 'include' ? matches : !matches;
   });
 }

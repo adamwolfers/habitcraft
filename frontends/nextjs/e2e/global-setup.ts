@@ -53,7 +53,9 @@ async function globalSetup() {
       }
     } catch (error) {
       console.error(`❌ ${service.name} is not accessible at ${service.url}`);
-      console.error('Make sure test services are running: docker compose -f docker-compose.test.yml up');
+      console.error(
+        'Make sure test services are running: docker compose -f docker-compose.test.yml up'
+      );
       throw error;
     }
   }

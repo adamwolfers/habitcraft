@@ -70,9 +70,11 @@ describe('HabitCard', () => {
     // Should have day name buttons (Mon, Tue, etc.)
     const buttons = screen.getAllByRole('button');
     // Filter out the delete button, navigation buttons, and view toggle buttons
-    const dayButtons = buttons.filter(btn => {
+    const dayButtons = buttons.filter((btn) => {
       const label = btn.getAttribute('aria-label');
-      return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'));
+      return (
+        !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'))
+      );
     });
 
     // Should have 7 day buttons
@@ -91,9 +93,11 @@ describe('HabitCard', () => {
     );
 
     const buttons = screen.getAllByRole('button');
-    const dayButtons = buttons.filter(btn => {
+    const dayButtons = buttons.filter((btn) => {
       const label = btn.getAttribute('aria-label');
-      return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'));
+      return (
+        !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'))
+      );
     });
 
     // Click the first day button
@@ -167,7 +171,7 @@ describe('HabitCard', () => {
 
     // Check that at least one day button has a filled background (completed state)
     const dayCircles = container.querySelectorAll('div.w-8');
-    const hasColoredBackground = Array.from(dayCircles).some(circle => {
+    const hasColoredBackground = Array.from(dayCircles).some((circle) => {
       const element = circle as HTMLElement;
       const bgColor = element.style.backgroundColor;
       // Check if background color is set and not transparent
@@ -322,9 +326,12 @@ describe('HabitCard', () => {
       // Should display some indication of the week range
       // Looking for date patterns like "Nov 17 - Nov 23" or similar
       const buttons = screen.getAllByRole('button');
-      const dayButtons = buttons.filter(btn => {
+      const dayButtons = buttons.filter((btn) => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('view'));
+        return (
+          !label ||
+          (!label.includes('Delete') && !label.includes('week') && !label.includes('view'))
+        );
       });
 
       // Should still have 7 day buttons
@@ -346,13 +353,19 @@ describe('HabitCard', () => {
 
       // Get all day buttons (excluding navigation and delete buttons)
       const allButtons = container.querySelectorAll('button');
-      const dayButtons = Array.from(allButtons).filter(btn => {
+      const dayButtons = Array.from(allButtons).filter((btn) => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
+        return (
+          !label ||
+          (!label.includes('Delete') &&
+            !label.includes('week') &&
+            !label.includes('Edit') &&
+            !label.includes('view'))
+        );
       });
 
       // Check each day button exists and is rendered
-      dayButtons.forEach(btn => {
+      dayButtons.forEach((btn) => {
         // For current week, some dates may be in the future (disabled)
         // and some may be in the past (enabled)
         expect(btn).toBeInTheDocument();
@@ -381,9 +394,15 @@ describe('HabitCard', () => {
 
       // Get all day buttons after navigation
       const buttons = screen.getAllByRole('button');
-      const dayButtons = buttons.filter(btn => {
+      const dayButtons = buttons.filter((btn) => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
+        return (
+          !label ||
+          (!label.includes('Delete') &&
+            !label.includes('week') &&
+            !label.includes('Edit') &&
+            !label.includes('view'))
+        );
       });
 
       // Try clicking the last day button (should be a future date in next week)
@@ -415,9 +434,15 @@ describe('HabitCard', () => {
 
       // Get all day buttons after navigation
       const buttons = screen.getAllByRole('button');
-      const dayButtons = buttons.filter(btn => {
+      const dayButtons = buttons.filter((btn) => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
+        return (
+          !label ||
+          (!label.includes('Delete') &&
+            !label.includes('week') &&
+            !label.includes('Edit') &&
+            !label.includes('view'))
+        );
       });
 
       // Clear any previous calls
@@ -447,19 +472,27 @@ describe('HabitCard', () => {
 
       // Future date buttons should have reduced opacity or different styling
       const allButtons = container.querySelectorAll('button');
-      const dayButtons = Array.from(allButtons).filter(btn => {
+      const dayButtons = Array.from(allButtons).filter((btn) => {
         const label = btn.getAttribute('aria-label');
-        return !label || (!label.includes('Delete') && !label.includes('week') && !label.includes('Edit') && !label.includes('view'));
+        return (
+          !label ||
+          (!label.includes('Delete') &&
+            !label.includes('week') &&
+            !label.includes('Edit') &&
+            !label.includes('view'))
+        );
       });
 
       // Check that at least one button has disabled styling (opacity or cursor)
-      const hasDisabledStyling = dayButtons.some(btn => {
+      const hasDisabledStyling = dayButtons.some((btn) => {
         const style = window.getComputedStyle(btn);
-        return btn.hasAttribute('disabled') ||
-               style.opacity === '0.5' ||
-               style.cursor === 'not-allowed' ||
-               btn.classList.contains('opacity-50') ||
-               btn.classList.contains('cursor-not-allowed');
+        return (
+          btn.hasAttribute('disabled') ||
+          style.opacity === '0.5' ||
+          style.cursor === 'not-allowed' ||
+          btn.classList.contains('opacity-50') ||
+          btn.classList.contains('cursor-not-allowed')
+        );
       });
 
       expect(hasDisabledStyling).toBe(true);
@@ -641,8 +674,8 @@ describe('HabitCard', () => {
         habitId: '1',
         date: mondayString,
         notes: 'Ran 3 miles',
-        createdAt: '2025-01-15T10:00:00.000Z'
-      }
+        createdAt: '2025-01-15T10:00:00.000Z',
+      },
     ];
 
     const mockCompletionsWithoutNotes: Completion[] = [
@@ -651,8 +684,8 @@ describe('HabitCard', () => {
         habitId: '1',
         date: mondayString,
         notes: null,
-        createdAt: '2025-01-15T10:00:00.000Z'
-      }
+        createdAt: '2025-01-15T10:00:00.000Z',
+      },
     ];
 
     const mockIsCompletedOnDateWithMonday = jest.fn((_habitId: string, date: Date) => {

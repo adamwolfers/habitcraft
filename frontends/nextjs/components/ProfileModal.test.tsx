@@ -34,12 +34,7 @@ describe('ProfileModal', () => {
 
     it('should render when isOpen is true', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -47,12 +42,7 @@ describe('ProfileModal', () => {
 
     it('should display modal heading', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       expect(screen.getByRole('heading', { name: /profile/i })).toBeInTheDocument();
@@ -61,12 +51,7 @@ describe('ProfileModal', () => {
     it('should call onClose when cancel button is clicked', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
@@ -78,12 +63,7 @@ describe('ProfileModal', () => {
     it('should call onClose when close button (X) is clicked', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const closeButton = screen.getByRole('button', { name: /close/i });
@@ -95,12 +75,7 @@ describe('ProfileModal', () => {
     it('should NOT close when clicking backdrop', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const backdrop = screen.getByTestId('modal-backdrop');
@@ -215,12 +190,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockRejectedValue(new Error('Update failed'));
       const { rerender } = render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       // Trigger a profile update error
@@ -247,12 +217,7 @@ describe('ProfileModal', () => {
       );
 
       rerender(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       // Error should be cleared
@@ -263,12 +228,7 @@ describe('ProfileModal', () => {
   describe('User Info Display', () => {
     it('should display current user name', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       expect(screen.getByText('Test User')).toBeInTheDocument();
@@ -276,12 +236,7 @@ describe('ProfileModal', () => {
 
     it('should display current user email', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       expect(screen.getByText('test@example.com')).toBeInTheDocument();
@@ -291,12 +246,7 @@ describe('ProfileModal', () => {
   describe('Name Field', () => {
     it('should render name input field', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -305,12 +255,7 @@ describe('ProfileModal', () => {
 
     it('should populate name input with current user name', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i) as HTMLInputElement;
@@ -320,12 +265,7 @@ describe('ProfileModal', () => {
     it('should allow user to edit the name', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -339,12 +279,7 @@ describe('ProfileModal', () => {
   describe('Email Field', () => {
     it('should render email input field', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const emailInput = screen.getByLabelText(/email/i);
@@ -353,12 +288,7 @@ describe('ProfileModal', () => {
 
     it('should populate email input with current user email', () => {
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const emailInput = screen.getByLabelText(/email/i) as HTMLInputElement;
@@ -368,12 +298,7 @@ describe('ProfileModal', () => {
     it('should allow user to edit the email', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const emailInput = screen.getByLabelText(/email/i);
@@ -389,12 +314,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockResolvedValue(undefined);
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -416,12 +336,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockResolvedValue(undefined);
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const emailInput = screen.getByLabelText(/email/i);
@@ -443,12 +358,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockResolvedValue(undefined);
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -466,12 +376,7 @@ describe('ProfileModal', () => {
     it('should not call onUpdate when no changes are made', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const saveButton = screen.getByRole('button', { name: /save/i });
@@ -487,12 +392,7 @@ describe('ProfileModal', () => {
     it('should disable save button when name is empty', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -505,12 +405,7 @@ describe('ProfileModal', () => {
     it('should disable save button when email is empty', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const emailInput = screen.getByLabelText(/email/i);
@@ -523,12 +418,7 @@ describe('ProfileModal', () => {
     it('should disable save button for invalid email format', async () => {
       const user = userEvent.setup();
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const emailInput = screen.getByLabelText(/email/i);
@@ -545,12 +435,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockRejectedValue(new Error('Email is already in use'));
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -569,12 +454,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockRejectedValue(new Error('Update failed'));
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -596,12 +476,7 @@ describe('ProfileModal', () => {
       const user = userEvent.setup();
       mockOnUpdate.mockRejectedValue(new Error('Update failed'));
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       // Trigger error
@@ -633,12 +508,7 @@ describe('ProfileModal', () => {
       mockOnUpdate.mockReturnValue(updatePromise);
 
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -667,12 +537,7 @@ describe('ProfileModal', () => {
       mockOnUpdate.mockReturnValue(updatePromise);
 
       render(
-        <ProfileModal
-          user={mockUser}
-          isOpen={true}
-          onClose={mockOnClose}
-          onUpdate={mockOnUpdate}
-        />
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
       );
 
       const nameInput = screen.getByLabelText(/name/i);
@@ -894,7 +759,11 @@ describe('ProfileModal', () => {
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
         await waitFor(() => {
-          expect(mockOnChangePassword).toHaveBeenCalledWith('oldpass123', 'newpass456', 'newpass456');
+          expect(mockOnChangePassword).toHaveBeenCalledWith(
+            'oldpass123',
+            'newpass456',
+            'newpass456'
+          );
         });
       });
 

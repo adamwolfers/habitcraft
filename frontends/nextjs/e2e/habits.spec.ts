@@ -25,7 +25,7 @@ import { test, expect, Page } from '@playwright/test';
 function getHabitCard(page: Page, habitName: string) {
   // Find the card container that has the h3 with the exact habit name
   return page.locator('div.bg-gray-800').filter({
-    has: page.locator('h3', { hasText: habitName })
+    has: page.locator('h3', { hasText: habitName }),
   });
 }
 
@@ -304,5 +304,4 @@ test.describe('Habit Management', () => {
       await expect(page.getByText(habitName)).not.toBeVisible();
     });
   });
-
 });

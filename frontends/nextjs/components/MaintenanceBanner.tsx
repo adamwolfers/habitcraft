@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useFeatureFlagEnabled, useFeatureFlagPayload } from "posthog-js/react";
-import { useState } from "react";
-import { FEATURE_FLAGS } from "@/constants/featureFlags";
+import { useFeatureFlagEnabled, useFeatureFlagPayload } from 'posthog-js/react';
+import { useState } from 'react';
+import { FEATURE_FLAGS } from '@/constants/featureFlags';
 
 interface MaintenanceBannerPayload {
   message?: string;
@@ -17,8 +17,7 @@ export function MaintenanceBanner() {
 
   if (!showBanner || dismissed) return null;
 
-  const message =
-    payload?.message || "Scheduled maintenance coming soon.";
+  const message = payload?.message || 'Scheduled maintenance coming soon.';
 
   return (
     <div

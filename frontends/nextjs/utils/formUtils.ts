@@ -1,4 +1,4 @@
-import { PRESET_COLORS, PRESET_ICONS } from "./habitUtils";
+import { PRESET_COLORS, PRESET_ICONS } from './habitUtils';
 
 export interface HabitFormState {
   name: string;
@@ -19,8 +19,8 @@ export interface PasswordFormState {
  */
 export function getDefaultHabitFormValues(): HabitFormState {
   return {
-    name: "",
-    description: "",
+    name: '',
+    description: '',
     color: PRESET_COLORS[0],
     icon: PRESET_ICONS[0],
   };
@@ -32,8 +32,8 @@ export function getDefaultHabitFormValues(): HabitFormState {
  */
 export function getEmptyPasswordState(): PasswordFormState {
   return {
-    currentPassword: "",
-    newPassword: "",
-    confirmPassword: "",
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
   };
 }

@@ -13,23 +13,35 @@ jest.mock('@/utils/confettiUtils', () => ({
   triggerConfetti: jest.fn(),
 }));
 
-const mockTriggerConfetti = confettiUtils.triggerConfetti as jest.MockedFunction<typeof confettiUtils.triggerConfetti>;
+const mockTriggerConfetti = confettiUtils.triggerConfetti as jest.MockedFunction<
+  typeof confettiUtils.triggerConfetti
+>;
 
 // Mock the useAuth hook
 jest.mock('@/context/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
-const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
+const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<
+  typeof authContextModule.useAuth
+>;
 
 const mockFetchHabits = api.fetchHabits as jest.MockedFunction<typeof api.fetchHabits>;
 const mockCreateHabit = api.createHabit as jest.MockedFunction<typeof api.createHabit>;
-const mockFetchCompletions = api.fetchCompletions as jest.MockedFunction<typeof api.fetchCompletions>;
-const mockCreateCompletion = api.createCompletion as jest.MockedFunction<typeof api.createCompletion>;
-const mockDeleteCompletion = api.deleteCompletion as jest.MockedFunction<typeof api.deleteCompletion>;
+const mockFetchCompletions = api.fetchCompletions as jest.MockedFunction<
+  typeof api.fetchCompletions
+>;
+const mockCreateCompletion = api.createCompletion as jest.MockedFunction<
+  typeof api.createCompletion
+>;
+const mockDeleteCompletion = api.deleteCompletion as jest.MockedFunction<
+  typeof api.deleteCompletion
+>;
 const mockDeleteHabit = api.deleteHabit as jest.MockedFunction<typeof api.deleteHabit>;
 const mockUpdateHabit = api.updateHabit as jest.MockedFunction<typeof api.updateHabit>;
-const mockUpdateCompletionNote = api.updateCompletionNote as jest.MockedFunction<typeof api.updateCompletionNote>;
+const mockUpdateCompletionNote = api.updateCompletionNote as jest.MockedFunction<
+  typeof api.updateCompletionNote
+>;
 
 describe('useHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
@@ -45,7 +57,7 @@ describe('useHabits', () => {
       icon: '⭐',
       status: 'active',
       createdAt: '2025-01-01T00:00:00.000Z',
-      updatedAt: '2025-01-01T00:00:00.000Z'
+      updatedAt: '2025-01-01T00:00:00.000Z',
     },
     {
       id: 'habit-2',
@@ -58,8 +70,8 @@ describe('useHabits', () => {
       icon: '📚',
       status: 'active',
       createdAt: '2025-01-02T00:00:00.000Z',
-      updatedAt: '2025-01-02T00:00:00.000Z'
-    }
+      updatedAt: '2025-01-02T00:00:00.000Z',
+    },
   ];
 
   beforeEach(() => {
@@ -68,7 +80,12 @@ describe('useHabits', () => {
     mockFetchHabits.mockResolvedValue([]);
     // Default: user is authenticated
     mockUseAuth.mockReturnValue({
-      user: { id: mockUserId, email: 'test@example.com', name: 'Test User', createdAt: '2025-01-01' },
+      user: {
+        id: mockUserId,
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2025-01-01',
+      },
       isLoading: false,
       isAuthenticated: true,
       login: jest.fn(),
@@ -136,7 +153,7 @@ describe('useHabits', () => {
     });
 
     // All returned habits should be active (we'd filter on backend)
-    expect(result.current.habits.every(h => h.status === 'active')).toBe(true);
+    expect(result.current.habits.every((h) => h.status === 'active')).toBe(true);
   });
 
   it('should not fetch habits if userId is not provided', async () => {
@@ -212,7 +229,12 @@ describe('useHabits', () => {
 
       // Simulate auth completing
       mockUseAuth.mockReturnValue({
-        user: { id: mockUserId, email: 'test@example.com', name: 'Test User', createdAt: '2025-01-01' },
+        user: {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01',
+        },
         isLoading: false,
         isAuthenticated: true,
         login: jest.fn(),
@@ -255,7 +277,7 @@ describe('useHabits', () => {
         description: 'Meditate for 10 minutes',
         frequency: 'daily',
         color: '#10B981',
-        icon: '🧘'
+        icon: '🧘',
       };
 
       const createdHabit: Habit = {
@@ -269,7 +291,7 @@ describe('useHabits', () => {
         icon: '🧘',
         status: 'active',
         createdAt: '2025-01-03T00:00:00.000Z',
-        updatedAt: '2025-01-03T00:00:00.000Z'
+        updatedAt: '2025-01-03T00:00:00.000Z',
       };
 
       mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
@@ -299,7 +321,7 @@ describe('useHabits', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const newHabitFormData: HabitFormData = {
         name: 'Failed Habit',
-        frequency: 'daily'
+        frequency: 'daily',
       };
 
       mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
@@ -334,7 +356,7 @@ describe('useHabits', () => {
       const newHabitFormData: HabitFormData = {
         name: 'Running',
         frequency: 'weekly',
-        targetDays: [1, 3, 5]
+        targetDays: [1, 3, 5],
       };
 
       const createdHabit: Habit = {
@@ -348,7 +370,7 @@ describe('useHabits', () => {
         icon: '🏃',
         status: 'active',
         createdAt: '2025-01-04T00:00:00.000Z',
-        updatedAt: '2025-01-04T00:00:00.000Z'
+        updatedAt: '2025-01-04T00:00:00.000Z',
       };
 
       mockFetchHabits.mockResolvedValue([]);
@@ -380,15 +402,15 @@ describe('useHabits', () => {
         habitId: 'habit-1',
         date: '2025-01-15',
         notes: null,
-        createdAt: '2025-01-15T10:00:00.000Z'
+        createdAt: '2025-01-15T10:00:00.000Z',
       },
       {
         id: 'completion-2',
         habitId: 'habit-1',
         date: '2025-01-14',
         notes: 'Great session',
-        createdAt: '2025-01-14T10:00:00.000Z'
-      }
+        createdAt: '2025-01-14T10:00:00.000Z',
+      },
     ];
 
     beforeEach(() => {
@@ -460,7 +482,10 @@ describe('useHabits', () => {
       expect(isCompleted).toBe(true);
 
       // Check non-completed date
-      const isNotCompleted = result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-16'));
+      const isNotCompleted = result.current.isHabitCompletedOnDate(
+        'habit-1',
+        new Date('2025-01-16')
+      );
       expect(isNotCompleted).toBe(false);
     });
 
@@ -473,7 +498,7 @@ describe('useHabits', () => {
         habitId: 'habit-1',
         date: '2025-01-16',
         notes: null,
-        createdAt: '2025-01-16T10:00:00.000Z'
+        createdAt: '2025-01-16T10:00:00.000Z',
       };
 
       mockCreateCompletion.mockResolvedValue(newCompletion);
@@ -559,7 +584,10 @@ describe('useHabits', () => {
         expect(result.current.habits).toHaveLength(2);
       });
 
-      const isCompleted = result.current.isHabitCompletedOnDate('non-existent', new Date('2025-01-15'));
+      const isCompleted = result.current.isHabitCompletedOnDate(
+        'non-existent',
+        new Date('2025-01-15')
+      );
       expect(isCompleted).toBe(false);
     });
 
@@ -572,7 +600,7 @@ describe('useHabits', () => {
         habitId: 'habit-1',
         date: '2025-01-16',
         notes: null,
-        createdAt: '2025-01-16T10:00:00.000Z'
+        createdAt: '2025-01-16T10:00:00.000Z',
       };
 
       mockCreateCompletion.mockResolvedValue(newCompletion);
@@ -766,7 +794,7 @@ describe('useHabits', () => {
       // Verify habit was removed from local state
       expect(result.current.habits).toHaveLength(1);
       expect(result.current.habits[0].id).toBe('habit-2');
-      expect(result.current.habits.find(h => h.id === 'habit-1')).toBeUndefined();
+      expect(result.current.habits.find((h) => h.id === 'habit-1')).toBeUndefined();
     });
 
     it('should handle deletion errors gracefully', async () => {
@@ -807,8 +835,8 @@ describe('useHabits', () => {
           habitId: 'habit-1',
           date: '2025-01-15',
           notes: null,
-          createdAt: '2025-01-15T10:00:00.000Z'
-        }
+          createdAt: '2025-01-15T10:00:00.000Z',
+        },
       ];
 
       mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
@@ -871,8 +899,8 @@ describe('useHabits', () => {
         habitId: 'habit-1',
         date: '2025-01-15',
         notes: null,
-        createdAt: '2025-01-15T10:00:00.000Z'
-      }
+        createdAt: '2025-01-15T10:00:00.000Z',
+      },
     ];
 
     beforeEach(() => {
@@ -882,7 +910,7 @@ describe('useHabits', () => {
     it('should update note via API and update local state', async () => {
       const updatedCompletion: Completion = {
         ...mockCompletions[0],
-        notes: 'Ran 5 miles'
+        notes: 'Ran 5 miles',
       };
 
       mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
@@ -901,23 +929,28 @@ describe('useHabits', () => {
       });
 
       // Verify API was called with correct data
-      expect(mockUpdateCompletionNote).toHaveBeenCalledWith(mockUserId, 'habit-1', '2025-01-15', 'Ran 5 miles');
+      expect(mockUpdateCompletionNote).toHaveBeenCalledWith(
+        mockUserId,
+        'habit-1',
+        '2025-01-15',
+        'Ran 5 miles'
+      );
 
       // Verify local state was updated
       const completions = result.current.getCompletionsForHabit('habit-1');
-      const updatedEntry = completions.find(c => c.date === '2025-01-15');
+      const updatedEntry = completions.find((c) => c.date === '2025-01-15');
       expect(updatedEntry?.notes).toBe('Ran 5 miles');
     });
 
     it('should clear note when null is passed', async () => {
       const completionWithNote: Completion = {
         ...mockCompletions[0],
-        notes: 'Existing note'
+        notes: 'Existing note',
       };
 
       const updatedCompletion: Completion = {
         ...mockCompletions[0],
-        notes: null
+        notes: null,
       };
 
       mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
@@ -936,11 +969,16 @@ describe('useHabits', () => {
       });
 
       // Verify API was called with null
-      expect(mockUpdateCompletionNote).toHaveBeenCalledWith(mockUserId, 'habit-1', '2025-01-15', null);
+      expect(mockUpdateCompletionNote).toHaveBeenCalledWith(
+        mockUserId,
+        'habit-1',
+        '2025-01-15',
+        null
+      );
 
       // Verify local state was updated
       const completions = result.current.getCompletionsForHabit('habit-1');
-      const updatedEntry = completions.find(c => c.date === '2025-01-15');
+      const updatedEntry = completions.find((c) => c.date === '2025-01-15');
       expect(updatedEntry?.notes).toBeNull();
     });
 
@@ -970,7 +1008,7 @@ describe('useHabits', () => {
 
       // Verify local state wasn't modified
       const completions = result.current.getCompletionsForHabit('habit-1');
-      const entry = completions.find(c => c.date === '2025-01-15');
+      const entry = completions.find((c) => c.date === '2025-01-15');
       expect(entry?.notes).toBeNull();
 
       consoleErrorSpy.mockRestore();
@@ -984,15 +1022,15 @@ describe('useHabits', () => {
         habitId: 'habit-1',
         date: '2025-01-15',
         notes: 'Great workout',
-        createdAt: '2025-01-15T10:00:00.000Z'
+        createdAt: '2025-01-15T10:00:00.000Z',
       },
       {
         id: 'completion-2',
         habitId: 'habit-1',
         date: '2025-01-14',
         notes: null,
-        createdAt: '2025-01-14T10:00:00.000Z'
-      }
+        createdAt: '2025-01-14T10:00:00.000Z',
+      },
     ];
 
     it('should return completions array for a habit', async () => {

@@ -15,16 +15,19 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
     }
   });
 
-  const setValue = useCallback((value: T) => {
-    setStoredValue(value);
-    try {
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(key, JSON.stringify(value));
+  const setValue = useCallback(
+    (value: T) => {
+      setStoredValue(value);
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.setItem(key, JSON.stringify(value));
+        }
+      } catch (error) {
+        console.error('Error writing to localStorage:', error);
       }
-    } catch (error) {
-      console.error('Error writing to localStorage:', error);
-    }
-  }, [key]);
+    },
+    [key]
+  );
 
   return [storedValue, setValue];
 }

@@ -28,7 +28,7 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           description: description.trim(),
           color,
           icon,
-          frequency: 'daily' // Default to daily for now
+          frequency: 'daily', // Default to daily for now
         });
         // Only clear form and close if successful
         const resetValues = getDefaultHabitFormValues();
@@ -73,7 +73,10 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           type="text"
           id="name"
           value={name}
-          onChange={(e) => { setName(e.target.value); setError(''); }}
+          onChange={(e) => {
+            setName(e.target.value);
+            setError('');
+          }}
           placeholder="e.g., Morning Exercise"
           className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           required

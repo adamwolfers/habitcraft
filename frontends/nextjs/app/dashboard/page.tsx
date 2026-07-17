@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useHabits } from "@/hooks/useHabits";
-import { useAuth } from "@/context/AuthContext";
-import AddHabitForm from "@/components/AddHabitForm";
-import HabitCard from "@/components/HabitCard";
-import EditHabitModal from "@/components/EditHabitModal";
-import CompletionNoteModal from "@/components/CompletionNoteModal";
-import Footer from "@/components/Footer";
-import ProtectedRoute from "@/components/ProtectedRoute";
-import { Habit, HabitFormData } from "@/types/habit";
-import { findHabitById } from "@/utils/habitUtils";
+import { useState } from 'react';
+import { useHabits } from '@/hooks/useHabits';
+import { useAuth } from '@/context/AuthContext';
+import AddHabitForm from '@/components/AddHabitForm';
+import HabitCard from '@/components/HabitCard';
+import EditHabitModal from '@/components/EditHabitModal';
+import CompletionNoteModal from '@/components/CompletionNoteModal';
+import Footer from '@/components/Footer';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { Habit, HabitFormData } from '@/types/habit';
+import { findHabitById } from '@/utils/habitUtils';
 
 interface NoteModalState {
   habitId: string;
@@ -30,7 +30,7 @@ export default function Dashboard() {
     deleteHabit,
     updateNote,
     getCompletionsForHabit,
-  } = useHabits(user?.id ?? "");
+  } = useHabits(user?.id ?? '');
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [noteModal, setNoteModal] = useState<NoteModalState | null>(null);
 
@@ -42,7 +42,7 @@ export default function Dashboard() {
     try {
       await deleteHabit(habitId);
     } catch (error) {
-      console.error("Failed to delete habit:", error);
+      console.error('Failed to delete habit:', error);
       // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
     }
   };
@@ -56,10 +56,7 @@ export default function Dashboard() {
     setEditingHabit(habit);
   };
 
-  const handleUpdateHabit = async (
-    habitId: string,
-    updates: Partial<Habit>
-  ) => {
+  const handleUpdateHabit = async (habitId: string, updates: Partial<Habit>) => {
     await updateHabit(habitId, updates);
     setEditingHabit(null);
   };
@@ -94,7 +91,7 @@ export default function Dashboard() {
       await updateNote(noteModal.habitId, noteModal.date, note);
       setNoteModal(null);
     } catch (error) {
-      console.error("Failed to update note:", error);
+      console.error('Failed to update note:', error);
     }
   };
 
@@ -123,9 +120,7 @@ export default function Dashboard() {
                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                   />
                 </svg>
-                <p className="text-lg">
-                  No habits yet. Add your first habit to get started!
-                </p>
+                <p className="text-lg">No habits yet. Add your first habit to get started!</p>
               </div>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">

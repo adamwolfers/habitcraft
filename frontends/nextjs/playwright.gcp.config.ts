@@ -54,10 +54,7 @@ export default defineConfig({
   workers: 1,
 
   // Reporter
-  reporter: [
-    ['html', { open: 'never', outputFolder: 'playwright-report-gcp' }],
-    ['list']
-  ],
+  reporter: [['html', { open: 'never', outputFolder: 'playwright-report-gcp' }], ['list']],
 
   // Shared settings
   use: {

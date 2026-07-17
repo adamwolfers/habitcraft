@@ -1,4 +1,4 @@
-import { Habit } from "@/types/habit";
+import { Habit } from '@/types/habit';
 
 export interface HabitFormValues {
   name: string;
@@ -10,7 +10,7 @@ export interface HabitFormValues {
 export interface HabitUpdatePayload {
   name: string;
   description: string | null;
-  frequency: "daily" | "weekly";
+  frequency: 'daily' | 'weekly';
   color: string;
   icon: string;
 }
@@ -19,13 +19,10 @@ export interface HabitUpdatePayload {
  * Detects whether any habit fields have changed between form values and original habit.
  * Handles null description in original habit by comparing to empty string.
  */
-export function detectHabitChanges(
-  formValues: HabitFormValues,
-  originalHabit: Habit
-): boolean {
+export function detectHabitChanges(formValues: HabitFormValues, originalHabit: Habit): boolean {
   const trimmedName = formValues.name.trim();
   const trimmedDescription = formValues.description.trim();
-  const originalDescription = originalHabit.description || "";
+  const originalDescription = originalHabit.description || '';
 
   const nameChanged = trimmedName !== originalHabit.name;
   const descriptionChanged = trimmedDescription !== originalDescription;
@@ -115,10 +112,7 @@ export const PRESET_ICONS = [
   '🎣', // fishing
 ];
 
-export function findHabitById(
-  habits: Habit[],
-  habitId: string
-): Habit | undefined {
+export function findHabitById(habits: Habit[], habitId: string): Habit | undefined {
   return habits.find((h) => h.id === habitId);
 }
 
@@ -127,7 +121,7 @@ export function findHabitById(
  * Future dates get disabled styling, past/present dates get hover styling.
  */
 export function getDateButtonFutureClasses(isFuture: boolean): string {
-  return isFuture ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-700";
+  return isFuture ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-700';
 }
 
 /**
@@ -139,6 +133,6 @@ export function getDateCircleStyle(
   color: string
 ): { backgroundColor: string } {
   return {
-    backgroundColor: isCompleted ? color : "transparent",
+    backgroundColor: isCompleted ? color : 'transparent',
   };
 }

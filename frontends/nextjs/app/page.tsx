@@ -9,11 +9,13 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-          Build Better Habits,<br />One Day at a Time
+          Build Better Habits,
+          <br />
+          One Day at a Time
         </h1>
         <p className="text-lg md:text-xl text-gray-400 max-w-2xl mb-8">
-          Track your habits, visualize your progress, and achieve your habit goals!
-          Simple and focused habit tracking.
+          Track your habits, visualize your progress, and achieve your habit goals! Simple and
+          focused habit tracking.
         </p>
         <Link
           href="/register"
@@ -31,7 +33,12 @@ export default function LandingPage() {
             <div className="bg-gray-700 rounded-lg p-6">
               <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Track Your Habits</h3>
@@ -43,19 +50,27 @@ export default function LandingPage() {
             <div className="bg-gray-700 rounded-lg p-6">
               <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Visualize Your Progress</h3>
-              <p className="text-gray-400">
-                Stay motivated by seeing your weekly progress.
-              </p>
+              <p className="text-gray-400">Stay motivated by seeing your weekly progress.</p>
             </div>
 
             <div className="bg-gray-700 rounded-lg p-6">
               <div className="w-12 h-12 bg-purple-600 rounded-lg flex items-center justify-center mb-4">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
                 </svg>
               </div>
               <h3 className="text-xl font-semibold mb-2">Achieve Your Habit Goals</h3>
@@ -79,7 +94,8 @@ export default function LandingPage() {
               <div>
                 <h3 className="text-xl font-semibold mb-2">Create a Habit</h3>
                 <p className="text-gray-400">
-                  Add a new habit with a name, description, icon, and color. Create habits that matter to you.
+                  Add a new habit with a name, description, icon, and color. Create habits that
+                  matter to you.
                 </p>
               </div>
             </div>

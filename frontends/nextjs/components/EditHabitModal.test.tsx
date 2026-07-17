@@ -409,9 +409,12 @@ describe('EditHabitModal', () => {
       await user.click(saveButton);
 
       expect(mockOnUpdate).toHaveBeenCalledTimes(1);
-      expect(mockOnUpdate).toHaveBeenCalledWith('1', expect.objectContaining({
-        description: 'Updated workout description',
-      }));
+      expect(mockOnUpdate).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          description: 'Updated workout description',
+        })
+      );
     });
 
     it('should update both title and description together', async () => {
@@ -463,9 +466,12 @@ describe('EditHabitModal', () => {
       const saveButton = screen.getByRole('button', { name: /save/i });
       await user.click(saveButton);
 
-      expect(mockOnUpdate).toHaveBeenCalledWith('1', expect.objectContaining({
-        description: 'Updated description',
-      }));
+      expect(mockOnUpdate).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          description: 'Updated description',
+        })
+      );
     });
 
     it('should allow clearing description', async () => {
@@ -485,9 +491,12 @@ describe('EditHabitModal', () => {
       const saveButton = screen.getByRole('button', { name: /save/i });
       await user.click(saveButton);
 
-      expect(mockOnUpdate).toHaveBeenCalledWith('1', expect.objectContaining({
-        description: null,
-      }));
+      expect(mockOnUpdate).toHaveBeenCalledWith(
+        '1',
+        expect.objectContaining({
+          description: null,
+        })
+      );
     });
   });
 

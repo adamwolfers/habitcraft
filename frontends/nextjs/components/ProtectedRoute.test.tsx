@@ -18,7 +18,9 @@ jest.mock('@/context/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
-const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
+const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<
+  typeof authContextModule.useAuth
+>;
 
 describe('ProtectedRoute', () => {
   beforeEach(() => {

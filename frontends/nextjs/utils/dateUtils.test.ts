@@ -1,4 +1,14 @@
-import { formatDate, isToday, getLastNDays, getDayName, getMonthDay, getCalendarWeek, getCalendarMonth, parseLocalDateFromString, isFutureDate } from './dateUtils';
+import {
+  formatDate,
+  isToday,
+  getLastNDays,
+  getDayName,
+  getMonthDay,
+  getCalendarWeek,
+  getCalendarMonth,
+  parseLocalDateFromString,
+  isFutureDate,
+} from './dateUtils';
 
 describe('dateUtils', () => {
   describe('formatDate', () => {
@@ -90,7 +100,7 @@ describe('dateUtils', () => {
   });
 
   describe('isToday', () => {
-    it('should return true for today\'s date', () => {
+    it("should return true for today's date", () => {
       const today = new Date();
       const todayString = formatDate(today);
       expect(isToday(todayString)).toBe(true);
@@ -278,7 +288,7 @@ describe('dateUtils', () => {
       const month = getCalendarMonth(0);
       expect(month.weeks.length).toBeGreaterThanOrEqual(4);
       expect(month.weeks.length).toBeLessThanOrEqual(6);
-      month.weeks.forEach(week => {
+      month.weeks.forEach((week) => {
         expect(week).toHaveLength(7);
       });
     });
@@ -286,7 +296,7 @@ describe('dateUtils', () => {
     it('should start each week on Sunday (first day at index 0)', () => {
       const month = getCalendarMonth(0);
       // Find first non-empty date to verify structure
-      const allDates = month.weeks.flat().filter(d => d !== '');
+      const allDates = month.weeks.flat().filter((d) => d !== '');
       if (allDates.length > 0) {
         // The first of the month should appear in the correct day position
         const firstDayDate = allDates[0];
@@ -312,7 +322,7 @@ describe('dateUtils', () => {
         }
       }
       // Just verify structure - all entries are either empty or valid dates
-      firstWeek.forEach(dateStr => {
+      firstWeek.forEach((dateStr) => {
         if (dateStr !== '') {
           expect(dateStr).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         }
@@ -323,7 +333,7 @@ describe('dateUtils', () => {
       const month = getCalendarMonth(0);
       const lastWeek = month.weeks[month.weeks.length - 1];
       // Last week should have empty strings after the last day of month
-      lastWeek.forEach(dateStr => {
+      lastWeek.forEach((dateStr) => {
         if (dateStr !== '') {
           expect(dateStr).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         }
@@ -360,7 +370,7 @@ describe('dateUtils', () => {
 
     it('should contain valid date strings in YYYY-MM-DD format', () => {
       const month = getCalendarMonth(0);
-      month.weeks.flat().forEach(dateString => {
+      month.weeks.flat().forEach((dateString) => {
         if (dateString !== '') {
           expect(dateString).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         }
@@ -374,7 +384,7 @@ describe('dateUtils', () => {
 
     it('should contain all days of the month', () => {
       const month = getCalendarMonth(0);
-      const allDates = month.weeks.flat().filter(d => d !== '');
+      const allDates = month.weeks.flat().filter((d) => d !== '');
 
       // Get number of days in the month
       const daysInMonth = new Date(month.year, month.month + 1, 0).getDate();
@@ -383,10 +393,10 @@ describe('dateUtils', () => {
 
     it('should have days in correct order (1 to last day)', () => {
       const month = getCalendarMonth(0);
-      const allDates = month.weeks.flat().filter(d => d !== '');
+      const allDates = month.weeks.flat().filter((d) => d !== '');
 
       // Extract day numbers and verify they're sequential
-      const dayNumbers = allDates.map(d => parseInt(d.split('-')[2]));
+      const dayNumbers = allDates.map((d) => parseInt(d.split('-')[2]));
       for (let i = 0; i < dayNumbers.length; i++) {
         expect(dayNumbers[i]).toBe(i + 1);
       }

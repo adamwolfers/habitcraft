@@ -35,20 +35,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const checkSession = async () => {
       try {
         let response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-          credentials: 'include'
+          credentials: 'include',
         });
 
         // If 401, try to refresh the token and retry
         if (response.status === 401) {
           const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
           });
 
           if (refreshResponse.ok) {
             // Retry the original request with new token
             response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-              credentials: 'include'
+              credentials: 'include',
             });
           }
         }
@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
 
     const data = await response.json();
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name })
+      body: JSON.stringify({ email, password, name }),
     });
 
     const data = await response.json();
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
     });
 
     setUser(null);
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       method: 'PUT',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates)
+      body: JSON.stringify(updates),
     });
 
     const data = await response.json();
@@ -140,7 +140,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser }}>
+    <AuthContext.Provider
+      value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser }}
+    >
       {children}
     </AuthContext.Provider>
   );
