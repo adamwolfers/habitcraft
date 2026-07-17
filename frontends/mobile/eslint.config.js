@@ -12,7 +12,6 @@ module.exports = [
       'node_modules/**',
       '.expo/**',
       'dist/**',
-      'e2e/**',
       'coverage/**',
       '*.config.js',
       '.*.js',

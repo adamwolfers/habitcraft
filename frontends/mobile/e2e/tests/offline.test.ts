@@ -1,10 +1,5 @@
 import { device, element, by, expect, waitFor } from 'detox';
-import {
-  generateTestUser,
-  registerTestUser,
-  waitForElement,
-  waitForElementToDisappear,
-} from '../config/testSetup';
+import { generateTestUser, registerTestUser, waitForElement } from '../config/testSetup';
 
 describe('Offline Functionality', () => {
   const testUser = generateTestUser();

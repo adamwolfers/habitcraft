@@ -1,4 +1,4 @@
-import { device, element, by, waitFor } from 'detox';
+import { element, by, waitFor } from 'detox';
 
 // API base URL for test backend
 export const API_URL = process.env.E2E_API_URL || 'http://localhost:3010';
