@@ -16,7 +16,7 @@ describe('useRequireAuth', () => {
     id: '123e4567-e89b-12d3-a456-426614174000',
     email: 'test@example.com',
     name: 'Test User',
-    createdAt: '2025-01-01T00:00:00.000Z'
+    createdAt: '2025-01-01T00:00:00.000Z',
   };
 
   beforeEach(() => {

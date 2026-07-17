@@ -10,7 +10,7 @@ import {
   createCompletion as apiCreateCompletion,
   deleteCompletion as apiDeleteCompletion,
   updateCompletionNote as apiUpdateCompletionNote,
-  deleteHabit as apiDeleteHabit
+  deleteHabit as apiDeleteHabit,
 } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { filterCompletionsByDate } from '@/utils/completionUtils';
@@ -76,7 +76,7 @@ export const useHabits = (userId: string) => {
   const isHabitCompletedOnDate = (habitId: string, date: Date): boolean => {
     const habitCompletions = completions.get(habitId) || [];
     const dateString = formatDate(date);
-    return habitCompletions.some(completion => {
+    return habitCompletions.some((completion) => {
       // Strip timestamp from completion.date if it exists
       const completionDate = completion.date.split('T')[0];
       return completionDate === dateString;
@@ -117,7 +117,7 @@ export const useHabits = (userId: string) => {
       const updatedHabit = await apiUpdateHabit(userId, habitId, updates);
 
       // Update habit in local state
-      setHabits(habits.map(h => h.id === habitId ? updatedHabit : h));
+      setHabits(habits.map((h) => (h.id === habitId ? updatedHabit : h)));
 
       return updatedHabit;
     } catch (error) {
@@ -131,7 +131,7 @@ export const useHabits = (userId: string) => {
       await apiDeleteHabit(userId, habitId);
 
       // Remove habit from local state
-      setHabits(habits.filter(h => h.id !== habitId));
+      setHabits(habits.filter((h) => h.id !== habitId));
 
       // Remove habit's completions from local state
       const newCompletions = new Map(completions);
@@ -149,7 +149,7 @@ export const useHabits = (userId: string) => {
 
       // Update local state
       const habitCompletions = completions.get(habitId) || [];
-      const updatedCompletions = habitCompletions.map(c =>
+      const updatedCompletions = habitCompletions.map((c) =>
         c.date === date ? updatedCompletion : c
       );
       setCompletions(new Map(completions).set(habitId, updatedCompletions));

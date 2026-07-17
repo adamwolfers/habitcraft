@@ -54,9 +54,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-4xl font-bold text-center mb-2">Log In</h1>
-          <p className="text-gray-400 text-center">
-            Welcome back to HabitCraft
-          </p>
+          <p className="text-gray-400 text-center">Welcome back to HabitCraft</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">

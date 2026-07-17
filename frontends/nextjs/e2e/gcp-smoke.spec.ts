@@ -152,14 +152,18 @@ test.describe('GCP Smoke Tests', () => {
       // Find the habit card by locating the heading with the habit name, then navigating up
       // The habit card is a div with class bg-gray-800, containing an h3 with the habit name
       const habitHeading = page.getByRole('heading', { name: habitName, level: 3 });
-      const habitCard = habitHeading.locator('xpath=ancestor::div[contains(@class, "bg-gray-800")]');
+      const habitCard = habitHeading.locator(
+        'xpath=ancestor::div[contains(@class, "bg-gray-800")]'
+      );
 
       const today = new Date();
       const dayAbbrev = today.toLocaleDateString('en-US', { weekday: 'short' });
       const dayNum = today.getDate().toString();
 
       // Click the button for today's date within this habit's card
-      await habitCard.getByRole('button', { name: new RegExp(`${dayAbbrev}.*${dayNum}`, 'i') }).click();
+      await habitCard
+        .getByRole('button', { name: new RegExp(`${dayAbbrev}.*${dayNum}`, 'i') })
+        .click();
 
       // Verify the page is still functional after marking complete
       await expect(page.getByText(habitName)).toBeVisible();
@@ -176,7 +180,9 @@ test.describe('GCP Smoke Tests', () => {
 
       // Find the habit card by locating the heading with the habit name, then navigating up
       const habitHeading = page.getByRole('heading', { name: habitName, level: 3 });
-      const habitCard = habitHeading.locator('xpath=ancestor::div[contains(@class, "bg-gray-800")]');
+      const habitCard = habitHeading.locator(
+        'xpath=ancestor::div[contains(@class, "bg-gray-800")]'
+      );
 
       await habitCard.getByRole('button', { name: /delete habit/i }).click();
 

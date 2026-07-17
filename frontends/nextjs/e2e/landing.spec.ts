@@ -42,7 +42,10 @@ test.describe('Landing Page', () => {
     test('should navigate to register when clicking Get Started CTA', async ({ page }) => {
       await page.goto('/');
 
-      await page.getByRole('link', { name: /get started/i }).first().click();
+      await page
+        .getByRole('link', { name: /get started/i })
+        .first()
+        .click();
 
       await expect(page).toHaveURL('/register');
     });

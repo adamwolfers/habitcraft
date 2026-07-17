@@ -101,7 +101,7 @@ describe('AddHabitForm', () => {
     await user.click(screen.getByText('+ Add New Habit'));
 
     // Get all color buttons (there should be 8)
-    const colorButtons = screen.getAllByRole('button').filter(button => {
+    const colorButtons = screen.getAllByRole('button').filter((button) => {
       const style = window.getComputedStyle(button);
       return style.backgroundColor !== '';
     });
@@ -354,9 +354,13 @@ describe('AddHabitForm', () => {
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
     const user = userEvent.setup();
 
-    const mockOnAddWithError = jest.fn().mockRejectedValue(
-      new Error('You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.')
-    );
+    const mockOnAddWithError = jest
+      .fn()
+      .mockRejectedValue(
+        new Error(
+          'You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.'
+        )
+      );
     render(<AddHabitForm onAdd={mockOnAddWithError} />);
 
     // Open form

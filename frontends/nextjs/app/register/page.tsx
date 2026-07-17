@@ -49,7 +49,10 @@ export default function RegisterPage() {
     }
   };
 
-  const handleInputChange = (field: 'name' | 'email' | 'password' | 'confirmPassword', value: string) => {
+  const handleInputChange = (
+    field: 'name' | 'email' | 'password' | 'confirmPassword',
+    value: string
+  ) => {
     if (field === 'name') {
       setName(value);
     } else if (field === 'email') {
@@ -70,9 +73,7 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h1 className="text-4xl font-bold text-center mb-2">Sign Up</h1>
-          <p className="text-gray-400 text-center">
-            Create your HabitCraft account
-          </p>
+          <p className="text-gray-400 text-center">Create your HabitCraft account</p>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -133,7 +134,10 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label
+                htmlFor="confirm-password"
+                className="block text-sm font-medium text-gray-300 mb-2"
+              >
                 Confirm Password
               </label>
               <PasswordInput

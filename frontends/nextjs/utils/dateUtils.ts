@@ -68,7 +68,7 @@ export const getCalendarWeek = (weekOffset: number = 0): string[] => {
   sunday.setDate(today.getDate() - currentDay);
 
   // Apply week offset
-  sunday.setDate(sunday.getDate() + (weekOffset * 7));
+  sunday.setDate(sunday.getDate() + weekOffset * 7);
 
   // Generate all 7 days of the week (Sunday through Saturday)
   const week: string[] = [];

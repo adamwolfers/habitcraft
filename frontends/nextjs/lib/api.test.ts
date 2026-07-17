@@ -1,4 +1,16 @@
-import { fetchHabits, createHabit, updateHabit, fetchCompletions, createCompletion, deleteCompletion, updateCompletionNote, deleteHabit, setOnAuthFailure, updateUserName, changePassword } from './api';
+import {
+  fetchHabits,
+  createHabit,
+  updateHabit,
+  fetchCompletions,
+  createCompletion,
+  deleteCompletion,
+  updateCompletionNote,
+  deleteHabit,
+  setOnAuthFailure,
+  updateUserName,
+  changePassword,
+} from './api';
 import { Habit, Completion } from '@/types/habit';
 
 describe('fetchHabits', () => {
@@ -22,7 +34,7 @@ describe('fetchHabits', () => {
       icon: '⭐',
       status: 'active',
       createdAt: '2025-01-01T00:00:00.000Z',
-      updatedAt: '2025-01-01T00:00:00.000Z'
+      updatedAt: '2025-01-01T00:00:00.000Z',
     },
     {
       id: 'habit-2',
@@ -35,8 +47,8 @@ describe('fetchHabits', () => {
       icon: '📚',
       status: 'active',
       createdAt: '2025-01-02T00:00:00.000Z',
-      updatedAt: '2025-01-02T00:00:00.000Z'
-    }
+      updatedAt: '2025-01-02T00:00:00.000Z',
+    },
   ];
 
   beforeEach(() => {
@@ -52,54 +64,48 @@ describe('fetchHabits', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => mockHabits
+      json: async () => mockHabits,
     });
 
     const result = await fetchHabits(mockUserId);
 
     expect(result).toEqual(mockHabits);
     expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/v1/habits`,
-      {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
-        }
-      }
-    );
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/habits`, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': mockUserId,
+      },
+    });
   });
 
   it('should fetch habits with status filter', async () => {
-    const activeHabits = mockHabits.filter(h => h.status === 'active');
+    const activeHabits = mockHabits.filter((h) => h.status === 'active');
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => activeHabits
+      json: async () => activeHabits,
     });
 
     const result = await fetchHabits(mockUserId, 'active');
 
     expect(result).toEqual(activeHabits);
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/v1/habits?status=active`,
-      {
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
-        }
-      }
-    );
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/habits?status=active`, {
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': mockUserId,
+      },
+    });
   });
 
   it('should return empty array when no habits exist', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => []
+      json: async () => [],
     });
 
     const result = await fetchHabits(mockUserId);
@@ -115,7 +121,7 @@ describe('fetchHabits', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 401,
-      json: async () => ({ error: 'Unauthorized', message: 'User ID not provided' })
+      json: async () => ({ error: 'Unauthorized', message: 'User ID not provided' }),
     });
 
     await expect(fetchHabits(mockUserId)).rejects.toThrow('Failed to fetch habits: 401');
@@ -128,7 +134,7 @@ describe('fetchHabits', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({ error: 'Internal server error' })
+      json: async () => ({ error: 'Internal server error' }),
     });
 
     await expect(fetchHabits(mockUserId)).rejects.toThrow('Failed to fetch habits: 500');
@@ -146,7 +152,7 @@ describe('fetchHabits', () => {
       status: 200,
       json: async () => {
         throw new Error('Invalid JSON');
-      }
+      },
     });
 
     await expect(fetchHabits(mockUserId)).rejects.toThrow('Invalid JSON');
@@ -175,25 +181,26 @@ describe('createHabit - Habit Limit', () => {
       status: 403,
       json: async () => ({
         error: 'Habit limit reached',
-        message: 'You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.'
-      })
+        message:
+          'You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.',
+      }),
     });
 
-    await expect(
-      createHabit(mockUserId, { name: 'Test', frequency: 'daily' })
-    ).rejects.toThrow('You have reached the maximum of 50 habits');
+    await expect(createHabit(mockUserId, { name: 'Test', frequency: 'daily' })).rejects.toThrow(
+      'You have reached the maximum of 50 habits'
+    );
   });
 
   it('should throw generic error for non-403 failures', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({ error: 'Internal server error' })
+      json: async () => ({ error: 'Internal server error' }),
     });
 
-    await expect(
-      createHabit(mockUserId, { name: 'Test', frequency: 'daily' })
-    ).rejects.toThrow('Failed to create habit: 500');
+    await expect(createHabit(mockUserId, { name: 'Test', frequency: 'daily' })).rejects.toThrow(
+      'Failed to create habit: 500'
+    );
   });
 });
 
@@ -212,15 +219,15 @@ describe('fetchCompletions', () => {
       habitId: mockHabitId,
       date: '2025-01-15',
       notes: 'Great session',
-      createdAt: '2025-01-15T10:00:00.000Z'
+      createdAt: '2025-01-15T10:00:00.000Z',
     },
     {
       id: 'completion-2',
       habitId: mockHabitId,
       date: '2025-01-14',
       notes: null,
-      createdAt: '2025-01-14T10:00:00.000Z'
-    }
+      createdAt: '2025-01-14T10:00:00.000Z',
+    },
   ];
 
   beforeEach(() => {
@@ -235,7 +242,7 @@ describe('fetchCompletions', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => mockCompletions
+      json: async () => mockCompletions,
     });
 
     const result = await fetchCompletions(mockUserId, mockHabitId);
@@ -247,8 +254,8 @@ describe('fetchCompletions', () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
-        }
+          'X-User-Id': mockUserId,
+        },
       }
     );
   });
@@ -257,7 +264,7 @@ describe('fetchCompletions', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => [mockCompletions[0]]
+      json: async () => [mockCompletions[0]],
     });
 
     const result = await fetchCompletions(mockUserId, mockHabitId, '2025-01-10', '2025-01-15');
@@ -267,8 +274,8 @@ describe('fetchCompletions', () => {
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions?startDate=2025-01-10&endDate=2025-01-15`,
       expect.objectContaining({
         headers: expect.objectContaining({
-          'X-User-Id': mockUserId
-        })
+          'X-User-Id': mockUserId,
+        }),
       })
     );
   });
@@ -277,7 +284,7 @@ describe('fetchCompletions', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => []
+      json: async () => [],
     });
 
     const result = await fetchCompletions(mockUserId, mockHabitId);
@@ -288,10 +295,12 @@ describe('fetchCompletions', () => {
   it('should throw error when API returns error', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 404
+      status: 404,
     });
 
-    await expect(fetchCompletions(mockUserId, mockHabitId)).rejects.toThrow('Failed to fetch completions: 404');
+    await expect(fetchCompletions(mockUserId, mockHabitId)).rejects.toThrow(
+      'Failed to fetch completions: 404'
+    );
   });
 });
 
@@ -318,16 +327,21 @@ describe('createCompletion', () => {
       habitId: mockHabitId,
       date: '2025-01-15',
       notes: 'Completed 30 minutes',
-      createdAt: '2025-01-15T10:00:00.000Z'
+      createdAt: '2025-01-15T10:00:00.000Z',
     };
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 201,
-      json: async () => mockCompletion
+      json: async () => mockCompletion,
     });
 
-    const result = await createCompletion(mockUserId, mockHabitId, '2025-01-15', 'Completed 30 minutes');
+    const result = await createCompletion(
+      mockUserId,
+      mockHabitId,
+      '2025-01-15',
+      'Completed 30 minutes'
+    );
 
     expect(result).toEqual(mockCompletion);
     expect(global.fetch).toHaveBeenCalledWith(
@@ -337,12 +351,12 @@ describe('createCompletion', () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
+          'X-User-Id': mockUserId,
         },
         body: JSON.stringify({
           date: '2025-01-15',
-          notes: 'Completed 30 minutes'
-        })
+          notes: 'Completed 30 minutes',
+        }),
       }
     );
   });
@@ -353,13 +367,13 @@ describe('createCompletion', () => {
       habitId: mockHabitId,
       date: '2025-01-15',
       notes: null,
-      createdAt: '2025-01-15T10:00:00.000Z'
+      createdAt: '2025-01-15T10:00:00.000Z',
     };
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 201,
-      json: async () => mockCompletion
+      json: async () => mockCompletion,
     });
 
     const result = await createCompletion(mockUserId, mockHabitId, '2025-01-15');
@@ -368,7 +382,7 @@ describe('createCompletion', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
       expect.objectContaining({
-        body: JSON.stringify({ date: '2025-01-15' })
+        body: JSON.stringify({ date: '2025-01-15' }),
       })
     );
   });
@@ -376,10 +390,12 @@ describe('createCompletion', () => {
   it('should throw error when creation fails', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 409
+      status: 409,
     });
 
-    await expect(createCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow('Failed to create completion: 409');
+    await expect(createCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow(
+      'Failed to create completion: 409'
+    );
   });
 });
 
@@ -403,7 +419,7 @@ describe('deleteCompletion', () => {
   it('should delete a completion successfully', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      status: 204
+      status: 204,
     });
 
     await deleteCompletion(mockUserId, mockHabitId, '2025-01-15');
@@ -415,8 +431,8 @@ describe('deleteCompletion', () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
-        }
+          'X-User-Id': mockUserId,
+        },
       }
     );
   });
@@ -424,10 +440,12 @@ describe('deleteCompletion', () => {
   it('should throw error when deletion fails', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 404
+      status: 404,
     });
 
-    await expect(deleteCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow('Failed to delete completion: 404');
+    await expect(deleteCompletion(mockUserId, mockHabitId, '2025-01-15')).rejects.toThrow(
+      'Failed to delete completion: 404'
+    );
   });
 });
 
@@ -454,16 +472,21 @@ describe('updateCompletionNote', () => {
       habitId: mockHabitId,
       date: '2025-01-15',
       notes: 'Updated note',
-      createdAt: '2025-01-15T10:00:00.000Z'
+      createdAt: '2025-01-15T10:00:00.000Z',
     };
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => mockCompletion
+      json: async () => mockCompletion,
     });
 
-    const result = await updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'Updated note');
+    const result = await updateCompletionNote(
+      mockUserId,
+      mockHabitId,
+      '2025-01-15',
+      'Updated note'
+    );
 
     expect(result).toEqual(mockCompletion);
     expect(global.fetch).toHaveBeenCalledWith(
@@ -473,9 +496,9 @@ describe('updateCompletionNote', () => {
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
+          'X-User-Id': mockUserId,
         },
-        body: JSON.stringify({ notes: 'Updated note' })
+        body: JSON.stringify({ notes: 'Updated note' }),
       }
     );
   });
@@ -486,13 +509,13 @@ describe('updateCompletionNote', () => {
       habitId: mockHabitId,
       date: '2025-01-15',
       notes: null,
-      createdAt: '2025-01-15T10:00:00.000Z'
+      createdAt: '2025-01-15T10:00:00.000Z',
     };
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => mockCompletion
+      json: async () => mockCompletion,
     });
 
     const result = await updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', null);
@@ -501,7 +524,7 @@ describe('updateCompletionNote', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions/2025-01-15`,
       expect.objectContaining({
-        body: JSON.stringify({ notes: null })
+        body: JSON.stringify({ notes: null }),
       })
     );
   });
@@ -509,21 +532,23 @@ describe('updateCompletionNote', () => {
   it('should throw error when update fails due to not found', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 404
+      status: 404,
     });
 
-    await expect(updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'note'))
-      .rejects.toThrow('Failed to update completion note: 404');
+    await expect(
+      updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'note')
+    ).rejects.toThrow('Failed to update completion note: 404');
   });
 
   it('should throw error when update fails due to unauthorized', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 403
+      status: 403,
     });
 
-    await expect(updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'note'))
-      .rejects.toThrow('Failed to update completion note: 403');
+    await expect(
+      updateCompletionNote(mockUserId, mockHabitId, '2025-01-15', 'note')
+    ).rejects.toThrow('Failed to update completion note: 403');
   });
 });
 
@@ -547,40 +572,41 @@ describe('deleteHabit', () => {
   it('should delete a habit successfully', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      status: 204
+      status: 204,
     });
 
     await deleteHabit(mockUserId, mockHabitId);
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/v1/habits/${mockHabitId}`,
-      {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-User-Id': mockUserId
-        }
-      }
-    );
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/habits/${mockHabitId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': mockUserId,
+      },
+    });
   });
 
   it('should throw error when deletion fails due to not found', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 404
+      status: 404,
     });
 
-    await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 404');
+    await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow(
+      'Failed to delete habit: 404'
+    );
   });
 
   it('should throw error when deletion fails due to invalid habit ID', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 400
+      status: 400,
     });
 
-    await expect(deleteHabit(mockUserId, 'invalid-id')).rejects.toThrow('Failed to delete habit: 400');
+    await expect(deleteHabit(mockUserId, 'invalid-id')).rejects.toThrow(
+      'Failed to delete habit: 400'
+    );
   });
 
   it('should throw error when deletion fails due to unauthorized', async () => {
@@ -590,10 +616,12 @@ describe('deleteHabit', () => {
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 401
+      status: 401,
     });
 
-    await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow('Failed to delete habit: 401');
+    await expect(deleteHabit(mockUserId, mockHabitId)).rejects.toThrow(
+      'Failed to delete habit: 401'
+    );
 
     // Clean up callback
     setOnAuthFailure(null);
@@ -656,7 +684,6 @@ describe('API Client - JWT Integration', () => {
       // Should only call once (no retry on 404)
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
-
   });
 
   describe('Token Refresh on 401', () => {
@@ -721,7 +748,11 @@ describe('API Client - JWT Integration', () => {
   describe('Request Retry with New Token', () => {
     it('should retry original request after successful token refresh', async () => {
       const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
-      const mockSuccessResponse = { ok: true, status: 200, json: async () => [{ id: 1, name: 'Test Habit' }] };
+      const mockSuccessResponse = {
+        ok: true,
+        status: 200,
+        json: async () => [{ id: 1, name: 'Test Habit' }],
+      };
 
       let callCount = 0;
       global.fetch = jest.fn((url) => {
@@ -756,7 +787,11 @@ describe('API Client - JWT Integration', () => {
     it('should preserve original request method and body on retry', async () => {
       const habitData = { name: 'New Habit', frequency: 'daily' as const };
       const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
-      const mockSuccessResponse = { ok: true, status: 201, json: async () => ({ id: 1, ...habitData }) };
+      const mockSuccessResponse = {
+        ok: true,
+        status: 201,
+        json: async () => ({ id: 1, ...habitData }),
+      };
 
       let callCount = 0;
       let retryOptions: RequestInit | undefined;
@@ -817,7 +852,11 @@ describe('API Client - JWT Integration', () => {
       // Configure the callback
       setOnAuthFailure(onAuthFailure);
 
-      const mock401Response = { ok: false, status: 401, json: async () => ({ error: 'Unauthorized' }) };
+      const mock401Response = {
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      };
       global.fetch = jest.fn(() => Promise.resolve(mock401Response as Response)) as jest.Mock;
 
       await expect(fetchHabits(mockUserId)).rejects.toThrow();
@@ -842,7 +881,7 @@ describe('API Client - JWT Integration', () => {
       icon: '🏃',
       status: 'active',
       createdAt: '2025-01-01T00:00:00.000Z',
-      updatedAt: '2025-01-02T00:00:00.000Z'
+      updatedAt: '2025-01-02T00:00:00.000Z',
     };
 
     beforeAll(() => {
@@ -861,37 +900,34 @@ describe('API Client - JWT Integration', () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         status: 200,
-        json: async () => updatedHabit
+        json: async () => updatedHabit,
       });
 
       const result = await updateHabit(mockUserId, mockHabitId, { name: 'Morning Run' });
 
       expect(result).toEqual(updatedHabit);
-      expect(global.fetch).toHaveBeenCalledWith(
-        `${API_BASE_URL}/api/v1/habits/${mockHabitId}`,
-        {
-          method: 'PUT',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-User-Id': mockUserId
-          },
-          body: JSON.stringify({ name: 'Morning Run' })
-        }
-      );
+      expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/habits/${mockHabitId}`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-Id': mockUserId,
+        },
+        body: JSON.stringify({ name: 'Morning Run' }),
+      });
     });
 
     it('should update multiple fields successfully', async () => {
       const updates = {
         name: 'Morning Run',
         description: 'Updated description',
-        color: '#FF5733'
+        color: '#FF5733',
       };
 
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
         status: 200,
-        json: async () => ({ ...updatedHabit, ...updates })
+        json: async () => ({ ...updatedHabit, ...updates }),
       });
 
       const result = await updateHabit(mockUserId, mockHabitId, updates);
@@ -904,31 +940,36 @@ describe('API Client - JWT Integration', () => {
     it('should throw error when update fails due to not found', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 404
+        status: 404,
       });
 
-      await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow('Failed to update habit: 404');
+      await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow(
+        'Failed to update habit: 404'
+      );
     });
 
     it('should throw error when update fails due to unauthorized', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 401
+        status: 401,
       });
 
-      await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow('Failed to update habit: 401');
+      await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow(
+        'Failed to update habit: 401'
+      );
     });
 
     it('should throw error when update fails due to validation error', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
-        status: 400
+        status: 400,
       });
 
-      await expect(updateHabit(mockUserId, mockHabitId, { name: '' })).rejects.toThrow('Failed to update habit: 400');
+      await expect(updateHabit(mockUserId, mockHabitId, { name: '' })).rejects.toThrow(
+        'Failed to update habit: 400'
+      );
     });
   });
-
 });
 
 describe('updateUserName', () => {
@@ -951,35 +992,32 @@ describe('updateUserName', () => {
       id: '123e4567-e89b-12d3-a456-426614174000',
       email: 'test@example.com',
       name: 'New Name',
-      createdAt: '2025-01-01T00:00:00.000Z'
+      createdAt: '2025-01-01T00:00:00.000Z',
     };
 
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => updatedUser
+      json: async () => updatedUser,
     });
 
     const result = await updateUserName('New Name');
 
     expect(result).toEqual(updatedUser);
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/v1/users/me`,
-      {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ name: 'New Name' })
-      }
-    );
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/users/me`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name: 'New Name' }),
+    });
   });
 
   it('should throw error when update fails', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
-      status: 400
+      status: 400,
     });
 
     await expect(updateUserName('')).rejects.toThrow('Failed to update user: 400');
@@ -1005,33 +1043,30 @@ describe('changePassword', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ message: 'Password changed successfully' })
+      json: async () => ({ message: 'Password changed successfully' }),
     });
 
     await changePassword('oldpass123', 'newpass456', 'newpass456');
 
-    expect(global.fetch).toHaveBeenCalledWith(
-      `${API_BASE_URL}/api/v1/users/me/password`,
-      {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          currentPassword: 'oldpass123',
-          newPassword: 'newpass456',
-          confirmPassword: 'newpass456'
-        })
-      }
-    );
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/users/me/password`, {
+      method: 'PUT',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        currentPassword: 'oldpass123',
+        newPassword: 'newpass456',
+        confirmPassword: 'newpass456',
+      }),
+    });
   });
 
   it('should resolve successfully on 200 response', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({ message: 'Password changed successfully' })
+      json: async () => ({ message: 'Password changed successfully' }),
     });
 
     await expect(changePassword('oldpass', 'newpass123', 'newpass123')).resolves.not.toThrow();
@@ -1041,15 +1076,16 @@ describe('changePassword', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 401,
-      json: async () => ({ error: 'Invalid current password' })
+      json: async () => ({ error: 'Invalid current password' }),
     });
 
     // Set up auth failure callback to prevent redirect
     const onAuthFailure = jest.fn();
     setOnAuthFailure(onAuthFailure);
 
-    await expect(changePassword('wrongpass', 'newpass123', 'newpass123'))
-      .rejects.toThrow('Invalid current password');
+    await expect(changePassword('wrongpass', 'newpass123', 'newpass123')).rejects.toThrow(
+      'Invalid current password'
+    );
 
     setOnAuthFailure(null);
   });
@@ -1058,21 +1094,23 @@ describe('changePassword', () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 400,
-      json: async () => ({ error: 'New password must be at least 8 characters' })
+      json: async () => ({ error: 'New password must be at least 8 characters' }),
     });
 
-    await expect(changePassword('oldpass', 'short', 'short'))
-      .rejects.toThrow('New password must be at least 8 characters');
+    await expect(changePassword('oldpass', 'short', 'short')).rejects.toThrow(
+      'New password must be at least 8 characters'
+    );
   });
 
   it('should throw generic error for other failures', async () => {
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 500,
-      json: async () => ({ error: 'Internal server error' })
+      json: async () => ({ error: 'Internal server error' }),
     });
 
-    await expect(changePassword('oldpass', 'newpass123', 'newpass123'))
-      .rejects.toThrow('Failed to change password');
+    await expect(changePassword('oldpass', 'newpass123', 'newpass123')).rejects.toThrow(
+      'Failed to change password'
+    );
   });
 });

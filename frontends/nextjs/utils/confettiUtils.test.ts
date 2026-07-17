@@ -30,7 +30,7 @@ describe('confettiUtils', () => {
       expect(calls.length).toBeGreaterThan(0);
 
       // At least one call should have origin.y close to 0 (top of screen)
-      const hasTopOrigin = calls.some(call => {
+      const hasTopOrigin = calls.some((call) => {
         const options = call[0] as { origin?: { y?: number } };
         return options?.origin?.y !== undefined && options.origin.y <= 0.1;
       });
@@ -44,7 +44,7 @@ describe('confettiUtils', () => {
       const calls = mockConfetti.mock.calls;
       expect(calls.length).toBeGreaterThan(0);
 
-      const allCallsHaveReasonableTicks = calls.every(call => {
+      const allCallsHaveReasonableTicks = calls.every((call) => {
         const options = call[0] as { ticks?: number };
         // ticks control animation length - should be around 400 for ~4 seconds
         return options?.ticks === undefined || options.ticks <= 500;

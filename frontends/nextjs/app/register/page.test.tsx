@@ -17,7 +17,9 @@ jest.mock('@/context/AuthContext', () => ({
   useAuth: jest.fn(),
 }));
 
-const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<typeof authContextModule.useAuth>;
+const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<
+  typeof authContextModule.useAuth
+>;
 
 describe('Registration Page - Basic Form Structure', () => {
   const mockRegister = jest.fn();
@@ -313,7 +315,9 @@ describe('Registration Page - Form Validation', () => {
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/password must be at least 8 characters/i)
+      ).toBeInTheDocument();
       expect(mockRegister).not.toHaveBeenCalled();
     });
 
@@ -355,7 +359,9 @@ describe('Registration Page - Form Validation', () => {
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(/password must be at least 8 characters/i)
+      ).toBeInTheDocument();
 
       // Type more characters
       await user.type(passwordInput, 'word');

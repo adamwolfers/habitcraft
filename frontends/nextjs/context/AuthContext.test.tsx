@@ -20,7 +20,7 @@ describe('AuthContext', () => {
     id: '123e4567-e89b-12d3-a456-426614174000',
     email: 'test@example.com',
     name: 'Test User',
-    createdAt: '2025-01-01T00:00:00.000Z'
+    createdAt: '2025-01-01T00:00:00.000Z',
   };
 
   beforeEach(() => {
@@ -37,13 +37,13 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -60,13 +60,13 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -83,13 +83,13 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -108,18 +108,18 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock login
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser })
+        json: async () => ({ user: mockUser }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -140,7 +140,7 @@ describe('AuthContext', () => {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'test@example.com', password: 'password123' })
+          body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
         })
       );
     });
@@ -150,18 +150,18 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock failed login
       mockFetch.mockResolvedValueOnce({
         ok: false,
-        json: async () => ({ error: 'Invalid credentials' })
+        json: async () => ({ error: 'Invalid credentials' }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -187,18 +187,18 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock register
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser })
+        json: async () => ({ user: mockUser }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -219,7 +219,11 @@ describe('AuthContext', () => {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: 'test@example.com', password: 'password123', name: 'Test User' })
+          body: JSON.stringify({
+            email: 'test@example.com',
+            password: 'password123',
+            name: 'Test User',
+          }),
         })
       );
     });
@@ -229,19 +233,19 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock failed register
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 409,
-        json: async () => ({ error: 'User with this email already exists' })
+        json: async () => ({ error: 'User with this email already exists' }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -264,18 +268,18 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock login
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ user: mockUser })
+        json: async () => ({ user: mockUser }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -293,7 +297,7 @@ describe('AuthContext', () => {
       // Mock logout endpoint
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ message: 'Logged out successfully' })
+        json: async () => ({ message: 'Logged out successfully' }),
       } as Response);
 
       // Then logout
@@ -307,7 +311,7 @@ describe('AuthContext', () => {
         `${API_BASE_URL}/api/v1/auth/logout`,
         expect.objectContaining({
           method: 'POST',
-          credentials: 'include'
+          credentials: 'include',
         })
       );
     });
@@ -318,7 +322,7 @@ describe('AuthContext', () => {
       // Mock /users/me returning user (cookie auth succeeds)
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -332,7 +336,7 @@ describe('AuthContext', () => {
       expect(mockFetch).toHaveBeenCalledWith(
         `${API_BASE_URL}/api/v1/users/me`,
         expect.objectContaining({
-          credentials: 'include'
+          credentials: 'include',
         })
       );
     });
@@ -342,17 +346,17 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock successful refresh
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ message: 'Token refreshed' })
+        json: async () => ({ message: 'Token refreshed' }),
       } as Response);
       // Mock retry of /users/me succeeds with new token
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -370,7 +374,7 @@ describe('AuthContext', () => {
         `${API_BASE_URL}/api/v1/auth/refresh`,
         expect.objectContaining({
           method: 'POST',
-          credentials: 'include'
+          credentials: 'include',
         })
       );
     });
@@ -380,13 +384,13 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -402,19 +406,21 @@ describe('AuthContext', () => {
 
   describe('auth failure callback', () => {
     it('should configure auth failure callback on mount', async () => {
-      const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<typeof apiModule.setOnAuthFailure>;
+      const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<
+        typeof apiModule.setOnAuthFailure
+      >;
 
       // Mock session check (no session)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
       // Mock refresh attempt (fails - no valid refresh token)
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        json: async () => ({ error: 'Unauthorized' })
+        json: async () => ({ error: 'Unauthorized' }),
       } as Response);
 
       renderHook(() => useAuth(), { wrapper });
@@ -425,7 +431,9 @@ describe('AuthContext', () => {
     });
 
     it('should logout and clear user when auth failure callback is triggered', async () => {
-      const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<typeof apiModule.setOnAuthFailure>;
+      const mockSetOnAuthFailure = apiModule.setOnAuthFailure as jest.MockedFunction<
+        typeof apiModule.setOnAuthFailure
+      >;
       let authFailureCallback: (() => void) | null = null;
 
       // Capture the callback that's passed to setOnAuthFailure
@@ -436,7 +444,7 @@ describe('AuthContext', () => {
       // Mock session check (authenticated user)
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -452,7 +460,7 @@ describe('AuthContext', () => {
       // Mock the logout endpoint
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ message: 'Logged out successfully' })
+        json: async () => ({ message: 'Logged out successfully' }),
       } as Response);
 
       // Trigger the auth failure callback
@@ -472,7 +480,7 @@ describe('AuthContext', () => {
         `${API_BASE_URL}/api/v1/auth/logout`,
         expect.objectContaining({
           method: 'POST',
-          credentials: 'include'
+          credentials: 'include',
         })
       );
     });
@@ -485,7 +493,7 @@ describe('AuthContext', () => {
       // Mock session check (authenticated user)
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -500,7 +508,7 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => updatedUser
+        json: async () => updatedUser,
       } as Response);
 
       await act(async () => {
@@ -514,7 +522,7 @@ describe('AuthContext', () => {
           method: 'PUT',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: 'Updated Name' })
+          body: JSON.stringify({ name: 'Updated Name' }),
         })
       );
     });
@@ -523,7 +531,7 @@ describe('AuthContext', () => {
       // Mock session check (authenticated user)
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        json: async () => mockUser
+        json: async () => mockUser,
       } as Response);
 
       const { result } = renderHook(() => useAuth(), { wrapper });
@@ -536,7 +544,7 @@ describe('AuthContext', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: async () => ({ error: 'Name is required' })
+        json: async () => ({ error: 'Name is required' }),
       } as Response);
 
       await expect(

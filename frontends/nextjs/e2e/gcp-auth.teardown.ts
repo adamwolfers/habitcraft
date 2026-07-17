@@ -47,7 +47,9 @@ teardown('delete test user and cleanup', async ({}) => {
     });
 
     if (!loginResponse.ok()) {
-      console.log(`⚠️  Could not login for cleanup (status ${loginResponse.status()}) - user may already be deleted`);
+      console.log(
+        `⚠️  Could not login for cleanup (status ${loginResponse.status()}) - user may already be deleted`
+      );
       await apiContext.dispose();
       cleanupFiles();
       return;
@@ -67,7 +69,7 @@ teardown('delete test user and cleanup', async ({}) => {
     // Delete the test user (requires JWT auth and password confirmation)
     const deleteResponse = await apiContext.delete('/api/v1/users/me', {
       headers: {
-        'Authorization': `Bearer ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
       data: {
         password: testUser.password,
@@ -78,7 +80,9 @@ teardown('delete test user and cleanup', async ({}) => {
       console.log(`✅ Deleted test user: ${testUser.email}`);
     } else {
       const errorText = await deleteResponse.text().catch(() => 'Could not read response body');
-      console.log(`⚠️  Failed to delete test user (status ${deleteResponse.status()}): ${errorText}`);
+      console.log(
+        `⚠️  Failed to delete test user (status ${deleteResponse.status()}): ${errorText}`
+      );
     }
 
     await apiContext.dispose();

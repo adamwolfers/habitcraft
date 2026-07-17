@@ -11,11 +11,7 @@ export default function PasswordInput({ className, ...props }: PasswordInputProp
 
   return (
     <div className="relative">
-      <input
-        type={showPassword ? 'text' : 'password'}
-        className={className}
-        {...props}
-      />
+      <input type={showPassword ? 'text' : 'password'} className={className} {...props} />
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}

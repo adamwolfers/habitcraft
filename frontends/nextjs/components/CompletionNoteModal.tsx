@@ -64,7 +64,8 @@ export default function CompletionNoteModal({
               {existingNote ? 'Edit Note' : 'Add Note'}
             </h2>
             <p className="text-sm text-gray-400">
-              <span className="font-medium text-gray-300">{habitName}</span> &bull; {formatDate(date)}
+              <span className="font-medium text-gray-300">{habitName}</span> &bull;{' '}
+              {formatDate(date)}
             </p>
           </div>
           <button
@@ -73,7 +74,12 @@ export default function CompletionNoteModal({
             aria-label="Close"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
