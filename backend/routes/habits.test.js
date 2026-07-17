@@ -5,17 +5,18 @@ const app = require('../app');
 // Mock the database pool module
 jest.mock('../db/pool', () => ({
   query: jest.fn(),
-  closePool: jest.fn()
+  closePool: jest.fn(),
 }));
 
 const { query, closePool } = require('../db/pool');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 const TEST_USER_ID = '123e4567-e89b-12d3-a456-426614174000';
-const TEST_TOKEN = jwt.sign({ userId: TEST_USER_ID, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+const TEST_TOKEN = jwt.sign({ userId: TEST_USER_ID, type: 'access' }, JWT_SECRET, {
+  expiresIn: '15m',
+});
 
 describe('POST /api/v1/habits', () => {
-
   beforeEach(() => {
     // Clear all mocks before each test
     jest.clearAllMocks();
@@ -37,7 +38,7 @@ describe('POST /api/v1/habits', () => {
       icon: '⭐',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     // Mock COUNT query (habit limit check) then INSERT
@@ -46,7 +47,7 @@ describe('POST /api/v1/habits', () => {
 
     const habitData = {
       name: 'Morning Exercise',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -60,7 +61,7 @@ describe('POST /api/v1/habits', () => {
       name: 'Morning Exercise',
       frequency: 'daily',
       userId: TEST_USER_ID,
-      status: 'active'
+      status: 'active',
     });
     expect(response.body).toHaveProperty('id');
     expect(response.body).toHaveProperty('createdAt');
@@ -68,14 +69,16 @@ describe('POST /api/v1/habits', () => {
 
     // Verify the database queries were called correctly (COUNT + INSERT)
     expect(query).toHaveBeenCalledTimes(2);
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('SELECT COUNT'),
-      [TEST_USER_ID]
-    );
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('INSERT INTO habits'),
-      [TEST_USER_ID, 'Morning Exercise', null, 'daily', [], '#3B82F6', '⭐']
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('SELECT COUNT'), [TEST_USER_ID]);
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO habits'), [
+      TEST_USER_ID,
+      'Morning Exercise',
+      null,
+      'daily',
+      [],
+      '#3B82F6',
+      '⭐',
+    ]);
   });
 
   it('should create a habit with all optional fields', async () => {
@@ -90,7 +93,7 @@ describe('POST /api/v1/habits', () => {
       icon: '📚',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
@@ -102,7 +105,7 @@ describe('POST /api/v1/habits', () => {
       frequency: 'daily',
       targetDays: [1, 3, 5],
       color: '#FF5733',
-      icon: '📚'
+      icon: '📚',
     };
 
     const response = await request(app)
@@ -118,13 +121,13 @@ describe('POST /api/v1/habits', () => {
       targetDays: [1, 3, 5],
       color: '#FF5733',
       icon: '📚',
-      status: 'active'
+      status: 'active',
     });
   });
 
   it('should return 400 if name is missing', async () => {
     const habitData = {
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -139,7 +142,7 @@ describe('POST /api/v1/habits', () => {
 
   it('should return 400 if frequency is missing', async () => {
     const habitData = {
-      name: 'Test Habit'
+      name: 'Test Habit',
     };
 
     const response = await request(app)
@@ -155,7 +158,7 @@ describe('POST /api/v1/habits', () => {
   it('should return 400 if frequency is invalid', async () => {
     const habitData = {
       name: 'Test Habit',
-      frequency: 'invalid'
+      frequency: 'invalid',
     };
 
     const response = await request(app)
@@ -171,7 +174,7 @@ describe('POST /api/v1/habits', () => {
   it('should return 400 if name is too long', async () => {
     const habitData = {
       name: 'a'.repeat(101), // Max is 100 characters
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -188,7 +191,7 @@ describe('POST /api/v1/habits', () => {
     const habitData = {
       name: 'Test Habit',
       frequency: 'daily',
-      color: 'not-a-hex-color'
+      color: 'not-a-hex-color',
     };
 
     const response = await request(app)
@@ -204,13 +207,10 @@ describe('POST /api/v1/habits', () => {
   it('should return 401 if user ID is not provided', async () => {
     const habitData = {
       name: 'Test Habit',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
-    const response = await request(app)
-      .post('/api/v1/habits')
-      .send(habitData)
-      .expect(401);
+    const response = await request(app).post('/api/v1/habits').send(habitData).expect(401);
 
     expect(response.body).toHaveProperty('error');
     expect(query).not.toHaveBeenCalled();
@@ -228,7 +228,7 @@ describe('POST /api/v1/habits', () => {
       icon: '⭐',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
@@ -236,7 +236,7 @@ describe('POST /api/v1/habits', () => {
 
     const habitData = {
       name: 'Simple Habit',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -274,10 +274,7 @@ describe('POST /api/v1/habits - Habit Limit', () => {
     expect(response.body.message).toContain('50');
     // Should NOT have called INSERT
     expect(query).toHaveBeenCalledTimes(1);
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('SELECT COUNT'),
-      [TEST_USER_ID]
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('SELECT COUNT'), [TEST_USER_ID]);
   });
 
   it('should allow creating habit when under the limit', async () => {
@@ -292,7 +289,7 @@ describe('POST /api/v1/habits - Habit Limit', () => {
       icon: '⭐',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     // Mock COUNT query returning 49 (under limit)
@@ -332,10 +329,7 @@ describe('GET /api/v1/habits', () => {
 
     expect(response.body).toEqual([]);
     expect(query).toHaveBeenCalledTimes(1);
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('SELECT'),
-      [TEST_USER_ID]
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('SELECT'), [TEST_USER_ID]);
   });
 
   it('should return all habits for the authenticated user', async () => {
@@ -352,7 +346,7 @@ describe('GET /api/v1/habits', () => {
         status: 'active',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completions: []
+        completions: [],
       },
       {
         id: 'habit-2',
@@ -366,8 +360,8 @@ describe('GET /api/v1/habits', () => {
         status: 'active',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completions: []
-      }
+        completions: [],
+      },
     ];
 
     query.mockResolvedValue({ rows: mockHabits });
@@ -382,13 +376,13 @@ describe('GET /api/v1/habits', () => {
       name: 'Morning Exercise',
       frequency: 'daily',
       userId: TEST_USER_ID,
-      status: 'active'
+      status: 'active',
     });
     expect(response.body[1]).toMatchObject({
       name: 'Read Books',
       frequency: 'weekly',
       userId: TEST_USER_ID,
-      status: 'active'
+      status: 'active',
     });
   });
 
@@ -407,8 +401,14 @@ describe('GET /api/v1/habits', () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         completions: [
-          { id: 'c-1', habit_id: 'habit-1', completed_date: '2026-07-10', note: null, created_at: new Date().toISOString() }
-        ]
+          {
+            id: 'c-1',
+            habit_id: 'habit-1',
+            completed_date: '2026-07-10',
+            note: null,
+            created_at: new Date().toISOString(),
+          },
+        ],
       },
       {
         id: 'habit-2',
@@ -422,8 +422,8 @@ describe('GET /api/v1/habits', () => {
         status: 'active',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        completions: []
-      }
+        completions: [],
+      },
     ];
 
     query.mockResolvedValue({ rows: mockHabits });
@@ -436,7 +436,7 @@ describe('GET /api/v1/habits', () => {
     expect(response.body[0].completions).toHaveLength(1);
     expect(response.body[0].completions[0]).toMatchObject({
       habit_id: 'habit-1',
-      completed_date: '2026-07-10'
+      completed_date: '2026-07-10',
     });
     expect(response.body[1].completions).toEqual([]);
   });
@@ -455,8 +455,8 @@ describe('GET /api/v1/habits', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        updatedAt: new Date().toISOString(),
+      },
     ];
 
     query.mockResolvedValue({ rows: mockHabits });
@@ -470,10 +470,9 @@ describe('GET /api/v1/habits', () => {
     expect(response.body[0].name).toBe('My Habit');
 
     // Verify the query was called with the user ID
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE h.user_id = $1'),
-      [TEST_USER_ID]
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('WHERE h.user_id = $1'), [
+      TEST_USER_ID,
+    ]);
   });
 
   it('should filter habits by active status', async () => {
@@ -489,8 +488,8 @@ describe('GET /api/v1/habits', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        updatedAt: new Date().toISOString(),
+      },
     ];
 
     query.mockResolvedValue({ rows: mockHabits });
@@ -505,10 +504,10 @@ describe('GET /api/v1/habits', () => {
     expect(response.body[0].status).toBe('active');
 
     // Verify the query includes the status filter
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('AND h.status = $2'),
-      [TEST_USER_ID, 'active']
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('AND h.status = $2'), [
+      TEST_USER_ID,
+      'active',
+    ]);
   });
 
   it('should filter habits by archived status', async () => {
@@ -524,8 +523,8 @@ describe('GET /api/v1/habits', () => {
         icon: '⭐',
         status: 'archived',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
+        updatedAt: new Date().toISOString(),
+      },
     ];
 
     query.mockResolvedValue({ rows: mockHabits });
@@ -540,16 +539,14 @@ describe('GET /api/v1/habits', () => {
     expect(response.body[0].status).toBe('archived');
 
     // Verify the query includes the status filter
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('AND h.status = $2'),
-      [TEST_USER_ID, 'archived']
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('AND h.status = $2'), [
+      TEST_USER_ID,
+      'archived',
+    ]);
   });
 
   it('should return 401 if user ID is not provided', async () => {
-    const response = await request(app)
-      .get('/api/v1/habits')
-      .expect(401);
+    const response = await request(app).get('/api/v1/habits').expect(401);
 
     expect(response.body).toHaveProperty('error');
     expect(query).not.toHaveBeenCalled();
@@ -579,10 +576,10 @@ describe('DELETE /api/v1/habits/:id', () => {
 
     expect(response.body).toEqual({});
     expect(query).toHaveBeenCalledTimes(1);
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('DELETE FROM habits'),
-      [HABIT_ID, TEST_USER_ID]
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM habits'), [
+      HABIT_ID,
+      TEST_USER_ID,
+    ]);
   });
 
   it('should return 404 if habit does not exist', async () => {
@@ -599,7 +596,7 @@ describe('DELETE /api/v1/habits/:id', () => {
     expect(query).toHaveBeenCalledTimes(1);
   });
 
-  it('should return 404 when trying to delete another user\'s habit', async () => {
+  it("should return 404 when trying to delete another user's habit", async () => {
     // Mock no rows deleted (because WHERE clause includes user_id)
     query.mockResolvedValue({ rows: [], rowCount: 0 });
 
@@ -609,16 +606,14 @@ describe('DELETE /api/v1/habits/:id', () => {
       .expect(404);
 
     expect(response.body).toHaveProperty('error');
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('WHERE id = $1 AND user_id = $2'),
-      [HABIT_ID, TEST_USER_ID]
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('WHERE id = $1 AND user_id = $2'), [
+      HABIT_ID,
+      TEST_USER_ID,
+    ]);
   });
 
   it('should return 401 if user ID is not provided', async () => {
-    const response = await request(app)
-      .delete(`/api/v1/habits/${HABIT_ID}`)
-      .expect(401);
+    const response = await request(app).delete(`/api/v1/habits/${HABIT_ID}`).expect(401);
 
     expect(response.body).toHaveProperty('error');
     expect(query).not.toHaveBeenCalled();
@@ -673,7 +668,7 @@ describe('PUT /api/v1/habits/:id', () => {
       icon: '🏃',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
@@ -684,7 +679,7 @@ describe('PUT /api/v1/habits/:id', () => {
       frequency: 'weekly',
       targetDays: [1, 3, 5],
       color: '#FF5733',
-      icon: '🏃'
+      icon: '🏃',
     };
 
     const response = await request(app)
@@ -701,7 +696,7 @@ describe('PUT /api/v1/habits/:id', () => {
       frequency: 'weekly',
       targetDays: [1, 3, 5],
       color: '#FF5733',
-      icon: '🏃'
+      icon: '🏃',
     });
 
     expect(query).toHaveBeenCalledTimes(1);
@@ -723,14 +718,14 @@ describe('PUT /api/v1/habits/:id', () => {
       icon: '⭐',
       status: 'active',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
 
     const updateData = {
       name: 'New Name',
-      frequency: 'daily' // Required field
+      frequency: 'daily', // Required field
     };
 
     const response = await request(app)
@@ -754,7 +749,7 @@ describe('PUT /api/v1/habits/:id', () => {
       icon: '⭐',
       status: 'archived',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
@@ -762,7 +757,7 @@ describe('PUT /api/v1/habits/:id', () => {
     const updateData = {
       name: 'Exercise',
       frequency: 'daily',
-      status: 'archived'
+      status: 'archived',
     };
 
     const response = await request(app)
@@ -779,7 +774,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -792,12 +787,12 @@ describe('PUT /api/v1/habits/:id', () => {
     expect(response.body.error).toContain('not found');
   });
 
-  it('should return 404 when trying to update another user\'s habit', async () => {
+  it("should return 404 when trying to update another user's habit", async () => {
     query.mockResolvedValue({ rows: [], rowCount: 0 });
 
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -819,7 +814,7 @@ describe('PUT /api/v1/habits/:id', () => {
   it('should return 401 if user ID is not provided', async () => {
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -836,7 +831,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -851,7 +846,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
   it('should return 400 if name is missing', async () => {
     const updateData = {
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -867,7 +862,7 @@ describe('PUT /api/v1/habits/:id', () => {
   it('should return 400 if frequency is invalid', async () => {
     const updateData = {
       name: 'Valid Name',
-      frequency: 'invalid-frequency'
+      frequency: 'invalid-frequency',
     };
 
     const response = await request(app)
@@ -884,7 +879,7 @@ describe('PUT /api/v1/habits/:id', () => {
     const updateData = {
       name: 'Valid Name',
       frequency: 'daily',
-      color: 'not-a-hex-color'
+      color: 'not-a-hex-color',
     };
 
     const response = await request(app)
@@ -901,7 +896,7 @@ describe('PUT /api/v1/habits/:id', () => {
     const updateData = {
       name: 'Valid Name',
       frequency: 'daily',
-      status: 'invalid-status'
+      status: 'invalid-status',
     };
 
     const response = await request(app)
@@ -919,7 +914,7 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Valid Name',
-      frequency: 'daily'
+      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -954,19 +949,16 @@ describe('Input sanitization', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
       query.mockResolvedValueOnce({ rows: [mockHabit] });
 
-      await request(app)
-        .post('/api/v1/habits')
-        .set('Authorization', `Bearer ${TEST_TOKEN}`)
-        .send({
-          name: '<script>alert("xss")</script>Exercise',
-          frequency: 'daily'
-        });
+      await request(app).post('/api/v1/habits').set('Authorization', `Bearer ${TEST_TOKEN}`).send({
+        name: '<script>alert("xss")</script>Exercise',
+        frequency: 'daily',
+      });
 
       // Check that the INSERT query was called with sanitized name (index 1, after COUNT)
       const insertCall = query.mock.calls[1];
@@ -987,20 +979,17 @@ describe('Input sanitization', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
       query.mockResolvedValueOnce({ rows: [mockHabit] });
 
-      await request(app)
-        .post('/api/v1/habits')
-        .set('Authorization', `Bearer ${TEST_TOKEN}`)
-        .send({
-          name: 'Exercise',
-          description: '<img src=x onerror="alert(1)">My workout routine',
-          frequency: 'daily'
-        });
+      await request(app).post('/api/v1/habits').set('Authorization', `Bearer ${TEST_TOKEN}`).send({
+        name: 'Exercise',
+        description: '<img src=x onerror="alert(1)">My workout routine',
+        frequency: 'daily',
+      });
 
       const insertCall = query.mock.calls[1]; // index 1, after COUNT
       const insertedDescription = insertCall[1][2]; // third param is description
@@ -1020,19 +1009,16 @@ describe('Input sanitization', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
       query.mockResolvedValueOnce({ rows: [mockHabit] });
 
-      await request(app)
-        .post('/api/v1/habits')
-        .set('Authorization', `Bearer ${TEST_TOKEN}`)
-        .send({
-          name: '  Exercise  ',
-          frequency: 'daily'
-        });
+      await request(app).post('/api/v1/habits').set('Authorization', `Bearer ${TEST_TOKEN}`).send({
+        name: '  Exercise  ',
+        frequency: 'daily',
+      });
 
       const insertCall = query.mock.calls[1]; // index 1, after COUNT
       const insertedName = insertCall[1][1];
@@ -1053,7 +1039,7 @@ describe('Input sanitization', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
@@ -1063,13 +1049,15 @@ describe('Input sanitization', () => {
         .set('Authorization', `Bearer ${TEST_TOKEN}`)
         .send({
           name: '<script>evil()</script>Updated Exercise',
-          frequency: 'daily'
+          frequency: 'daily',
         });
 
       const updateCall = query.mock.calls[0];
       const queryParams = updateCall[1];
       // Find the name in query params (it's one of the SET values)
-      const nameInQuery = queryParams.find(p => typeof p === 'string' && p.includes('Updated Exercise'));
+      const nameInQuery = queryParams.find(
+        (p) => typeof p === 'string' && p.includes('Updated Exercise')
+      );
       expect(nameInQuery).toBe('Updated Exercise');
     });
 
@@ -1085,7 +1073,7 @@ describe('Input sanitization', () => {
         icon: '⭐',
         status: 'active',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       query.mockResolvedValue({ rows: [updatedHabit], rowCount: 1 });
@@ -1096,12 +1084,14 @@ describe('Input sanitization', () => {
         .send({
           name: 'Exercise',
           description: '  Trimmed description  ',
-          frequency: 'daily'
+          frequency: 'daily',
         });
 
       const updateCall = query.mock.calls[0];
       const queryParams = updateCall[1];
-      const descInQuery = queryParams.find(p => typeof p === 'string' && p.includes('Trimmed description'));
+      const descInQuery = queryParams.find(
+        (p) => typeof p === 'string' && p.includes('Trimmed description')
+      );
       expect(descInQuery).toBe('Trimmed description');
     });
   });

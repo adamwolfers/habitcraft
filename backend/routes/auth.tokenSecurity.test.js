@@ -8,7 +8,7 @@ jest.mock('../services/tokenService', () => ({
   validateRefreshToken: jest.fn(),
   revokeRefreshToken: jest.fn().mockResolvedValue(),
   revokeAllUserTokens: jest.fn().mockResolvedValue(1),
-  hashToken: jest.fn(token => `hashed_${token}`)
+  hashToken: jest.fn((token) => `hashed_${token}`),
 }));
 
 // Mock the database pool
@@ -24,8 +24,8 @@ jest.mock('../utils/securityLogger', () => ({
     TOKEN_REFRESH_SUCCESS: 'TOKEN_REFRESH_SUCCESS',
     TOKEN_REFRESH_FAILURE: 'TOKEN_REFRESH_FAILURE',
     LOGOUT: 'LOGOUT',
-    AUTH_FAILURE: 'AUTH_FAILURE'
-  }
+    AUTH_FAILURE: 'AUTH_FAILURE',
+  },
 }));
 
 const app = require('../app');
@@ -48,7 +48,7 @@ describe('Auth API - Token Security Enhancements', () => {
         email: 'test@example.com',
         name: 'Test User',
         password_hash: hashedPassword,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -69,19 +69,17 @@ describe('Auth API - Token Security Enhancements', () => {
         id: mockUserId,
         email: 'newuser@example.com',
         name: 'New User',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [] }); // Check user doesn't exist
       pool.query.mockResolvedValueOnce({ rows: [mockUser] }); // Insert user
 
-      await request(app)
-        .post('/api/v1/auth/register')
-        .send({
-          email: 'newuser@example.com',
-          password: 'SecurePass123!',
-          name: 'New User'
-        });
+      await request(app).post('/api/v1/auth/register').send({
+        email: 'newuser@example.com',
+        password: 'SecurePass123!',
+        name: 'New User',
+      });
 
       expect(tokenService.storeRefreshToken).toHaveBeenCalledWith(
         mockUserId,
@@ -93,41 +91,33 @@ describe('Auth API - Token Security Enhancements', () => {
 
   describe('Refresh token rotation', () => {
     it('should validate token in database before refreshing', async () => {
-      const refreshToken = jwt.sign(
-        { userId: mockUserId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
       tokenService.validateRefreshToken.mockResolvedValueOnce({
         valid: true,
         userId: mockUserId,
-        tokenId: 'token-id'
+        tokenId: 'token-id',
       });
 
-      await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(tokenService.validateRefreshToken).toHaveBeenCalledWith(refreshToken);
     });
 
     it('should revoke old token and store new one on refresh', async () => {
-      const refreshToken = jwt.sign(
-        { userId: mockUserId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
       tokenService.validateRefreshToken.mockResolvedValueOnce({
         valid: true,
         userId: mockUserId,
-        tokenId: 'token-id'
+        tokenId: 'token-id',
       });
 
-      await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(tokenService.revokeRefreshToken).toHaveBeenCalledWith(refreshToken);
       expect(tokenService.storeRefreshToken).toHaveBeenCalledWith(
@@ -138,62 +128,52 @@ describe('Auth API - Token Security Enhancements', () => {
     });
 
     it('should return new refresh token in cookie on refresh', async () => {
-      const refreshToken = jwt.sign(
-        { userId: mockUserId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
       tokenService.validateRefreshToken.mockResolvedValueOnce({
         valid: true,
         userId: mockUserId,
-        tokenId: 'token-id'
+        tokenId: 'token-id',
       });
 
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(response.status).toBe(200);
       const cookies = response.headers['set-cookie'];
-      expect(cookies.some(c => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(
+        true
+      );
     });
 
     it('should reject revoked tokens', async () => {
-      const refreshToken = jwt.sign(
-        { userId: mockUserId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
       tokenService.validateRefreshToken.mockResolvedValueOnce({
         valid: false,
-        reason: 'token_revoked'
+        reason: 'token_revoked',
       });
 
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain('revoked');
     });
 
     it('should reject tokens not in database', async () => {
-      const refreshToken = jwt.sign(
-        { userId: mockUserId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
       tokenService.validateRefreshToken.mockResolvedValueOnce({
         valid: false,
-        reason: 'token_not_found'
+        reason: 'token_not_found',
       });
 
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain('Invalid');
@@ -202,15 +182,11 @@ describe('Auth API - Token Security Enhancements', () => {
 
   describe('Token revocation on logout', () => {
     it('should revoke refresh token on logout', async () => {
-      const refreshToken = jwt.sign(
-        { userId: mockUserId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
-      await request(app)
-        .post('/api/v1/auth/logout')
-        .set('Cookie', `refreshToken=${refreshToken}`);
+      await request(app).post('/api/v1/auth/logout').set('Cookie', `refreshToken=${refreshToken}`);
 
       expect(tokenService.revokeRefreshToken).toHaveBeenCalledWith(refreshToken);
     });
@@ -224,7 +200,7 @@ describe('Auth API - Token Security Enhancements', () => {
         email: 'test@example.com',
         name: 'Test User',
         password_hash: hashedPassword,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       // Login twice in quick succession
@@ -241,7 +217,7 @@ describe('Auth API - Token Security Enhancements', () => {
       // Extract refresh tokens from cookies
       const getRefreshToken = (res) => {
         const cookies = res.headers['set-cookie'];
-        const refreshCookie = cookies.find(c => c.startsWith('refreshToken='));
+        const refreshCookie = cookies.find((c) => c.startsWith('refreshToken='));
         const match = refreshCookie.match(/refreshToken=([^;]+)/);
         return match[1];
       };
@@ -268,7 +244,7 @@ describe('Auth API - Token Security Enhancements', () => {
         email: 'test@example.com',
         name: 'Test User',
         password_hash: hashedPassword,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValue({ rows: [mockUser] });
@@ -278,7 +254,7 @@ describe('Auth API - Token Security Enhancements', () => {
         .send({ email: 'test@example.com', password: 'SecurePass123!' });
 
       const cookies = response.headers['set-cookie'];
-      const accessCookie = cookies.find(c => c.startsWith('accessToken='));
+      const accessCookie = cookies.find((c) => c.startsWith('accessToken='));
       const match = accessCookie.match(/accessToken=([^;]+)/);
       const accessToken = match[1];
 

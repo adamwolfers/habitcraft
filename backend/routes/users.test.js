@@ -22,12 +22,14 @@ describe('Users API', () => {
 
   describe('GET /api/v1/users/me', () => {
     it('should return user profile with valid token', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const mockUser = {
         id: mockUserId,
         email: 'test@example.com',
         name: 'Test User',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -40,13 +42,12 @@ describe('Users API', () => {
       expect(response.body).toMatchObject({
         id: mockUserId,
         email: 'test@example.com',
-        name: 'Test User'
+        name: 'Test User',
       });
     });
 
     it('should return 401 without token', async () => {
-      const response = await request(app)
-        .get('/api/v1/users/me');
+      const response = await request(app).get('/api/v1/users/me');
 
       expect(response.status).toBe(401);
     });
@@ -60,7 +61,9 @@ describe('Users API', () => {
     });
 
     it('should return 404 if user not found', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       pool.query.mockResolvedValueOnce({ rows: [] });
 
@@ -75,12 +78,14 @@ describe('Users API', () => {
 
   describe('PUT /api/v1/users/me', () => {
     it('should update user name with valid token', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'test@example.com',
         name: 'Updated Name',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
@@ -95,7 +100,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for empty name', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me')
@@ -108,7 +115,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for whitespace-only name', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me')
@@ -121,7 +130,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 when no fields are provided', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me')
@@ -134,7 +145,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for name exceeding max length', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const longName = 'a'.repeat(101);
 
       const response = await request(app)
@@ -148,12 +161,14 @@ describe('Users API', () => {
     });
 
     it('should trim whitespace from name', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'test@example.com',
         name: 'Trimmed Name',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
@@ -168,7 +183,9 @@ describe('Users API', () => {
     });
 
     it('should return 404 if user not found', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       pool.query.mockResolvedValueOnce({ rows: [] });
 
@@ -182,12 +199,14 @@ describe('Users API', () => {
     });
 
     it('should return all expected user fields', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'test@example.com',
         name: 'Updated Name',
-        createdAt: '2025-01-15T10:30:00.000Z'
+        createdAt: '2025-01-15T10:30:00.000Z',
       };
 
       pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
@@ -202,19 +221,21 @@ describe('Users API', () => {
         id: mockUserId,
         email: 'test@example.com',
         name: 'Updated Name',
-        createdAt: '2025-01-15T10:30:00.000Z'
+        createdAt: '2025-01-15T10:30:00.000Z',
       });
     });
   });
 
   describe('PUT /api/v1/users/me - Email Update', () => {
     it('should update user email with valid token', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'newemail@example.com',
         name: 'Test User',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       // Mock check for existing email (none found)
@@ -232,7 +253,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for email exceeding 255 characters', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const longEmail = 'a'.repeat(64) + '@' + 'b'.repeat(186) + '.com'; // 256 chars
 
       const response = await request(app)
@@ -243,15 +266,17 @@ describe('Users API', () => {
       expect(response.status).toBe(400);
       expect(response.body.errors).toBeDefined();
       // May fail on isEmail or isLength, either is acceptable
-      const errorMsgs = response.body.errors.map(e => e.msg);
+      const errorMsgs = response.body.errors.map((e) => e.msg);
       const hasLengthOrFormatError = errorMsgs.some(
-        msg => msg.includes('255') || msg.includes('email') || msg.includes('Email')
+        (msg) => msg.includes('255') || msg.includes('email') || msg.includes('Email')
       );
       expect(hasLengthOrFormatError).toBe(true);
     });
 
     it('should return 400 for invalid email format', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me')
@@ -264,7 +289,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for empty email', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me')
@@ -276,11 +303,13 @@ describe('Users API', () => {
     });
 
     it('should return 409 when email is already taken by another user', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       // Mock check for existing email - found another user with this email
       pool.query.mockResolvedValueOnce({
-        rows: [{ id: 'different-user-id', email: 'taken@example.com' }]
+        rows: [{ id: 'different-user-id', email: 'taken@example.com' }],
       });
 
       const response = await request(app)
@@ -293,17 +322,19 @@ describe('Users API', () => {
     });
 
     it('should allow updating to the same email (no change)', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'current@example.com',
         name: 'Test User',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       // Mock check for existing email - finds current user (same id)
       pool.query.mockResolvedValueOnce({
-        rows: [{ id: mockUserId, email: 'current@example.com' }]
+        rows: [{ id: mockUserId, email: 'current@example.com' }],
       });
       // Mock update query
       pool.query.mockResolvedValueOnce({ rows: [updatedUser] });
@@ -318,12 +349,14 @@ describe('Users API', () => {
     });
 
     it('should normalize email to lowercase', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'newemail@example.com',
         name: 'Test User',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       // Mock check for existing email (none found)
@@ -345,12 +378,14 @@ describe('Users API', () => {
     });
 
     it('should trim whitespace from email', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'trimmed@example.com',
         name: 'Test User',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       // Mock check for existing email (none found)
@@ -367,12 +402,14 @@ describe('Users API', () => {
     });
 
     it('should update both name and email together', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const updatedUser = {
         id: mockUserId,
         email: 'newemail@example.com',
         name: 'New Name',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
       };
 
       // Mock check for existing email (none found)
@@ -403,7 +440,7 @@ describe('Users API', () => {
     const validPasswordChange = {
       currentPassword: 'OldPass123!',
       newPassword: 'NewSecure456!',
-      confirmPassword: 'NewSecure456!'
+      confirmPassword: 'NewSecure456!',
     };
 
     beforeEach(() => {
@@ -423,14 +460,16 @@ describe('Users API', () => {
     });
 
     it('should return 400 for missing currentPassword', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me/password')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           newPassword: 'NewSecure456!',
-          confirmPassword: 'NewSecure456!'
+          confirmPassword: 'NewSecure456!',
         });
 
       expect(response.status).toBe(400);
@@ -439,14 +478,16 @@ describe('Users API', () => {
     });
 
     it('should return 400 for missing newPassword', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me/password')
         .set('Authorization', `Bearer ${accessToken}`)
         .send({
           currentPassword: 'OldPass123!',
-          confirmPassword: 'NewSecure456!'
+          confirmPassword: 'NewSecure456!',
         });
 
       expect(response.status).toBe(400);
@@ -455,7 +496,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for newPassword too short', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me/password')
@@ -463,7 +506,7 @@ describe('Users API', () => {
         .send({
           currentPassword: 'OldPass123!',
           newPassword: 'short',
-          confirmPassword: 'short'
+          confirmPassword: 'short',
         });
 
       expect(response.status).toBe(400);
@@ -472,7 +515,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 for newPassword exceeding 72 characters', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const longPassword = 'a'.repeat(73);
 
       const response = await request(app)
@@ -481,7 +526,7 @@ describe('Users API', () => {
         .send({
           currentPassword: 'OldPass123!',
           newPassword: longPassword,
-          confirmPassword: longPassword
+          confirmPassword: longPassword,
         });
 
       expect(response.status).toBe(400);
@@ -490,7 +535,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 when passwords do not match', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .put('/api/v1/users/me/password')
@@ -498,7 +545,7 @@ describe('Users API', () => {
         .send({
           currentPassword: 'OldPass123!',
           newPassword: 'NewSecure456!',
-          confirmPassword: 'DifferentPass789!'
+          confirmPassword: 'DifferentPass789!',
         });
 
       expect(response.status).toBe(400);
@@ -507,7 +554,9 @@ describe('Users API', () => {
     });
 
     it('should return 404 if user not found', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       pool.query.mockResolvedValueOnce({ rows: [] });
 
@@ -521,11 +570,13 @@ describe('Users API', () => {
     });
 
     it('should return 401 for wrong current password', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const mockUser = {
         id: mockUserId,
         email: 'test@example.com',
-        password_hash: 'hashed_password'
+        password_hash: 'hashed_password',
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -546,11 +597,13 @@ describe('Users API', () => {
     });
 
     it('should change password successfully with valid data', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const mockUser = {
         id: mockUserId,
         email: 'test@example.com',
-        password_hash: 'old_hashed_password'
+        password_hash: 'old_hashed_password',
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -576,11 +629,13 @@ describe('Users API', () => {
     });
 
     it('should update password_hash in database', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const mockUser = {
         id: mockUserId,
         email: 'test@example.com',
-        password_hash: 'old_hashed_password'
+        password_hash: 'old_hashed_password',
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -601,11 +656,13 @@ describe('Users API', () => {
     });
 
     it('should revoke all refresh tokens after password change', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       const mockUser = {
         id: mockUserId,
         email: 'test@example.com',
-        password_hash: 'old_hashed_password'
+        password_hash: 'old_hashed_password',
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -630,7 +687,7 @@ describe('Users API', () => {
       // Create mock client for transaction
       mockClient = {
         query: jest.fn(),
-        release: jest.fn()
+        release: jest.fn(),
       };
       pool.connect = jest.fn().mockResolvedValue(mockClient);
       bcrypt.compare.mockReset();
@@ -646,7 +703,9 @@ describe('Users API', () => {
     });
 
     it('should return 400 if password not provided', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .delete('/api/v1/users/me')
@@ -658,7 +717,9 @@ describe('Users API', () => {
     });
 
     it('should return 404 if user not found', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
@@ -676,7 +737,9 @@ describe('Users API', () => {
     });
 
     it('should return 401 if password is incorrect', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
@@ -696,7 +759,9 @@ describe('Users API', () => {
     });
 
     it('should delete user and all related data successfully', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
@@ -721,7 +786,9 @@ describe('Users API', () => {
     });
 
     it('should delete data in correct foreign key order', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
@@ -741,14 +808,18 @@ describe('Users API', () => {
 
       const calls = mockClient.query.mock.calls;
       // Find the order of DELETE calls
-      const deleteCompletionsIndex = calls.findIndex(c =>
-        typeof c[0] === 'string' && c[0].includes('DELETE FROM completions'));
-      const deleteHabitsIndex = calls.findIndex(c =>
-        typeof c[0] === 'string' && c[0].includes('DELETE FROM habits'));
-      const deleteRefreshTokensIndex = calls.findIndex(c =>
-        typeof c[0] === 'string' && c[0].includes('DELETE FROM refresh_tokens'));
-      const deleteUserIndex = calls.findIndex(c =>
-        typeof c[0] === 'string' && c[0].includes('DELETE FROM users'));
+      const deleteCompletionsIndex = calls.findIndex(
+        (c) => typeof c[0] === 'string' && c[0].includes('DELETE FROM completions')
+      );
+      const deleteHabitsIndex = calls.findIndex(
+        (c) => typeof c[0] === 'string' && c[0].includes('DELETE FROM habits')
+      );
+      const deleteRefreshTokensIndex = calls.findIndex(
+        (c) => typeof c[0] === 'string' && c[0].includes('DELETE FROM refresh_tokens')
+      );
+      const deleteUserIndex = calls.findIndex(
+        (c) => typeof c[0] === 'string' && c[0].includes('DELETE FROM users')
+      );
 
       // Completions must be deleted before habits (FK constraint)
       expect(deleteCompletionsIndex).toBeLessThan(deleteHabitsIndex);
@@ -758,11 +829,15 @@ describe('Users API', () => {
     });
 
     it('should log ACCOUNT_DELETED security event on success', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN
-        .mockResolvedValueOnce({ rows: [{ email: 'deleted@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockResolvedValueOnce({
+          rows: [{ email: 'deleted@example.com', password_hash: 'hashed' }],
+        }) // SELECT user
         .mockResolvedValueOnce({}) // DELETE completions
         .mockResolvedValueOnce({}) // DELETE habits
         .mockResolvedValueOnce({}) // DELETE refresh_tokens
@@ -781,13 +856,15 @@ describe('Users API', () => {
         expect.any(Object),
         expect.objectContaining({
           userId: mockUserId,
-          email: 'deleted@example.com'
+          email: 'deleted@example.com',
         })
       );
     });
 
     it('should rollback transaction on database error', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       mockClient.query
         .mockResolvedValueOnce({}) // BEGIN

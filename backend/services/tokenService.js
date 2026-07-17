@@ -55,7 +55,7 @@ async function validateRefreshToken(refreshToken) {
   return {
     valid: true,
     userId: tokenRecord.user_id,
-    tokenId: tokenRecord.id
+    tokenId: tokenRecord.id,
   };
 }
 
@@ -111,5 +111,5 @@ module.exports = {
   validateRefreshToken,
   revokeRefreshToken,
   revokeAllUserTokens,
-  cleanupExpiredTokens
+  cleanupExpiredTokens,
 };

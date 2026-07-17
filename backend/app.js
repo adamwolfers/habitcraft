@@ -14,20 +14,22 @@ const app = express();
 app.set('trust proxy', true);
 
 // Security headers (helmet)
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'"],
-      imgSrc: ["'self'"],
-      connectSrc: ["'self'"],
-      fontSrc: ["'self'"],
-      objectSrc: ["'none'"],
-      frameAncestors: ["'none'"]
-    }
-  }
-}));
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  })
+);
 
 // Middleware
 // Parse allowed origins from FRONTEND_URL (comma-separated) or derive www/apex variants
@@ -35,7 +37,7 @@ const parseAllowedOrigins = () => {
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3100';
   // Support comma-separated list of origins
   if (frontendUrl.includes(',')) {
-    return frontendUrl.split(',').map(url => url.trim());
+    return frontendUrl.split(',').map((url) => url.trim());
   }
   // Auto-derive www/apex variants for production domains
   try {
@@ -58,17 +60,19 @@ const parseAllowedOrigins = () => {
 };
 const allowedOrigins = parseAllowedOrigins();
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or Postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS not allowed'), false);
-  },
-  credentials: true // Allow cookies to be sent cross-origin
-}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('CORS not allowed'), false);
+    },
+    credentials: true, // Allow cookies to be sent cross-origin
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 

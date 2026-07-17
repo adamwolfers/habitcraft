@@ -7,11 +7,11 @@ describe('Sanitize Middleware', () => {
 
   beforeEach(() => {
     mockReq = {
-      body: {}
+      body: {},
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
     nextFn = jest.fn();
   });
@@ -21,7 +21,7 @@ describe('Sanitize Middleware', () => {
       it('should strip script tags from string fields', () => {
         mockReq.body = {
           name: '<script>alert("xss")</script>Exercise',
-          description: 'My <script>evil()</script> workout'
+          description: 'My <script>evil()</script> workout',
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -34,7 +34,7 @@ describe('Sanitize Middleware', () => {
       it('should strip HTML tags from string fields', () => {
         mockReq.body = {
           name: '<b>Bold</b> Name',
-          description: '<a href="evil.com">Click me</a>'
+          description: '<a href="evil.com">Click me</a>',
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -46,7 +46,7 @@ describe('Sanitize Middleware', () => {
 
       it('should handle onerror and other event handlers', () => {
         mockReq.body = {
-          name: '<img src=x onerror="alert(1)">Test'
+          name: '<img src=x onerror="alert(1)">Test',
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -58,7 +58,7 @@ describe('Sanitize Middleware', () => {
 
       it('should handle javascript: URLs', () => {
         mockReq.body = {
-          description: '<a href="javascript:alert(1)">Click</a>'
+          description: '<a href="javascript:alert(1)">Click</a>',
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -72,7 +72,7 @@ describe('Sanitize Middleware', () => {
       it('should trim leading and trailing whitespace from strings', () => {
         mockReq.body = {
           name: '  Exercise  ',
-          description: '\t\nDescription with spaces\n\t'
+          description: '\t\nDescription with spaces\n\t',
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -89,7 +89,7 @@ describe('Sanitize Middleware', () => {
           name: 'Exercise',
           targetDays: [0, 1, 2],
           count: 5,
-          active: true
+          active: true,
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -104,7 +104,7 @@ describe('Sanitize Middleware', () => {
         mockReq.body = {
           name: 'Test',
           description: null,
-          notes: undefined
+          notes: undefined,
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -130,8 +130,8 @@ describe('Sanitize Middleware', () => {
         mockReq.body = {
           name: '<script>bad</script>Test',
           nested: {
-            value: '<b>nested</b>'
-          }
+            value: '<b>nested</b>',
+          },
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -146,7 +146,7 @@ describe('Sanitize Middleware', () => {
       it('should preserve emojis', () => {
         mockReq.body = {
           name: '🏃 Running',
-          icon: '⭐'
+          icon: '⭐',
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
@@ -161,7 +161,7 @@ describe('Sanitize Middleware', () => {
   describe('sanitizeEmail', () => {
     it('should trim whitespace from email', () => {
       mockReq.body = {
-        email: '  user@example.com  '
+        email: '  user@example.com  ',
       };
 
       sanitizeEmail(mockReq, mockRes, nextFn);
@@ -172,7 +172,7 @@ describe('Sanitize Middleware', () => {
 
     it('should convert email to lowercase', () => {
       mockReq.body = {
-        email: 'User@Example.COM'
+        email: 'User@Example.COM',
       };
 
       sanitizeEmail(mockReq, mockRes, nextFn);
@@ -183,7 +183,7 @@ describe('Sanitize Middleware', () => {
 
     it('should handle both trim and lowercase together', () => {
       mockReq.body = {
-        email: '  USER@EXAMPLE.COM  '
+        email: '  USER@EXAMPLE.COM  ',
       };
 
       sanitizeEmail(mockReq, mockRes, nextFn);
@@ -194,7 +194,7 @@ describe('Sanitize Middleware', () => {
 
     it('should handle missing email gracefully', () => {
       mockReq.body = {
-        name: 'John'
+        name: 'John',
       };
 
       sanitizeEmail(mockReq, mockRes, nextFn);
@@ -205,7 +205,7 @@ describe('Sanitize Middleware', () => {
 
     it('should handle null email', () => {
       mockReq.body = {
-        email: null
+        email: null,
       };
 
       sanitizeEmail(mockReq, mockRes, nextFn);

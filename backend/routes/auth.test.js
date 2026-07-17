@@ -11,10 +11,14 @@ jest.mock('../db/pool');
 // Mock the token service
 jest.mock('../services/tokenService', () => ({
   storeRefreshToken: jest.fn().mockResolvedValue(),
-  validateRefreshToken: jest.fn().mockResolvedValue({ valid: true, userId: '123e4567-e89b-12d3-a456-426614174000', tokenId: 'token-id' }),
+  validateRefreshToken: jest.fn().mockResolvedValue({
+    valid: true,
+    userId: '123e4567-e89b-12d3-a456-426614174000',
+    tokenId: 'token-id',
+  }),
   revokeRefreshToken: jest.fn().mockResolvedValue(),
   revokeAllUserTokens: jest.fn().mockResolvedValue(1),
-  hashToken: jest.fn(token => `hashed_${token}`)
+  hashToken: jest.fn((token) => `hashed_${token}`),
 }));
 
 // Mock the security logger
@@ -27,8 +31,8 @@ jest.mock('../utils/securityLogger', () => ({
     TOKEN_REFRESH_SUCCESS: 'TOKEN_REFRESH_SUCCESS',
     TOKEN_REFRESH_FAILURE: 'TOKEN_REFRESH_FAILURE',
     LOGOUT: 'LOGOUT',
-    AUTH_FAILURE: 'AUTH_FAILURE'
-  }
+    AUTH_FAILURE: 'AUTH_FAILURE',
+  },
 }));
 
 describe('Auth API', () => {
@@ -42,7 +46,7 @@ describe('Auth API', () => {
     const validUser = {
       email: 'test@example.com',
       password: 'SecurePass123!',
-      name: 'Test User'
+      name: 'Test User',
     };
 
     it('should register a new user and set HttpOnly cookies', async () => {
@@ -50,7 +54,7 @@ describe('Auth API', () => {
         id: mockUserId,
         email: validUser.email,
         name: validUser.name,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       // Mock: check user doesn't exist
@@ -58,15 +62,13 @@ describe('Auth API', () => {
       // Mock: insert user
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/v1/auth/register')
-        .send(validUser);
+      const response = await request(app).post('/api/v1/auth/register').send(validUser);
 
       expect(response.status).toBe(201);
       expect(response.body.user).toMatchObject({
         id: mockUserId,
         email: validUser.email,
-        name: validUser.name
+        name: validUser.name,
       });
       expect(response.body.user.password).toBeUndefined();
 
@@ -79,19 +81,21 @@ describe('Auth API', () => {
       // Check HttpOnly cookies are set (for web clients)
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
-      expect(cookies.some(c => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(
+        true
+      );
+      expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(
+        true
+      );
     });
 
     it('should return 409 if email already exists', async () => {
       // Mock: user already exists
       pool.query.mockResolvedValueOnce({
-        rows: [{ id: mockUserId, email: validUser.email }]
+        rows: [{ id: mockUserId, email: validUser.email }],
       });
 
-      const response = await request(app)
-        .post('/api/v1/auth/register')
-        .send(validUser);
+      const response = await request(app).post('/api/v1/auth/register').send(validUser);
 
       expect(response.status).toBe(409);
       expect(response.body.error).toContain('email');
@@ -144,9 +148,9 @@ describe('Auth API', () => {
       expect(response.status).toBe(400);
       expect(response.body.errors).toBeDefined();
       // May fail on isEmail or isLength, either is acceptable
-      const errorMsgs = response.body.errors.map(e => e.msg);
+      const errorMsgs = response.body.errors.map((e) => e.msg);
       const hasLengthOrFormatError = errorMsgs.some(
-        msg => msg.includes('255') || msg.includes('email')
+        (msg) => msg.includes('255') || msg.includes('email')
       );
       expect(hasLengthOrFormatError).toBe(true);
     });
@@ -176,15 +180,13 @@ describe('Auth API', () => {
         id: mockUserId,
         email: validUser.email,
         name: validUser.name,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [] });
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-      await request(app)
-        .post('/api/v1/auth/register')
-        .send(validUser);
+      await request(app).post('/api/v1/auth/register').send(validUser);
 
       // Check that the INSERT query was called with a hashed password
       const insertCall = pool.query.mock.calls[1];
@@ -197,7 +199,7 @@ describe('Auth API', () => {
   describe('POST /api/v1/auth/login', () => {
     const validCredentials = {
       email: 'test@example.com',
-      password: 'SecurePass123!'
+      password: 'SecurePass123!',
     };
 
     it('should login with valid credentials and set HttpOnly cookies', async () => {
@@ -207,19 +209,17 @@ describe('Auth API', () => {
         email: validCredentials.email,
         name: 'Test User',
         password_hash: hashedPassword,
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send(validCredentials);
+      const response = await request(app).post('/api/v1/auth/login').send(validCredentials);
 
       expect(response.status).toBe(200);
       expect(response.body.user).toMatchObject({
         id: mockUserId,
-        email: validCredentials.email
+        email: validCredentials.email,
       });
       expect(response.body.user.password).toBeUndefined();
 
@@ -232,16 +232,18 @@ describe('Auth API', () => {
       // Check HttpOnly cookies are set (for web clients)
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
-      expect(cookies.some(c => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(
+        true
+      );
+      expect(cookies.some((c) => c.startsWith('refreshToken=') && c.includes('HttpOnly'))).toBe(
+        true
+      );
     });
 
     it('should return 401 for non-existent email', async () => {
       pool.query.mockResolvedValueOnce({ rows: [] });
 
-      const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send(validCredentials);
+      const response = await request(app).post('/api/v1/auth/login').send(validCredentials);
 
       expect(response.status).toBe(401);
       expect(response.body.error).toBe('Invalid credentials');
@@ -252,14 +254,12 @@ describe('Auth API', () => {
       const mockUser = {
         id: mockUserId,
         email: validCredentials.email,
-        password_hash: hashedPassword
+        password_hash: hashedPassword,
       };
 
       pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-      const response = await request(app)
-        .post('/api/v1/auth/login')
-        .send(validCredentials);
+      const response = await request(app).post('/api/v1/auth/login').send(validCredentials);
 
       expect(response.status).toBe(401);
       expect(response.body.error).toBe('Invalid credentials');
@@ -286,11 +286,11 @@ describe('Auth API', () => {
     const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
     it('should return new tokens with valid refresh token', async () => {
-      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(response.status).toBe(200);
       // Both tokens in body for mobile clients
@@ -301,18 +301,20 @@ describe('Auth API', () => {
     });
 
     it('should return 401 for expired refresh token', async () => {
-      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '-1s' });
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '-1s',
+      });
 
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({ refreshToken });
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
       expect(response.status).toBe(401);
       expect(response.body.error).toContain('expired');
     });
 
     it('should return 401 for access token used as refresh', async () => {
-      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
 
       const response = await request(app)
         .post('/api/v1/auth/refresh')
@@ -323,15 +325,15 @@ describe('Auth API', () => {
     });
 
     it('should return 400 if refresh token is missing', async () => {
-      const response = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({});
+      const response = await request(app).post('/api/v1/auth/refresh').send({});
 
       expect(response.status).toBe(400);
     });
 
     it('should return new access token when refresh token is in cookie', async () => {
-      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
 
       const response = await request(app)
         .post('/api/v1/auth/refresh')
@@ -343,14 +345,15 @@ describe('Auth API', () => {
       // Should also set new accessToken cookie
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some(c => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(
+        true
+      );
     });
   });
 
   describe('POST /api/v1/auth/logout', () => {
     it('should clear auth cookies', async () => {
-      const response = await request(app)
-        .post('/api/v1/auth/logout');
+      const response = await request(app).post('/api/v1/auth/logout');
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Logged out successfully');
@@ -358,8 +361,8 @@ describe('Auth API', () => {
       // Check cookies are cleared (set to empty with past expiry)
       const cookies = response.headers['set-cookie'];
       expect(cookies).toBeDefined();
-      expect(cookies.some(c => c.startsWith('accessToken='))).toBe(true);
-      expect(cookies.some(c => c.startsWith('refreshToken='))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('accessToken='))).toBe(true);
+      expect(cookies.some((c) => c.startsWith('refreshToken='))).toBe(true);
     });
   });
 
@@ -370,19 +373,17 @@ describe('Auth API', () => {
           id: mockUserId,
           email: 'test@example.com',
           name: 'Test User',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
 
         pool.query.mockResolvedValueOnce({ rows: [] });
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-        await request(app)
-          .post('/api/v1/auth/register')
-          .send({
-            email: 'test@example.com',
-            password: 'SecurePass123!',
-            name: '<script>alert("xss")</script>Test User'
-          });
+        await request(app).post('/api/v1/auth/register').send({
+          email: 'test@example.com',
+          password: 'SecurePass123!',
+          name: '<script>alert("xss")</script>Test User',
+        });
 
         // Check that the INSERT query was called with sanitized name
         const insertCall = pool.query.mock.calls[1];
@@ -396,19 +397,17 @@ describe('Auth API', () => {
           id: mockUserId,
           email: 'test@example.com',
           name: 'Test User',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
 
         pool.query.mockResolvedValueOnce({ rows: [] });
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-        await request(app)
-          .post('/api/v1/auth/register')
-          .send({
-            email: 'test@example.com',
-            password: 'SecurePass123!',
-            name: '  Test User  '
-          });
+        await request(app).post('/api/v1/auth/register').send({
+          email: 'test@example.com',
+          password: 'SecurePass123!',
+          name: '  Test User  ',
+        });
 
         const insertCall = pool.query.mock.calls[1];
         const insertedName = insertCall[1][2];
@@ -420,19 +419,17 @@ describe('Auth API', () => {
           id: mockUserId,
           email: 'test@example.com',
           name: 'Test User',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
 
         pool.query.mockResolvedValueOnce({ rows: [] });
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-        await request(app)
-          .post('/api/v1/auth/register')
-          .send({
-            email: '  TEST@EXAMPLE.COM  ',
-            password: 'SecurePass123!',
-            name: 'Test User'
-          });
+        await request(app).post('/api/v1/auth/register').send({
+          email: '  TEST@EXAMPLE.COM  ',
+          password: 'SecurePass123!',
+          name: 'Test User',
+        });
 
         // Check both queries use normalized email
         const checkCall = pool.query.mock.calls[0];
@@ -450,17 +447,15 @@ describe('Auth API', () => {
           email: 'test@example.com',
           name: 'Test User',
           password_hash: hashedPassword,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
 
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-        await request(app)
-          .post('/api/v1/auth/login')
-          .send({
-            email: '  TEST@EXAMPLE.COM  ',
-            password: 'SecurePass123!'
-          });
+        await request(app).post('/api/v1/auth/login').send({
+          email: '  TEST@EXAMPLE.COM  ',
+          password: 'SecurePass123!',
+        });
 
         // Check query uses normalized email
         const queryCall = pool.query.mock.calls[0];
@@ -482,7 +477,7 @@ describe('Auth API', () => {
           email: 'test@example.com',
           name: 'Test User',
           password_hash: hashedPassword,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
 
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -496,7 +491,7 @@ describe('Auth API', () => {
           expect.any(Object),
           expect.objectContaining({
             email: 'test@example.com',
-            userId: mockUserId
+            userId: mockUserId,
           })
         );
       });
@@ -513,7 +508,7 @@ describe('Auth API', () => {
           expect.any(Object),
           expect.objectContaining({
             email: 'nonexistent@example.com',
-            reason: 'user_not_found'
+            reason: 'user_not_found',
           })
         );
       });
@@ -523,7 +518,7 @@ describe('Auth API', () => {
         const mockUser = {
           id: mockUserId,
           email: 'test@example.com',
-          password_hash: hashedPassword
+          password_hash: hashedPassword,
         };
 
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
@@ -537,7 +532,7 @@ describe('Auth API', () => {
           expect.any(Object),
           expect.objectContaining({
             email: 'test@example.com',
-            reason: 'invalid_password'
+            reason: 'invalid_password',
           })
         );
       });
@@ -549,26 +544,24 @@ describe('Auth API', () => {
           id: mockUserId,
           email: 'newuser@example.com',
           name: 'New User',
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
         };
 
         pool.query.mockResolvedValueOnce({ rows: [] });
         pool.query.mockResolvedValueOnce({ rows: [mockUser] });
 
-        await request(app)
-          .post('/api/v1/auth/register')
-          .send({
-            email: 'newuser@example.com',
-            password: 'SecurePass123!',
-            name: 'New User'
-          });
+        await request(app).post('/api/v1/auth/register').send({
+          email: 'newuser@example.com',
+          password: 'SecurePass123!',
+          name: 'New User',
+        });
 
         expect(logSecurityEvent).toHaveBeenCalledWith(
           SECURITY_EVENTS.REGISTER_SUCCESS,
           expect.any(Object),
           expect.objectContaining({
             email: 'newuser@example.com',
-            userId: mockUserId
+            userId: mockUserId,
           })
         );
       });
@@ -578,61 +571,49 @@ describe('Auth API', () => {
       const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
       it('should log TOKEN_REFRESH_SUCCESS on successful refresh', async () => {
-        const refreshToken = jwt.sign(
-          { userId: mockUserId, type: 'refresh' },
-          JWT_SECRET,
-          { expiresIn: '7d' }
-        );
+        const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+          expiresIn: '7d',
+        });
 
-        await request(app)
-          .post('/api/v1/auth/refresh')
-          .send({ refreshToken });
+        await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
         expect(logSecurityEvent).toHaveBeenCalledWith(
           SECURITY_EVENTS.TOKEN_REFRESH_SUCCESS,
           expect.any(Object),
           expect.objectContaining({
-            userId: mockUserId
+            userId: mockUserId,
           })
         );
       });
 
       it('should log TOKEN_REFRESH_FAILURE on expired token', async () => {
-        const refreshToken = jwt.sign(
-          { userId: mockUserId, type: 'refresh' },
-          JWT_SECRET,
-          { expiresIn: '-1s' }
-        );
+        const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+          expiresIn: '-1s',
+        });
 
-        await request(app)
-          .post('/api/v1/auth/refresh')
-          .send({ refreshToken });
+        await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
 
         expect(logSecurityEvent).toHaveBeenCalledWith(
           SECURITY_EVENTS.TOKEN_REFRESH_FAILURE,
           expect.any(Object),
           expect.objectContaining({
-            reason: 'token_expired'
+            reason: 'token_expired',
           })
         );
       });
 
       it('should log TOKEN_REFRESH_FAILURE on invalid token type', async () => {
-        const accessToken = jwt.sign(
-          { userId: mockUserId, type: 'access' },
-          JWT_SECRET,
-          { expiresIn: '15m' }
-        );
+        const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+          expiresIn: '15m',
+        });
 
-        await request(app)
-          .post('/api/v1/auth/refresh')
-          .send({ refreshToken: accessToken });
+        await request(app).post('/api/v1/auth/refresh').send({ refreshToken: accessToken });
 
         expect(logSecurityEvent).toHaveBeenCalledWith(
           SECURITY_EVENTS.TOKEN_REFRESH_FAILURE,
           expect.any(Object),
           expect.objectContaining({
-            reason: 'invalid_token_type'
+            reason: 'invalid_token_type',
           })
         );
       });
@@ -640,8 +621,7 @@ describe('Auth API', () => {
 
     describe('Logout events', () => {
       it('should log LOGOUT event', async () => {
-        await request(app)
-          .post('/api/v1/auth/logout');
+        await request(app).post('/api/v1/auth/logout');
 
         expect(logSecurityEvent).toHaveBeenCalledWith(
           SECURITY_EVENTS.LOGOUT,

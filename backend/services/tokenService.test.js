@@ -43,12 +43,14 @@ describe('TokenService', () => {
   describe('validateRefreshToken', () => {
     it('should return true for a valid, non-revoked token', async () => {
       pool.query.mockResolvedValueOnce({
-        rows: [{
-          id: 'token-id',
-          user_id: mockUserId,
-          revoked: false,
-          expires_at: new Date(Date.now() + 1000000)
-        }]
+        rows: [
+          {
+            id: 'token-id',
+            user_id: mockUserId,
+            revoked: false,
+            expires_at: new Date(Date.now() + 1000000),
+          },
+        ],
       });
 
       const result = await tokenService.validateRefreshToken(mockRefreshToken);
@@ -56,25 +58,27 @@ describe('TokenService', () => {
       expect(result).toEqual({
         valid: true,
         userId: mockUserId,
-        tokenId: 'token-id'
+        tokenId: 'token-id',
       });
     });
 
     it('should return false for a revoked token', async () => {
       pool.query.mockResolvedValueOnce({
-        rows: [{
-          id: 'token-id',
-          user_id: mockUserId,
-          revoked: true,
-          expires_at: new Date(Date.now() + 1000000)
-        }]
+        rows: [
+          {
+            id: 'token-id',
+            user_id: mockUserId,
+            revoked: true,
+            expires_at: new Date(Date.now() + 1000000),
+          },
+        ],
       });
 
       const result = await tokenService.validateRefreshToken(mockRefreshToken);
 
       expect(result).toEqual({
         valid: false,
-        reason: 'token_revoked'
+        reason: 'token_revoked',
       });
     });
 
@@ -85,7 +89,7 @@ describe('TokenService', () => {
 
       expect(result).toEqual({
         valid: false,
-        reason: 'token_not_found'
+        reason: 'token_not_found',
       });
     });
 
@@ -94,10 +98,9 @@ describe('TokenService', () => {
 
       await tokenService.validateRefreshToken(mockRefreshToken);
 
-      expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('token_hash'),
-        [mockTokenHash]
-      );
+      expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('token_hash'), [
+        mockTokenHash,
+      ]);
     });
   });
 
@@ -129,10 +132,9 @@ describe('TokenService', () => {
 
       const count = await tokenService.revokeAllUserTokens(mockUserId);
 
-      expect(pool.query).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE refresh_tokens'),
-        [mockUserId]
-      );
+      expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE refresh_tokens'), [
+        mockUserId,
+      ]);
       expect(count).toBe(3);
     });
   });

@@ -11,11 +11,11 @@ const loginLimiter = rateLimit({
   message: {
     error: 'Too many login attempts',
     message: 'Too many login attempts from this IP, please try again after 15 minutes',
-    statusCode: 429
+    statusCode: 429,
   },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  skip: shouldSkip
+  skip: shouldSkip,
 });
 
 // Rate limiter for registration endpoint - moderate to prevent spam
@@ -25,11 +25,11 @@ const registerLimiter = rateLimit({
   message: {
     error: 'Too many registration attempts',
     message: 'Too many accounts created from this IP, please try again after an hour',
-    statusCode: 429
+    statusCode: 429,
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: shouldSkip
+  skip: shouldSkip,
 });
 
 // Rate limiter for token refresh - allows normal usage but prevents abuse
@@ -39,11 +39,11 @@ const refreshLimiter = rateLimit({
   message: {
     error: 'Too many refresh attempts',
     message: 'Too many token refresh attempts from this IP, please try again later',
-    statusCode: 429
+    statusCode: 429,
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: shouldSkip
+  skip: shouldSkip,
 });
 
 // Rate limiter for password change - strict to prevent brute force attacks
@@ -53,11 +53,11 @@ const passwordChangeLimiter = rateLimit({
   message: {
     error: 'Too many password change attempts',
     message: 'Too many password change attempts from this IP, please try again after 15 minutes',
-    statusCode: 429
+    statusCode: 429,
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: shouldSkip
+  skip: shouldSkip,
 });
 
 // Rate limiter for account deletion - strict to prevent abuse
@@ -67,11 +67,11 @@ const accountDeleteLimiter = rateLimit({
   message: {
     error: 'Too many deletion attempts',
     message: 'Too many account deletion attempts from this IP, please try again after 15 minutes',
-    statusCode: 429
+    statusCode: 429,
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: shouldSkip
+  skip: shouldSkip,
 });
 
 module.exports = {
@@ -79,5 +79,5 @@ module.exports = {
   registerLimiter,
   refreshLimiter,
   passwordChangeLimiter,
-  accountDeleteLimiter
+  accountDeleteLimiter,
 };

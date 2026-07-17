@@ -43,21 +43,17 @@ describe('Rate Limiting', () => {
     it('should return 429 after exceeding login attempt limit', async () => {
       const loginData = {
         email: 'test@example.com',
-        password: 'wrongpassword'
+        password: 'wrongpassword',
       };
 
       // Make 15 requests (within limit) - these should return 401 (invalid credentials)
       for (let i = 0; i < 15; i++) {
-        const response = await request(app)
-          .post('/api/v1/auth/login')
-          .send(loginData);
+        const response = await request(app).post('/api/v1/auth/login').send(loginData);
         expect(response.status).toBe(401);
       }
 
       // 16th request should be rate limited (429)
-      const rateLimitedResponse = await request(app)
-        .post('/api/v1/auth/login')
-        .send(loginData);
+      const rateLimitedResponse = await request(app).post('/api/v1/auth/login').send(loginData);
 
       expect(rateLimitedResponse.status).toBe(429);
       expect(rateLimitedResponse.body.error).toBe('Too many login attempts');
@@ -87,18 +83,16 @@ describe('Rate Limiting', () => {
           .send({
             email: `spammer${i}@example.com`,
             password: 'password123',
-            name: 'Spammer'
+            name: 'Spammer',
           });
       }
 
       // 11th request should be rate limited (429)
-      const rateLimitedResponse = await request(app)
-        .post('/api/v1/auth/register')
-        .send({
-          email: 'spammer10@example.com',
-          password: 'password123',
-          name: 'Spammer'
-        });
+      const rateLimitedResponse = await request(app).post('/api/v1/auth/register').send({
+        email: 'spammer10@example.com',
+        password: 'password123',
+        name: 'Spammer',
+      });
 
       expect(rateLimitedResponse.status).toBe(429);
       expect(rateLimitedResponse.body.error).toBe('Too many registration attempts');
@@ -109,17 +103,13 @@ describe('Rate Limiting', () => {
     it('should return 429 after exceeding refresh attempt limit', async () => {
       // Make 30 requests (within limit)
       for (let i = 0; i < 30; i++) {
-        const response = await request(app)
-          .post('/api/v1/auth/refresh')
-          .send({});
+        const response = await request(app).post('/api/v1/auth/refresh').send({});
         // Will return 400 (no token) - that's expected
         expect(response.status).toBe(400);
       }
 
       // 31st request should be rate limited (429)
-      const rateLimitedResponse = await request(app)
-        .post('/api/v1/auth/refresh')
-        .send({});
+      const rateLimitedResponse = await request(app).post('/api/v1/auth/refresh').send({});
 
       expect(rateLimitedResponse.status).toBe(429);
       expect(rateLimitedResponse.body.error).toBe('Too many refresh attempts');

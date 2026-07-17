@@ -67,7 +67,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to fetch habits',
-      statusCode: 500
+      statusCode: 500,
     });
   }
 });
@@ -86,7 +86,7 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req
     if (parseInt(countResult.rows[0].count, 10) >= MAX_HABITS_PER_USER) {
       return res.status(403).json({
         error: 'Habit limit reached',
-        message: `You have reached the maximum of ${MAX_HABITS_PER_USER} habits. Please delete or archive existing habits before creating new ones.`
+        message: `You have reached the maximum of ${MAX_HABITS_PER_USER} habits. Please delete or archive existing habits before creating new ones.`,
       });
     }
 
@@ -114,7 +114,7 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req
         frequency,
         targetDays || [],
         color || '#3B82F6',
-        icon || '⭐'
+        icon || '⭐',
       ]
     );
 
@@ -125,7 +125,7 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to create habit',
-      statusCode: 500
+      statusCode: 500,
     });
   }
 });
@@ -145,7 +145,7 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
       return res.status(400).json({
         error: 'Invalid habit ID',
         message: 'Habit ID must be a non-empty string',
-        statusCode: 400
+        statusCode: 400,
       });
     }
 
@@ -155,7 +155,7 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
       return res.status(400).json({
         error: 'Invalid habit ID format',
         message: 'Habit ID contains invalid characters',
-        statusCode: 400
+        statusCode: 400,
       });
     }
 
@@ -229,7 +229,7 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
       return res.status(404).json({
         error: 'Habit not found',
         message: 'Habit not found or access denied',
-        statusCode: 404
+        statusCode: 404,
       });
     }
 
@@ -240,7 +240,7 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to update habit',
-      statusCode: 500
+      statusCode: 500,
     });
   }
 });
@@ -259,7 +259,7 @@ router.delete('/:id', jwtAuthMiddleware, async (req, res) => {
       return res.status(400).json({
         error: 'Invalid habit ID',
         message: 'Habit ID must be a non-empty string',
-        statusCode: 400
+        statusCode: 400,
       });
     }
 
@@ -270,22 +270,19 @@ router.delete('/:id', jwtAuthMiddleware, async (req, res) => {
       return res.status(400).json({
         error: 'Invalid habit ID format',
         message: 'Habit ID contains invalid characters',
-        statusCode: 400
+        statusCode: 400,
       });
     }
 
     // Delete the habit (only if it belongs to the user)
-    const result = await query(
-      'DELETE FROM habits WHERE id = $1 AND user_id = $2',
-      [id, userId]
-    );
+    const result = await query('DELETE FROM habits WHERE id = $1 AND user_id = $2', [id, userId]);
 
     // Check if any row was deleted
     if (result.rowCount === 0) {
       return res.status(404).json({
         error: 'Habit not found',
         message: 'Habit not found or access denied',
-        statusCode: 404
+        statusCode: 404,
       });
     }
 
@@ -296,7 +293,7 @@ router.delete('/:id', jwtAuthMiddleware, async (req, res) => {
     res.status(500).json({
       error: 'Internal server error',
       message: 'Failed to delete habit',
-      statusCode: 500
+      statusCode: 500,
     });
   }
 });

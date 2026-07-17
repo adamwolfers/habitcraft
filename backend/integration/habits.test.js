@@ -21,22 +21,18 @@ describe('Habit CRUD Integration Tests', () => {
     await quickReset();
 
     // Login as user 1
-    const login1 = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: testUsers.user1.email,
-        password: testUsers.user1.password,
-      });
-    user1Cookies = login1.headers['set-cookie'].map(c => c.split(';')[0]).join('; ');
+    const login1 = await request(app).post('/api/v1/auth/login').send({
+      email: testUsers.user1.email,
+      password: testUsers.user1.password,
+    });
+    user1Cookies = login1.headers['set-cookie'].map((c) => c.split(';')[0]).join('; ');
 
     // Login as user 2
-    const login2 = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: testUsers.user2.email,
-        password: testUsers.user2.password,
-      });
-    user2Cookies = login2.headers['set-cookie'].map(c => c.split(';')[0]).join('; ');
+    const login2 = await request(app).post('/api/v1/auth/login').send({
+      email: testUsers.user2.email,
+      password: testUsers.user2.password,
+    });
+    user2Cookies = login2.headers['set-cookie'].map((c) => c.split(';')[0]).join('; ');
   });
 
   describe('Create Habit (POST /api/v1/habits)', () => {
@@ -60,10 +56,7 @@ describe('Habit CRUD Integration Tests', () => {
 
       // Verify in database
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT * FROM habits WHERE id = $1',
-        [response.body.id]
-      );
+      const result = await pool.query('SELECT * FROM habits WHERE id = $1', [response.body.id]);
       expect(result.rows.length).toBe(1);
       expect(result.rows[0].name).toBe(newHabit.name);
     });
@@ -142,9 +135,7 @@ describe('Habit CRUD Integration Tests', () => {
 
   describe('Read Habits (GET /api/v1/habits)', () => {
     it('should return all active habits for authenticated user', async () => {
-      const response = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user1Cookies);
+      const response = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -153,7 +144,7 @@ describe('Habit CRUD Integration Tests', () => {
       // By default, should return all habits without filtering
       expect(response.body.length).toBe(3);
 
-      const habitNames = response.body.map(h => h.name);
+      const habitNames = response.body.map((h) => h.name);
       expect(habitNames).toContain('Morning Exercise');
       expect(habitNames).toContain('Read Books');
       expect(habitNames).toContain('Archived Habit');
@@ -166,7 +157,7 @@ describe('Habit CRUD Integration Tests', () => {
 
       expect(activeResponse.status).toBe(200);
       expect(activeResponse.body.length).toBe(2);
-      activeResponse.body.forEach(habit => {
+      activeResponse.body.forEach((habit) => {
         expect(habit.status).toBe('active');
       });
 
@@ -184,9 +175,7 @@ describe('Habit CRUD Integration Tests', () => {
       const pool = getTestPool();
       await pool.query('DELETE FROM habits WHERE user_id = $1', [testUsers.user2.id]);
 
-      const response = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user2Cookies);
+      const response = await request(app).get('/api/v1/habits').set('Cookie', user2Cookies);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
@@ -217,10 +206,9 @@ describe('Habit CRUD Integration Tests', () => {
 
       // Verify in database
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT name FROM habits WHERE id = $1',
-        [testHabits.exercise]
-      );
+      const result = await pool.query('SELECT name FROM habits WHERE id = $1', [
+        testHabits.exercise,
+      ]);
       expect(result.rows[0].name).toBe(updates.name);
     });
 
@@ -296,10 +284,7 @@ describe('Habit CRUD Integration Tests', () => {
 
       // Verify deleted from database
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT id FROM habits WHERE id = $1',
-        [testHabits.exercise]
-      );
+      const result = await pool.query('SELECT id FROM habits WHERE id = $1', [testHabits.exercise]);
       expect(result.rows.length).toBe(0);
     });
 
@@ -320,8 +305,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
-        .delete(`/api/v1/habits/${testHabits.exercise}`);
+      const response = await request(app).delete(`/api/v1/habits/${testHabits.exercise}`);
 
       expect(response.status).toBe(401);
     });
@@ -329,22 +313,18 @@ describe('Habit CRUD Integration Tests', () => {
 
   describe('User Isolation', () => {
     it('should not return other users habits in list', async () => {
-      const user1Response = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user1Cookies);
+      const user1Response = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
 
-      const user2Response = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user2Cookies);
+      const user2Response = await request(app).get('/api/v1/habits').set('Cookie', user2Cookies);
 
       // User 1 should only see their habits
-      const user1HabitIds = user1Response.body.map(h => h.id);
+      const user1HabitIds = user1Response.body.map((h) => h.id);
       expect(user1HabitIds).toContain(testHabits.exercise);
       expect(user1HabitIds).toContain(testHabits.reading);
       expect(user1HabitIds).not.toContain(testHabits.user2Habit);
 
       // User 2 should only see their habits
-      const user2HabitIds = user2Response.body.map(h => h.id);
+      const user2HabitIds = user2Response.body.map((h) => h.id);
       expect(user2HabitIds).toContain(testHabits.user2Habit);
       expect(user2HabitIds).not.toContain(testHabits.exercise);
     });
@@ -359,10 +339,9 @@ describe('Habit CRUD Integration Tests', () => {
 
       // Verify habit unchanged
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT name FROM habits WHERE id = $1',
-        [testHabits.user2Habit]
-      );
+      const result = await pool.query('SELECT name FROM habits WHERE id = $1', [
+        testHabits.user2Habit,
+      ]);
       expect(result.rows[0].name).toBe('User 2 Habit');
     });
 
@@ -375,10 +354,9 @@ describe('Habit CRUD Integration Tests', () => {
 
       // Verify habit still exists
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT id FROM habits WHERE id = $1',
-        [testHabits.user2Habit]
-      );
+      const result = await pool.query('SELECT id FROM habits WHERE id = $1', [
+        testHabits.user2Habit,
+      ]);
       expect(result.rows.length).toBe(1);
     });
 
@@ -392,11 +370,9 @@ describe('Habit CRUD Integration Tests', () => {
       const newHabitId = createResponse.body.id;
 
       // User 2 should not see it
-      const user2Habits = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user2Cookies);
+      const user2Habits = await request(app).get('/api/v1/habits').set('Cookie', user2Cookies);
 
-      const user2HabitIds = user2Habits.body.map(h => h.id);
+      const user2HabitIds = user2Habits.body.map((h) => h.id);
       expect(user2HabitIds).not.toContain(newHabitId);
 
       // User 2 should not be able to update it
@@ -428,10 +404,9 @@ describe('Habit CRUD Integration Tests', () => {
       );
 
       // Verify completion exists
-      const beforeDelete = await pool.query(
-        'SELECT id FROM completions WHERE habit_id = $1',
-        [testHabits.exercise]
-      );
+      const beforeDelete = await pool.query('SELECT id FROM completions WHERE habit_id = $1', [
+        testHabits.exercise,
+      ]);
       expect(beforeDelete.rows.length).toBe(1);
 
       // Delete the habit
@@ -442,10 +417,9 @@ describe('Habit CRUD Integration Tests', () => {
       expect(response.status).toBe(204);
 
       // Verify completions are also deleted (via ON DELETE CASCADE)
-      const afterDelete = await pool.query(
-        'SELECT id FROM completions WHERE habit_id = $1',
-        [testHabits.exercise]
-      );
+      const afterDelete = await pool.query('SELECT id FROM completions WHERE habit_id = $1', [
+        testHabits.exercise,
+      ]);
       expect(afterDelete.rows.length).toBe(0);
     });
 
@@ -463,10 +437,9 @@ describe('Habit CRUD Integration Tests', () => {
       );
 
       // Verify completions exist
-      const beforeDelete = await pool.query(
-        'SELECT id FROM completions WHERE habit_id = $1',
-        [testHabits.exercise]
-      );
+      const beforeDelete = await pool.query('SELECT id FROM completions WHERE habit_id = $1', [
+        testHabits.exercise,
+      ]);
       expect(beforeDelete.rows.length).toBe(3);
 
       // Delete the habit
@@ -475,10 +448,9 @@ describe('Habit CRUD Integration Tests', () => {
         .set('Cookie', user1Cookies);
 
       // Verify all completions are deleted
-      const afterDelete = await pool.query(
-        'SELECT id FROM completions WHERE habit_id = $1',
-        [testHabits.exercise]
-      );
+      const afterDelete = await pool.query('SELECT id FROM completions WHERE habit_id = $1', [
+        testHabits.exercise,
+      ]);
       expect(afterDelete.rows.length).toBe(0);
     });
 
@@ -526,11 +498,9 @@ describe('Habit CRUD Integration Tests', () => {
       const habitId = createResponse.body.id;
 
       // READ - verify in list
-      const listResponse = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user1Cookies);
+      const listResponse = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
 
-      const createdHabit = listResponse.body.find(h => h.id === habitId);
+      const createdHabit = listResponse.body.find((h) => h.id === habitId);
       expect(createdHabit).toBeDefined();
       expect(createdHabit.name).toBe('Full CRUD Test');
 
@@ -556,11 +526,9 @@ describe('Habit CRUD Integration Tests', () => {
       expect(deleteResponse.status).toBe(204);
 
       // Verify deletion
-      const finalList = await request(app)
-        .get('/api/v1/habits')
-        .set('Cookie', user1Cookies);
+      const finalList = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
 
-      const deletedHabit = finalList.body.find(h => h.id === habitId);
+      const deletedHabit = finalList.body.find((h) => h.id === habitId);
       expect(deletedHabit).toBeUndefined();
     });
   });

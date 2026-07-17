@@ -23,10 +23,7 @@ function isFutureDate(dateString) {
 
 // Helper function to verify habit ownership
 async function verifyHabitOwnership(habitId, userId) {
-  const result = await pool.query(
-    'SELECT id, user_id FROM habits WHERE id = $1',
-    [habitId]
-  );
+  const result = await pool.query('SELECT id, user_id FROM habits WHERE id = $1', [habitId]);
 
   if (result.rows.length === 0) {
     return { exists: false, owned: false };
@@ -34,7 +31,7 @@ async function verifyHabitOwnership(habitId, userId) {
 
   return {
     exists: true,
-    owned: result.rows[0].user_id === userId
+    owned: result.rows[0].user_id === userId,
   };
 }
 
@@ -238,7 +235,7 @@ router.delete('/:date', jwtAuthMiddleware, async (req, res) => {
     res.status(200).json({
       message: 'Completion deleted successfully',
       habitId: habitId,
-      date: date
+      date: date,
     });
   } catch (error) {
     console.error('Error deleting completion:', error);

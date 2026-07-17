@@ -31,22 +31,18 @@ describe('Completion Tracking Integration Tests', () => {
     await quickReset();
 
     // Login as user 1
-    const login1 = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: testUsers.user1.email,
-        password: testUsers.user1.password,
-      });
-    user1Cookies = login1.headers['set-cookie'].map(c => c.split(';')[0]).join('; ');
+    const login1 = await request(app).post('/api/v1/auth/login').send({
+      email: testUsers.user1.email,
+      password: testUsers.user1.password,
+    });
+    user1Cookies = login1.headers['set-cookie'].map((c) => c.split(';')[0]).join('; ');
 
     // Login as user 2
-    const login2 = await request(app)
-      .post('/api/v1/auth/login')
-      .send({
-        email: testUsers.user2.email,
-        password: testUsers.user2.password,
-      });
-    user2Cookies = login2.headers['set-cookie'].map(c => c.split(';')[0]).join('; ');
+    const login2 = await request(app).post('/api/v1/auth/login').send({
+      email: testUsers.user2.email,
+      password: testUsers.user2.password,
+    });
+    user2Cookies = login2.headers['set-cookie'].map((c) => c.split(';')[0]).join('; ');
   });
 
   describe('Create Completion (POST /api/v1/habits/:habitId/completions)', () => {
@@ -65,10 +61,9 @@ describe('Completion Tracking Integration Tests', () => {
 
       // Verify in database
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT * FROM completions WHERE id = $1',
-        [response.body.id]
-      );
+      const result = await pool.query('SELECT * FROM completions WHERE id = $1', [
+        response.body.id,
+      ]);
       expect(result.rows.length).toBe(1);
       expect(result.rows[0].habit_id).toBe(testHabits.exercise);
       expect(result.rows[0].date.toISOString().split('T')[0]).toBe(today);
@@ -88,10 +83,9 @@ describe('Completion Tracking Integration Tests', () => {
 
       // Verify notes in database
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT notes FROM completions WHERE id = $1',
-        [response.body.id]
-      );
+      const result = await pool.query('SELECT notes FROM completions WHERE id = $1', [
+        response.body.id,
+      ]);
       expect(result.rows[0].notes).toBe(notes);
     });
 
@@ -193,10 +187,7 @@ describe('Completion Tracking Integration Tests', () => {
 
       // Verify both exist in database
       const pool = getTestPool();
-      const result = await pool.query(
-        'SELECT habit_id FROM completions WHERE date = $1',
-        [today]
-      );
+      const result = await pool.query('SELECT habit_id FROM completions WHERE date = $1', [today]);
       expect(result.rows.length).toBe(2);
     });
 
@@ -263,7 +254,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(response.body.length).toBe(5);
 
       // Should be ordered by date descending
-      const dates = response.body.map(c => c.date);
+      const dates = response.body.map((c) => c.date);
       const sortedDates = [...dates].sort().reverse();
       expect(dates).toEqual(sortedDates);
     });
@@ -278,7 +269,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(response.status).toBe(200);
       // Should only include completions from day 0, 1, 2 (days ago)
       expect(response.body.length).toBe(3);
-      response.body.forEach(c => {
+      response.body.forEach((c) => {
         expect(c.date >= startDate).toBe(true);
       });
     });
@@ -293,7 +284,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(response.status).toBe(200);
       // Should only include completions from day 5 and 10 (days ago)
       expect(response.body.length).toBe(2);
-      response.body.forEach(c => {
+      response.body.forEach((c) => {
         expect(c.date <= endDate).toBe(true);
       });
     });
@@ -303,13 +294,15 @@ describe('Completion Tracking Integration Tests', () => {
       const endDate = getDaysAgo(1);
 
       const response = await request(app)
-        .get(`/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}&endDate=${endDate}`)
+        .get(
+          `/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}&endDate=${endDate}`
+        )
         .set('Cookie', user1Cookies);
 
       expect(response.status).toBe(200);
       // Should include days 1, 2, and 5 ago
       expect(response.body.length).toBe(3);
-      response.body.forEach(c => {
+      response.body.forEach((c) => {
         expect(c.date >= startDate).toBe(true);
         expect(c.date <= endDate).toBe(true);
       });
@@ -329,7 +322,9 @@ describe('Completion Tracking Integration Tests', () => {
       const endDate = getDaysAgo(90);
 
       const response = await request(app)
-        .get(`/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}&endDate=${endDate}`)
+        .get(
+          `/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}&endDate=${endDate}`
+        )
         .set('Cookie', user1Cookies);
 
       expect(response.status).toBe(200);
@@ -345,8 +340,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
-        .get(`/api/v1/habits/${testHabits.exercise}/completions`);
+      const response = await request(app).get(`/api/v1/habits/${testHabits.exercise}/completions`);
 
       expect(response.status).toBe(401);
     });
@@ -358,10 +352,10 @@ describe('Completion Tracking Integration Tests', () => {
       const pool = getTestPool();
 
       // Create a completion first
-      await pool.query(
-        'INSERT INTO completions (habit_id, date) VALUES ($1, $2)',
-        [testHabits.exercise, today]
-      );
+      await pool.query('INSERT INTO completions (habit_id, date) VALUES ($1, $2)', [
+        testHabits.exercise,
+        today,
+      ]);
 
       // Verify it exists
       const beforeDelete = await pool.query(
@@ -415,8 +409,9 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
-        .delete(`/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`);
+      const response = await request(app).delete(
+        `/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`
+      );
 
       expect(response.status).toBe(401);
     });
@@ -439,10 +434,9 @@ describe('Completion Tracking Integration Tests', () => {
         .set('Cookie', user1Cookies);
 
       // Verify yesterday's completion still exists
-      const result = await pool.query(
-        'SELECT date FROM completions WHERE habit_id = $1',
-        [testHabits.exercise]
-      );
+      const result = await pool.query('SELECT date FROM completions WHERE habit_id = $1', [
+        testHabits.exercise,
+      ]);
       expect(result.rows.length).toBe(1);
       expect(result.rows[0].date.toISOString().split('T')[0]).toBe(yesterday);
     });
@@ -454,10 +448,11 @@ describe('Completion Tracking Integration Tests', () => {
       const pool = getTestPool();
 
       // Create a completion first
-      await pool.query(
-        'INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)',
-        [testHabits.exercise, today, 'Original note']
-      );
+      await pool.query('INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)', [
+        testHabits.exercise,
+        today,
+        'Original note',
+      ]);
 
       // Update the note
       const response = await request(app)
@@ -483,10 +478,11 @@ describe('Completion Tracking Integration Tests', () => {
       const pool = getTestPool();
 
       // Create a completion with a note
-      await pool.query(
-        'INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)',
-        [testHabits.exercise, today, 'Note to delete']
-      );
+      await pool.query('INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)', [
+        testHabits.exercise,
+        today,
+        'Note to delete',
+      ]);
 
       // Clear the note by passing null
       const response = await request(app)
@@ -547,10 +543,11 @@ describe('Completion Tracking Integration Tests', () => {
       const pool = getTestPool();
 
       // Create completion for user 2's habit
-      await pool.query(
-        'INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)',
-        [testHabits.user2Habit, today, 'User 2 note']
-      );
+      await pool.query('INSERT INTO completions (habit_id, date, notes) VALUES ($1, $2, $3)', [
+        testHabits.user2Habit,
+        today,
+        'User 2 note',
+      ]);
 
       // User 1 tries to update it
       const response = await request(app)
@@ -594,10 +591,10 @@ describe('Completion Tracking Integration Tests', () => {
       const today = getToday();
 
       // Create completion for user 2's habit
-      await pool.query(
-        'INSERT INTO completions (habit_id, date) VALUES ($1, $2)',
-        [testHabits.user2Habit, today]
-      );
+      await pool.query('INSERT INTO completions (habit_id, date) VALUES ($1, $2)', [
+        testHabits.user2Habit,
+        today,
+      ]);
 
       // User 1 tries to delete it
       const response = await request(app)
@@ -695,7 +692,7 @@ describe('Completion Tracking Integration Tests', () => {
         .set('Cookie', user1Cookies);
 
       expect(readResponse.status).toBe(200);
-      const completion = readResponse.body.find(c => c.date === today);
+      const completion = readResponse.body.find((c) => c.date === today);
       expect(completion).toBeDefined();
       expect(completion.notes).toBe(notes);
 
@@ -711,7 +708,7 @@ describe('Completion Tracking Integration Tests', () => {
         .get(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies);
 
-      const deletedCompletion = finalRead.body.find(c => c.date === today);
+      const deletedCompletion = finalRead.body.find((c) => c.date === today);
       expect(deletedCompletion).toBeUndefined();
     });
 
