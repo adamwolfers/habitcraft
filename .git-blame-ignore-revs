@@ -1,0 +1,9 @@
+# Revisions listed here are skipped by `git blame` so that bulk mechanical
+# reformats don't obscure the real authorship of each line.
+#
+# Enable locally with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# (GitHub applies this file automatically.)
+
+# Apply Prettier formatting to backend (habitcraft-4zh)
+d602c05b6e4569a2596c593b5832d48ce4838c92
