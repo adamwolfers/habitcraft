@@ -53,9 +53,7 @@ describe('Habit CRUD Operations', () => {
 
       // Verify error is shown
       await expect(element(by.id('create-habit-error'))).toBeVisible();
-      await expect(element(by.id('create-habit-error'))).toHaveText(
-        'Habit name is required'
-      );
+      await expect(element(by.id('create-habit-error'))).toHaveText('Habit name is required');
     });
 
     it('should create habit with only name (description optional)', async () => {
