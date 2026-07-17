@@ -7,11 +7,11 @@ describe('Habit Validator Middleware', () => {
 
   beforeEach(() => {
     mockReq = {
-      body: {}
+      body: {},
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
     nextFn = jest.fn();
   });
@@ -20,7 +20,7 @@ describe('Habit Validator Middleware', () => {
     it('should call next() with valid habit input', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily'
+        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -37,7 +37,7 @@ describe('Habit Validator Middleware', () => {
         color: '#FF5733',
         icon: '🏃',
         status: 'active',
-        targetDays: [1, 3, 5]
+        targetDays: [1, 3, 5],
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -50,7 +50,7 @@ describe('Habit Validator Middleware', () => {
   describe('Name validation', () => {
     it('should return 400 if name is missing', () => {
       mockReq.body = {
-        frequency: 'daily'
+        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -58,7 +58,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          error: 'Validation error'
+          error: 'Validation error',
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if name is empty string', () => {
       mockReq.body = {
         name: '   ',
-        frequency: 'daily'
+        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -79,7 +79,7 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if name exceeds max length', () => {
       mockReq.body = {
         name: 'a'.repeat(101),
-        frequency: 'daily'
+        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -87,7 +87,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must not exceed 100 characters')
+          message: expect.stringContaining('must not exceed 100 characters'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -97,7 +97,7 @@ describe('Habit Validator Middleware', () => {
   describe('Frequency validation', () => {
     it('should return 400 if frequency is missing', () => {
       mockReq.body = {
-        name: 'Exercise'
+        name: 'Exercise',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -109,7 +109,7 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if frequency is invalid', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'invalid'
+        frequency: 'invalid',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -117,7 +117,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must be one of: daily, weekly')
+          message: expect.stringContaining('must be one of: daily, weekly'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -129,7 +129,7 @@ describe('Habit Validator Middleware', () => {
       mockReq.body = {
         name: 'Exercise',
         frequency: 'daily',
-        description: 'a'.repeat(501)
+        description: 'a'.repeat(501),
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -137,7 +137,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must not exceed 500 characters')
+          message: expect.stringContaining('must not exceed 500 characters'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -149,7 +149,7 @@ describe('Habit Validator Middleware', () => {
       mockReq.body = {
         name: 'Exercise',
         frequency: 'daily',
-        targetDays: 'not-an-array'
+        targetDays: 'not-an-array',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -157,7 +157,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('targetDays must be an array')
+          message: expect.stringContaining('targetDays must be an array'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -167,7 +167,7 @@ describe('Habit Validator Middleware', () => {
       mockReq.body = {
         name: 'Exercise',
         frequency: 'daily',
-        targetDays: [0, 1, 7]
+        targetDays: [0, 1, 7],
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -175,7 +175,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must contain integers between 0 and 6')
+          message: expect.stringContaining('must contain integers between 0 and 6'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe('Habit Validator Middleware', () => {
       mockReq.body = {
         name: 'Exercise',
         frequency: 'daily',
-        color: 'not-a-color'
+        color: 'not-a-color',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -195,7 +195,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must be a valid hex color code')
+          message: expect.stringContaining('must be a valid hex color code'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -207,7 +207,7 @@ describe('Habit Validator Middleware', () => {
       mockReq.body = {
         name: 'Exercise',
         frequency: 'daily',
-        icon: 123
+        icon: 123,
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -215,7 +215,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('icon must be a string')
+          message: expect.stringContaining('icon must be a string'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();
@@ -227,7 +227,7 @@ describe('Habit Validator Middleware', () => {
       mockReq.body = {
         name: 'Exercise',
         frequency: 'daily',
-        status: 'invalid-status'
+        status: 'invalid-status',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -235,7 +235,7 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('must be one of: active, archived')
+          message: expect.stringContaining('must be one of: active, archived'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();

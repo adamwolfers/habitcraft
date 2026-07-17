@@ -11,7 +11,7 @@ const SECURITY_EVENTS = {
   AUTH_FAILURE: 'AUTH_FAILURE',
   PASSWORD_CHANGE_SUCCESS: 'PASSWORD_CHANGE_SUCCESS',
   PASSWORD_CHANGE_FAILURE: 'PASSWORD_CHANGE_FAILURE',
-  ACCOUNT_DELETED: 'ACCOUNT_DELETED'
+  ACCOUNT_DELETED: 'ACCOUNT_DELETED',
 };
 
 function getClientIp(req) {
@@ -30,7 +30,7 @@ function logSecurityEvent(event, req, details = {}) {
     event,
     ip: getClientIp(req),
     userAgent: req.get('user-agent') || null,
-    ...details
+    ...details,
   };
 
   // Include path for auth failure events
@@ -43,5 +43,5 @@ function logSecurityEvent(event, req, details = {}) {
 
 module.exports = {
   logSecurityEvent,
-  SECURITY_EVENTS
+  SECURITY_EVENTS,
 };

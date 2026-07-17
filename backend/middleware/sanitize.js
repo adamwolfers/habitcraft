@@ -9,7 +9,7 @@ const xss = require('xss');
 const xssOptions = {
   whiteList: {}, // No tags allowed
   stripIgnoreTag: true, // Remove all tags
-  stripIgnoreTagBody: ['script', 'style'] // Remove script/style content entirely
+  stripIgnoreTagBody: ['script', 'style'], // Remove script/style content entirely
 };
 
 /**
@@ -44,5 +44,5 @@ function sanitizeEmail(req, res, next) {
 
 module.exports = {
   sanitizeBody,
-  sanitizeEmail
+  sanitizeEmail,
 };

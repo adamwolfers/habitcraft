@@ -39,7 +39,7 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });
@@ -56,7 +56,7 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_FAILURE, mockReq, { email: 'test@example.com' });
@@ -71,7 +71,7 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null; // No x-forwarded-for
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });
@@ -86,7 +86,7 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'TestBrowser/1.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });
@@ -102,7 +102,7 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'user@example.com' });
@@ -117,12 +117,12 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, {
         email: 'user@example.com',
-        userId: '12345-uuid'
+        userId: '12345-uuid',
       });
 
       const loggedData = parseLogOutput(consoleSpy.mock.calls[0]);
@@ -135,12 +135,12 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_FAILURE, mockReq, {
         email: 'user@example.com',
-        reason: 'invalid_password'
+        reason: 'invalid_password',
       });
 
       const loggedData = parseLogOutput(consoleSpy.mock.calls[0]);
@@ -150,7 +150,7 @@ describe('Security Logger', () => {
     it('should handle missing user agent gracefully', () => {
       const mockReq = {
         ip: '127.0.0.1',
-        get: jest.fn().mockReturnValue(null) // All headers return null
+        get: jest.fn().mockReturnValue(null), // All headers return null
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });
@@ -166,7 +166,7 @@ describe('Security Logger', () => {
           if (header === 'x-forwarded-for') return '203.0.113.195, 70.41.3.18';
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });
@@ -183,11 +183,11 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, mockReq, {
-        reason: 'token_expired'
+        reason: 'token_expired',
       });
 
       const loggedData = parseLogOutput(consoleSpy.mock.calls[0]);
@@ -202,7 +202,7 @@ describe('Security Logger', () => {
         get: jest.fn().mockImplementation((header) => {
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
-        })
+        }),
       };
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });

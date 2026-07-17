@@ -12,8 +12,8 @@ jest.mock('../utils/securityLogger', () => ({
     TOKEN_REFRESH_SUCCESS: 'TOKEN_REFRESH_SUCCESS',
     TOKEN_REFRESH_FAILURE: 'TOKEN_REFRESH_FAILURE',
     LOGOUT: 'LOGOUT',
-    AUTH_FAILURE: 'AUTH_FAILURE'
-  }
+    AUTH_FAILURE: 'AUTH_FAILURE',
+  },
 }));
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
@@ -26,17 +26,19 @@ describe('JWT Auth Middleware', () => {
   beforeEach(() => {
     mockReq = {
       headers: {},
-      cookies: {}
+      cookies: {},
     };
     mockRes = {
       status: jest.fn().mockReturnThis(),
-      json: jest.fn()
+      json: jest.fn(),
     };
     nextFn = jest.fn();
   });
 
   it('should call next() with valid access token from Authorization header', () => {
-    const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+    const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, {
+      expiresIn: '15m',
+    });
     mockReq.headers.authorization = `Bearer ${token}`;
 
     jwtAuthMiddleware(mockReq, mockRes, nextFn);
@@ -46,7 +48,9 @@ describe('JWT Auth Middleware', () => {
   });
 
   it('should call next() with valid access token from cookie', () => {
-    const token = jwt.sign({ userId: 'user-456', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+    const token = jwt.sign({ userId: 'user-456', type: 'access' }, JWT_SECRET, {
+      expiresIn: '15m',
+    });
     mockReq.cookies.accessToken = token;
 
     jwtAuthMiddleware(mockReq, mockRes, nextFn);
@@ -56,8 +60,12 @@ describe('JWT Auth Middleware', () => {
   });
 
   it('should prefer cookie over Authorization header', () => {
-    const cookieToken = jwt.sign({ userId: 'cookie-user', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
-    const headerToken = jwt.sign({ userId: 'header-user', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+    const cookieToken = jwt.sign({ userId: 'cookie-user', type: 'access' }, JWT_SECRET, {
+      expiresIn: '15m',
+    });
+    const headerToken = jwt.sign({ userId: 'header-user', type: 'access' }, JWT_SECRET, {
+      expiresIn: '15m',
+    });
 
     mockReq.cookies.accessToken = cookieToken;
     mockReq.headers.authorization = `Bearer ${headerToken}`;
@@ -97,7 +105,9 @@ describe('JWT Auth Middleware', () => {
   });
 
   it('should return 401 if token is expired', () => {
-    const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, { expiresIn: '-1s' });
+    const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, {
+      expiresIn: '-1s',
+    });
     mockReq.headers.authorization = `Bearer ${token}`;
 
     jwtAuthMiddleware(mockReq, mockRes, nextFn);
@@ -108,7 +118,9 @@ describe('JWT Auth Middleware', () => {
   });
 
   it('should return 401 if token type is not access', () => {
-    const token = jwt.sign({ userId: 'user-123', type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
+    const token = jwt.sign({ userId: 'user-123', type: 'refresh' }, JWT_SECRET, {
+      expiresIn: '7d',
+    });
     mockReq.headers.authorization = `Bearer ${token}`;
 
     jwtAuthMiddleware(mockReq, mockRes, nextFn);
@@ -132,7 +144,7 @@ describe('JWT Auth Middleware', () => {
         SECURITY_EVENTS.AUTH_FAILURE,
         expect.any(Object),
         expect.objectContaining({
-          reason: 'no_token'
+          reason: 'no_token',
         })
       );
     });
@@ -147,7 +159,7 @@ describe('JWT Auth Middleware', () => {
         SECURITY_EVENTS.AUTH_FAILURE,
         expect.any(Object),
         expect.objectContaining({
-          reason: 'invalid_format'
+          reason: 'invalid_format',
         })
       );
     });
@@ -162,13 +174,15 @@ describe('JWT Auth Middleware', () => {
         SECURITY_EVENTS.AUTH_FAILURE,
         expect.any(Object),
         expect.objectContaining({
-          reason: 'invalid_token'
+          reason: 'invalid_token',
         })
       );
     });
 
     it('should log AUTH_FAILURE when token is expired', () => {
-      const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, { expiresIn: '-1s' });
+      const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, {
+        expiresIn: '-1s',
+      });
       mockReq.headers.authorization = `Bearer ${token}`;
       mockReq.path = '/api/v1/habits';
 
@@ -178,13 +192,15 @@ describe('JWT Auth Middleware', () => {
         SECURITY_EVENTS.AUTH_FAILURE,
         expect.any(Object),
         expect.objectContaining({
-          reason: 'token_expired'
+          reason: 'token_expired',
         })
       );
     });
 
     it('should log AUTH_FAILURE when token type is wrong', () => {
-      const token = jwt.sign({ userId: 'user-123', type: 'refresh' }, JWT_SECRET, { expiresIn: '7d' });
+      const token = jwt.sign({ userId: 'user-123', type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
       mockReq.headers.authorization = `Bearer ${token}`;
       mockReq.path = '/api/v1/habits';
 
@@ -194,13 +210,15 @@ describe('JWT Auth Middleware', () => {
         SECURITY_EVENTS.AUTH_FAILURE,
         expect.any(Object),
         expect.objectContaining({
-          reason: 'invalid_token_type'
+          reason: 'invalid_token_type',
         })
       );
     });
 
     it('should NOT log when authentication succeeds', () => {
-      const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, { expiresIn: '15m' });
+      const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
       mockReq.headers.authorization = `Bearer ${token}`;
 
       jwtAuthMiddleware(mockReq, mockRes, nextFn);

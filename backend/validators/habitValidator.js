@@ -42,9 +42,7 @@ function validateHabitInput(req, res, next) {
     if (!Array.isArray(targetDays)) {
       errors.push('targetDays must be an array');
     } else {
-      const invalidDays = targetDays.filter(day =>
-        !Number.isInteger(day) || day < 0 || day > 6
-      );
+      const invalidDays = targetDays.filter((day) => !Number.isInteger(day) || day < 0 || day > 6);
       if (invalidDays.length > 0) {
         errors.push('targetDays must contain integers between 0 and 6 (0=Sunday, 6=Saturday)');
       }
@@ -75,7 +73,7 @@ function validateHabitInput(req, res, next) {
     return res.status(400).json({
       error: 'Validation error',
       message: errors.join('; '),
-      statusCode: 400
+      statusCode: 400,
     });
   }
 
@@ -83,5 +81,5 @@ function validateHabitInput(req, res, next) {
 }
 
 module.exports = {
-  validateHabitInput
+  validateHabitInput,
 };

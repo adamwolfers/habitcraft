@@ -6,7 +6,7 @@ jest.mock('./db/pool', () => {
   const original = jest.requireActual('./db/pool');
   return {
     ...original,
-    query: jest.fn(original.query)
+    query: jest.fn(original.query),
   };
 });
 
@@ -15,13 +15,10 @@ const app = require('./app');
 
 describe('GET /hello', () => {
   it('should return hello world message', async () => {
-    const response = await request(app)
-      .get('/hello')
-      .expect('Content-Type', /json/)
-      .expect(200);
+    const response = await request(app).get('/hello').expect('Content-Type', /json/).expect(200);
 
     expect(response.body).toEqual({
-      message: 'Hello World!'
+      message: 'Hello World!',
     });
   });
 });
@@ -41,10 +38,7 @@ describe('GET /health', () => {
     // Mock successful database query
     pool.query.mockResolvedValueOnce({ rows: [{ result: 1 }] });
 
-    const response = await request(app)
-      .get('/health')
-      .expect('Content-Type', /json/)
-      .expect(200);
+    const response = await request(app).get('/health').expect('Content-Type', /json/).expect(200);
 
     expect(response.body).toHaveProperty('status', 'healthy');
     expect(response.body).toHaveProperty('timestamp');
@@ -55,9 +49,7 @@ describe('GET /health', () => {
     // Mock successful database query
     pool.query.mockResolvedValueOnce({ rows: [{ result: 1 }] });
 
-    const response = await request(app)
-      .get('/health')
-      .expect(200);
+    const response = await request(app).get('/health').expect(200);
 
     expect(response.body).toHaveProperty('service', 'habittracker-api');
     expect(response.body).toHaveProperty('version');
@@ -67,10 +59,7 @@ describe('GET /health', () => {
     // Mock query to simulate database error
     pool.query.mockRejectedValueOnce(new Error('Connection failed'));
 
-    const response = await request(app)
-      .get('/health')
-      .expect('Content-Type', /json/)
-      .expect(503);
+    const response = await request(app).get('/health').expect('Content-Type', /json/).expect(503);
 
     expect(response.body).toHaveProperty('status', 'unhealthy');
     expect(response.body).toHaveProperty('database', 'disconnected');
