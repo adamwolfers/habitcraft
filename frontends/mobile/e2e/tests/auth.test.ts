@@ -21,9 +21,7 @@ describe('Authentication', () => {
       // Fill registration form
       await element(by.id('register-email-input')).typeText(testUser.email);
       await element(by.id('register-password-input')).typeText(testUser.password);
-      await element(by.id('register-confirm-password-input')).typeText(
-        testUser.password
-      );
+      await element(by.id('register-confirm-password-input')).typeText(testUser.password);
 
       // Submit form
       await element(by.id('register-button')).tap();
@@ -40,22 +38,16 @@ describe('Authentication', () => {
       await waitForElement('register-email-input');
 
       // Fill form with mismatched passwords
-      await element(by.id('register-email-input')).typeText(
-        'test@example.com'
-      );
+      await element(by.id('register-email-input')).typeText('test@example.com');
       await element(by.id('register-password-input')).typeText('password123');
-      await element(by.id('register-confirm-password-input')).typeText(
-        'different456'
-      );
+      await element(by.id('register-confirm-password-input')).typeText('different456');
 
       // Submit form
       await element(by.id('register-button')).tap();
 
       // Verify error is shown
       await expect(element(by.id('register-error'))).toBeVisible();
-      await expect(element(by.id('register-error'))).toHaveText(
-        'Passwords do not match'
-      );
+      await expect(element(by.id('register-error'))).toHaveText('Passwords do not match');
     });
 
     it('should show error for invalid email format', async () => {
@@ -66,18 +58,14 @@ describe('Authentication', () => {
       // Fill form with invalid email
       await element(by.id('register-email-input')).typeText('invalid-email');
       await element(by.id('register-password-input')).typeText('password123');
-      await element(by.id('register-confirm-password-input')).typeText(
-        'password123'
-      );
+      await element(by.id('register-confirm-password-input')).typeText('password123');
 
       // Submit form
       await element(by.id('register-button')).tap();
 
       // Verify error is shown
       await expect(element(by.id('register-error'))).toBeVisible();
-      await expect(element(by.id('register-error'))).toHaveText(
-        'Please enter a valid email'
-      );
+      await expect(element(by.id('register-error'))).toHaveText('Please enter a valid email');
     });
 
     it('should show error for short password', async () => {
@@ -86,9 +74,7 @@ describe('Authentication', () => {
       await waitForElement('register-email-input');
 
       // Fill form with short password
-      await element(by.id('register-email-input')).typeText(
-        'test@example.com'
-      );
+      await element(by.id('register-email-input')).typeText('test@example.com');
       await element(by.id('register-password-input')).typeText('12345');
       await element(by.id('register-confirm-password-input')).typeText('12345');
 
@@ -125,9 +111,7 @@ describe('Authentication', () => {
 
       await element(by.id('register-email-input')).typeText(testUser.email);
       await element(by.id('register-password-input')).typeText(testUser.password);
-      await element(by.id('register-confirm-password-input')).typeText(
-        testUser.password
-      );
+      await element(by.id('register-confirm-password-input')).typeText(testUser.password);
       await element(by.id('register-button')).tap();
       await waitForElement('dashboard-screen');
 
@@ -149,9 +133,7 @@ describe('Authentication', () => {
     });
 
     it('should show error for invalid credentials', async () => {
-      await element(by.id('login-email-input')).typeText(
-        'nonexistent@example.com'
-      );
+      await element(by.id('login-email-input')).typeText('nonexistent@example.com');
       await element(by.id('login-password-input')).typeText('wrongpassword');
       await element(by.id('login-button')).tap();
 
@@ -167,9 +149,7 @@ describe('Authentication', () => {
 
       // Verify error is shown
       await expect(element(by.id('login-error'))).toBeVisible();
-      await expect(element(by.id('login-error'))).toHaveText(
-        'Email is required'
-      );
+      await expect(element(by.id('login-error'))).toHaveText('Email is required');
     });
 
     it('should show error for empty password', async () => {
@@ -178,9 +158,7 @@ describe('Authentication', () => {
 
       // Verify error is shown
       await expect(element(by.id('login-error'))).toBeVisible();
-      await expect(element(by.id('login-error'))).toHaveText(
-        'Password is required'
-      );
+      await expect(element(by.id('login-error'))).toHaveText('Password is required');
     });
 
     it('should show error for invalid email format', async () => {
@@ -190,9 +168,7 @@ describe('Authentication', () => {
 
       // Verify error is shown
       await expect(element(by.id('login-error'))).toBeVisible();
-      await expect(element(by.id('login-error'))).toHaveText(
-        'Please enter a valid email'
-      );
+      await expect(element(by.id('login-error'))).toHaveText('Please enter a valid email');
     });
   });
 });

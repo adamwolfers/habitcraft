@@ -26,10 +26,7 @@ export async function waitForElement(testID: string, timeout = 10000) {
 /**
  * Wait for an element to not be visible
  */
-export async function waitForElementToDisappear(
-  testID: string,
-  timeout = 10000
-) {
+export async function waitForElementToDisappear(testID: string, timeout = 10000) {
   await waitFor(element(by.id(testID)))
     .not.toBeVisible()
     .withTimeout(timeout);
