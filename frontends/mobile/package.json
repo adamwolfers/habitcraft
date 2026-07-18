@@ -79,8 +79,9 @@
     "typescript": "~5.9.2"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx}": [
-      "prettier --write"
+    "**/*.{ts,tsx}": [
+      "prettier --write",
+      "eslint"
     ]
   },
   "private": true
