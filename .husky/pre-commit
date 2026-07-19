@@ -3,8 +3,15 @@ if command -v bd >/dev/null 2>&1; then
   bd hook pre-commit
 fi
 
-# Run lint-staged for mobile app formatting
-MOBILE_DIR="$(git rev-parse --show-toplevel)/frontends/mobile"
-if [ -f "$MOBILE_DIR/node_modules/.bin/lint-staged" ]; then
-  cd "$MOBILE_DIR" && npx lint-staged
-fi
+# Dispatch pre-commit linting/formatting to each package's own lint-staged.
+# Git allows only one hooks directory, so this hook is the single repo-level
+# piece; it owns no rules — each package's config lives in its own package.json.
+# A package with lint-staged installed runs it (against only its own staged
+# files, since lint-staged is scoped to its cwd); packages without it are
+# skipped cleanly. Any failure aborts the commit.
+ROOT="$(git rev-parse --show-toplevel)"
+for pkg in backend frontends/nextjs frontends/mobile; do
+  if [ -f "$ROOT/$pkg/node_modules/.bin/lint-staged" ]; then
+    (cd "$ROOT/$pkg" && npx lint-staged) || exit 1
+  fi
+done
