@@ -13,9 +13,11 @@
  */
 
 const { Pool } = require('pg');
+const http = require('http');
 const { execSync } = require('child_process');
 const path = require('path');
 const { findProjectRoot } = require('../utils/findProjectRoot');
+const app = require('../app');
 
 // Test database configuration (from .env.test)
 const testDbConfig = {
@@ -28,6 +30,67 @@ const testDbConfig = {
 
 // Create a dedicated pool for integration tests
 let testPool = null;
+
+// A single HTTP server shared by every request in a suite.
+//
+// Why not `request(app)`: supertest starts a throwaway server per request and
+// closes it when the response ends. If a request never returns (a test that
+// times out mid-flight), that server is never closed, its handle keeps the
+// event loop alive, and jest idles forever after the run finishes. Owning one
+// long-lived server lets afterAll tear it down deterministically. See
+// habitcraft-doz.
+let testServer = null;
+let testServerReady = null;
+
+/**
+ * Get the shared test HTTP server, starting it on a random port if needed.
+ *
+ * Supertest reuses an already-listening server (and, importantly, does not
+ * close it), so callers pass this instead of the bare app.
+ * @returns {http.Server} Listening test server
+ */
+function getTestServer() {
+  if (!testServer) {
+    testServer = http.createServer(app);
+    testServerReady = new Promise((resolve, reject) => {
+      testServer.once('listening', resolve);
+      testServer.once('error', reject);
+    });
+    testServer.listen(0);
+  }
+  return testServer;
+}
+
+/**
+ * Wait until the shared server is bound and has an address.
+ *
+ * listen() binds asynchronously; until it completes server.address() is null,
+ * and supertest would try to listen a second time and throw.
+ * @returns {Promise<void>}
+ */
+async function whenTestServerReady() {
+  getTestServer();
+  await testServerReady;
+}
+
+/**
+ * Close the shared test server, dropping any in-flight connections.
+ * @returns {Promise<void>}
+ */
+async function closeTestServer() {
+  if (!testServer) return;
+
+  const server = testServer;
+  testServer = null;
+  testServerReady = null;
+
+  // Load-bearing: close() on its own waits for open connections to finish, so
+  // a request that never returned would still hang teardown.
+  if (typeof server.closeAllConnections === 'function') {
+    server.closeAllConnections();
+  }
+  await new Promise((resolve) => server.close(() => resolve()));
+}
 
 /**
  * Get the test database pool
@@ -187,6 +250,9 @@ const testHabits = {
 module.exports = {
   getTestPool,
   closeTestPool,
+  getTestServer,
+  whenTestServerReady,
+  closeTestServer,
   resetTestDatabase,
   clearTables,
   insertFixtures,

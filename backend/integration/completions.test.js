@@ -9,8 +9,9 @@
  */
 
 const request = require('supertest');
-const app = require('../app');
-const { quickReset, testUsers, testHabits, getTestPool } = require('./setup');
+const { quickReset, testUsers, testHabits, getTestPool, getTestServer } = require('./setup');
+
+const testServer = getTestServer();
 
 describe('Completion Tracking Integration Tests', () => {
   let user1Cookies;
@@ -31,14 +32,14 @@ describe('Completion Tracking Integration Tests', () => {
     await quickReset();
 
     // Login as user 1
-    const login1 = await request(app).post('/api/v1/auth/login').send({
+    const login1 = await request(testServer).post('/api/v1/auth/login').send({
       email: testUsers.user1.email,
       password: testUsers.user1.password,
     });
     user1Cookies = login1.headers['set-cookie'].map((c) => c.split(';')[0]).join('; ');
 
     // Login as user 2
-    const login2 = await request(app).post('/api/v1/auth/login').send({
+    const login2 = await request(testServer).post('/api/v1/auth/login').send({
       email: testUsers.user2.email,
       password: testUsers.user2.password,
     });
@@ -49,7 +50,7 @@ describe('Completion Tracking Integration Tests', () => {
     it('should create a completion and verify in database', async () => {
       const today = getToday();
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
@@ -73,7 +74,7 @@ describe('Completion Tracking Integration Tests', () => {
       const today = getToday();
       const notes = 'Great workout today!';
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today, notes });
@@ -92,7 +93,7 @@ describe('Completion Tracking Integration Tests', () => {
     it('should create completions for past dates', async () => {
       const pastDate = getDaysAgo(5);
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: pastDate });
@@ -102,7 +103,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 400 for missing date', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({});
@@ -112,7 +113,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 400 for invalid date format', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: 'not-a-date' });
@@ -126,7 +127,7 @@ describe('Completion Tracking Integration Tests', () => {
       tomorrow.setDate(tomorrow.getDate() + 1);
       const futureDate = tomorrow.toISOString().split('T')[0];
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: futureDate });
@@ -136,7 +137,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .send({ date: getToday() });
 
@@ -149,7 +150,7 @@ describe('Completion Tracking Integration Tests', () => {
       const today = getToday();
 
       // Create first completion
-      const first = await request(app)
+      const first = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
@@ -157,7 +158,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(first.status).toBe(201);
 
       // Try to create duplicate
-      const duplicate = await request(app)
+      const duplicate = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
@@ -170,7 +171,7 @@ describe('Completion Tracking Integration Tests', () => {
       const today = getToday();
 
       // Create completion for exercise habit
-      const first = await request(app)
+      const first = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
@@ -178,7 +179,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(first.status).toBe(201);
 
       // Create completion for reading habit (same date, different habit)
-      const second = await request(app)
+      const second = await request(testServer)
         .post(`/api/v1/habits/${testHabits.reading}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
@@ -196,7 +197,7 @@ describe('Completion Tracking Integration Tests', () => {
       const yesterday = getDaysAgo(1);
 
       // Create completion for today
-      const first = await request(app)
+      const first = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
@@ -204,7 +205,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(first.status).toBe(201);
 
       // Create completion for yesterday
-      const second = await request(app)
+      const second = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: yesterday });
@@ -245,7 +246,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return all completions for a habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -262,7 +263,7 @@ describe('Completion Tracking Integration Tests', () => {
     it('should filter completions by startDate', async () => {
       const startDate = getDaysAgo(3);
 
-      const response = await request(app)
+      const response = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}`)
         .set('Cookie', user1Cookies);
 
@@ -277,7 +278,7 @@ describe('Completion Tracking Integration Tests', () => {
     it('should filter completions by endDate', async () => {
       const endDate = getDaysAgo(3);
 
-      const response = await request(app)
+      const response = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions?endDate=${endDate}`)
         .set('Cookie', user1Cookies);
 
@@ -293,7 +294,7 @@ describe('Completion Tracking Integration Tests', () => {
       const startDate = getDaysAgo(6);
       const endDate = getDaysAgo(1);
 
-      const response = await request(app)
+      const response = await request(testServer)
         .get(
           `/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}&endDate=${endDate}`
         )
@@ -309,7 +310,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return empty array for habit with no completions', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .get(`/api/v1/habits/${testHabits.reading}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -321,7 +322,7 @@ describe('Completion Tracking Integration Tests', () => {
       const startDate = getDaysAgo(100);
       const endDate = getDaysAgo(90);
 
-      const response = await request(app)
+      const response = await request(testServer)
         .get(
           `/api/v1/habits/${testHabits.exercise}/completions?startDate=${startDate}&endDate=${endDate}`
         )
@@ -332,7 +333,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 404 for non-existent habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .get('/api/v1/habits/99999999-9999-9999-9999-999999999999/completions')
         .set('Cookie', user1Cookies);
 
@@ -340,7 +341,9 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app).get(`/api/v1/habits/${testHabits.exercise}/completions`);
+      const response = await request(testServer).get(
+        `/api/v1/habits/${testHabits.exercise}/completions`
+      );
 
       expect(response.status).toBe(401);
     });
@@ -365,7 +368,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(beforeDelete.rows.length).toBe(1);
 
       // Delete via API
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
         .set('Cookie', user1Cookies);
 
@@ -383,7 +386,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 404 when deleting non-existent completion', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`)
         .set('Cookie', user1Cookies);
 
@@ -392,7 +395,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 404 for non-existent habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/99999999-9999-9999-9999-999999999999/completions/${getToday()}`)
         .set('Cookie', user1Cookies);
 
@@ -400,7 +403,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 400 for invalid date format', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}/completions/invalid-date`)
         .set('Cookie', user1Cookies);
 
@@ -409,7 +412,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app).delete(
+      const response = await request(testServer).delete(
         `/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`
       );
 
@@ -429,7 +432,7 @@ describe('Completion Tracking Integration Tests', () => {
       );
 
       // Delete only today's completion
-      await request(app)
+      await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
         .set('Cookie', user1Cookies);
 
@@ -455,7 +458,7 @@ describe('Completion Tracking Integration Tests', () => {
       ]);
 
       // Update the note
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
         .set('Cookie', user1Cookies)
         .send({ notes: 'Updated note content' });
@@ -485,7 +488,7 @@ describe('Completion Tracking Integration Tests', () => {
       ]);
 
       // Clear the note by passing null
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
         .set('Cookie', user1Cookies)
         .send({ notes: null });
@@ -502,7 +505,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 404 when completion does not exist', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`)
         .set('Cookie', user1Cookies)
         .send({ notes: 'Some note' });
@@ -512,7 +515,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 404 for non-existent habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put('/api/v1/habits/99999999-9999-9999-9999-999999999999/completions/2025-01-01')
         .set('Cookie', user1Cookies)
         .send({ notes: 'Some note' });
@@ -521,7 +524,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 400 for invalid date format', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}/completions/invalid-date`)
         .set('Cookie', user1Cookies)
         .send({ notes: 'Some note' });
@@ -531,7 +534,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}/completions/${getToday()}`)
         .send({ notes: 'Some note' });
 
@@ -550,7 +553,7 @@ describe('Completion Tracking Integration Tests', () => {
       ]);
 
       // User 1 tries to update it
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.user2Habit}/completions/${today}`)
         .set('Cookie', user1Cookies)
         .send({ notes: 'Hacked note' });
@@ -568,7 +571,7 @@ describe('Completion Tracking Integration Tests', () => {
 
   describe('Habit Ownership Validation', () => {
     it('should not allow user 1 to create completion for user 2 habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post(`/api/v1/habits/${testHabits.user2Habit}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: getToday() });
@@ -578,7 +581,7 @@ describe('Completion Tracking Integration Tests', () => {
     });
 
     it('should not allow user 1 to read completions for user 2 habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .get(`/api/v1/habits/${testHabits.user2Habit}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -597,7 +600,7 @@ describe('Completion Tracking Integration Tests', () => {
       ]);
 
       // User 1 tries to delete it
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.user2Habit}/completions/${today}`)
         .set('Cookie', user1Cookies);
 
@@ -615,7 +618,7 @@ describe('Completion Tracking Integration Tests', () => {
       const today = getToday();
 
       // User 2 creates completion
-      const createResponse = await request(app)
+      const createResponse = await request(testServer)
         .post(`/api/v1/habits/${testHabits.user2Habit}/completions`)
         .set('Cookie', user2Cookies)
         .send({ date: today });
@@ -623,7 +626,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(createResponse.status).toBe(201);
 
       // User 2 reads completions
-      const readResponse = await request(app)
+      const readResponse = await request(testServer)
         .get(`/api/v1/habits/${testHabits.user2Habit}/completions`)
         .set('Cookie', user2Cookies);
 
@@ -631,7 +634,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(readResponse.body.length).toBe(1);
 
       // User 2 deletes completion
-      const deleteResponse = await request(app)
+      const deleteResponse = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.user2Habit}/completions/${today}`)
         .set('Cookie', user2Cookies);
 
@@ -642,19 +645,19 @@ describe('Completion Tracking Integration Tests', () => {
       const today = getToday();
 
       // User 1 creates completion for their habit
-      await request(app)
+      await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today });
 
       // User 2 creates completion for their habit
-      await request(app)
+      await request(testServer)
         .post(`/api/v1/habits/${testHabits.user2Habit}/completions`)
         .set('Cookie', user2Cookies)
         .send({ date: today });
 
       // User 1 should only see their completion
-      const user1Completions = await request(app)
+      const user1Completions = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -662,7 +665,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(user1Completions.body[0].habitId).toBe(testHabits.exercise);
 
       // User 2 should only see their completion
-      const user2Completions = await request(app)
+      const user2Completions = await request(testServer)
         .get(`/api/v1/habits/${testHabits.user2Habit}/completions`)
         .set('Cookie', user2Cookies);
 
@@ -677,7 +680,7 @@ describe('Completion Tracking Integration Tests', () => {
       const notes = 'Completed full workflow test';
 
       // CREATE
-      const createResponse = await request(app)
+      const createResponse = await request(testServer)
         .post(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies)
         .send({ date: today, notes });
@@ -687,7 +690,7 @@ describe('Completion Tracking Integration Tests', () => {
       expect(createResponse.body.notes).toBe(notes);
 
       // READ - verify in list
-      const readResponse = await request(app)
+      const readResponse = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -697,14 +700,14 @@ describe('Completion Tracking Integration Tests', () => {
       expect(completion.notes).toBe(notes);
 
       // DELETE
-      const deleteResponse = await request(app)
+      const deleteResponse = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}/completions/${today}`)
         .set('Cookie', user1Cookies);
 
       expect(deleteResponse.status).toBe(200);
 
       // Verify deletion
-      const finalRead = await request(app)
+      const finalRead = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -725,7 +728,7 @@ describe('Completion Tracking Integration Tests', () => {
 
       // Create completions for a full week
       for (const date of dates) {
-        const response = await request(app)
+        const response = await request(testServer)
           .post(`/api/v1/habits/${testHabits.exercise}/completions`)
           .set('Cookie', user1Cookies)
           .send({ date });
@@ -734,7 +737,7 @@ describe('Completion Tracking Integration Tests', () => {
       }
 
       // Verify all completions exist
-      const response = await request(app)
+      const response = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions`)
         .set('Cookie', user1Cookies);
 
@@ -743,7 +746,7 @@ describe('Completion Tracking Integration Tests', () => {
 
       // Verify we can filter to this week
       const weekStart = getDaysAgo(6);
-      const filteredResponse = await request(app)
+      const filteredResponse = await request(testServer)
         .get(`/api/v1/habits/${testHabits.exercise}/completions?startDate=${weekStart}`)
         .set('Cookie', user1Cookies);
 

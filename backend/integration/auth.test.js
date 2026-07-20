@@ -9,8 +9,9 @@
  */
 
 const request = require('supertest');
-const app = require('../app');
-const { quickReset, testUsers, getTestPool } = require('./setup');
+const { quickReset, testUsers, getTestPool, getTestServer } = require('./setup');
+
+const testServer = getTestServer();
 
 describe('Authentication Integration Tests', () => {
   // Reset database before each test to ensure clean state
@@ -27,7 +28,9 @@ describe('Authentication Integration Tests', () => {
       };
 
       // Step 1: Register new user
-      const registerResponse = await request(app).post('/api/v1/auth/register').send(newUser);
+      const registerResponse = await request(testServer)
+        .post('/api/v1/auth/register')
+        .send(newUser);
 
       expect(registerResponse.status).toBe(201);
       expect(registerResponse.body.user.email).toBe(newUser.email);
@@ -47,7 +50,7 @@ describe('Authentication Integration Tests', () => {
       expect(dbUser.rows[0].email).toBe(newUser.email);
 
       // Step 3: Login with registered credentials
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: newUser.email,
         password: newUser.password,
       });
@@ -60,7 +63,9 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Step 4: Access protected route (GET /api/v1/habits)
-      const habitsResponse = await request(app).get('/api/v1/habits').set('Cookie', cookieString);
+      const habitsResponse = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', cookieString);
 
       expect(habitsResponse.status).toBe(200);
       expect(Array.isArray(habitsResponse.body)).toBe(true);
@@ -68,7 +73,7 @@ describe('Authentication Integration Tests', () => {
       expect(habitsResponse.body.length).toBe(0);
 
       // Step 5: Access user profile
-      const profileResponse = await request(app)
+      const profileResponse = await request(testServer)
         .get('/api/v1/users/me')
         .set('Cookie', cookieString);
 
@@ -79,7 +84,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should allow existing test user to login and access their habits', async () => {
       // Login with test user 1 (has pre-existing habits)
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -90,7 +95,9 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Access habits - should see test user's habits
-      const habitsResponse = await request(app).get('/api/v1/habits').set('Cookie', cookieString);
+      const habitsResponse = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', cookieString);
 
       expect(habitsResponse.status).toBe(200);
       expect(habitsResponse.body.length).toBeGreaterThan(0);
@@ -105,7 +112,7 @@ describe('Authentication Integration Tests', () => {
   describe('Login → Token Refresh → Continue Session', () => {
     it('should refresh access token and continue session', async () => {
       // Step 1: Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -116,7 +123,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Step 2: Refresh token
-      const refreshResponse = await request(app)
+      const refreshResponse = await request(testServer)
         .post('/api/v1/auth/refresh')
         .set('Cookie', cookieString);
 
@@ -129,7 +136,7 @@ describe('Authentication Integration Tests', () => {
       const newCookieString = newCookies.map((c) => c.split(';')[0]).join('; ');
 
       // Step 3: Continue session with new token
-      const habitsResponse = await request(app)
+      const habitsResponse = await request(testServer)
         .get('/api/v1/habits')
         .set('Cookie', newCookieString);
 
@@ -139,7 +146,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should reject refresh with invalid/missing refresh token', async () => {
       // Try to refresh without any cookies - returns 400 (bad request)
-      const response = await request(app).post('/api/v1/auth/refresh');
+      const response = await request(testServer).post('/api/v1/auth/refresh');
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('required');
@@ -148,7 +155,7 @@ describe('Authentication Integration Tests', () => {
 
   describe('Invalid Credentials → Proper Error Response', () => {
     it('should return 401 for wrong password', async () => {
-      const response = await request(app).post('/api/v1/auth/login').send({
+      const response = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: 'wrongpassword',
       });
@@ -160,7 +167,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should return 401 for non-existent email', async () => {
-      const response = await request(app).post('/api/v1/auth/login').send({
+      const response = await request(testServer).post('/api/v1/auth/login').send({
         email: 'nonexistent@example.com',
         password: 'anypassword',
       });
@@ -172,7 +179,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should return 400 for missing email', async () => {
-      const response = await request(app).post('/api/v1/auth/login').send({
+      const response = await request(testServer).post('/api/v1/auth/login').send({
         password: 'somepassword',
       });
 
@@ -181,7 +188,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should return 400 for invalid email format', async () => {
-      const response = await request(app).post('/api/v1/auth/login').send({
+      const response = await request(testServer).post('/api/v1/auth/login').send({
         email: 'notanemail',
         password: 'somepassword',
       });
@@ -191,7 +198,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should return 409 for duplicate email registration', async () => {
-      const response = await request(app).post('/api/v1/auth/register').send({
+      const response = await request(testServer).post('/api/v1/auth/register').send({
         email: testUsers.user1.email, // Already exists
         password: 'NewPass123!',
         name: 'Duplicate User',
@@ -205,7 +212,7 @@ describe('Authentication Integration Tests', () => {
   describe('User Isolation Verification', () => {
     it('should not allow user 1 to access user 2 habits', async () => {
       // Login as user 1
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -214,7 +221,9 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Get user 1's habits
-      const habitsResponse = await request(app).get('/api/v1/habits').set('Cookie', cookieString);
+      const habitsResponse = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', cookieString);
 
       expect(habitsResponse.status).toBe(200);
 
@@ -225,7 +234,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should not allow user 1 to modify user 2 habits', async () => {
       // Login as user 1
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -234,7 +243,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Try to update user 2's habit with valid data (should fail with 404)
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/habits/dddddddd-dddd-dddd-dddd-dddddddddddd')
         .set('Cookie', cookieString)
         .send({
@@ -247,7 +256,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should not allow user 1 to delete user 2 habits', async () => {
       // Login as user 1
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -256,7 +265,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Try to delete user 2's habit (should fail)
-      const deleteResponse = await request(app)
+      const deleteResponse = await request(testServer)
         .delete('/api/v1/habits/dddddddd-dddd-dddd-dddd-dddddddddddd')
         .set('Cookie', cookieString);
 
@@ -272,7 +281,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should allow each user to only see their own profile', async () => {
       // Login as user 1
-      const login1Response = await request(app).post('/api/v1/auth/login').send({
+      const login1Response = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -281,7 +290,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString1 = cookies1.map((c) => c.split(';')[0]).join('; ');
 
       // Get user 1's profile
-      const profile1Response = await request(app)
+      const profile1Response = await request(testServer)
         .get('/api/v1/users/me')
         .set('Cookie', cookieString1);
 
@@ -290,7 +299,7 @@ describe('Authentication Integration Tests', () => {
       expect(profile1Response.body.id).toBe(testUsers.user1.id);
 
       // Login as user 2
-      const login2Response = await request(app).post('/api/v1/auth/login').send({
+      const login2Response = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user2.email,
         password: testUsers.user2.password,
       });
@@ -299,7 +308,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString2 = cookies2.map((c) => c.split(';')[0]).join('; ');
 
       // Get user 2's profile
-      const profile2Response = await request(app)
+      const profile2Response = await request(testServer)
         .get('/api/v1/users/me')
         .set('Cookie', cookieString2);
 
@@ -312,7 +321,7 @@ describe('Authentication Integration Tests', () => {
   describe('Profile Update', () => {
     it('should update user name successfully', async () => {
       // Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -321,7 +330,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Update name
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .set('Cookie', cookieString)
         .send({ name: 'Updated Test Name' });
@@ -340,7 +349,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should update user email successfully', async () => {
       // Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -350,7 +359,7 @@ describe('Authentication Integration Tests', () => {
 
       // Update email
       const newEmail = 'updated-email@example.com';
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .set('Cookie', cookieString)
         .send({ email: newEmail });
@@ -368,7 +377,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should update both name and email together', async () => {
       // Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -377,7 +386,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Update both
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .set('Cookie', cookieString)
         .send({
@@ -392,7 +401,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should reject email update if email is already taken by another user', async () => {
       // Login as user 1
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -401,7 +410,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Try to update to user 2's email
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .set('Cookie', cookieString)
         .send({ email: testUsers.user2.email });
@@ -419,7 +428,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should normalize email to lowercase', async () => {
       // Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -428,7 +437,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Update with mixed case email
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .set('Cookie', cookieString)
         .send({ email: 'UPPERCASE@EXAMPLE.COM' });
@@ -439,7 +448,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should reject invalid email format', async () => {
       // Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -448,7 +457,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Try invalid email
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .set('Cookie', cookieString)
         .send({ email: 'not-an-email' });
@@ -458,7 +467,7 @@ describe('Authentication Integration Tests', () => {
     });
 
     it('should reject update without authentication', async () => {
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put('/api/v1/users/me')
         .send({ name: 'Unauthenticated Update' });
 
@@ -469,7 +478,7 @@ describe('Authentication Integration Tests', () => {
   describe('Logout Flow', () => {
     it('should logout and invalidate session', async () => {
       // Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -478,11 +487,13 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Verify session works
-      const habitsResponse = await request(app).get('/api/v1/habits').set('Cookie', cookieString);
+      const habitsResponse = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', cookieString);
       expect(habitsResponse.status).toBe(200);
 
       // Logout
-      const logoutResponse = await request(app)
+      const logoutResponse = await request(testServer)
         .post('/api/v1/auth/logout')
         .set('Cookie', cookieString);
 
@@ -508,7 +519,7 @@ describe('Authentication Integration Tests', () => {
       );
 
       // Try to access protected route with expired token
-      const response = await request(app)
+      const response = await request(testServer)
         .get('/api/v1/habits')
         .set('Cookie', `accessToken=${expiredAccessToken}`);
 
@@ -525,7 +536,7 @@ describe('Authentication Integration Tests', () => {
       );
 
       // Try to refresh with expired token
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/auth/refresh')
         .set('Cookie', `refreshToken=${expiredRefreshToken}`);
 
@@ -535,7 +546,7 @@ describe('Authentication Integration Tests', () => {
 
     it('should allow refresh when access token expired but refresh token valid', async () => {
       // Login to get a valid refresh token stored in database
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -555,13 +566,13 @@ describe('Authentication Integration Tests', () => {
       );
 
       // Verify expired access token is rejected
-      const accessResponse = await request(app)
+      const accessResponse = await request(testServer)
         .get('/api/v1/habits')
         .set('Cookie', `accessToken=${expiredAccessToken}`);
       expect(accessResponse.status).toBe(401);
 
       // Refresh should work with valid refresh token from login
-      const refreshResponse = await request(app)
+      const refreshResponse = await request(testServer)
         .post('/api/v1/auth/refresh')
         .set('Cookie', `refreshToken=${validRefreshToken}`);
 
@@ -572,7 +583,7 @@ describe('Authentication Integration Tests', () => {
       const newCookies = refreshResponse.headers['set-cookie'];
       const newCookieString = newCookies.map((c) => c.split(';')[0]).join('; ');
 
-      const habitsResponse = await request(app)
+      const habitsResponse = await request(testServer)
         .get('/api/v1/habits')
         .set('Cookie', newCookieString);
 
@@ -588,7 +599,7 @@ describe('Authentication Integration Tests', () => {
         { expiresIn: '15m' }
       );
 
-      const response = await request(app)
+      const response = await request(testServer)
         .get('/api/v1/habits')
         .set('Cookie', `accessToken=${wrongSecretToken}`);
 
@@ -601,7 +612,7 @@ describe('Authentication Integration Tests', () => {
       const newPassword = 'NewSecurePass123!';
 
       // Step 1: Login with original password
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -612,7 +623,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Step 2: Change password
-      const changeResponse = await request(app)
+      const changeResponse = await request(testServer)
         .put('/api/v1/users/me/password')
         .set('Cookie', cookieString)
         .send({
@@ -625,7 +636,7 @@ describe('Authentication Integration Tests', () => {
       expect(changeResponse.body.message).toContain('successfully');
 
       // Step 3: Login with new password
-      const newLoginResponse = await request(app).post('/api/v1/auth/login').send({
+      const newLoginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: newPassword,
       });
@@ -638,7 +649,7 @@ describe('Authentication Integration Tests', () => {
       const newPassword = 'ChangedPassword456!';
 
       // Step 1: Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -647,7 +658,7 @@ describe('Authentication Integration Tests', () => {
       const cookieString = cookies.map((c) => c.split(';')[0]).join('; ');
 
       // Step 2: Change password
-      const changeResponse = await request(app)
+      const changeResponse = await request(testServer)
         .put('/api/v1/users/me/password')
         .set('Cookie', cookieString)
         .send({
@@ -659,7 +670,7 @@ describe('Authentication Integration Tests', () => {
       expect(changeResponse.status).toBe(200);
 
       // Step 3: Try to login with old password - should fail
-      const oldPasswordLogin = await request(app).post('/api/v1/auth/login').send({
+      const oldPasswordLogin = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -672,7 +683,7 @@ describe('Authentication Integration Tests', () => {
       const newPassword = 'TokenRevoke789!';
 
       // Step 1: Login
-      const loginResponse = await request(app).post('/api/v1/auth/login').send({
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
         email: testUsers.user1.email,
         password: testUsers.user1.password,
       });
@@ -687,14 +698,14 @@ describe('Authentication Integration Tests', () => {
       const refreshToken = refreshCookie.match(/refreshToken=([^;]+)/)[1];
 
       // Step 2: Verify refresh token works before password change
-      const refreshBefore = await request(app)
+      const refreshBefore = await request(testServer)
         .post('/api/v1/auth/refresh')
         .set('Cookie', `refreshToken=${refreshToken}`);
 
       expect(refreshBefore.status).toBe(200);
 
       // Step 3: Change password
-      const changeResponse = await request(app)
+      const changeResponse = await request(testServer)
         .put('/api/v1/users/me/password')
         .set('Cookie', cookieString)
         .send({
@@ -706,7 +717,7 @@ describe('Authentication Integration Tests', () => {
       expect(changeResponse.status).toBe(200);
 
       // Step 4: Verify refresh token is revoked after password change
-      const refreshAfter = await request(app)
+      const refreshAfter = await request(testServer)
         .post('/api/v1/auth/refresh')
         .set('Cookie', `refreshToken=${refreshToken}`);
 

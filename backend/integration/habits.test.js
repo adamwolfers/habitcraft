@@ -9,8 +9,9 @@
  */
 
 const request = require('supertest');
-const app = require('../app');
-const { quickReset, testUsers, testHabits, getTestPool } = require('./setup');
+const { quickReset, testUsers, testHabits, getTestPool, getTestServer } = require('./setup');
+
+const testServer = getTestServer();
 
 describe('Habit CRUD Integration Tests', () => {
   let user1Cookies;
@@ -21,14 +22,14 @@ describe('Habit CRUD Integration Tests', () => {
     await quickReset();
 
     // Login as user 1
-    const login1 = await request(app).post('/api/v1/auth/login').send({
+    const login1 = await request(testServer).post('/api/v1/auth/login').send({
       email: testUsers.user1.email,
       password: testUsers.user1.password,
     });
     user1Cookies = login1.headers['set-cookie'].map((c) => c.split(';')[0]).join('; ');
 
     // Login as user 2
-    const login2 = await request(app).post('/api/v1/auth/login').send({
+    const login2 = await request(testServer).post('/api/v1/auth/login').send({
       email: testUsers.user2.email,
       password: testUsers.user2.password,
     });
@@ -42,7 +43,7 @@ describe('Habit CRUD Integration Tests', () => {
         frequency: 'daily',
       };
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send(newHabit);
@@ -71,7 +72,7 @@ describe('Habit CRUD Integration Tests', () => {
         icon: '📝',
       };
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send(newHabit);
@@ -91,7 +92,7 @@ describe('Habit CRUD Integration Tests', () => {
         frequency: 'daily',
       };
 
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send(newHabit);
@@ -103,7 +104,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 400 for missing name', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send({ frequency: 'daily' });
@@ -114,7 +115,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 400 for missing frequency', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send({ name: 'Test Habit' });
@@ -125,7 +126,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .post('/api/v1/habits')
         .send({ name: 'Test', frequency: 'daily' });
 
@@ -135,7 +136,7 @@ describe('Habit CRUD Integration Tests', () => {
 
   describe('Read Habits (GET /api/v1/habits)', () => {
     it('should return all active habits for authenticated user', async () => {
-      const response = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
+      const response = await request(testServer).get('/api/v1/habits').set('Cookie', user1Cookies);
 
       expect(response.status).toBe(200);
       expect(Array.isArray(response.body)).toBe(true);
@@ -151,7 +152,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should filter habits by status', async () => {
-      const activeResponse = await request(app)
+      const activeResponse = await request(testServer)
         .get('/api/v1/habits?status=active')
         .set('Cookie', user1Cookies);
 
@@ -161,7 +162,7 @@ describe('Habit CRUD Integration Tests', () => {
         expect(habit.status).toBe('active');
       });
 
-      const archivedResponse = await request(app)
+      const archivedResponse = await request(testServer)
         .get('/api/v1/habits?status=archived')
         .set('Cookie', user1Cookies);
 
@@ -175,14 +176,14 @@ describe('Habit CRUD Integration Tests', () => {
       const pool = getTestPool();
       await pool.query('DELETE FROM habits WHERE user_id = $1', [testUsers.user2.id]);
 
-      const response = await request(app).get('/api/v1/habits').set('Cookie', user2Cookies);
+      const response = await request(testServer).get('/api/v1/habits').set('Cookie', user2Cookies);
 
       expect(response.status).toBe(200);
       expect(response.body).toEqual([]);
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app).get('/api/v1/habits');
+      const response = await request(testServer).get('/api/v1/habits');
 
       expect(response.status).toBe(401);
     });
@@ -195,7 +196,7 @@ describe('Habit CRUD Integration Tests', () => {
         frequency: 'daily',
       };
 
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies)
         .send(updates);
@@ -223,7 +224,7 @@ describe('Habit CRUD Integration Tests', () => {
         status: 'archived',
       };
 
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies)
         .send(updates);
@@ -239,7 +240,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 404 for non-existent habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put('/api/v1/habits/99999999-9999-9999-9999-999999999999')
         .set('Cookie', user1Cookies)
         .send({ name: 'Test', frequency: 'daily' });
@@ -248,7 +249,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 400 for invalid habit ID format', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put('/api/v1/habits/invalid!@#id')
         .set('Cookie', user1Cookies)
         .send({ name: 'Test', frequency: 'daily' });
@@ -257,7 +258,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 400 for missing required fields', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies)
         .send({ description: 'Only description' });
@@ -266,7 +267,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}`)
         .send({ name: 'Test', frequency: 'daily' });
 
@@ -276,7 +277,7 @@ describe('Habit CRUD Integration Tests', () => {
 
   describe('Delete Habit (DELETE /api/v1/habits/:id)', () => {
     it('should delete habit successfully', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies);
 
@@ -289,7 +290,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 404 for non-existent habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete('/api/v1/habits/99999999-9999-9999-9999-999999999999')
         .set('Cookie', user1Cookies);
 
@@ -297,7 +298,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 400 for invalid habit ID format', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete('/api/v1/habits/invalid!@#id')
         .set('Cookie', user1Cookies);
 
@@ -305,7 +306,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      const response = await request(app).delete(`/api/v1/habits/${testHabits.exercise}`);
+      const response = await request(testServer).delete(`/api/v1/habits/${testHabits.exercise}`);
 
       expect(response.status).toBe(401);
     });
@@ -313,9 +314,13 @@ describe('Habit CRUD Integration Tests', () => {
 
   describe('User Isolation', () => {
     it('should not return other users habits in list', async () => {
-      const user1Response = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
+      const user1Response = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', user1Cookies);
 
-      const user2Response = await request(app).get('/api/v1/habits').set('Cookie', user2Cookies);
+      const user2Response = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', user2Cookies);
 
       // User 1 should only see their habits
       const user1HabitIds = user1Response.body.map((h) => h.id);
@@ -330,7 +335,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should not allow user to update another users habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.user2Habit}`)
         .set('Cookie', user1Cookies)
         .send({ name: 'Hacked!', frequency: 'daily' });
@@ -346,7 +351,7 @@ describe('Habit CRUD Integration Tests', () => {
     });
 
     it('should not allow user to delete another users habit', async () => {
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.user2Habit}`)
         .set('Cookie', user1Cookies);
 
@@ -362,7 +367,7 @@ describe('Habit CRUD Integration Tests', () => {
 
     it('should isolate newly created habits to the creating user', async () => {
       // User 1 creates a habit
-      const createResponse = await request(app)
+      const createResponse = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send({ name: 'User 1 Secret Habit', frequency: 'daily' });
@@ -370,13 +375,15 @@ describe('Habit CRUD Integration Tests', () => {
       const newHabitId = createResponse.body.id;
 
       // User 2 should not see it
-      const user2Habits = await request(app).get('/api/v1/habits').set('Cookie', user2Cookies);
+      const user2Habits = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', user2Cookies);
 
       const user2HabitIds = user2Habits.body.map((h) => h.id);
       expect(user2HabitIds).not.toContain(newHabitId);
 
       // User 2 should not be able to update it
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put(`/api/v1/habits/${newHabitId}`)
         .set('Cookie', user2Cookies)
         .send({ name: 'Stolen!', frequency: 'daily' });
@@ -384,7 +391,7 @@ describe('Habit CRUD Integration Tests', () => {
       expect(updateResponse.status).toBe(404);
 
       // User 2 should not be able to delete it
-      const deleteResponse = await request(app)
+      const deleteResponse = await request(testServer)
         .delete(`/api/v1/habits/${newHabitId}`)
         .set('Cookie', user2Cookies);
 
@@ -410,7 +417,7 @@ describe('Habit CRUD Integration Tests', () => {
       expect(beforeDelete.rows.length).toBe(1);
 
       // Delete the habit
-      const response = await request(app)
+      const response = await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies);
 
@@ -443,7 +450,7 @@ describe('Habit CRUD Integration Tests', () => {
       expect(beforeDelete.rows.length).toBe(3);
 
       // Delete the habit
-      await request(app)
+      await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies);
 
@@ -467,7 +474,7 @@ describe('Habit CRUD Integration Tests', () => {
       );
 
       // Delete exercise habit
-      await request(app)
+      await request(testServer)
         .delete(`/api/v1/habits/${testHabits.exercise}`)
         .set('Cookie', user1Cookies);
 
@@ -483,7 +490,7 @@ describe('Habit CRUD Integration Tests', () => {
   describe('Full CRUD Workflow', () => {
     it('should complete a full create, read, update, delete cycle', async () => {
       // CREATE
-      const createResponse = await request(app)
+      const createResponse = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
         .send({
@@ -498,14 +505,16 @@ describe('Habit CRUD Integration Tests', () => {
       const habitId = createResponse.body.id;
 
       // READ - verify in list
-      const listResponse = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
+      const listResponse = await request(testServer)
+        .get('/api/v1/habits')
+        .set('Cookie', user1Cookies);
 
       const createdHabit = listResponse.body.find((h) => h.id === habitId);
       expect(createdHabit).toBeDefined();
       expect(createdHabit.name).toBe('Full CRUD Test');
 
       // UPDATE
-      const updateResponse = await request(app)
+      const updateResponse = await request(testServer)
         .put(`/api/v1/habits/${habitId}`)
         .set('Cookie', user1Cookies)
         .send({
@@ -519,14 +528,14 @@ describe('Habit CRUD Integration Tests', () => {
       expect(updateResponse.body.frequency).toBe('weekly');
 
       // DELETE
-      const deleteResponse = await request(app)
+      const deleteResponse = await request(testServer)
         .delete(`/api/v1/habits/${habitId}`)
         .set('Cookie', user1Cookies);
 
       expect(deleteResponse.status).toBe(204);
 
       // Verify deletion
-      const finalList = await request(app).get('/api/v1/habits').set('Cookie', user1Cookies);
+      const finalList = await request(testServer).get('/api/v1/habits').set('Cookie', user1Cookies);
 
       const deletedHabit = finalList.body.find((h) => h.id === habitId);
       expect(deletedHabit).toBeUndefined();

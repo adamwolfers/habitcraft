@@ -46,6 +46,48 @@ FRONTEND_UNIT=0
 INTEGRATION=0
 E2E=0
 
+# Per-phase timeouts (seconds). A leaked handle in any phase must not be able
+# to stall the whole suite indefinitely -- see habitcraft-doz, where one
+# timed-out integration test left jest idling in its event loop forever and the
+# run sat at 0% CPU until it was killed by hand 40+ minutes later.
+TIMEOUT_BACKEND_UNIT=300
+TIMEOUT_FRONTEND_UNIT=600
+TIMEOUT_INTEGRATION=300
+TIMEOUT_E2E_SHARD=900
+
+# Run a command with a wall-clock limit, returning its exit code.
+# macOS has no coreutils `timeout`, so this uses a background watchdog.
+run_with_timeout() {
+    local timeout_secs=$1
+    shift
+
+    # Job control makes the command its own process group leader, so killing
+    # the group takes jest/playwright children with it rather than orphaning
+    # them behind the npm wrapper.
+    set -m
+    "$@" &
+    local cmd_pid=$!
+    set +m
+
+    (
+        sleep "$timeout_secs"
+        kill -9 -"$cmd_pid" 2>/dev/null || kill -9 "$cmd_pid" 2>/dev/null
+    ) &
+    local watchdog_pid=$!
+
+    wait "$cmd_pid"
+    local rc=$?
+
+    # Cancel the watchdog if the command finished on its own
+    kill "$watchdog_pid" 2>/dev/null
+    wait "$watchdog_pid" 2>/dev/null
+
+    if [ $rc -ge 128 ]; then
+        echo "⏱️  TIMEOUT: phase exceeded ${timeout_secs}s and was killed (exit $rc)"
+    fi
+    return $rc
+}
+
 # Helper function to wait for a service
 wait_for_service() {
     local url=$1
@@ -128,7 +170,7 @@ echo ""
 echo "📦 [1/4] Backend Unit Tests"
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT/backend"
-if npm test; then
+if run_with_timeout "$TIMEOUT_BACKEND_UNIT" npm test; then
     BACKEND_UNIT=1
     echo "✅ Backend unit tests passed"
 else
@@ -140,7 +182,7 @@ echo ""
 echo "🎨 [2/4] Frontend Unit Tests"
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT/frontend"
-if npm test; then
+if run_with_timeout "$TIMEOUT_FRONTEND_UNIT" npm test; then
     FRONTEND_UNIT=1
     echo "✅ Frontend unit tests passed"
 else
@@ -152,7 +194,7 @@ echo ""
 echo "🔗 [3/4] Backend Integration Tests"
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT/backend"
-if npm run test:integration; then
+if run_with_timeout "$TIMEOUT_INTEGRATION" npm run test:integration; then
     INTEGRATION=1
     echo "✅ Integration tests passed"
 else
@@ -194,7 +236,19 @@ SKIP_E2E_SETUP=1 npx playwright test --shard=4/4 > "$E2E_LOG_DIR/shard-4.log" 2>
 PID4=$!
 echo "  Started shard 4/4 (PID $PID4)"
 
-# Wait for all shards (timeout handled by playwright's own timeout settings)
+# One watchdog per shard. Playwright has its own per-test timeouts, but those
+# do not cover a shard that wedges outside a test (or after the run finishes),
+# which would leave the `wait` below blocking forever.
+# Note: unlike run_with_timeout, these shards are not in their own process
+# group, so only the shard PID is killed -- killing the group would take this
+# script with it.
+for shard in 1 2 3 4; do
+    eval "SPID=\$PID$shard"
+    ( sleep "$TIMEOUT_E2E_SHARD"; kill -9 "$SPID" 2>/dev/null ) &
+    eval "WPID$shard=$!"
+done
+
+# Wait for all shards
 E2E=1
 for shard in 1 2 3 4; do
     eval "PID=\$PID$shard"
@@ -202,8 +256,17 @@ for shard in 1 2 3 4; do
     wait $PID
     EXIT_CODE=$?
 
+    # Cancel this shard's watchdog now that it has finished
+    eval "WPID=\$WPID$shard"
+    kill "$WPID" 2>/dev/null
+    wait "$WPID" 2>/dev/null
+
     if [ $EXIT_CODE -eq 0 ]; then
         echo "  ✅ Shard $shard/4 passed"
+    elif [ $EXIT_CODE -ge 128 ]; then
+        echo "  ⏱️  Shard $shard/4 TIMED OUT after ${TIMEOUT_E2E_SHARD}s and was killed"
+        echo "     See $E2E_LOG_DIR/shard-$shard.log for details"
+        E2E=0
     else
         echo "  ❌ Shard $shard/4 failed (exit code $EXIT_CODE)"
         echo "     See $E2E_LOG_DIR/shard-$shard.log for details"

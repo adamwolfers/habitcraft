@@ -6,8 +6,8 @@ This document covers the testing infrastructure, conventions, and isolation stra
 
 | Type | Framework | Location | Purpose |
 |------|-----------|----------|---------|
-| Backend Unit | Jest + Supertest | `backend/tests/` | API endpoint and middleware testing |
-| Backend Integration | Jest + Supertest | `backend/tests/integration/` | Full database workflows |
+| Backend Unit | Jest + Supertest | `backend/**/*.test.js` (colocated) | API endpoint and middleware testing |
+| Backend Integration | Jest + Supertest | `backend/integration/` | Full database workflows |
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
@@ -86,6 +86,12 @@ Both users have sample habits with predictable UUIDs and sample completions.
 scripts/test-all.sh           # Run all tests sequentially
 scripts/test-all.sh --rebuild # Rebuild containers first
 ```
+
+Each phase runs under a wall-clock timeout (see `TIMEOUT_*` at the top of
+`scripts/test-all.sh`), so a wedged or leaked handle fails that phase instead of
+stalling the whole suite. A phase killed this way is reported as
+`⏱️  TIMEOUT: phase exceeded Ns` and is distinct from an ordinary test failure.
+Raise the relevant `TIMEOUT_*` value if a phase legitimately outgrows its budget.
 
 ### Backend
 
@@ -190,7 +196,36 @@ test('should show error when email already taken', async ({ page }) => {
 
 ## Backend Integration Tests
 
-Located in `backend/tests/integration/`:
+Located in `backend/integration/`:
+
+### Use the shared test server, not the app
+
+Integration tests must issue requests against the shared server from
+`getTestServer()`, never against the bare app:
+
+```javascript
+const { getTestServer } = require('./setup');
+
+const testServer = getTestServer();
+
+// Correct
+await request(testServer).get('/api/v1/habits');
+
+// Wrong — reintroduces the hang described below
+await request(app).get('/api/v1/habits');
+```
+
+`request(app)` makes supertest start a throwaway server per request and close it
+when the response ends. If a request never returns — a test that times out
+mid-flight — that server is never closed, its handle keeps the event loop
+alive, and jest idles forever after the run completes ("Jest did not exit one
+second after the test run has completed"). A single such test turns a 20-second
+failing run into an indefinite stall.
+
+The shared server is started once per suite and torn down in `afterAll` with
+`closeAllConnections()` followed by `close()`. The `closeAllConnections()` call
+is load-bearing: `close()` on its own waits for in-flight connections and would
+hang on exactly the request that caused the problem.
 
 ### `auth.test.js` — Authentication Flows
 - Register → Login → Access Protected Route
