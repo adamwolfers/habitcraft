@@ -1,0 +1,31 @@
+# Configuration for lychee, the markdown link checker run by
+# .github/workflows/link-check.yml
+#
+# Scope: local file links only (see `offline` below). Docs in this repo use
+# depth-encoded relative links (e.g. "../../PROJECT_PLAN.md"), which silently
+# break whenever a directory moves up or down a level -- the failure mode that
+# broke backend/integration/setup.js during the backends/node -> backend/ move.
+# A plain grep for the old path does not catch those; this checker does.
+
+# Only verify links to files on disk. External URLs are deliberately not
+# checked: they fail for reasons unrelated to this repo (rate limits, 403s on
+# CI egress IPs, transient outages), which would make the gate flaky and train
+# everyone to ignore it. Doc rot from a moved *file* is the risk worth gating.
+offline = true
+
+# Vendored and generated trees contain thousands of broken links we neither own
+# nor can fix.
+exclude_path = [
+  "node_modules",
+  ".next",
+  "coverage",
+  "build",
+  "ios/Pods",
+  ".beads",
+]
+
+# Anchors (#section-name) are left unverified (lychee's default). Checking them
+# would flag headings that GitHub actually renders fine, since slug generation
+# differs between renderers.
+
+no_progress = true

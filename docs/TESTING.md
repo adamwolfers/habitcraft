@@ -10,6 +10,31 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Backend Integration | Jest + Supertest | `backend/tests/integration/` | Full database workflows |
 | Frontend Unit | Jest + RTL | `frontends/nextjs/**/*.test.tsx` | Component and hook testing |
 | E2E | Playwright | `frontends/nextjs/e2e/` | Full user journey testing |
+| Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
+
+### Doc Link Checking
+
+Docs link between packages with depth-encoded relative paths (e.g.
+`../../PROJECT_PLAN.md`). Moving a directory up or down a level silently breaks
+them, and a grep for the old path does not catch it. `lychee` verifies every
+relative link still resolves.
+
+Run locally the same way CI does:
+
+```bash
+docker run --rm -v "$PWD:/input" -w /input lycheeverse/lychee:latest \
+  --config lychee.toml './**/*.md'
+```
+
+Configured in `lychee.toml`; runs via `.github/workflows/link-check.yml`, which
+is separate from `ci.yml` because that workflow ignores markdown changes. Only
+local files are checked — external URLs are skipped deliberately, since they
+fail for reasons unrelated to this repo and would make the gate flaky.
+
+**Limitation:** only markdown *links* are checked. Relative paths inside fenced
+code blocks (shell commands like `cd ../..` or
+`docker compose -f ../../docker-compose.test.yml`) are invisible to any link
+checker and must still be updated by hand when a directory moves.
 
 ## Test Infrastructure
 
