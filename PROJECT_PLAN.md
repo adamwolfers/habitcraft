@@ -368,7 +368,7 @@ HabitCraft is a full-stack habit tracking application demonstrating modern web d
 
 ### Code Quality & Testability Refactors ✓
 
-See [docs/plans/code-quality-testability-refactors.md](docs/plans/code-quality-testability-refactors.md) for completed work and planned improvements.
+See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/completed/code-quality-testability-refactors.md) for completed work and planned improvements.
 
 ### Infrastructure & DevOps
 
