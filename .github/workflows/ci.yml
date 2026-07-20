@@ -16,6 +16,17 @@ on:
     branches: ['**']
     tags:
       - 'mobile-v*'
+    # paths-ignore is a cheap short-circuit, not the real gating mechanism: the
+    # detect-changes job below uses dorny/paths-filter for finer-grained,
+    # per-area control, and every downstream job is already gated on its
+    # outputs. A change matching only the paths here would skip all of those
+    # jobs anyway -- this just avoids spinning up a runner to reach that
+    # conclusion. The two mechanisms are deliberately redundant.
+    #
+    # Consequence: markdown is never checked by this workflow. Doc links are
+    # verified by .github/workflows/link-check.yml, whose triggers are the
+    # inverse of these. Adding a docs job *here* would not work -- it could
+    # never fire on a docs-only change.
     paths-ignore:
       - '**/*.md'
       - '.beads/**'
@@ -25,6 +36,7 @@ on:
       - '.gitignore'
   pull_request:
     branches: [main, master]
+    # Keep in sync with the push trigger above; see the rationale there.
     paths-ignore:
       - '**/*.md'
       - '.beads/**'
