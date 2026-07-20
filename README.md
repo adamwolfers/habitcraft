@@ -21,8 +21,10 @@ HabitCraft helps users build and track daily habits with an intuitive calendar-b
 
 ```
 habittracker_fullstack/
-├── backend/        # Node.js + Express backend
-├── frontends/nextjs/     # Next.js frontend
+├── backend/              # Node.js + Express backend
+├── frontend/             # Next.js frontend
+├── mobile/               # React Native (Expo) mobile app
+├── db/                   # dbmate SQL migrations
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI specification
 │   ├── database/         # PostgreSQL schema and migrations
@@ -148,13 +150,13 @@ cd backend && npm run test:integration
 ./scripts/test-db-stop.sh
 
 # Frontend unit tests
-cd frontends/nextjs
+cd frontend
 npm test
 
 # Frontend E2E tests (requires test environment)
 ./scripts/test-db-start.sh
 docker compose -f docker-compose.test.yml up -d
-cd frontends/nextjs && npm run test:e2e
+cd frontend && npm run test:e2e
 docker compose -f docker-compose.test.yml down
 ./scripts/test-db-stop.sh
 ```

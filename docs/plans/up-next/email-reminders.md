@@ -304,7 +304,7 @@ npm install --save-dev @types/node-cron
 
 ### Step 1: TypeScript Types
 
-**File:** `frontends/nextjs/types/emailPreferences.ts`
+**File:** `frontend/types/emailPreferences.ts`
 
 ```typescript
 interface UserEmailPreferences {
@@ -335,8 +335,8 @@ interface HabitReminderSettings {
 ### Step 2: API Client Methods (TDD)
 
 **Files:**
-- `frontends/nextjs/lib/api.ts`
-- `frontends/nextjs/lib/api.test.ts`
+- `frontend/lib/api.ts`
+- `frontend/lib/api.test.ts`
 
 #### 2a. Write tests first
 - [ ] Test: `getEmailPreferences()` fetches preferences
@@ -352,8 +352,8 @@ interface HabitReminderSettings {
 ### Step 3: Email Preferences Component (TDD)
 
 **Files:**
-- `frontends/nextjs/components/EmailPreferencesSection.tsx`
-- `frontends/nextjs/components/EmailPreferencesSection.test.tsx`
+- `frontend/components/EmailPreferencesSection.tsx`
+- `frontend/components/EmailPreferencesSection.test.tsx`
 
 #### 3a. Write tests first
 - [ ] Test: renders enable/disable toggle
@@ -372,8 +372,8 @@ interface HabitReminderSettings {
 ### Step 4: Add Email Preferences to ProfileModal
 
 **Files:**
-- `frontends/nextjs/components/ProfileModal.tsx`
-- `frontends/nextjs/components/ProfileModal.test.tsx`
+- `frontend/components/ProfileModal.tsx`
+- `frontend/components/ProfileModal.test.tsx`
 
 - [ ] Add "Email Notifications" section header
 - [ ] Include EmailPreferencesSection component
@@ -382,8 +382,8 @@ interface HabitReminderSettings {
 ### Step 5: Habit Reminder Settings Component (TDD)
 
 **Files:**
-- `frontends/nextjs/components/HabitReminderSettings.tsx`
-- `frontends/nextjs/components/HabitReminderSettings.test.tsx`
+- `frontend/components/HabitReminderSettings.tsx`
+- `frontend/components/HabitReminderSettings.test.tsx`
 
 #### 5a. Write tests first
 - [ ] Test: renders enable toggle
@@ -409,8 +409,8 @@ interface HabitReminderSettings {
 ### Step 6: Add Reminder Settings to EditHabitModal
 
 **Files:**
-- `frontends/nextjs/components/EditHabitModal.tsx`
-- `frontends/nextjs/components/EditHabitModal.test.tsx`
+- `frontend/components/EditHabitModal.tsx`
+- `frontend/components/EditHabitModal.test.tsx`
 
 - [ ] Add "Reminders" section/tab
 - [ ] Include HabitReminderSettings component
@@ -418,7 +418,7 @@ interface HabitReminderSettings {
 
 ### Step 7: E2E Tests
 
-**File:** `frontends/nextjs/e2e/emailReminders.spec.ts`
+**File:** `frontend/e2e/emailReminders.spec.ts`
 
 - [ ] Test: user can enable email reminders globally
 - [ ] Test: user can set default reminder time
@@ -509,18 +509,18 @@ interface HabitReminderSettings {
 ### Frontend
 | File | Changes |
 |------|---------|
-| `frontends/nextjs/types/emailPreferences.ts` | New - TypeScript types |
-| `frontends/nextjs/lib/api.ts` | Add email/reminder API methods |
-| `frontends/nextjs/lib/api.test.ts` | Add API method tests |
-| `frontends/nextjs/components/EmailPreferencesSection.tsx` | New - preferences UI |
-| `frontends/nextjs/components/EmailPreferencesSection.test.tsx` | New - component tests |
-| `frontends/nextjs/components/HabitReminderSettings.tsx` | New - reminder config UI |
-| `frontends/nextjs/components/HabitReminderSettings.test.tsx` | New - component tests |
-| `frontends/nextjs/components/ProfileModal.tsx` | Add email preferences section |
-| `frontends/nextjs/components/ProfileModal.test.tsx` | Add new tests |
-| `frontends/nextjs/components/EditHabitModal.tsx` | Add reminder settings |
-| `frontends/nextjs/components/EditHabitModal.test.tsx` | Add new tests |
-| `frontends/nextjs/e2e/emailReminders.spec.ts` | New - E2E tests |
+| `frontend/types/emailPreferences.ts` | New - TypeScript types |
+| `frontend/lib/api.ts` | Add email/reminder API methods |
+| `frontend/lib/api.test.ts` | Add API method tests |
+| `frontend/components/EmailPreferencesSection.tsx` | New - preferences UI |
+| `frontend/components/EmailPreferencesSection.test.tsx` | New - component tests |
+| `frontend/components/HabitReminderSettings.tsx` | New - reminder config UI |
+| `frontend/components/HabitReminderSettings.test.tsx` | New - component tests |
+| `frontend/components/ProfileModal.tsx` | Add email preferences section |
+| `frontend/components/ProfileModal.test.tsx` | Add new tests |
+| `frontend/components/EditHabitModal.tsx` | Add reminder settings |
+| `frontend/components/EditHabitModal.test.tsx` | Add new tests |
+| `frontend/e2e/emailReminders.spec.ts` | New - E2E tests |
 
 ### Documentation
 | File | Changes |

@@ -25,7 +25,7 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 - PostHog analytics integration
 - TDD approach with comprehensive test coverage
 
-See [PROJECT_PLAN.md](../../PROJECT_PLAN.md) for the complete project roadmap.
+See [PROJECT_PLAN.md](../PROJECT_PLAN.md) for the complete project roadmap.
 
 ## Tech Stack
 
@@ -79,7 +79,7 @@ npm start
 ## Project Structure
 
 ```
-frontends/nextjs/
+frontend/
 ├── app/                           # Next.js app directory
 │   ├── page.tsx                  # Landing page
 │   ├── page.test.tsx             # Landing page tests
@@ -180,8 +180,8 @@ E2E tests run against the full stack using a test database.
 
 ```bash
 # Prerequisites: Start test environment
-../../scripts/test-db-start.sh
-docker compose -f ../../docker-compose.test.yml up -d
+../scripts/test-db-start.sh
+docker compose -f ../docker-compose.test.yml up -d
 
 # Run E2E tests
 npm run test:e2e
@@ -196,8 +196,8 @@ npm run test:e2e:headed
 npm run test:e2e:report
 
 # Stop test environment
-docker compose -f ../../docker-compose.test.yml down
-../../scripts/test-db-stop.sh
+docker compose -f ../docker-compose.test.yml down
+../scripts/test-db-stop.sh
 ```
 
 E2E test coverage includes:
@@ -227,7 +227,7 @@ docker run -p 3100:3000 \
   habitcraft-nextjs
 
 # Or use docker-compose from root
-cd ../..
+cd ..
 docker-compose up frontend-nextjs
 ```
 
@@ -238,4 +238,4 @@ This project follows TDD:
 2. Implement minimum code to pass the test
 3. Refactor if needed
 
-For the complete development roadmap, see [PROJECT_PLAN.md](../../PROJECT_PLAN.md).
+For the complete development roadmap, see [PROJECT_PLAN.md](../PROJECT_PLAN.md).

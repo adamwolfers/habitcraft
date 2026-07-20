@@ -50,7 +50,7 @@ Login at http://localhost:3100/login to start tracking habits!
 
 For local development without Docker, see the individual setup guides:
 - **[Backend Setup](backend/README.md)** - Node.js + Express backend
-- **[Frontend Setup](frontends/nextjs/README.md)** - Next.js frontend
+- **[Frontend Setup](frontend/README.md)** - Next.js frontend
 
 Note: You'll need to run PostgreSQL, backend, and frontend simultaneously for the application to work.
 
@@ -58,8 +58,10 @@ Note: You'll need to run PostgreSQL, backend, and frontend simultaneously for th
 
 ```
 habittracker_fullstack/
-├── backend/        # Node.js + Express backend
-├── frontends/nextjs/     # Next.js frontend
+├── backend/              # Node.js + Express backend
+├── frontend/             # Next.js frontend
+├── mobile/               # React Native (Expo) mobile app
+├── db/                   # dbmate SQL migrations
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI specification
 │   ├── database/         # PostgreSQL schema and migrations
@@ -214,7 +216,7 @@ npm test -- routes/habits.test.js
 npm test -- routes/completions.test.js
 
 # Next.js frontend
-cd frontends/nextjs
+cd frontend
 npm test
 
 # Run specific test file

@@ -8,8 +8,8 @@ This document covers the testing infrastructure, conventions, and isolation stra
 |------|-----------|----------|---------|
 | Backend Unit | Jest + Supertest | `backend/tests/` | API endpoint and middleware testing |
 | Backend Integration | Jest + Supertest | `backend/tests/integration/` | Full database workflows |
-| Frontend Unit | Jest + RTL | `frontends/nextjs/**/*.test.tsx` | Component and hook testing |
-| E2E | Playwright | `frontends/nextjs/e2e/` | Full user journey testing |
+| Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
+| E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 
 ### Doc Link Checking
@@ -76,7 +76,7 @@ Both users have sample habits with predictable UUIDs and sample completions.
 | File | Purpose |
 |------|---------|
 | `backend/.env.test` | Test database connection, test JWT secret |
-| `frontends/nextjs/.env.test` | Test API URL |
+| `frontend/.env.test` | Test API URL |
 
 ## Running Tests
 
@@ -98,7 +98,7 @@ npm run test:integration      # Integration tests (requires test db)
 ### Frontend
 
 ```bash
-cd frontends/nextjs
+cd frontend
 npm test                      # Unit tests
 npm run test:e2e              # E2E tests (headless)
 npm run test:e2e:ui           # E2E tests with Playwright UI
@@ -268,5 +268,5 @@ Run coverage reports:
 cd backend && npm test -- --coverage
 
 # Frontend
-cd frontends/nextjs && npm test -- --coverage
+cd frontend && npm test -- --coverage
 ```

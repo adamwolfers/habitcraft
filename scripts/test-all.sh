@@ -70,7 +70,7 @@ echo "----------------------------------------------"
 cd "$PROJECT_ROOT"
 
 # Check if dependencies have changed since last successful run
-CURRENT_HASH=$(cat backend/package-lock.json frontends/nextjs/package-lock.json 2>/dev/null | md5 -q 2>/dev/null || cat backend/package-lock.json frontends/nextjs/package-lock.json | md5sum | cut -d' ' -f1)
+CURRENT_HASH=$(cat backend/package-lock.json frontend/package-lock.json 2>/dev/null | md5 -q 2>/dev/null || cat backend/package-lock.json frontend/package-lock.json | md5sum | cut -d' ' -f1)
 
 if [ "$FORCE_REBUILD" = false ] && [ -f "$LOCK_HASH_FILE" ]; then
     SAVED_HASH=$(cat "$LOCK_HASH_FILE")
@@ -139,7 +139,7 @@ echo ""
 # 2. Frontend Unit Tests
 echo "🎨 [2/4] Frontend Unit Tests"
 echo "----------------------------------------------"
-cd "$PROJECT_ROOT/frontends/nextjs"
+cd "$PROJECT_ROOT/frontend"
 if npm test; then
     FRONTEND_UNIT=1
     echo "✅ Frontend unit tests passed"
@@ -163,14 +163,14 @@ echo ""
 # 4. E2E Tests (parallel shards)
 echo "🌐 [4/4] End-to-End Tests (4 parallel shards)"
 echo "----------------------------------------------"
-cd "$PROJECT_ROOT/frontends/nextjs"
+cd "$PROJECT_ROOT/frontend"
 
 # Reset database once before running shards
 echo "  Resetting test database..."
 "$PROJECT_ROOT/scripts/test-db-reset.sh" > /dev/null 2>&1
 
 # Create temp directory for shard logs
-E2E_LOG_DIR="$PROJECT_ROOT/frontends/nextjs/.e2e-shard-logs"
+E2E_LOG_DIR="$PROJECT_ROOT/frontend/.e2e-shard-logs"
 mkdir -p "$E2E_LOG_DIR"
 
 # Disable set -e for parallel section (exit codes handled manually)

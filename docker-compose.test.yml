@@ -77,7 +77,7 @@ services:
   frontend-nextjs-test:
     build:
       context: .
-      dockerfile: ./frontends/nextjs/Dockerfile.dev
+      dockerfile: ./frontend/Dockerfile.dev
     container_name: habitcraft-frontend-nextjs-test
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3010
@@ -87,7 +87,7 @@ services:
     # Anonymous volumes (/app/node_modules) persist across rebuilds and can contain outdated
     # dependencies. Named volumes are explicitly managed and cleaned up with `docker compose down -v`.
     volumes:
-      - ./frontends/nextjs:/app
+      - ./frontend:/app
       - frontend_test_modules:/app/node_modules
       - frontend_test_next:/app/.next
     networks:
