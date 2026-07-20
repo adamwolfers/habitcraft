@@ -14,7 +14,7 @@ The HabitCraft mobile app uses [EAS Build](https://docs.expo.dev/build/introduct
 
 ### Preview Builds (Automatic)
 
-Triggers on push to `master` when `frontends/mobile/` or `shared/` changes. Requires `mobile-unit-tests` to pass first.
+Triggers on push to `master` when `mobile/` or `shared/` changes. Requires `mobile-unit-tests` to pass first.
 
 - Runs `eas build --profile preview --platform android --non-interactive --no-wait` (Android-only until iOS credentials are configured)
 - Uses `--no-wait` so CI doesn't block on EAS cloud build completion
@@ -32,7 +32,7 @@ This job:
 
 ## Local Commands
 
-Run from `frontends/mobile/`:
+Run from `mobile/`:
 
 ```bash
 npm run eas:build:dev       # Development build (both platforms)
@@ -54,7 +54,7 @@ These steps must be completed once before CI builds will work:
 ### 1. Expo Account & EAS Project
 
 - [ ] Create an Expo account at [expo.dev](https://expo.dev)
-- [ ] Run `npx eas-cli init` in `frontends/mobile/` to generate the EAS project ID
+- [ ] Run `npx eas-cli init` in `mobile/` to generate the EAS project ID
 - [ ] Update `app.json` → `expo.extra.eas.projectId` with the generated ID
 - [ ] Generate an access token at expo.dev and add it as the `EXPO_TOKEN` GitHub secret
 
@@ -69,7 +69,7 @@ These steps must be completed once before CI builds will work:
 
 - [ ] Create an app in [Google Play Console](https://play.google.com/console) with package `org.habitcraft.app`
 - [ ] Create a service account with API access for automated uploads
-- [ ] Download the service account JSON key and place it at `frontends/mobile/google-play-service-account.json`
+- [ ] Download the service account JSON key and place it at `mobile/google-play-service-account.json`
 - [ ] Add `google-play-service-account.json` to `.gitignore` (already done)
 
 ### 4. EAS Credentials
@@ -88,6 +88,6 @@ These steps must be completed once before CI builds will work:
 
 | File | Purpose |
 |------|---------|
-| `frontends/mobile/eas.json` | EAS build profiles and submit configuration |
-| `frontends/mobile/app.json` | Expo app config (identifiers, EAS project ID) |
+| `mobile/eas.json` | EAS build profiles and submit configuration |
+| `mobile/app.json` | Expo app config (identifiers, EAS project ID) |
 | `.github/workflows/ci.yml` | CI jobs for preview and production builds |
