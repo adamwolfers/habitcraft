@@ -50,6 +50,17 @@ on:
       - 'infrastructure/**'
       - 'LICENSE'
       - '.gitignore'
+      # Below: paths that match no filter in detect-changes, so they would
+      # otherwise trigger the workflow and then skip every job -- a passing
+      # run that verified nothing. Listed here so they do not trigger at all.
+      - '.claude/**'
+      - '.gitattributes'
+      - '.git-blame-ignore-revs'
+      - '.dbmaterc'
+      - 'lychee.toml'
+      - '**/*.example'
+      # Has its own workflow with its own triggers; nothing here tests it.
+      - '.github/workflows/link-check.yml'
   pull_request:
     branches: [main, master]
     # Keep in sync with the push trigger above; see the rationale there.
@@ -60,6 +71,17 @@ on:
       - 'infrastructure/**'
       - 'LICENSE'
       - '.gitignore'
+      # Below: paths that match no filter in detect-changes, so they would
+      # otherwise trigger the workflow and then skip every job -- a passing
+      # run that verified nothing. Listed here so they do not trigger at all.
+      - '.claude/**'
+      - '.gitattributes'
+      - '.git-blame-ignore-revs'
+      - '.dbmaterc'
+      - 'lychee.toml'
+      - '**/*.example'
+      # Has its own workflow with its own triggers; nothing here tests it.
+      - '.github/workflows/link-check.yml'
 
 jobs:
   # ===========================================
@@ -77,6 +99,7 @@ jobs:
       db: ${{ steps.filter.outputs.db }}
       shared: ${{ steps.filter.outputs.shared }}
       e2e-infra: ${{ steps.filter.outputs.e2e-infra }}
+      tooling: ${{ steps.filter.outputs.tooling }}
       workflow: ${{ steps.filter.outputs.workflow }}
     steps:
       - uses: actions/checkout@v4
@@ -84,21 +107,48 @@ jobs:
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          # 'every' (all patterns must match), NOT the default 'some'.
+          #
+          # This is required for the '!**/*.md' exclusions below to work, and
+          # the default is actively dangerous here: under 'some', a negated
+          # pattern is OR-ed in, and since '!**/*.md' matches every file that
+          # is not markdown, adding it would make each filter true for ALL
+          # non-markdown changes -- 'backend' would fire on scripts/test-all.sh.
+          # Verified against picomatch 4.0.5, the library this action uses.
+          #
+          # Consequence: a filter may have only ONE positive pattern, since
+          # under 'every' a file must match all of them. Multiple alternatives
+          # must be expressed as one extglob '@(a|b|c)' pattern -- see
+          # e2e-infra and tooling below.
+          predicate-quantifier: 'every'
           filters: |
             backend:
               - 'backend/**'
+              - '!**/*.md'
             frontend:
               - 'frontends/nextjs/**'
+              - '!**/*.md'
             mobile:
               - 'frontends/mobile/**'
+              - '!**/*.md'
             db:
               - 'db/**'
+              - '!**/*.md'
             shared:
               - 'shared/**'
+              - '!**/*.md'
+            # Single extglob rather than three patterns: 'every' would require a
+            # file to match all three at once, which nothing does.
             e2e-infra:
-              - 'docker-compose*.yml'
-              - 'docker-bake*.hcl'
-              - '**/Dockerfile*'
+              - '@(docker-compose*.yml|docker-bake*.hcl|**/Dockerfile*)'
+              - '!**/*.md'
+            # Repo-level tooling that changes how tests run everywhere but
+            # belongs to no single package. Without this, editing
+            # scripts/test-all.sh triggered the workflow and then skipped every
+            # job -- a green check that ran nothing.
+            tooling:
+              - '@(scripts/**|.husky/**|package.json|package-lock.json)'
+              - '!**/*.md'
             workflow:
               - '.github/workflows/ci.yml'
 
@@ -112,6 +162,7 @@ jobs:
     if: |
       needs.detect-changes.outputs.backend == 'true' ||
       needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
       needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
@@ -256,6 +307,7 @@ jobs:
     if: |
       needs.detect-changes.outputs.frontend == 'true' ||
       needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
       needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
@@ -296,6 +348,7 @@ jobs:
     if: |
       needs.detect-changes.outputs.mobile == 'true' ||
       needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
       needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
