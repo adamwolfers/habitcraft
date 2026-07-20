@@ -16,17 +16,33 @@ on:
     branches: ['**']
     tags:
       - 'mobile-v*'
-    # paths-ignore is a cheap short-circuit, not the real gating mechanism: the
-    # detect-changes job below uses dorny/paths-filter for finer-grained,
-    # per-area control, and every downstream job is already gated on its
-    # outputs. A change matching only the paths here would skip all of those
-    # jobs anyway -- this just avoids spinning up a runner to reach that
-    # conclusion. The two mechanisms are deliberately redundant.
+    # DO NOT REMOVE without first reading the note below. This overlaps the
+    # dorny/paths-filter gating in detect-changes, but is not redundant with
+    # it -- it is load-bearing.
     #
-    # Consequence: markdown is never checked by this workflow. Doc links are
-    # verified by .github/workflows/link-check.yml, whose triggers are the
-    # inverse of these. Adding a docs job *here* would not work -- it could
-    # never fire on a docs-only change.
+    # Six markdown files live *inside* package directories and therefore match
+    # a paths-filter pattern as well as '**/*.md' here:
+    #
+    #   backend/README.md, backend/db/README.md   -> backend
+    #   frontends/nextjs/README.md                -> frontend
+    #   db/README.md                              -> db
+    #   shared/{database,types}/README.md         -> shared
+    #
+    # paths-filter matches on path alone and cannot tell a README from source.
+    # Without this paths-ignore, editing db/README.md on master would fire
+    # run-migrations-gcp (Cloud SQL backup + production migration job), and
+    # editing shared/types/README.md would fire deploy-backend-gcp and
+    # deploy-frontend-gcp. Those jobs are gated on `db`/`shared` being true,
+    # which a README edit satisfies.
+    #
+    # To remove this safely, first make each filter code-aware by adding
+    # `- '!**/*.md'` to every pattern in detect-changes. Tighten the filters,
+    # then drop the blunt instrument -- not the reverse.
+    #
+    # Consequence: no job in this workflow can run on markdown, docs/, or
+    # infrastructure/ changes. Doc links are checked by
+    # .github/workflows/link-check.yml, whose triggers are the inverse of
+    # these; a docs job added *here* could never fire on a docs-only change.
     paths-ignore:
       - '**/*.md'
       - '.beads/**'
