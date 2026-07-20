@@ -14,4 +14,4 @@ services:
   frontend-nextjs:
     build:
       context: .
-      dockerfile: frontends/nextjs/Dockerfile.dev
+      dockerfile: frontend/Dockerfile.dev

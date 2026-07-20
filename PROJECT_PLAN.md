@@ -388,7 +388,7 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
     - [ ] Add `dorny/paths-filter` action to detect changed paths
     - [ ] Define path filters for frontend, backend, and shared code:
       - `backend`: `backend/**`, `shared/database/**`
-      - `frontend`: `frontends/nextjs/**`, `shared/types/**`
+      - `frontend`: `frontend/**`, `shared/types/**`
       - `shared`: `shared/**` (triggers both)
       - `ci`: `.github/workflows/**` (triggers both)
     - [ ] Update `deploy-backend` job condition:
@@ -463,4 +463,4 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
 - **API Specification:** `/shared/api-spec/openapi.yaml`
 - **Database Schema:** `/shared/database/schema.sql`
 - **Backend README:** `/backend/README.md`
-- **Frontend README:** `/frontends/nextjs/README.md`
+- **Frontend README:** `/frontend/README.md`

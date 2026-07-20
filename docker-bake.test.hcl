@@ -20,6 +20,6 @@ target "backend-node-test" {
 
 target "frontend-nextjs-test" {
   context = "."
-  dockerfile = "./frontends/nextjs/Dockerfile.dev"
+  dockerfile = "./frontend/Dockerfile.dev"
   tags = ["habitcraft-frontend-nextjs-test:latest"]
 }

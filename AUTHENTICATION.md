@@ -249,7 +249,7 @@ function jwtAuthMiddleware(req, res, next) {
 
 ### Auth Context
 
-**Location:** `frontends/nextjs/context/AuthContext.tsx`
+**Location:** `frontend/context/AuthContext.tsx`
 
 ```typescript
 interface AuthContextType {
@@ -274,7 +274,7 @@ interface AuthContextType {
 
 ### API Client Updates
 
-**Location:** `frontends/nextjs/lib/api.ts`
+**Location:** `frontend/lib/api.ts`
 
 - Uses HttpOnly cookies for authentication (credentials: 'include')
 - Intercept 401 responses on API calls
@@ -282,7 +282,7 @@ interface AuthContextType {
 - Retry failed request with new token
 - Redirect to login if refresh fails
 
-**Session Recovery:** `frontends/nextjs/context/AuthContext.tsx`
+**Session Recovery:** `frontend/context/AuthContext.tsx`
 
 - On page load, checks session via `/api/v1/users/me`
 - If access token expired (401), automatically attempts refresh
@@ -368,7 +368,7 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete security and deployment 
 - [API Specification](shared/api-spec/openapi.yaml)
 - [Database Schema](shared/database/schema.sql)
 - [Backend README](backend/README.md)
-- [Frontend README](frontends/nextjs/README.md)
+- [Frontend README](frontend/README.md)
 
 ## Questions & Troubleshooting
 

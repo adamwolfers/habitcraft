@@ -24,7 +24,7 @@ on:
     # a paths-filter pattern as well as '**/*.md' here:
     #
     #   backend/README.md, backend/db/README.md   -> backend
-    #   frontends/nextjs/README.md                -> frontend
+    #   frontend/README.md                -> frontend
     #   db/README.md                              -> db
     #   shared/{database,types}/README.md         -> shared
     #
@@ -126,7 +126,7 @@ jobs:
               - 'backend/**'
               - '!**/*.md'
             frontend:
-              - 'frontends/nextjs/**'
+              - 'frontend/**'
               - '!**/*.md'
             mobile:
               - 'mobile/**'
@@ -311,7 +311,7 @@ jobs:
       needs.detect-changes.outputs.workflow == 'true'
     defaults:
       run:
-        working-directory: frontends/nextjs
+        working-directory: frontend
 
     steps:
       - uses: actions/checkout@v4
@@ -321,7 +321,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontends/nextjs/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
         run: npm ci
@@ -335,7 +335,7 @@ jobs:
       - name: Upload frontend coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          directory: frontends/nextjs/coverage
+          directory: frontend/coverage
           flags: frontend
           name: frontend-coverage
           fail_ci_if_error: false
@@ -428,7 +428,7 @@ jobs:
           fi
 
           BACKEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'backend/package-lock.json' | wc -l)
-          FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontends/nextjs/package-lock.json' | wc -l)
+          FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontend/package-lock.json' | wc -l)
 
           if [ "$BACKEND_DEPS" -gt 0 ] || [ "$FRONTEND_DEPS" -gt 0 ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
@@ -443,7 +443,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: frontends/nextjs/package-lock.json
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -460,11 +460,11 @@ jobs:
           load: true
 
       - name: Install frontend dependencies
-        working-directory: frontends/nextjs
+        working-directory: frontend
         run: npm ci
 
       - name: Install Playwright browsers
-        working-directory: frontends/nextjs
+        working-directory: frontend
         run: npx playwright install --with-deps chromium
 
       - name: Start test environment
@@ -480,7 +480,7 @@ jobs:
           echo "Frontend is ready!"
 
       - name: Run E2E tests (shard ${{ matrix.shard }}/4)
-        working-directory: frontends/nextjs
+        working-directory: frontend
         run: npx playwright test --shard=${{ matrix.shard }}/4 --reporter=blob
 
       - name: Upload blob report (shard ${{ matrix.shard }})
@@ -488,7 +488,7 @@ jobs:
         if: always()
         with:
           name: blob-report-shard-${{ matrix.shard }}
-          path: frontends/nextjs/blob-report/
+          path: frontend/blob-report/
           retention-days: 1
 
       - name: Stop test environment
@@ -510,7 +510,7 @@ jobs:
           node-version: '20'
 
       - name: Install Playwright
-        working-directory: frontends/nextjs
+        working-directory: frontend
         run: npm install @playwright/test
 
       - name: Download all blob reports
@@ -521,14 +521,14 @@ jobs:
           merge-multiple: true
 
       - name: Merge reports
-        working-directory: frontends/nextjs
+        working-directory: frontend
         run: npx playwright merge-reports --reporter html "$GITHUB_WORKSPACE/all-blob-reports"
 
       - name: Upload merged report
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: frontends/nextjs/playwright-report/
+          path: frontend/playwright-report/
           retention-days: 7
 
   # ===========================================
@@ -714,7 +714,7 @@ jobs:
             --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.habitcraft.org \
             --build-arg NEXT_PUBLIC_POSTHOG_KEY=${{ secrets.POSTHOG_KEY }} \
             -t us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/frontend:${{ github.sha }} \
-            ./frontends/nextjs
+            ./frontend
           docker tag us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/frontend:${{ github.sha }} us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/frontend:latest
           docker push us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/frontend:${{ github.sha }}
           docker push us-central1-docker.pkg.dev/habitcraft-prod/habitcraft-containers/frontend:latest

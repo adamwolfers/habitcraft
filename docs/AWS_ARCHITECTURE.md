@@ -179,7 +179,7 @@ aws lightsail push-container-image \
 **Frontend:**
 
 ```bash
-cd frontends/nextjs
+cd frontend
 
 # Build the image
 docker build -t habitcraft-frontend .
@@ -426,7 +426,7 @@ CMD ["./entrypoint.sh"]
 cp shared/database/schema.sql backend/
 ```
 
-### Frontend (frontends/nextjs/Dockerfile)
+### Frontend (frontend/Dockerfile)
 
 ```dockerfile
 FROM node:20-alpine AS builder

@@ -342,7 +342,7 @@ SNS provides delivery status logging via CloudWatch Logs rather than webhooks.
 
 ### Step 1: TypeScript Types
 
-**File:** `frontends/nextjs/types/smsPreferences.ts`
+**File:** `frontend/types/smsPreferences.ts`
 
 ```typescript
 interface UserSmsPreferences {
@@ -375,8 +375,8 @@ interface HabitSmsReminderSettings {
 ### Step 2: API Client Methods (TDD)
 
 **Files:**
-- `frontends/nextjs/lib/api.ts`
-- `frontends/nextjs/lib/api.test.ts`
+- `frontend/lib/api.ts`
+- `frontend/lib/api.test.ts`
 
 #### 2a. Write tests first
 - [ ] Test: `getSmsPreferences()` fetches preferences
@@ -395,8 +395,8 @@ interface HabitSmsReminderSettings {
 ### Step 3: Phone Verification Component (TDD)
 
 **Files:**
-- `frontends/nextjs/components/PhoneVerification.tsx`
-- `frontends/nextjs/components/PhoneVerification.test.tsx`
+- `frontend/components/PhoneVerification.tsx`
+- `frontend/components/PhoneVerification.test.tsx`
 
 #### 3a. Write tests first
 - [ ] Test: renders phone input field
@@ -418,8 +418,8 @@ interface HabitSmsReminderSettings {
 ### Step 4: SMS Preferences Component (TDD)
 
 **Files:**
-- `frontends/nextjs/components/SmsPreferencesSection.tsx`
-- `frontends/nextjs/components/SmsPreferencesSection.test.tsx`
+- `frontend/components/SmsPreferencesSection.tsx`
+- `frontend/components/SmsPreferencesSection.test.tsx`
 
 #### 4a. Write tests first
 - [ ] Test: renders phone verification section
@@ -441,8 +441,8 @@ interface HabitSmsReminderSettings {
 ### Step 5: Add SMS Preferences to ProfileModal
 
 **Files:**
-- `frontends/nextjs/components/ProfileModal.tsx`
-- `frontends/nextjs/components/ProfileModal.test.tsx`
+- `frontend/components/ProfileModal.tsx`
+- `frontend/components/ProfileModal.test.tsx`
 
 - [ ] Add "SMS Notifications" section header
 - [ ] Include SmsPreferencesSection component
@@ -451,8 +451,8 @@ interface HabitSmsReminderSettings {
 ### Step 6: Habit SMS Reminder Settings Component (TDD)
 
 **Files:**
-- `frontends/nextjs/components/HabitSmsReminderSettings.tsx`
-- `frontends/nextjs/components/HabitSmsReminderSettings.test.tsx`
+- `frontend/components/HabitSmsReminderSettings.tsx`
+- `frontend/components/HabitSmsReminderSettings.test.tsx`
 
 #### 6a. Write tests first
 - [ ] Test: renders enable toggle
@@ -479,8 +479,8 @@ interface HabitSmsReminderSettings {
 ### Step 7: Add SMS Reminder Settings to EditHabitModal
 
 **Files:**
-- `frontends/nextjs/components/EditHabitModal.tsx`
-- `frontends/nextjs/components/EditHabitModal.test.tsx`
+- `frontend/components/EditHabitModal.tsx`
+- `frontend/components/EditHabitModal.test.tsx`
 
 - [ ] Add "SMS Reminders" section/tab
 - [ ] Include HabitSmsReminderSettings component
@@ -489,7 +489,7 @@ interface HabitSmsReminderSettings {
 
 ### Step 8: E2E Tests
 
-**File:** `frontends/nextjs/e2e/smsReminders.spec.ts`
+**File:** `frontend/e2e/smsReminders.spec.ts`
 
 - [ ] Test: user can add and verify phone number
 - [ ] Test: user can enable SMS reminders globally
@@ -580,20 +580,20 @@ function generateVerificationSms({ code }) {
 ### Frontend
 | File | Changes |
 |------|---------|
-| `frontends/nextjs/types/smsPreferences.ts` | New - TypeScript types |
-| `frontends/nextjs/lib/api.ts` | Add SMS/reminder API methods |
-| `frontends/nextjs/lib/api.test.ts` | Add API method tests |
-| `frontends/nextjs/components/PhoneVerification.tsx` | New - phone verification UI |
-| `frontends/nextjs/components/PhoneVerification.test.tsx` | New - component tests |
-| `frontends/nextjs/components/SmsPreferencesSection.tsx` | New - preferences UI |
-| `frontends/nextjs/components/SmsPreferencesSection.test.tsx` | New - component tests |
-| `frontends/nextjs/components/HabitSmsReminderSettings.tsx` | New - reminder config UI |
-| `frontends/nextjs/components/HabitSmsReminderSettings.test.tsx` | New - component tests |
-| `frontends/nextjs/components/ProfileModal.tsx` | Add SMS preferences section |
-| `frontends/nextjs/components/ProfileModal.test.tsx` | Add new tests |
-| `frontends/nextjs/components/EditHabitModal.tsx` | Add SMS reminder settings |
-| `frontends/nextjs/components/EditHabitModal.test.tsx` | Add new tests |
-| `frontends/nextjs/e2e/smsReminders.spec.ts` | New - E2E tests |
+| `frontend/types/smsPreferences.ts` | New - TypeScript types |
+| `frontend/lib/api.ts` | Add SMS/reminder API methods |
+| `frontend/lib/api.test.ts` | Add API method tests |
+| `frontend/components/PhoneVerification.tsx` | New - phone verification UI |
+| `frontend/components/PhoneVerification.test.tsx` | New - component tests |
+| `frontend/components/SmsPreferencesSection.tsx` | New - preferences UI |
+| `frontend/components/SmsPreferencesSection.test.tsx` | New - component tests |
+| `frontend/components/HabitSmsReminderSettings.tsx` | New - reminder config UI |
+| `frontend/components/HabitSmsReminderSettings.test.tsx` | New - component tests |
+| `frontend/components/ProfileModal.tsx` | Add SMS preferences section |
+| `frontend/components/ProfileModal.test.tsx` | Add new tests |
+| `frontend/components/EditHabitModal.tsx` | Add SMS reminder settings |
+| `frontend/components/EditHabitModal.test.tsx` | Add new tests |
+| `frontend/e2e/smsReminders.spec.ts` | New - E2E tests |
 
 ### Documentation
 | File | Changes |

@@ -10,7 +10,7 @@ fi
 # files, since lint-staged is scoped to its cwd); packages without it are
 # skipped cleanly. Any failure aborts the commit.
 ROOT="$(git rev-parse --show-toplevel)"
-for pkg in backend frontends/nextjs mobile; do
+for pkg in backend frontend mobile; do
   if [ -f "$ROOT/$pkg/node_modules/.bin/lint-staged" ]; then
     (cd "$ROOT/$pkg" && npx lint-staged) || exit 1
   fi

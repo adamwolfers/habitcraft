@@ -87,7 +87,7 @@ services:
   frontend-nextjs:
     build:
       context: .
-      dockerfile: frontends/nextjs/Dockerfile.dev
+      dockerfile: frontend/Dockerfile.dev
     container_name: habitcraft-frontend-nextjs
     environment:
       # Note: API URL is accessed from the browser, not from the container
@@ -99,7 +99,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./frontends/nextjs:/app
+      - ./frontend:/app
       - /app/node_modules
       - /app/.next
     networks:
