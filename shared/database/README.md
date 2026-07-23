@@ -53,27 +53,30 @@ users (1) ──< (N) refresh_tokens
 ## Files
 
 - **schema.sql** - Database schema definition (tables, indexes, triggers, views)
-- **seed.sql** - Development seed data (demo user and sample habits)
+- **test-fixtures.sql** - Seed data for development, CI, and test environments
 - **migrations/** - SQL migration scripts for schema changes
   - `001_add_refresh_tokens.sql` - Adds refresh_tokens table for token rotation
 
-The seed data is automatically loaded when using docker-compose and includes:
-- Demo user (ID: `123e4567-e89b-12d3-a456-426614174000`, email: `demo@example.com`, password: `demo123`)
-- Sample habits for testing
+The seed data is loaded on demand (`docker compose --profile seed run --rm db-seed`) and includes:
+- Test user 1 (ID: `11111111-1111-1111-1111-111111111111`, email: `test@example.com`, password: `Test1234!`)
+- Test user 2 (ID: `22222222-2222-2222-2222-222222222222`, email: `test2@example.com`, password: `Test1234!`)
+- Sample habits and completions for testing
 
 ## Usage
 
 ### Automated Setup (Recommended)
 
-When using docker-compose (from project root), the database is automatically initialized with schema and seed data:
+When using docker-compose (from project root), the database is initialized with the schema
+automatically; seed data is loaded as a separate, explicit step:
 
 ```bash
 docker-compose up postgres
+docker compose --profile seed run --rm db-seed
 ```
 
 This will:
-1. Create the database with schema (01-schema.sql)
-2. Load seed data with demo user and sample habits (02-seed.sql)
+1. Create the database and apply migrations
+2. Load seed data with test users and sample habits (test-fixtures.sql)
 3. Make the app immediately usable for testing
 
 ### Creating the Database Manually
