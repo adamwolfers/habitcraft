@@ -40,9 +40,15 @@ docker-compose stop
 docker-compose down -v
 ```
 
-**Demo User Credentials:**
-- Email: `demo@example.com`
-- Password: `demo123`
+**Seed the database** (one-off, after the services are up):
+
+```bash
+docker compose --profile seed run --rm db-seed
+```
+
+**Test User Credentials:**
+- Email: `test@example.com`
+- Password: `Test1234!`
 
 Login at http://localhost:3100/login to start tracking habits!
 
@@ -99,11 +105,11 @@ docker-compose up -d postgres
 The database includes:
 
 - Schema with users, habits, and completions tables
-- Seed data with demo users and sample habits
+- Seed data with test users and sample habits (loaded on demand, see above)
 - Adminer web UI at http://localhost:8080
   - System login: habituser / habitpass / habitcraft
-  - Demo User 1: `demo@example.com` / `demo123` (ID: `123e4567-e89b-12d3-a456-426614174000`)
-  - Demo User 2: `demo2@example.com` / `demo1234` (ID: `223e4567-e89b-12d3-a456-426614174001`)
+  - Test User 1: `test@example.com` / `Test1234!` (ID: `11111111-1111-1111-1111-111111111111`)
+  - Test User 2: `test2@example.com` / `Test1234!` (ID: `22222222-2222-2222-2222-222222222222`)
 
 Manual setup:
 
@@ -301,26 +307,28 @@ curl http://localhost:3000/hello
 docker-compose restart backend-node
 ```
 
-### Working with Demo Users
+### Working with Test Users
 
-The database is automatically seeded with two demo users on first startup:
+Seeding is **not** automatic — run `docker compose --profile seed run --rm db-seed` once after
+the services are up. This loads `shared/database/test-fixtures.sql`, the same fixtures CI uses:
 
-**Demo User 1:**
-- Email: `demo@example.com`
-- Password: `demo123`
-- Sample Habits: 3 pre-created habits
+**Test User 1:**
+- Email: `test@example.com`
+- Password: `Test1234!`
+- Sample Habits: Morning Exercise, Read Books, plus one archived habit
 
-**Demo User 2:**
-- Email: `demo2@example.com`
-- Password: `demo1234`
-- Sample Habits: 3 pre-created habits (Learn Spanish, Drink Water, Journal Writing)
+**Test User 2:**
+- Email: `test2@example.com`
+- Password: `Test1234!`
+- Sample Habits: one habit, used for verifying user isolation
 
 To test the application:
 
 1. Start the services with Docker: `docker-compose up postgres backend-node frontend-nextjs`
-2. Open http://localhost:3100/login
-3. Login with either demo user credentials
-4. Start tracking your habits!
+2. Seed the database: `docker compose --profile seed run --rm db-seed`
+3. Open http://localhost:3100/login
+4. Login with either test user's credentials
+5. Start tracking your habits!
 
 The application uses JWT authentication with HttpOnly cookies for secure token management.
 

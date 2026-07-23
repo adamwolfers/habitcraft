@@ -30,7 +30,7 @@ The `db-migrate` service runs before backends start, ensuring the schema is alwa
 
 ### Loading Seed Data
 
-Seed data (demo users, sample habits) is loaded separately to avoid duplicates on restarts:
+Seed data (test users, sample habits) is loaded separately to avoid duplicates on restarts:
 
 ```bash
 # Load seed data once after initial setup

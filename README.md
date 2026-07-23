@@ -89,9 +89,15 @@ docker-compose up postgres backend-node frontend-nextjs
 # - Database Admin: http://localhost:8080
 ```
 
-**Demo User:**
-- Email: `demo@example.com`
-- Password: `demo123`
+**Seed the database** (one-off, after the services are up):
+
+```bash
+docker compose --profile seed run --rm db-seed
+```
+
+**Test User:**
+- Email: `test@example.com`
+- Password: `Test1234!`
 
 ### Manual Setup
 
