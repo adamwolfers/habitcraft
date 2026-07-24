@@ -384,26 +384,22 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
 - **CI/CD Pipelines**
   - [x] GitHub Actions workflows with automated testing, linting, Codecov coverage, and GCP Cloud Run deployment
   - [x] Integration/E2E tests depend on unit tests passing first
-  - [ ] **Path-Based Deployment Filtering**
-    - [ ] Add `dorny/paths-filter` action to detect changed paths
-    - [ ] Define path filters for frontend, backend, and shared code:
-      - `backend`: `backend/**`, `shared/database/**`
-      - `frontend`: `frontend/**`, `shared/types/**`
-      - `shared`: `shared/**` (triggers both)
-      - `ci`: `.github/workflows/**` (triggers both)
-    - [ ] Update `deploy-backend` job condition:
-      - Deploy when backend paths change OR shared paths change OR CI config changes
-      - Skip deployment if only frontend paths changed
-    - [ ] Update `deploy-frontend` job condition:
-      - Deploy when frontend paths change OR shared paths change OR CI config changes
-      - Skip deployment if only backend paths changed
+  - [x] **Path-Based Deployment Filtering**
+    - [x] `dorny/paths-filter` in the `detect-changes` job gates every downstream job
+    - [x] Filters run under `predicate-quantifier: 'every'`, so each filter has exactly
+          ONE positive pattern plus negations; alternatives use a single extglob
+          `@(a|b|c)`. Semantics verified against picomatch 4.0.5.
+    - [x] Test filters: `backend`, `frontend`, `mobile`, `db`, `shared`, `e2e-infra`,
+          `tooling`, `workflow` — each `<dir>/**` minus `!**/*.md`
+    - [x] Separate deploy filters `backend-deploy` / `frontend-deploy` subtract test
+          paths (`*.test.*`, `integration/`, `e2e/`, jest + playwright configs,
+          `.env.test`). Test jobs use the test filters; deploy jobs use these, so a
+          test-only change no longer ships a Cloud Run revision (habitcraft-irq).
+    - [x] Markdown/docs excluded at the trigger level via `paths-ignore`, because
+          READMEs inside package directories match the package filters
     - [ ] Add workflow summary output showing which services will deploy
-    - [ ] Test scenarios to verify:
-      - Backend-only change → only backend deploys
-      - Frontend-only change → only frontend deploys
-      - Shared code change → both deploy
-      - CI workflow change → both deploy
-      - Documentation change → neither deploys (already excluded)
+    - [ ] Commit the picomatch verification harness as `scripts/verify-ci-filters.js`
+          (habitcraft-tcn) — the filter block has no automated coverage today
   - [x] **E2E Test Container Optimization**
     - Docker BuildKit layer caching with GHA cache backend (31% faster: 240s → 166s)
     - Local development: `scripts/test-all.sh` with `--rebuild` flag, auto-detection of dependency changes

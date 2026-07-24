@@ -95,6 +95,8 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      backend-deploy: ${{ steps.filter.outputs.backend-deploy }}
+      frontend-deploy: ${{ steps.filter.outputs.frontend-deploy }}
       mobile: ${{ steps.filter.outputs.mobile }}
       db: ${{ steps.filter.outputs.db }}
       shared: ${{ steps.filter.outputs.shared }}
@@ -128,6 +130,33 @@ jobs:
             frontend:
               - 'frontend/**'
               - '!**/*.md'
+            # Deploy-only variants. The `backend`/`frontend` filters above gate
+            # the TEST jobs, where a test-only change must count as a change.
+            # The deploy jobs need the opposite: editing a test cannot alter the
+            # shipped artifact, so deploying a new Cloud Run revision for it is
+            # pure churn. paths-filter matches on path alone and cannot tell a
+            # test from source, so the distinction has to be spelled out here --
+            # the same class of problem the paths-ignore note above documents
+            # for markdown, one level down.
+            #
+            # Do NOT gate a deploy job on `backend`/`frontend`; use these.
+            # Negations compose fine under 'every'; only the single positive
+            # pattern is constrained.
+            backend-deploy:
+              - 'backend/**'
+              - '!**/*.md'
+              - '!**/*.test.*'
+              - '!backend/integration/**'
+              - '!backend/jest*.js'
+              - '!backend/.env.test'
+            frontend-deploy:
+              - 'frontend/**'
+              - '!**/*.md'
+              - '!**/*.test.*'
+              - '!frontend/e2e/**'
+              - '!frontend/jest*'
+              - '!frontend/playwright*.config.ts'
+              - '!frontend/.env.test'
             mobile:
               - 'mobile/**'
               - '!**/*.md'
@@ -612,7 +641,9 @@ jobs:
     name: Deploy Backend to GCP
     runs-on: ubuntu-latest
     needs: [detect-changes, run-migrations-gcp]
-    # Deploy when backend, db, or shared changed (migrations may be skipped if no db changes)
+    # Deploy when backend source, db, or shared changed (migrations may be
+    # skipped if no db changes). Uses backend-deploy, NOT backend, so that a
+    # test-only change does not ship a new revision -- see the filter comments.
     if: |
       github.ref == 'refs/heads/master' &&
       github.event_name == 'push' &&
@@ -620,7 +651,7 @@ jobs:
       !failure() &&
       !cancelled() &&
       (
-        needs.detect-changes.outputs.backend == 'true' ||
+        needs.detect-changes.outputs.backend-deploy == 'true' ||
         needs.detect-changes.outputs.db == 'true' ||
         needs.detect-changes.outputs.shared == 'true'
       )
@@ -677,7 +708,9 @@ jobs:
     name: Deploy Frontend to GCP
     runs-on: ubuntu-latest
     needs: [detect-changes, run-migrations-gcp]
-    # Deploy when frontend or shared changed (migrations may be skipped if no db changes)
+    # Deploy when frontend source or shared changed (migrations may be skipped
+    # if no db changes). Uses frontend-deploy, NOT frontend, so that a test-only
+    # change does not ship a new revision -- see the filter comments.
     if: |
       github.ref == 'refs/heads/master' &&
       github.event_name == 'push' &&
@@ -685,7 +718,7 @@ jobs:
       !failure() &&
       !cancelled() &&
       (
-        needs.detect-changes.outputs.frontend == 'true' ||
+        needs.detect-changes.outputs.frontend-deploy == 'true' ||
         needs.detect-changes.outputs.shared == 'true'
       )
 
