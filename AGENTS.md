@@ -12,6 +12,12 @@ bd close <id>         # Complete work
 bd sync               # Sync with git
 ```
 
+## Git Workflow: Trunk-Based Development
+
+This project uses **trunk-based development**. Work directly on `master` in
+`/Users/afw/github/habitcraft` and commit there in small increments. Do NOT create
+feature branches or git worktrees for routine work. See CLAUDE.md for details.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.

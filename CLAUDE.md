@@ -5,24 +5,20 @@
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
 - See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
 
-## Git Worktree Workflow
+## Git Workflow: Trunk-Based Development
 
-This project uses **git worktrees**. The main branch is `master` (not `main`).
+This project uses **trunk-based development**. The trunk is `master` (not `main`).
 
-| Location | Branch | Purpose |
-|----------|--------|---------|
-| `/Users/afw/github/habitcraft` | `master` | Main worktree - merges and pushes happen here |
-| `/Users/afw/github/habitcraft-*` | feature branches | Ephemeral worktrees for development |
-
-**CRITICAL: Never run `git checkout main` or `git checkout master` from a feature worktree.** This can create a divergent local branch. Instead, merge via the main worktree:
+- Work directly in `/Users/afw/github/habitcraft` on `master`.
+- Commit straight to `master` in small, focused increments (see Development Principles).
+- **Do NOT create feature branches or git worktrees** for routine work. Committing on `master` is expected here — the general "branch before committing on the default branch" default does **not** apply to this repo.
+- Pull before you push (`git pull --rebase`) and push frequently to keep the trunk current.
+- Use a short-lived branch **only** when a change genuinely needs an isolated PR/CI run, and merge it back to `master` quickly.
 
 ```bash
-# From feature worktree: commit your changes
+# Normal flow: commit and push on master
 git add <files> && git commit -m "..."
-
-# Go to main worktree to merge (don't checkout!)
-cd /Users/afw/github/habitcraft
-git merge <feature-branch-name>
+git pull --rebase
 git push
 ```
 
