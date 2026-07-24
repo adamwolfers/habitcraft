@@ -1,6 +1,6 @@
 import React from 'react';
 import { renderHook, waitFor, act } from '@testing-library/react-native';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, notifyManager } from '@tanstack/react-query';
 import Toast from 'react-native-toast-message';
 import {
   useHabits,
@@ -74,10 +74,23 @@ function createTestQueryClient() {
     defaultOptions: {
       queries: {
         retry: false,
-        gcTime: 0,
+        // gcTime must not be 0: several tests read getQueryData(['habits'])
+        // after a mutation without ever mounting an observer for that key. With
+        // gcTime: 0 the observer-less entry is scheduled for garbage collection
+        // on a setTimeout(0) that races the synchronous cache read, so the
+        // assertion intermittently (deterministically under --detectOpenHandles)
+        // sees undefined. Each test builds its own client, so a long-lived cache
+        // does not leak across tests.
+        gcTime: Infinity,
       },
       mutations: {
         retry: false,
+        // Mutations default to a 5-minute gcTime. After each mutation hook
+        // unmounts (via RNTL auto-cleanup) the settled mutation schedules its
+        // removal with setTimeout(300000), and those timers keep Jest's event
+        // loop alive long after the tests finish. gcTime: 0 removes settled
+        // mutations promptly so the process exits cleanly.
+        gcTime: 0,
       },
     },
   });
@@ -98,6 +111,15 @@ function createWrapperWithClient() {
 }
 
 describe('useHabits', () => {
+  beforeAll(() => {
+    // Flush React Query notifications synchronously in tests. By default the
+    // notifyManager batches via setTimeout(cb, 0), which fires AFTER the test's
+    // component tree is gone — producing out-of-act warnings and a leaked timer
+    // that keeps Jest from exiting. A synchronous scheduler makes notifies run
+    // inside the triggering act()/waitFor.
+    notifyManager.setScheduler((cb) => cb());
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockNetworkStatus.isOnline.mockResolvedValue(true);
