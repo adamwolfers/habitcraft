@@ -404,10 +404,12 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
           READMEs inside package directories match the package filters
     - [x] `scripts/verify-ci-filters.js` verifies the filter block on every change to
           it or to `scripts/**` (`verify-ci-filters` job). Parses the live filters,
-          quantifier, and `paths-ignore` from `ci.yml`, evaluates them with picomatch,
-          and asserts a case table, no dead filters, no tracked file that triggers
-          CI while matching zero filters, and no deploy job gated on a test-inclusive
-          filter (habitcraft-tcn, habitcraft-2db). See
+          quantifier, and both triggers' `paths-ignore` from `ci.yml`, evaluates them
+          with picomatch, and asserts a case table, no dead filters, no tracked file
+          that triggers CI while matching zero filters, no deploy job gated on a
+          test-inclusive filter, and that the `push` and `pull_request`
+          `paths-ignore` lists stay identical
+          (habitcraft-tcn, habitcraft-2db, habitcraft-8mn). See
           [docs/TESTING.md](docs/TESTING.md#ci-path-filter-verification)
     - [ ] Add workflow summary output showing which services will deploy
   - [x] **E2E Test Container Optimization**

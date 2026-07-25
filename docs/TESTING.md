@@ -26,10 +26,10 @@ npm run verify:ci-filters      # from the repo root
 node scripts/verify-ci-filters.js [path/to/ci.yml]
 ```
 
-It parses the live `filters: |` block, the `predicate-quantifier`, the push
-trigger's `paths-ignore`, and the job gates out of `ci.yml` (rather than
-duplicating them, which would drift), evaluates patterns with picomatch — the
-library `dorny/paths-filter` uses — and asserts four things:
+It parses the live `filters: |` block, the `predicate-quantifier`, the `push` and
+`pull_request` triggers' `paths-ignore` lists, and the job gates out of `ci.yml`
+(rather than duplicating them, which would drift), evaluates patterns with
+picomatch — the library `dorny/paths-filter` uses — and asserts five things:
 
 1. A table of representative files yields the expected trigger decision and the
    expected set of true filter outputs.
@@ -41,6 +41,13 @@ library `dorny/paths-filter` uses — and asserts four things:
    every filter their `if:` reads is checked against the tracked test files. A
    deploy gated on a test-inclusive filter means a test-only commit ships a
    revision identical to the previous one (habitcraft-irq, -2db, -688).
+5. The `push` and `pull_request` triggers declare identical `paths-ignore` lists,
+   as the comment on the `pull_request` copy claims. Checks 1–4 evaluate the
+   `push` list, so a path dropped from only the `pull_request` copy would leave
+   them all passing while PRs fired the workflow for files `push` ignores
+   (habitcraft-8mn). Only `paths-ignore` is compared — `push` also carries
+   `branches: ['**']` and `tags: ['mobile-v*']` where `pull_request` carries
+   `branches: [main, master]`, and that asymmetry is intentional.
 
 Runs in CI as the `verify-ci-filters` job, gated on the `tooling` and `workflow`
 filters — so it gates both itself and the config it checks.

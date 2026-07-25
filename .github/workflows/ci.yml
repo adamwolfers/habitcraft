@@ -63,7 +63,8 @@ on:
       - '.github/workflows/link-check.yml'
   pull_request:
     branches: [main, master]
-    # Keep in sync with the push trigger above; see the rationale there.
+    # Kept in sync with the push trigger above (enforced by
+    # scripts/verify-ci-filters.js); see the rationale there.
     paths-ignore:
       - '**/*.md'
       - '.beads/**'

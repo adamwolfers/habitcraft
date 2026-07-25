@@ -16,9 +16,12 @@
  *   3. No tracked file triggers the workflow while matching zero filters.
  *   4. No job that builds or ships an artifact is gated on a filter that a test
  *      file can satisfy -- otherwise a test-only commit deploys to production.
+ *   5. The push and pull_request triggers declare identical paths-ignore lists,
+ *      as the comment on the pull_request copy claims. Only paths-ignore: the
+ *      two triggers' branches/tags keys are deliberately different.
  *
- * How it works: the live `filters: |` block, the `predicate-quantifier`, the
- * push trigger's `paths-ignore` list and the job gates are parsed out of ci.yml
+ * How it works: the live `filters: |` block, the `predicate-quantifier`, both
+ * triggers' `paths-ignore` lists and the job gates are parsed out of ci.yml
  * itself, so this tests the real config rather than a copy that can drift.
  * Patterns are evaluated with picomatch (the library dorny/paths-filter uses)
  * with { dot: true }, and per-pattern results are combined with .every() or
@@ -201,24 +204,28 @@ function unquote(value) {
   return quoted ? quoted[1] : trimmed;
 }
 
-/** The `paths-ignore:` list inside the `push:` trigger. */
-function parsePathsIgnore(lines) {
-  const pushIndex = lines.findIndex((l) => /^ {2}push:\s*$/.test(l));
-  if (pushIndex === -1) fail("Could not find the 'push:' trigger");
+/** The `paths-ignore:` list inside the named trigger ('push' | 'pull_request'). */
+function parsePathsIgnore(lines, trigger) {
+  const triggerIndex = lines.findIndex((l) =>
+    new RegExp(`^ {2}${trigger}:\\s*$`).test(l)
+  );
+  if (triggerIndex === -1) fail(`Could not find the '${trigger}:' trigger`);
 
-  const pushBlock = blockAfter(lines, pushIndex);
-  const ignoreIndex = pushBlock.findIndex((l) => /^\s*paths-ignore:\s*$/.test(l));
-  if (ignoreIndex === -1) fail("Could not find 'paths-ignore:' under the push trigger");
+  const triggerBlock = blockAfter(lines, triggerIndex);
+  const ignoreIndex = triggerBlock.findIndex((l) => /^\s*paths-ignore:\s*$/.test(l));
+  if (ignoreIndex === -1) {
+    fail(`Could not find 'paths-ignore:' under the ${trigger} trigger`);
+  }
 
-  const patterns = blockAfter(pushBlock, ignoreIndex)
+  const patterns = blockAfter(triggerBlock, ignoreIndex)
     .filter((l) => indentOf(l) !== null)
     .map((l) => {
       const item = /^\s*-\s+(.*)$/.exec(l);
-      if (!item) fail(`Unparsable paths-ignore entry: ${l}`);
+      if (!item) fail(`Unparsable ${trigger} paths-ignore entry: ${l}`);
       return unquote(item[1]);
     });
 
-  if (patterns.length === 0) fail('paths-ignore list parsed as empty');
+  if (patterns.length === 0) fail(`${trigger} paths-ignore list parsed as empty`);
   return patterns;
 }
 
@@ -350,7 +357,8 @@ function main() {
   const lines = text.split('\n');
 
   const config = {
-    pathsIgnore: parsePathsIgnore(lines),
+    pathsIgnore: parsePathsIgnore(lines, 'push'),
+    pullRequestPathsIgnore: parsePathsIgnore(lines, 'pull_request'),
     quantifier: parseQuantifier(text),
     filters: parseFilters(lines),
   };
@@ -360,7 +368,10 @@ function main() {
   console.log(`Parsed ${path.relative(REPO_ROOT, WORKFLOW_PATH)}:`);
   console.log(`  predicate-quantifier: ${config.quantifier}`);
   console.log(`  filters: ${filterNames.join(', ')}`);
-  console.log(`  paths-ignore entries: ${config.pathsIgnore.length}`);
+  console.log(
+    `  paths-ignore entries: ${config.pathsIgnore.length} (push), ` +
+      `${config.pullRequestPathsIgnore.length} (pull_request)`
+  );
   console.log('');
 
   // 1. Case table.
@@ -458,6 +469,37 @@ function main() {
   }
   console.log(
     `Checked ${deployJobs.length} deploy job(s) against ${testFiles.length} test files.`
+  );
+
+  // 5. The two triggers' paths-ignore lists agree.
+  //
+  // Only paths-ignore is claimed to be in sync -- push also carries
+  // branches ['**'] and tags ['mobile-v*'] where pull_request carries
+  // branches [main, master], and that asymmetry is intentional.
+  //
+  // Everything above evaluates the push list; a path dropped from only the
+  // pull_request copy would leave every check passing while PRs fire the
+  // workflow (or skip it) for files the push trigger treats the other way.
+  const pushOnly = config.pathsIgnore.filter(
+    (pattern) => !config.pullRequestPathsIgnore.includes(pattern)
+  );
+  const pullRequestOnly = config.pullRequestPathsIgnore.filter(
+    (pattern) => !config.pathsIgnore.includes(pattern)
+  );
+  check(
+    pushOnly.length === 0 && pullRequestOnly.length === 0,
+    `the push and pull_request triggers declare different paths-ignore lists, ` +
+      `but the pull_request copy claims to be in sync with push:` +
+      (pushOnly.length > 0 ? `\n    push only: ${pushOnly.join(', ')}` : '') +
+      (pullRequestOnly.length > 0
+        ? `\n    pull_request only: ${pullRequestOnly.join(', ')}`
+        : '') +
+      `\n    Add the missing entr(ies) to the other trigger. Only paths-ignore ` +
+      `must match -- the branches/tags difference is deliberate.`
+  );
+  console.log(
+    `Checked push and pull_request paths-ignore for drift ` +
+      `(${config.pathsIgnore.length} entries).`
   );
   console.log('');
 
