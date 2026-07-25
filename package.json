@@ -1,8 +1,10 @@
 {
   "devDependencies": {
-    "husky": "^9.1.7"
+    "husky": "^9.1.7",
+    "picomatch": "4.0.5"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "verify:ci-filters": "node scripts/verify-ci-filters.js"
   }
 }
