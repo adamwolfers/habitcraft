@@ -1,6 +1,8 @@
-# Run bd (beads) pre-commit hook for issue tracking sync
+# Run bd (beads) pre-commit hook for issue tracking sync.
+# `bd hook <name>` was renamed to `bd hooks run <name>` in bd 1.1.0; the old
+# form now exits non-zero and aborts every commit.
 if command -v bd >/dev/null 2>&1; then
-  bd hook pre-commit
+  bd hooks run pre-commit
 fi
 
 # Dispatch pre-commit linting/formatting to each package's own lint-staged.
