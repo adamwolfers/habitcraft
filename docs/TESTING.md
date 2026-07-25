@@ -26,16 +26,21 @@ npm run verify:ci-filters      # from the repo root
 node scripts/verify-ci-filters.js [path/to/ci.yml]
 ```
 
-It parses the live `filters: |` block, the `predicate-quantifier`, and the push
-trigger's `paths-ignore` out of `ci.yml` (rather than duplicating them, which
-would drift), evaluates patterns with picomatch — the library
-`dorny/paths-filter` uses — and asserts three things:
+It parses the live `filters: |` block, the `predicate-quantifier`, the push
+trigger's `paths-ignore`, and the job gates out of `ci.yml` (rather than
+duplicating them, which would drift), evaluates patterns with picomatch — the
+library `dorny/paths-filter` uses — and asserts four things:
 
 1. A table of representative files yields the expected trigger decision and the
    expected set of true filter outputs.
 2. No filter is dead: every filter matches at least one case.
 3. No tracked file triggers the workflow while matching zero filters
    (`git ls-files` sweep).
+4. No deploy job is gated on a filter that a test file can satisfy. Jobs that
+   build, push or submit an artifact are detected from their own bodies, and
+   every filter their `if:` reads is checked against the tracked test files. A
+   deploy gated on a test-inclusive filter means a test-only commit ships a
+   revision identical to the previous one (habitcraft-irq, -2db, -688).
 
 Runs in CI as the `verify-ci-filters` job, gated on the `tooling` and `workflow`
 filters — so it gates both itself and the config it checks.
