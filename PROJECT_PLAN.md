@@ -397,9 +397,13 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
           test-only change no longer ships a Cloud Run revision (habitcraft-irq).
     - [x] Markdown/docs excluded at the trigger level via `paths-ignore`, because
           READMEs inside package directories match the package filters
+    - [x] `scripts/verify-ci-filters.js` verifies the filter block on every change to
+          it or to `scripts/**` (`verify-ci-filters` job). Parses the live filters,
+          quantifier, and `paths-ignore` from `ci.yml`, evaluates them with picomatch,
+          and asserts a case table, no dead filters, and no tracked file that triggers
+          CI while matching zero filters (habitcraft-tcn). See
+          [docs/TESTING.md](docs/TESTING.md#ci-path-filter-verification)
     - [ ] Add workflow summary output showing which services will deploy
-    - [ ] Commit the picomatch verification harness as `scripts/verify-ci-filters.js`
-          (habitcraft-tcn) — the filter block has no automated coverage today
   - [x] **E2E Test Container Optimization**
     - Docker BuildKit layer caching with GHA cache backend (31% faster: 240s → 166s)
     - Local development: `scripts/test-all.sh` with `--rebuild` flag, auto-detection of dependency changes

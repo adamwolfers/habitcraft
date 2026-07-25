@@ -11,6 +11,38 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
+| CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
+
+### CI Path Filter Verification
+
+The `detect-changes` filter block in `.github/workflows/ci.yml` decides which
+jobs run. Its defects are invisible on inspection and never fail loudly — a
+filter that matches nothing, or a file that triggers the workflow while matching
+no filter, both produce a green run that tested nothing. Two such defects
+shipped before this check existed.
+
+```bash
+npm run verify:ci-filters      # from the repo root
+node scripts/verify-ci-filters.js [path/to/ci.yml]
+```
+
+It parses the live `filters: |` block, the `predicate-quantifier`, and the push
+trigger's `paths-ignore` out of `ci.yml` (rather than duplicating them, which
+would drift), evaluates patterns with picomatch — the library
+`dorny/paths-filter` uses — and asserts three things:
+
+1. A table of representative files yields the expected trigger decision and the
+   expected set of true filter outputs.
+2. No filter is dead: every filter matches at least one case.
+3. No tracked file triggers the workflow while matching zero filters
+   (`git ls-files` sweep).
+
+Runs in CI as the `verify-ci-filters` job, gated on the `tooling` and `workflow`
+filters — so it gates both itself and the config it checks.
+
+**Limitation:** this verifies *pattern semantics* only. It cannot exercise
+GitHub's own `paths-ignore` evaluation or the action's git diff behaviour, so it
+complements a real push rather than replacing one.
 
 ### Doc Link Checking
 
