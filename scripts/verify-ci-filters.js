@@ -14,13 +14,15 @@
  *      and the expected set of true filter outputs.
  *   2. No filter is dead -- every filter is matched by at least one case.
  *   3. No tracked file triggers the workflow while matching zero filters.
+ *   4. No job that builds or ships an artifact is gated on a filter that a test
+ *      file can satisfy -- otherwise a test-only commit deploys to production.
  *
- * How it works: the live `filters: |` block, the `predicate-quantifier`, and
- * the push trigger's `paths-ignore` list are parsed out of ci.yml itself, so
- * this tests the real config rather than a copy that can drift. Patterns are
- * evaluated with picomatch (the library dorny/paths-filter uses) with
- * { dot: true }, and per-pattern results are combined with .every() or .some()
- * to mirror the action's own predicate-quantifier handling.
+ * How it works: the live `filters: |` block, the `predicate-quantifier`, the
+ * push trigger's `paths-ignore` list and the job gates are parsed out of ci.yml
+ * itself, so this tests the real config rather than a copy that can drift.
+ * Patterns are evaluated with picomatch (the library dorny/paths-filter uses)
+ * with { dot: true }, and per-pattern results are combined with .every() or
+ * .some() to mirror the action's own predicate-quantifier handling.
  *
  * Scope: this verifies PATTERN SEMANTICS only. It cannot verify GitHub's own
  * paths-ignore evaluation or the action's git diff behaviour, so it
@@ -61,8 +63,14 @@ const CASES = [
   ['frontend/playwright.config.ts', true, ['frontend']],
   ['frontend/.env.test', true, ['frontend']],
 
+  // --- Mobile: same split as backend/frontend -------------------------------
+  ['mobile/app/index.tsx', true, ['mobile', 'mobile-deploy']],
+  ['mobile/src/hooks/useHabits.test.ts', true, ['mobile']],
+  ['mobile/e2e/tests/auth.test.ts', true, ['mobile']],
+  ['mobile/e2e/config/testSetup.ts', true, ['mobile']], // not a *.test.* file
+  ['mobile/jest.setup.js', true, ['mobile']],
+
   // --- Other packages -------------------------------------------------------
-  ['mobile/app/index.tsx', true, ['mobile']],
   ['db/migrations/20250101000000_init.sql', true, ['db']],
   ['shared/database/test-fixtures.sql', true, ['shared']],
   ['shared/types/habit.ts', true, ['shared']],
@@ -115,6 +123,46 @@ const CASES = [
   ['LICENSE', false, []],
   ['.gitignore', false, []],
   ['docker-compose.override.yml.example', false, []],
+];
+
+// ---------------------------------------------------------------------------
+// Deploy-gate safety (check 4)
+//
+// A filter is "deploy-unsafe" if some tracked TEST file matches it: gating a
+// job that builds or ships an artifact on such a filter means a commit touching
+// only tests produces a new production revision that cannot differ from the
+// previous one. This is derived from the working tree rather than declared, so
+// adding a test file under a path no deploy filter excludes fails the check.
+//
+// The patterns below are the definition of "test file" for that sweep. A
+// convention missing here makes the check under-report, so extend it when a new
+// test layout appears.
+// ---------------------------------------------------------------------------
+const TEST_FILE_PATTERNS = [
+  '**/*.test.*',
+  '**/*.spec.*',
+  '**/__tests__/**',
+  '**/__mocks__/**',
+  'backend/integration/**',
+  'frontend/e2e/**',
+  'mobile/e2e/**',
+  '**/jest*',
+  '**/playwright*.config.ts',
+  '**/.env.test',
+  'shared/database/test-fixtures.sql',
+];
+
+// A job is a deploy job if it builds, pushes or submits an artifact. Detected
+// from the job body rather than listed, so a new deploy job is covered the day
+// it lands; EXPECTED_DEPLOY_JOBS then guards against a marker going stale and
+// silently emptying the set.
+const DEPLOY_MARKERS = /docker push|gcloud run deploy|eas-cli (build|submit)/;
+const EXPECTED_DEPLOY_JOBS = [
+  'run-migrations-gcp',
+  'deploy-backend-gcp',
+  'deploy-frontend-gcp',
+  'build-mobile-preview',
+  'build-mobile-production',
 ];
 
 // ---------------------------------------------------------------------------
@@ -216,6 +264,31 @@ function parseFilters(lines) {
     if (patterns.length === 0) fail(`Filter '${name}' has no patterns`);
   }
   return filters;
+}
+
+/** Top-level jobs as { name: body-text }. */
+function parseJobs(lines) {
+  const jobsIndex = lines.findIndex((l) => /^jobs:\s*$/.test(l));
+  if (jobsIndex === -1) fail("Could not find the 'jobs:' block");
+
+  const jobsBlock = blockAfter(lines, jobsIndex);
+  const jobs = new Map();
+  for (let i = 0; i < jobsBlock.length; i++) {
+    const header = /^ {2}([A-Za-z0-9_-]+):\s*$/.exec(jobsBlock[i]);
+    if (header) jobs.set(header[1], blockAfter(jobsBlock, i).join('\n'));
+  }
+
+  if (jobs.size === 0) fail('jobs block parsed as empty');
+  return jobs;
+}
+
+/** Filter outputs a job's `if:` expression reads, e.g. ['backend', 'shared']. */
+function gateFilters(jobBody) {
+  const names = new Set();
+  const reference = /needs\.detect-changes\.outputs\.([A-Za-z0-9_-]+)/g;
+  let match;
+  while ((match = reference.exec(jobBody)) !== null) names.add(match[1]);
+  return [...names];
 }
 
 // ---------------------------------------------------------------------------
@@ -341,6 +414,51 @@ function main() {
       (orphans.length > 20 ? `\n    ... and ${orphans.length - 20} more` : '')
   );
   console.log(`Swept ${tracked.length} tracked files for no-op triggers.`);
+
+  // 4. No deploy job is gated on a filter that a test file can satisfy.
+  const testFiles = tracked.filter((file) =>
+    TEST_FILE_PATTERNS.some((pattern) => matches(pattern, file))
+  );
+  check(
+    testFiles.length >= 20,
+    `only ${testFiles.length} tracked files matched TEST_FILE_PATTERNS -- the ` +
+      `deploy-gate check is near-vacuous. Did the test layout move?`
+  );
+
+  // filter -> an example test file proving it is deploy-unsafe.
+  const unsafeFilters = new Map();
+  for (const file of testFiles) {
+    for (const name of evaluator.filtersFor(file)) {
+      if (!unsafeFilters.has(name)) unsafeFilters.set(name, file);
+    }
+  }
+
+  const jobs = parseJobs(lines);
+  const deployJobs = [...jobs].filter(([, body]) => DEPLOY_MARKERS.test(body));
+  for (const name of EXPECTED_DEPLOY_JOBS) {
+    check(
+      deployJobs.some(([job]) => job === name),
+      `job '${name}' was not detected as a deploy job -- it was renamed, removed, ` +
+        `or DEPLOY_MARKERS no longer matches how it ships. Deploy gates for it ` +
+        `are going unchecked.`
+    );
+  }
+
+  for (const [job, body] of deployJobs) {
+    for (const name of gateFilters(body)) {
+      check(
+        !unsafeFilters.has(name),
+        `deploy job '${job}' is gated on filter '${name}', which matches the test ` +
+          `file '${unsafeFilters.get(name)}'. A commit touching only tests would ` +
+          `ship a new revision identical to the last one. Gate it on a *-deploy ` +
+          `filter that subtracts test paths, or drop the filter if it cannot ` +
+          `affect the artifact.`
+      );
+    }
+  }
+  console.log(
+    `Checked ${deployJobs.length} deploy job(s) against ${testFiles.length} test files.`
+  );
   console.log('');
 
   if (failures.length > 0) {

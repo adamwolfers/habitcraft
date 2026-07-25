@@ -391,17 +391,23 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
           `@(a|b|c)`. Semantics verified against picomatch 4.0.5.
     - [x] Test filters: `backend`, `frontend`, `mobile`, `db`, `shared`, `e2e-infra`,
           `tooling`, `workflow` — each `<dir>/**` minus `!**/*.md`
-    - [x] Separate deploy filters `backend-deploy` / `frontend-deploy` subtract test
-          paths (`*.test.*`, `integration/`, `e2e/`, jest + playwright configs,
-          `.env.test`). Test jobs use the test filters; deploy jobs use these, so a
-          test-only change no longer ships a Cloud Run revision (habitcraft-irq).
+    - [x] Separate deploy filters `backend-deploy` / `frontend-deploy` / `mobile-deploy`
+          subtract test paths (`*.test.*`, `integration/`, `e2e/`, jest + playwright
+          configs, `.env.test`). Test jobs use the test filters; deploy jobs use these,
+          so a test-only change no longer ships a Cloud Run revision or an EAS preview
+          build (habitcraft-irq, habitcraft-688).
+    - [x] Deploy jobs are NOT gated on `shared`: the production images build with
+          context `./backend` and `./frontend`, so `shared/` is outside both build
+          contexts and nothing imports it. `db` needs no deploy variant — every path
+          under it ships in the migrations image (habitcraft-2db).
     - [x] Markdown/docs excluded at the trigger level via `paths-ignore`, because
           READMEs inside package directories match the package filters
     - [x] `scripts/verify-ci-filters.js` verifies the filter block on every change to
           it or to `scripts/**` (`verify-ci-filters` job). Parses the live filters,
           quantifier, and `paths-ignore` from `ci.yml`, evaluates them with picomatch,
-          and asserts a case table, no dead filters, and no tracked file that triggers
-          CI while matching zero filters (habitcraft-tcn). See
+          and asserts a case table, no dead filters, no tracked file that triggers
+          CI while matching zero filters, and no deploy job gated on a test-inclusive
+          filter (habitcraft-tcn, habitcraft-2db). See
           [docs/TESTING.md](docs/TESTING.md#ci-path-filter-verification)
     - [ ] Add workflow summary output showing which services will deploy
   - [x] **E2E Test Container Optimization**
