@@ -82,7 +82,7 @@ Implement full change password functionality:
 ### Frontend Steps (TDD)
 
 #### Step 1: Password Validation Utility ✅
-**Files:** `frontends/nextjs/utils/authUtils.ts`, `frontends/nextjs/utils/authUtils.test.ts`
+**Files:** `frontend/utils/authUtils.ts`, `frontend/utils/authUtils.test.ts`
 
 ##### 1a. Write tests first
 - [x] Test: returns null for valid password change data
@@ -96,7 +96,7 @@ Implement full change password functionality:
 ---
 
 #### Step 2: API Client Method ✅
-**Files:** `frontends/nextjs/lib/api.ts`, `frontends/nextjs/lib/api.test.ts`
+**Files:** `frontend/lib/api.ts`, `frontend/lib/api.test.ts`
 
 ##### 2a. Write tests first
 - [x] Test: calls PUT /users/me/password with correct payload
@@ -110,7 +110,7 @@ Implement full change password functionality:
 ---
 
 #### Step 3: ProfileModal Password Fields Rendering ✅
-**Files:** `frontends/nextjs/components/ProfileModal.tsx`, `frontends/nextjs/components/ProfileModal.test.tsx`
+**Files:** `frontend/components/ProfileModal.tsx`, `frontend/components/ProfileModal.test.tsx`
 
 ##### 3a. Write tests first
 - [x] Test: renders "Change Password" section heading
@@ -155,7 +155,7 @@ Implement full change password functionality:
 ---
 
 #### Step 6: E2E Tests ✅
-**File:** `frontends/nextjs/e2e/auth.spec.ts`
+**File:** `frontend/e2e/auth.spec.ts`
 
 ##### 6a. Write E2E tests
 - [x] Test: user can change password successfully
@@ -196,13 +196,13 @@ Implement full change password functionality:
 ### Frontend (In Progress)
 | File | Changes |
 |------|---------|
-| `frontends/nextjs/utils/authUtils.ts` | Add `validatePasswordChange()` |
-| `frontends/nextjs/utils/authUtils.test.ts` | Add validation tests |
-| `frontends/nextjs/lib/api.ts` | Add `changePassword()` |
-| `frontends/nextjs/lib/api.test.ts` | Add API tests |
-| `frontends/nextjs/components/ProfileModal.tsx` | Add password change section |
-| `frontends/nextjs/components/ProfileModal.test.tsx` | Add component tests |
-| `frontends/nextjs/e2e/auth.spec.ts` | Add E2E tests for password change |
+| `frontend/utils/authUtils.ts` | Add `validatePasswordChange()` |
+| `frontend/utils/authUtils.test.ts` | Add validation tests |
+| `frontend/lib/api.ts` | Add `changePassword()` |
+| `frontend/lib/api.test.ts` | Add API tests |
+| `frontend/components/ProfileModal.tsx` | Add password change section |
+| `frontend/components/ProfileModal.test.tsx` | Add component tests |
+| `frontend/e2e/auth.spec.ts` | Add E2E tests for password change |
 | `PROJECT_PLAN.md` | Check off completed items |
 
 ---

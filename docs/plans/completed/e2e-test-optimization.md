@@ -86,7 +86,7 @@ e2e-tests:
     # ... existing setup steps ...
 
     - name: Run E2E tests (shard ${{ matrix.shard }}/4)
-      working-directory: frontends/nextjs
+      working-directory: frontend
       run: npx playwright test --shard=${{ matrix.shard }}/4 --reporter=blob
 
     - name: Upload blob report (shard ${{ matrix.shard }})
@@ -94,7 +94,7 @@ e2e-tests:
       if: always()
       with:
         name: blob-report-shard-${{ matrix.shard }}
-        path: frontends/nextjs/blob-report/
+        path: frontend/blob-report/
         retention-days: 1
 ```
 
@@ -112,7 +112,7 @@ e2e-merge-reports:
       with:
         node-version: '20'
     - name: Install Playwright
-      working-directory: frontends/nextjs
+      working-directory: frontend
       run: npm install @playwright/test
     - name: Download all blob reports
       uses: actions/download-artifact@v4
@@ -121,20 +121,20 @@ e2e-merge-reports:
         path: all-blob-reports
         merge-multiple: true
     - name: Merge reports
-      working-directory: frontends/nextjs
+      working-directory: frontend
       run: npx playwright merge-reports --reporter html ../../all-blob-reports
     - name: Upload merged report
       uses: actions/upload-artifact@v4
       with:
         name: playwright-report
-        path: frontends/nextjs/playwright-report/
+        path: frontend/playwright-report/
         retention-days: 7
 ```
 
 #### Files to Modify
 
 1. `.github/workflows/ci.yml` - Add matrix strategy and merge job
-2. `frontends/nextjs/playwright.config.ts` - Update workers to 2 in CI
+2. `frontend/playwright.config.ts` - Update workers to 2 in CI
 3. `.gitignore` - Add `blob-report/`
 
 #### Verify Before Merging
@@ -147,7 +147,7 @@ e2e-merge-reports:
 
 2. Confirm test distribution (all tests run exactly once):
    ```bash
-   cd frontends/nextjs
+   cd frontend
    for shard in 1 2 3 4; do
        echo "=== Shard $shard/4 ==="
        npx playwright test --list --shard=$shard/4 2>/dev/null | grep -c "test" || echo "0"
@@ -184,7 +184,7 @@ The current `global-setup.ts` resets the test database before each test run. Whe
 Modify `global-setup.ts` to skip DB reset when `SKIP_E2E_SETUP=1` environment variable is set:
 
 ```ts
-// frontends/nextjs/e2e/global-setup.ts
+// frontend/e2e/global-setup.ts
 async function globalSetup() {
   console.log('\n🚀 Setting up E2E tests...\n');
   const projectRoot = resolve(__dirname, '../../..');
@@ -218,14 +218,14 @@ async function globalSetup() {
 # 4. E2E Tests (parallel shards)
 echo "🌐 [4/4] End-to-End Tests (4 parallel shards)"
 echo "----------------------------------------------"
-cd "$PROJECT_ROOT/frontends/nextjs"
+cd "$PROJECT_ROOT/frontend"
 
 # Reset database once before running shards
 echo "  Resetting test database..."
 "$PROJECT_ROOT/scripts/test-db-reset.sh" > /dev/null 2>&1
 
 # Create temp directory for shard logs
-E2E_LOG_DIR="$PROJECT_ROOT/frontends/nextjs/.e2e-shard-logs"
+E2E_LOG_DIR="$PROJECT_ROOT/frontend/.e2e-shard-logs"
 mkdir -p "$E2E_LOG_DIR"
 
 # Disable set -e for parallel section (exit codes handled manually)
@@ -295,7 +295,7 @@ fi
 
 #### Files to Modify
 
-1. `frontends/nextjs/e2e/global-setup.ts` - Add SKIP_E2E_SETUP check
+1. `frontend/e2e/global-setup.ts` - Add SKIP_E2E_SETUP check
 2. `scripts/test-all.sh` - Run parallel shards
 3. `.gitignore` - Add `.e2e-shard-logs/`
 
@@ -356,7 +356,7 @@ Currently, e2e-tests waits for backend-integration-tests before starting contain
 ### Baseline Metrics
 
 ```bash
-cd frontends/nextjs
+cd frontend
 
 # Time full test run
 time npx playwright test 2>&1 | tail -1

@@ -14,9 +14,9 @@ Add support for users to capture daily completion notes for each habit. This all
 The backend infrastructure already exists:
 
 1. **Database schema** (`shared/database/schema.sql:40-48`): The `completions` table has a `notes` column (TEXT, nullable)
-2. **TypeScript types** (`frontends/nextjs/types/habit.ts:15-20`): `Completion` interface includes `notes: string | null`
+2. **TypeScript types** (`frontend/types/habit.ts:15-20`): `Completion` interface includes `notes: string | null`
 3. **API endpoint** (`backend/routes/completions.js:41-99`): POST accepts optional `notes` in request body
-4. **API client** (`frontends/nextjs/lib/api.ts:205-231`): `createCompletion()` accepts optional `notes` parameter
+4. **API client** (`frontend/lib/api.ts:205-231`): `createCompletion()` accepts optional `notes` parameter
 
 **What's missing:** Frontend UI to capture, display, and edit notes.
 
@@ -44,7 +44,7 @@ Two UX options for capturing notes:
 ### Part 1: Note Modal Component
 
 #### Step 1: Create CompletionNoteModal Component Tests
-**Files:** `frontends/nextjs/components/CompletionNoteModal.test.tsx`
+**Files:** `frontend/components/CompletionNoteModal.test.tsx`
 
 - [x] Test: renders modal with habit name and date in header
 - [x] Test: renders textarea for note input
@@ -58,7 +58,7 @@ Two UX options for capturing notes:
 - [x] Test: limits note to 500 characters
 
 #### Step 2: Implement CompletionNoteModal Component
-**Files:** `frontends/nextjs/components/CompletionNoteModal.tsx`
+**Files:** `frontend/components/CompletionNoteModal.tsx`
 
 - [x] Create modal component with props: `habitName`, `date`, `existingNote`, `onSave`, `onClose`
 - [x] Add textarea with character count
@@ -90,7 +90,7 @@ Two UX options for capturing notes:
 - [x] Add PUT /habits/{habitId}/completions/{date} endpoint spec
 
 #### Step 4: Add API Client Method for Updating Notes
-**Files:** `frontends/nextjs/lib/api.ts`, `frontends/nextjs/lib/api.test.ts`
+**Files:** `frontend/lib/api.ts`, `frontend/lib/api.test.ts`
 
 ##### 4a. Write API client tests
 - [x] Test: calls PUT with correct payload
@@ -105,7 +105,7 @@ Two UX options for capturing notes:
 ### Part 3: Integrate Notes into HabitCard
 
 #### Step 5: Add Note Indicator to HabitCard
-**Files:** `frontends/nextjs/components/HabitCard.tsx`, `frontends/nextjs/components/HabitCard.test.tsx`
+**Files:** `frontend/components/HabitCard.tsx`, `frontend/components/HabitCard.test.tsx`
 
 ##### 5a. Write tests
 - [x] Test: renders note icon for completed days
@@ -124,7 +124,7 @@ Two UX options for capturing notes:
 ### Part 4: Update useHabits Hook
 
 #### Step 6: Add Note Management to useHabits
-**Files:** `frontends/nextjs/hooks/useHabits.ts`, `frontends/nextjs/hooks/useHabits.test.ts`
+**Files:** `frontend/hooks/useHabits.ts`, `frontend/hooks/useHabits.test.ts`
 
 ##### 6a. Write tests
 - [x] Test: `saveNote` creates completion with note when not already complete
@@ -144,7 +144,7 @@ Two UX options for capturing notes:
 ### Part 5: Wire Up Dashboard
 
 #### Step 7: Integrate Modal into Dashboard
-**Files:** `frontends/nextjs/app/dashboard/page.tsx`, `frontends/nextjs/app/dashboard/page.test.tsx`
+**Files:** `frontend/app/dashboard/page.tsx`, `frontend/app/dashboard/page.test.tsx`
 
 ##### 7a. Write tests
 - [x] Test: opens note modal when onOpenNoteModal called
@@ -164,7 +164,7 @@ Two UX options for capturing notes:
 ### Part 6: E2E Tests
 
 #### Step 8: Add E2E Tests for Notes
-**Files:** `frontends/nextjs/e2e/completion-notes.spec.ts`
+**Files:** `frontend/e2e/completion-notes.spec.ts`
 
 - [x] Test: user can add a note to a completed habit
 - [x] Test: user can edit an existing note
@@ -193,9 +193,9 @@ Two UX options for capturing notes:
 ### New Files
 | File | Purpose |
 |------|---------|
-| `frontends/nextjs/components/CompletionNoteModal.tsx` | Modal component for adding/editing notes |
-| `frontends/nextjs/components/CompletionNoteModal.test.tsx` | Unit tests for modal |
-| `frontends/nextjs/e2e/completion-notes.spec.ts` | E2E tests for notes feature |
+| `frontend/components/CompletionNoteModal.tsx` | Modal component for adding/editing notes |
+| `frontend/components/CompletionNoteModal.test.tsx` | Unit tests for modal |
+| `frontend/e2e/completion-notes.spec.ts` | E2E tests for notes feature |
 
 ### Modified Files
 | File | Changes |
@@ -203,14 +203,14 @@ Two UX options for capturing notes:
 | `backend/routes/completions.js` | Add PUT endpoint for updating notes |
 | `backend/routes/completions.test.js` | Add tests for PUT endpoint |
 | `shared/api-spec/openapi.yaml` | Add PUT endpoint spec |
-| `frontends/nextjs/lib/api.ts` | Add `updateCompletionNote()` function |
-| `frontends/nextjs/lib/api.test.ts` | Add tests for new API function |
-| `frontends/nextjs/components/HabitCard.tsx` | Add note icon indicator |
-| `frontends/nextjs/components/HabitCard.test.tsx` | Add tests for note icon |
-| `frontends/nextjs/hooks/useHabits.ts` | Add note management methods |
-| `frontends/nextjs/hooks/useHabits.test.ts` | Add tests for note methods |
-| `frontends/nextjs/app/dashboard/page.tsx` | Wire up note modal |
-| `frontends/nextjs/app/dashboard/page.test.tsx` | Add tests for modal integration |
+| `frontend/lib/api.ts` | Add `updateCompletionNote()` function |
+| `frontend/lib/api.test.ts` | Add tests for new API function |
+| `frontend/components/HabitCard.tsx` | Add note icon indicator |
+| `frontend/components/HabitCard.test.tsx` | Add tests for note icon |
+| `frontend/hooks/useHabits.ts` | Add note management methods |
+| `frontend/hooks/useHabits.test.ts` | Add tests for note methods |
+| `frontend/app/dashboard/page.tsx` | Wire up note modal |
+| `frontend/app/dashboard/page.test.tsx` | Add tests for modal integration |
 
 ---
 
