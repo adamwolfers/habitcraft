@@ -219,16 +219,16 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3000
 
 ```bash
 # Build image
-docker build -t habitcraft-nextjs .
+docker build -t habitcraft-frontend .
 
 # Run container
 docker run -p 3100:3000 \
   -e NEXT_PUBLIC_API_BASE_URL=http://localhost:3000 \
-  habitcraft-nextjs
+  habitcraft-frontend
 
 # Or use docker-compose from root
 cd ..
-docker-compose up frontend-nextjs
+docker-compose up frontend
 ```
 
 ## Development Workflow

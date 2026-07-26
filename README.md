@@ -81,7 +81,7 @@ Create an account to get started.
 
 ```bash
 # Start all services (database + backend + frontend)
-docker-compose up postgres backend-node frontend-nextjs
+docker-compose up postgres backend frontend
 
 # Access the application:
 # - Frontend: http://localhost:3100

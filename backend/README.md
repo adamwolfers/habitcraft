@@ -207,7 +207,7 @@ docker run -p 3000:3000 \
 
 # Or use docker-compose from root
 cd ..
-docker-compose up backend-node
+docker-compose up backend
 ```
 
 ## Development Workflow

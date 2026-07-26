@@ -9,17 +9,17 @@
 #   docker buildx bake -f docker-compose.test.yml -f docker-bake.test.hcl --load
 
 group "default" {
-  targets = ["backend-node-test", "frontend-nextjs-test"]
+  targets = ["backend-test", "frontend-test"]
 }
 
-target "backend-node-test" {
+target "backend-test" {
   context = "."
   dockerfile = "./backend/Dockerfile.dev"
-  tags = ["habitcraft-backend-node-test:latest"]
+  tags = ["habitcraft-backend-test:latest"]
 }
 
-target "frontend-nextjs-test" {
+target "frontend-test" {
   context = "."
   dockerfile = "./frontend/Dockerfile.dev"
-  tags = ["habitcraft-frontend-nextjs-test:latest"]
+  tags = ["habitcraft-frontend-test:latest"]
 }

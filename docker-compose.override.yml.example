@@ -6,12 +6,12 @@
 # Production deployments should NOT include docker-compose.override.yml.
 
 services:
-  backend-node:
+  backend:
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
 
-  frontend-nextjs:
+  frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev

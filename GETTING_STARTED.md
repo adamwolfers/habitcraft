@@ -19,7 +19,7 @@ The easiest way to run HabitCraft is with Docker Compose, which starts all requi
 cp docker-compose.override.yml.example docker-compose.override.yml
 
 # Start services
-docker-compose up postgres backend-node frontend-nextjs
+docker-compose up postgres backend frontend
 
 # Access the application:
 # - Frontend: http://localhost:3100
@@ -182,14 +182,14 @@ npm install <package-name>
 
 # 3. Rebuild and restart containers
 cd ../..
-docker-compose up --build postgres backend-node frontend-nextjs
+docker-compose up --build postgres backend frontend
 ```
 
 **Option 2: Install directly in container (quick testing)**
 
 ```bash
 # Install package inside the running container
-docker-compose exec backend-node npm install <package-name>
+docker-compose exec backend npm install <package-name>
 
 # Note: This is temporary - package.json on host won't be updated
 # For permanent changes, use Option 1
@@ -202,11 +202,11 @@ docker-compose exec backend-node npm install <package-name>
 docker-compose ps
 
 # View container logs for errors
-docker-compose logs backend-node
+docker-compose logs backend
 
 # Force rebuild without cache
-docker-compose build --no-cache backend-node
-docker-compose up -d backend-node
+docker-compose build --no-cache backend
+docker-compose up -d backend
 ```
 
 ### Running Tests
@@ -304,7 +304,7 @@ curl http://localhost:3000/hello
 # Should return: {"message":"Hello World!"}
 
 # 4. If CORS issues persist, restart backend
-docker-compose restart backend-node
+docker-compose restart backend
 ```
 
 ### Working with Test Users
@@ -324,7 +324,7 @@ the services are up. This loads `shared/database/test-fixtures.sql`, the same fi
 
 To test the application:
 
-1. Start the services with Docker: `docker-compose up postgres backend-node frontend-nextjs`
+1. Start the services with Docker: `docker-compose up postgres backend frontend`
 2. Seed the database: `docker compose --profile seed run --rm db-seed`
 3. Open http://localhost:3100/login
 4. Login with either test user's credentials

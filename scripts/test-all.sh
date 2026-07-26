@@ -126,7 +126,7 @@ if [ "$FORCE_REBUILD" = true ]; then
     echo "Force rebuild requested - removing old containers and volumes..."
     docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
     echo "Removing old test images..."
-    docker rmi habitcraft-backend-node-test habitcraft-frontend-nextjs-test 2>/dev/null || true
+    docker rmi habitcraft-backend-test habitcraft-frontend-test 2>/dev/null || true
     echo "Building Docker containers (--no-cache for fresh dependencies)..."
     docker compose -f docker-compose.test.yml build --no-cache
     echo "Starting Docker containers..."
@@ -153,14 +153,14 @@ echo "✅ Database is ready"
 
 # Wait for backend
 if ! wait_for_service "http://localhost:3010/health" "backend"; then
-    echo "Check logs: docker compose -f docker-compose.test.yml logs backend-node-test"
+    echo "Check logs: docker compose -f docker-compose.test.yml logs backend-test"
     exit 1
 fi
 echo "✅ Backend is ready"
 
 # Wait for frontend
 if ! wait_for_service "http://localhost:3110" "frontend"; then
-    echo "Check logs: docker compose -f docker-compose.test.yml logs frontend-nextjs-test"
+    echo "Check logs: docker compose -f docker-compose.test.yml logs frontend-test"
     exit 1
 fi
 echo "✅ Frontend is ready"

@@ -56,11 +56,11 @@ services:
       - seed
 
   # Node.js Backend
-  backend-node:
+  backend:
     build:
       context: .
       dockerfile: backend/Dockerfile.dev
-    container_name: habitcraft-backend-node
+    container_name: habitcraft-backend
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${BACKEND_PORT:-3000}
@@ -84,14 +84,14 @@ services:
     command: npm run dev
 
   # Next.js Frontend
-  frontend-nextjs:
+  frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile.dev
-    container_name: habitcraft-frontend-nextjs
+    container_name: habitcraft-frontend
     environment:
       # Note: API URL is accessed from the browser, not from the container
-      # So we use localhost (host machine) not backend-node (container network)
+      # So we use localhost (host machine) not backend (container network)
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:3000}
       # PostHog Analytics (optional)
       NEXT_PUBLIC_POSTHOG_KEY: ${NEXT_PUBLIC_POSTHOG_KEY:-}
