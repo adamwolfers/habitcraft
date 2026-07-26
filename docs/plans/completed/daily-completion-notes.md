@@ -164,7 +164,7 @@ Two UX options for capturing notes:
 ### Part 6: E2E Tests
 
 #### Step 8: Add E2E Tests for Notes
-**Files:** `frontend/e2e/completion-notes.spec.ts`
+**Files:** `frontend/e2e/completions.spec.ts`
 
 - [x] Test: user can add a note to a completed habit
 - [x] Test: user can edit an existing note
@@ -195,7 +195,7 @@ Two UX options for capturing notes:
 |------|---------|
 | `frontend/components/CompletionNoteModal.tsx` | Modal component for adding/editing notes |
 | `frontend/components/CompletionNoteModal.test.tsx` | Unit tests for modal |
-| `frontend/e2e/completion-notes.spec.ts` | E2E tests for notes feature |
+| `frontend/e2e/completions.spec.ts` | E2E tests for notes feature (planned as `completion-notes.spec.ts`; shipped merged into the existing completions spec) |
 
 ### Modified Files
 | File | Changes |
