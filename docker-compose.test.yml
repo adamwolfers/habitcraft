@@ -44,11 +44,11 @@ services:
         psql "$$DATABASE_URL" -f /db/test-fixtures.sql
 
   # Node.js Backend for Integration Tests
-  backend-node-test:
+  backend-test:
     build:
       context: .
       dockerfile: ./backend/Dockerfile.dev
-    container_name: habitcraft-backend-node-test
+    container_name: habitcraft-backend-test
     environment:
       NODE_ENV: test
       PORT: 3000
@@ -74,11 +74,11 @@ services:
     command: npm run dev
 
   # Next.js Frontend for E2E Tests
-  frontend-nextjs-test:
+  frontend-test:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile.dev
-    container_name: habitcraft-frontend-nextjs-test
+    container_name: habitcraft-frontend-test
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://localhost:3010
     ports:
