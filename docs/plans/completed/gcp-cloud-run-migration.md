@@ -815,7 +815,7 @@ jobs:
 
       - name: Build and push frontend image
         run: |
-          cd frontends/nextjs
+          cd frontend
           docker build \
             --build-arg NEXT_PUBLIC_API_BASE_URL=https://api.habitcraft.org \
             -t ${{ env.ARTIFACT_REGISTRY }}/frontend:${{ github.sha }} .
@@ -1542,13 +1542,13 @@ Refactored tests to use Playwright's recommended setup project pattern, which:
 5. [x] Add `.auth/` to `.gitignore`
 
 **Files Created:**
-- `frontends/nextjs/e2e/gcp-auth.setup.ts`
-- `frontends/nextjs/e2e/gcp-auth.teardown.ts`
+- `frontend/e2e/gcp-auth.setup.ts`
+- `frontend/e2e/gcp-auth.teardown.ts`
 
 **Files Modified:**
-- `frontends/nextjs/playwright.gcp.config.ts`
-- `frontends/nextjs/playwright.config.ts` (exclude new files)
-- `frontends/nextjs/e2e/gcp-smoke.spec.ts`
+- `frontend/playwright.gcp.config.ts`
+- `frontend/playwright.config.ts` (exclude new files)
+- `frontend/e2e/gcp-smoke.spec.ts`
 - `.gitignore`
 
 **Rate Limiting Note:**
@@ -1771,7 +1771,7 @@ Before rolling back after go-live, verify:
 1. Frontend is built with `NEXT_PUBLIC_API_BASE_URL=https://api.habitcraft.org`
 2. Backend CORS only allows `https://www.habitcraft.org`
 
-GCP smoke tests are available at `frontends/nextjs/playwright.gcp.config.ts` for use after DNS cutover:
+GCP smoke tests are available at `frontend/playwright.gcp.config.ts` for use after DNS cutover:
 ```bash
 npx playwright test --config=playwright.gcp.config.ts
 ```

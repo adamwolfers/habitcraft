@@ -11,12 +11,12 @@ Add a per-habit toggle to switch between weekly view (current 7-day row) and mon
 ## Implementation Steps (TDD)
 
 ### Step 1: Add `getCalendarMonth` utility ✅
-- [x] Write tests in `frontends/nextjs/utils/dateUtils.test.ts`
-- [x] Implement `getCalendarMonth()` in `frontends/nextjs/utils/dateUtils.ts`
+- [x] Write tests in `frontend/utils/dateUtils.test.ts`
+- [x] Implement `getCalendarMonth()` in `frontend/utils/dateUtils.ts`
 - [x] Commit: "Add getCalendarMonth utility function with tests"
 
 ### Step 2: Add view toggle UI to HabitCard ✅
-- [x] Write tests in `frontends/nextjs/components/HabitCard.test.tsx`
+- [x] Write tests in `frontend/components/HabitCard.test.tsx`
 - [x] Add `viewMode` state and toggle UI in `HabitCard.tsx`
 - [x] Commit: "Add weekly/monthly view toggle to HabitCard"
 
@@ -43,10 +43,10 @@ Add a per-habit toggle to switch between weekly view (current 7-day row) and mon
 
 | File | Changes |
 |------|---------|
-| `frontends/nextjs/utils/dateUtils.ts` | Add `CalendarMonth` type and `getCalendarMonth()` |
-| `frontends/nextjs/utils/dateUtils.test.ts` | Add tests for `getCalendarMonth()` |
-| `frontends/nextjs/components/HabitCard.tsx` | Add toggle, monthly view, month navigation |
-| `frontends/nextjs/components/HabitCard.test.tsx` | Add tests for toggle and monthly view |
+| `frontend/utils/dateUtils.ts` | Add `CalendarMonth` type and `getCalendarMonth()` |
+| `frontend/utils/dateUtils.test.ts` | Add tests for `getCalendarMonth()` |
+| `frontend/components/HabitCard.tsx` | Add toggle, monthly view, month navigation |
+| `frontend/components/HabitCard.test.tsx` | Add tests for toggle and monthly view |
 
 ## Technical Details
 
