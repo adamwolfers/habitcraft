@@ -150,6 +150,7 @@ npm run test:integration      # Integration tests (requires test db)
 ```bash
 cd frontend
 npm test                      # Unit tests
+npm run typecheck             # Type check (Jest/SWC does NOT check types)
 npm run test:e2e              # E2E tests (headless)
 npm run test:e2e:ui           # E2E tests with Playwright UI
 npm run test:e2e:headed       # E2E tests in visible browser
@@ -347,8 +348,9 @@ The factory's return type is annotated as `AuthContextType`, so adding a field t
 the context fails compilation in that one file instead of silently drifting across
 every test that mocks auth. Hand-rolled literals are how 29 type errors accumulated
 unnoticed (habitcraft-b28) — SWC strips types during Jest runs without checking them,
-so a green test suite proves nothing about types. Run `npx tsc --noEmit` from
-`frontend/` to check them.
+so a green test suite proves nothing about types. Run `npm run typecheck` from
+`frontend/` to check them; CI runs the same step, so type errors now fail the build
+(habitcraft-chm).
 
 ### Testing Loading States
 
