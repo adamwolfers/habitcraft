@@ -325,6 +325,31 @@ jest.mock('@/lib/api', () => ({
 }));
 ```
 
+### Mocking Auth Context
+
+Always build `useAuth()` return values with the shared factory in
+`frontend/test-utils/mockAuthContext.ts` — never hand-roll the object literal:
+
+```typescript
+import { createMockAuth } from '@/test-utils/mockAuthContext';
+
+mockUseAuth.mockReturnValue(createMockAuth()); // logged out
+mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true })); // still checking session
+mockUseAuth.mockReturnValue(createMockAuth({ user: mockUser })); // logged in
+mockUseAuth.mockReturnValue(createMockAuth({ logout: mockLogout })); // assert on a call
+```
+
+`isAuthenticated` defaults to `user != null`, mirroring `AuthProvider`'s own
+derivation, so you rarely pass it. Overrides are applied last and always win, so
+pass it explicitly to model an inconsistent state.
+
+The factory's return type is annotated as `AuthContextType`, so adding a field to
+the context fails compilation in that one file instead of silently drifting across
+every test that mocks auth. Hand-rolled literals are how 29 type errors accumulated
+unnoticed (habitcraft-b28) — SWC strips types during Jest runs without checking them,
+so a green test suite proves nothing about types. Run `npx tsc --noEmit` from
+`frontend/` to check them.
+
 ### Testing Loading States
 
 ```typescript

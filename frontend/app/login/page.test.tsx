@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from './page';
 import * as authContextModule from '@/context/AuthContext';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock Next.js navigation
 const mockPush = jest.fn();
@@ -26,14 +27,7 @@ describe('Login Page', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: mockLogin,
-      register: jest.fn(),
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth({ login: mockLogin }));
   });
 
   describe('Form Rendering', () => {
@@ -305,19 +299,17 @@ describe('Login Page', () => {
 
   describe('Auto-redirect for authenticated users', () => {
     it('should redirect to dashboard if user is already authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: mockLogin,
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+          login: mockLogin,
+        })
+      );
 
       render(<LoginPage />);
 

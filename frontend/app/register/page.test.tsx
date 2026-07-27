@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import RegisterPage from './page';
 import * as authContextModule from '@/context/AuthContext';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock Next.js navigation
 const mockPush = jest.fn();
@@ -26,14 +27,7 @@ describe('Registration Page - Basic Form Structure', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: mockRegister,
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth({ register: mockRegister }));
   });
 
   describe('Form Rendering', () => {
@@ -126,19 +120,17 @@ describe('Registration Page - Basic Form Structure', () => {
 
   describe('Auto-redirect for authenticated users', () => {
     it('should redirect to dashboard if user is already authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: mockRegister,
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+          register: mockRegister,
+        })
+      );
 
       render(<RegisterPage />);
 
@@ -158,14 +150,7 @@ describe('Registration Page - Form Validation', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: mockRegister,
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth({ register: mockRegister }));
   });
 
   describe('HTML5 Validation', () => {
@@ -376,14 +361,7 @@ describe('Registration Page - Form Submission', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: mockRegister,
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth({ register: mockRegister }));
   });
 
   describe('Successful Registration', () => {
@@ -471,14 +449,7 @@ describe('Registration Page - Error Handling', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: mockRegister,
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth({ register: mockRegister }));
   });
 
   describe('API Error Display', () => {

@@ -2,6 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Header from './Header';
 import * as authContextModule from '@/context/AuthContext';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock Next.js navigation
 const mockPush = jest.fn();
@@ -31,15 +32,7 @@ describe('Header Component', () => {
   describe('App Variant (default)', () => {
     describe('When user is not authenticated', () => {
       beforeEach(() => {
-        mockUseAuth.mockReturnValue({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(createMockAuth({ logout: mockLogout }));
       });
 
       it('should not render logout button', () => {
@@ -67,20 +60,17 @@ describe('Header Component', () => {
 
       beforeEach(() => {
         mockOnOpenProfileModal.mockClear();
-        mockUseAuth.mockReturnValue({
-          user: {
-            id: '123',
-            email: 'test@example.com',
-            name: 'Test User',
-            createdAt: '2025-01-01T00:00:00.000Z',
-          },
-          isLoading: false,
-          isAuthenticated: true,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(
+          createMockAuth({
+            user: {
+              id: '123',
+              email: 'test@example.com',
+              name: 'Test User',
+              createdAt: '2025-01-01T00:00:00.000Z',
+            },
+            logout: mockLogout,
+          })
+        );
       });
 
       it('should show logout in profile menu when authenticated', async () => {
@@ -100,20 +90,17 @@ describe('Header Component', () => {
 
       beforeEach(() => {
         mockOnOpenProfileModal.mockClear();
-        mockUseAuth.mockReturnValue({
-          user: {
-            id: '123',
-            email: 'test@example.com',
-            name: 'Test User',
-            createdAt: '2025-01-01T00:00:00.000Z',
-          },
-          isLoading: false,
-          isAuthenticated: true,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(
+          createMockAuth({
+            user: {
+              id: '123',
+              email: 'test@example.com',
+              name: 'Test User',
+              createdAt: '2025-01-01T00:00:00.000Z',
+            },
+            logout: mockLogout,
+          })
+        );
       });
 
       it('should render profile button when authenticated', () => {
@@ -123,15 +110,7 @@ describe('Header Component', () => {
       });
 
       it('should not render profile button when not authenticated', () => {
-        mockUseAuth.mockReturnValue({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(createMockAuth({ logout: mockLogout }));
 
         render(<Header onOpenProfileModal={mockOnOpenProfileModal} />);
 
@@ -258,20 +237,17 @@ describe('Header Component', () => {
 
       beforeEach(() => {
         mockOnOpenProfileModal.mockClear();
-        mockUseAuth.mockReturnValue({
-          user: {
-            id: '123',
-            email: 'test@example.com',
-            name: 'Test User',
-            createdAt: '2025-01-01T00:00:00.000Z',
-          },
-          isLoading: false,
-          isAuthenticated: true,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(
+          createMockAuth({
+            user: {
+              id: '123',
+              email: 'test@example.com',
+              name: 'Test User',
+              createdAt: '2025-01-01T00:00:00.000Z',
+            },
+            logout: mockLogout,
+          })
+        );
       });
 
       it('should handle logout errors gracefully', async () => {
@@ -303,15 +279,7 @@ describe('Header Component', () => {
   describe('Landing Variant', () => {
     describe('When user is not authenticated', () => {
       beforeEach(() => {
-        mockUseAuth.mockReturnValue({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(createMockAuth({ logout: mockLogout }));
       });
 
       it('should render Login link', () => {
@@ -355,20 +323,17 @@ describe('Header Component', () => {
 
       beforeEach(() => {
         mockOnOpenProfileModal.mockClear();
-        mockUseAuth.mockReturnValue({
-          user: {
-            id: '123',
-            email: 'test@example.com',
-            name: 'Test User',
-            createdAt: '2025-01-01T00:00:00.000Z',
-          },
-          isLoading: false,
-          isAuthenticated: true,
-          login: jest.fn(),
-          register: jest.fn(),
-          logout: mockLogout,
-          updateUser: jest.fn(),
-        });
+        mockUseAuth.mockReturnValue(
+          createMockAuth({
+            user: {
+              id: '123',
+              email: 'test@example.com',
+              name: 'Test User',
+              createdAt: '2025-01-01T00:00:00.000Z',
+            },
+            logout: mockLogout,
+          })
+        );
       });
 
       it('should render Go to Dashboard link', () => {

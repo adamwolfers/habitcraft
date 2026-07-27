@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import ProtectedRoute from './ProtectedRoute';
 import * as authContextModule from '@/context/AuthContext';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock Next.js navigation
 const mockPush = jest.fn();
@@ -29,14 +30,7 @@ describe('ProtectedRoute', () => {
 
   describe('Loading State', () => {
     it('should show loading state while authentication is being checked', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       render(
         <ProtectedRoute>
@@ -49,14 +43,7 @@ describe('ProtectedRoute', () => {
     });
 
     it('should not redirect during loading state', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       render(
         <ProtectedRoute>
@@ -71,14 +58,7 @@ describe('ProtectedRoute', () => {
 
   describe('Redirect to Login', () => {
     it('should redirect to login when not authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth());
 
       render(
         <ProtectedRoute>
@@ -90,14 +70,7 @@ describe('ProtectedRoute', () => {
     });
 
     it('should not show protected content when not authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth());
 
       render(
         <ProtectedRoute>
@@ -111,19 +84,16 @@ describe('ProtectedRoute', () => {
 
   describe('Authenticated Access', () => {
     it('should render children when authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(
         <ProtectedRoute>
@@ -135,19 +105,16 @@ describe('ProtectedRoute', () => {
     });
 
     it('should not redirect when authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(
         <ProtectedRoute>
@@ -160,19 +127,16 @@ describe('ProtectedRoute', () => {
     });
 
     it('should not show loading state when authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(
         <ProtectedRoute>

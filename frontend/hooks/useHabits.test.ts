@@ -4,6 +4,7 @@ import { HabitFormData, Habit, Completion } from '@/types/habit';
 import * as api from '@/lib/api';
 import * as authContextModule from '@/context/AuthContext';
 import * as confettiUtils from '@/utils/confettiUtils';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock the API module
 jest.mock('@/lib/api');
@@ -79,19 +80,16 @@ describe('useHabits', () => {
     // Default mock returns empty array
     mockFetchHabits.mockResolvedValue([]);
     // Default: user is authenticated
-    mockUseAuth.mockReturnValue({
-      user: {
-        id: mockUserId,
-        email: 'test@example.com',
-        name: 'Test User',
-        createdAt: '2025-01-01',
-      },
-      isLoading: false,
-      isAuthenticated: true,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(
+      createMockAuth({
+        user: {
+          id: mockUserId,
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01',
+        },
+      })
+    );
   });
 
   it('should initialize with empty habits array', async () => {
@@ -170,14 +168,7 @@ describe('useHabits', () => {
 
   describe('authentication awareness', () => {
     it('should not fetch habits when user is not authenticated', async () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth());
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -190,14 +181,7 @@ describe('useHabits', () => {
     });
 
     it('should not fetch habits while authentication is loading', async () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -211,14 +195,7 @@ describe('useHabits', () => {
 
     it('should fetch habits when user becomes authenticated', async () => {
       // Start with loading state
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
 
@@ -228,19 +205,16 @@ describe('useHabits', () => {
       expect(mockFetchHabits).not.toHaveBeenCalled();
 
       // Simulate auth completing
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: mockUserId,
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: mockUserId,
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01',
+          },
+        })
+      );
 
       rerender();
 
@@ -255,14 +229,7 @@ describe('useHabits', () => {
     });
 
     it('should return isLoading state from hook', async () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 

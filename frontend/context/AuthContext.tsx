@@ -5,14 +5,14 @@ import { setOnAuthFailure } from '@/lib/api';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
   createdAt: string;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;

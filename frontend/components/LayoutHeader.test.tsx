@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import LayoutHeader from './LayoutHeader';
 import * as authContextModule from '@/context/AuthContext';
 import * as navigationModule from 'next/navigation';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
@@ -26,15 +27,7 @@ const mockUsePathname = navigationModule.usePathname as jest.MockedFunction<
 describe('LayoutHeader Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-      updateUser: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth());
   });
 
   describe('Route-based variant detection', () => {
@@ -50,20 +43,16 @@ describe('LayoutHeader Component', () => {
 
     it('should use app variant on /dashboard', () => {
       mockUsePathname.mockReturnValue('/dashboard');
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-        updateUser: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(<LayoutHeader />);
 
@@ -74,20 +63,16 @@ describe('LayoutHeader Component', () => {
 
     it('should use app variant on other paths', () => {
       mockUsePathname.mockReturnValue('/some-other-path');
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-        updateUser: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(<LayoutHeader />);
 
@@ -97,20 +82,16 @@ describe('LayoutHeader Component', () => {
 
     it('should show Go to Dashboard on landing when authenticated', () => {
       mockUsePathname.mockReturnValue('/');
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-        updateUser: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(<LayoutHeader />);
 

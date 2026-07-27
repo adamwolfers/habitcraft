@@ -4,6 +4,7 @@ import Dashboard from './page';
 import * as useHabitsModule from '@/hooks/useHabits';
 import * as authContextModule from '@/context/AuthContext';
 import * as habitUtilsModule from '@/utils/habitUtils';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 import { Habit } from '@/types/habit';
 
 // Mock Next.js navigation
@@ -138,19 +139,16 @@ describe('Dashboard Page - Delete Functionality', () => {
     mockFindHabitById.mockImplementation((habits, id) => habits.find((h) => h.id === id));
 
     // Mock authenticated user
-    mockUseAuth.mockReturnValue({
-      user: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        email: 'test@example.com',
-        name: 'Test User',
-        createdAt: '2025-01-01T00:00:00.000Z',
-      },
-      isLoading: false,
-      isAuthenticated: true,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(
+      createMockAuth({
+        user: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+      })
+    );
 
     mockUseHabits.mockReturnValue({
       habits: mockHabits,
@@ -167,19 +165,16 @@ describe('Dashboard Page - Delete Functionality', () => {
 
   it('should pass authenticated user ID to useHabits', () => {
     // Use a different user ID to verify page uses auth context, not hardcoded value
-    mockUseAuth.mockReturnValue({
-      user: {
-        id: 'real-authenticated-user-id',
-        email: 'test@example.com',
-        name: 'Test User',
-        createdAt: '2025-01-01T00:00:00.000Z',
-      },
-      isLoading: false,
-      isAuthenticated: true,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(
+      createMockAuth({
+        user: {
+          id: 'real-authenticated-user-id',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+      })
+    );
 
     render(<Dashboard />);
 
@@ -187,14 +182,7 @@ describe('Dashboard Page - Delete Functionality', () => {
   });
 
   it('should pass empty string to useHabits when user is null', () => {
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth());
 
     render(<Dashboard />);
 
@@ -433,19 +421,16 @@ describe('Dashboard Page - Edit Functionality', () => {
     // Default: findHabitById returns the habit that matches
     mockFindHabitById.mockImplementation((habits, id) => habits.find((h) => h.id === id));
 
-    mockUseAuth.mockReturnValue({
-      user: {
-        id: '123e4567-e89b-12d3-a456-426614174000',
-        email: 'test@example.com',
-        name: 'Test User',
-        createdAt: '2025-01-01T00:00:00.000Z',
-      },
-      isLoading: false,
-      isAuthenticated: true,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(
+      createMockAuth({
+        user: {
+          id: '123e4567-e89b-12d3-a456-426614174000',
+          email: 'test@example.com',
+          name: 'Test User',
+          createdAt: '2025-01-01T00:00:00.000Z',
+        },
+      })
+    );
 
     mockUseHabits.mockReturnValue({
       habits: mockHabits,
