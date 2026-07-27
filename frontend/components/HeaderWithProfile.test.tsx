@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import HeaderWithProfile from './HeaderWithProfile';
 import * as authContextModule from '@/context/AuthContext';
+import { createMockAuth } from '@/test-utils/mockAuthContext';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
@@ -21,15 +22,7 @@ const mockUseAuth = authContextModule.useAuth as jest.MockedFunction<
 describe('HeaderWithProfile Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockUseAuth.mockReturnValue({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-      login: jest.fn(),
-      register: jest.fn(),
-      logout: jest.fn(),
-      updateUser: jest.fn(),
-    });
+    mockUseAuth.mockReturnValue(createMockAuth());
   });
 
   describe('Variant prop', () => {
@@ -55,20 +48,16 @@ describe('HeaderWithProfile Component', () => {
     });
 
     it('should show Go to Dashboard for landing variant when authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: {
-          id: '123',
-          email: 'test@example.com',
-          name: 'Test User',
-          createdAt: '2025-01-01T00:00:00.000Z',
-        },
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-        updateUser: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(
+        createMockAuth({
+          user: {
+            id: '123',
+            email: 'test@example.com',
+            name: 'Test User',
+            createdAt: '2025-01-01T00:00:00.000Z',
+          },
+        })
+      );
 
       render(<HeaderWithProfile variant="landing" />);
 

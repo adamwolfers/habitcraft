@@ -2,6 +2,7 @@ import { renderHook, waitFor } from '@testing-library/react';
 import { useRequireAuth } from './useRequireAuth';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { createMockAuth } from '../test-utils/mockAuthContext';
 
 // Mock dependencies
 jest.mock('../context/AuthContext');
@@ -33,14 +34,7 @@ describe('useRequireAuth', () => {
 
   describe('when user is authenticated', () => {
     it('should return auth context without redirecting', () => {
-      mockUseAuth.mockReturnValue({
-        user: mockUser,
-        isLoading: false,
-        isAuthenticated: true,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ user: mockUser }));
 
       const { result } = renderHook(() => useRequireAuth());
 
@@ -53,14 +47,7 @@ describe('useRequireAuth', () => {
 
   describe('when user is not authenticated', () => {
     it('should redirect to /login when not authenticated and not loading', async () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth());
 
       renderHook(() => useRequireAuth());
 
@@ -70,14 +57,7 @@ describe('useRequireAuth', () => {
     });
 
     it('should not redirect when loading', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       renderHook(() => useRequireAuth());
 
@@ -88,27 +68,13 @@ describe('useRequireAuth', () => {
       const { rerender } = renderHook(() => useRequireAuth());
 
       // First render: loading
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: true,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
       rerender();
       expect(mockPush).not.toHaveBeenCalled();
 
       // Second render: loading complete, not authenticated
-      mockUseAuth.mockReturnValue({
-        user: null,
-        isLoading: false,
-        isAuthenticated: false,
-        login: jest.fn(),
-        register: jest.fn(),
-        logout: jest.fn(),
-      });
+      mockUseAuth.mockReturnValue(createMockAuth());
 
       rerender();
 
