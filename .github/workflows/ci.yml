@@ -400,6 +400,11 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      # next/jest compiles with SWC, which strips types without checking them, so
+      # a green unit-test run proves nothing about type correctness (habitcraft-b28).
+      - name: Type check
+        run: npm run typecheck
+
       - name: Run unit tests with coverage
         run: npm run test:coverage
 
