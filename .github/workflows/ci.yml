@@ -144,6 +144,12 @@ jobs:
             # Do NOT gate a deploy job on `backend`/`frontend`; use these.
             # Negations compose fine under 'every'; only the single positive
             # pattern is constrained.
+            #
+            # These are DENYLISTS: everything under <pkg>/ ships unless excluded
+            # below. So adding a new test-only directory silently reintroduces
+            # the churn -- '!**/*.test.*' only catches files with '.test.' in
+            # the NAME, not helper modules beside them. frontend/test-utils was
+            # exactly this (habitcraft-d55). Add new test-only paths here.
             backend-deploy:
               - 'backend/**'
               - '!**/*.md'
@@ -159,6 +165,7 @@ jobs:
               - '!frontend/jest*'
               - '!frontend/playwright*.config.ts'
               - '!frontend/.env.test'
+              - '!frontend/test-utils/**'
             mobile:
               - 'mobile/**'
               - '!**/*.md'
