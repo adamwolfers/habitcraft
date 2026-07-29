@@ -76,3 +76,12 @@ last_pull
 embeddeddolt/
 proxieddb/
 proxied_server_client_info.json
+
+# JSONL exports (habitcraft-fa3)
+# Untracked deliberately. Under the embedded Dolt backend nothing refreshes
+# these on commit, so tracking them meant git carried a snapshot that silently
+# fell 4 months and ~79 issues behind the real data. The Dolt remote is the
+# single source of truth -- see README.md. Regenerate an ad-hoc copy with
+# 'bd export -o <path>' if you need a greppable dump; do not commit it.
+issues.jsonl
+sync_base.jsonl

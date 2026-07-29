@@ -2,6 +2,33 @@
 
 Welcome to Beads! This repository uses **Beads** for issue tracking - a modern, AI-native tool designed to live directly in your codebase alongside your code.
 
+## How HabitCraft stores its issues
+
+> This section is HabitCraft-specific and overrides the generic guidance below.
+
+This repo runs bd on the **embedded Dolt backend** (`.beads/metadata.json` →
+`"dolt_mode": "embedded"`). That means:
+
+- **The Dolt remote is the single source of truth.** Issue data lives in
+  `.beads/embeddeddolt/`, which is gitignored, and is shared by pushing to the
+  remote configured as `sync.remote` in `config.yaml`.
+- **Git does not carry a copy of the issues.** `issues.jsonl` and
+  `sync_base.jsonl` were tracked until 2026-07-28 but nothing refreshed them
+  under the embedded backend, so they drifted 4 months and ~79 issues out of
+  date while still looking authoritative. They are now gitignored
+  (habitcraft-fa3). A stale snapshot is worse than no snapshot.
+- **`bd dolt push` is what preserves your work**, not `git push`. Running only
+  `git push` leaves new issues on this machine alone. See the session
+  completion checklist in [AGENTS.md](../AGENTS.md).
+
+Need a human-readable dump for grepping or archaeology? Generate one on demand
+and leave it untracked:
+
+```bash
+bd export -o /tmp/issues.jsonl        # regular issues
+bd export --all -o /tmp/full.jsonl    # plus infra, templates, gates, memories
+```
+
 ## What is Beads?
 
 Beads is issue tracking that lives in your repo, making it perfect for AI coding agents and developers who want their issues close to their code. No web UI required - everything works through the CLI and integrates seamlessly with git.
@@ -33,7 +60,8 @@ bd sync
 ### Working with Issues
 
 Issues in Beads are:
-- **Git-native**: Stored in `.beads/issues.jsonl` and synced like code
+- **Git-native**: Stored in the repo and synced like code (in HabitCraft, via
+  the embedded Dolt database and `bd dolt push` — see above, not `issues.jsonl`)
 - **AI-friendly**: CLI-first design works perfectly with AI coding agents
 - **Branch-aware**: Issues can follow your branch workflow
 - **Always in sync**: Auto-syncs with your commits
