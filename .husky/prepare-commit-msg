@@ -1,0 +1,37 @@
+# Beads commit-message preparation -- adds agent identity trailers, which is
+# what makes commit forensics possible.
+#
+# husky owns the single hooks directory (core.hooksPath=.husky/_), leaving
+# .git/hooks/ and .beads/hooks/ inert -- see habitcraft-8t8. Do NOT source
+# '_/h': the stub .husky/_/prepare-commit-msg does that and invokes this file.
+#
+# "$@" matters here -- git passes the path to the message file, and bd edits
+# that file in place. Without it bd has nothing to write to.
+#
+# Unlike the post-* hooks, a non-zero exit from this one ABORTS the commit.
+# That is deliberate for a genuine bd failure, but a hang should not block
+# work, so BEADS_HOOK_TIMEOUT bounds it (124 is timeout's own code; timeout is
+# absent on stock macOS). The exit-3 check is defensive only -- bd 1.1.0
+# embedded returns 0 for a missing project, an empty .beads/ and a fresh
+# clone, so no "uninitialised database" state tested here reaches it.
+# '|| _bd_exit=$?' is load-bearing -- husky runs this under `sh -e`, which
+# would abort on the 124 before the timeout guard could read the status.
+if command -v bd >/dev/null 2>&1; then
+  export BD_GIT_HOOK=1
+  _bd_timeout=${BEADS_HOOK_TIMEOUT:-300}
+  _bd_exit=0
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$_bd_timeout" bd hooks run prepare-commit-msg "$@" || _bd_exit=$?
+    if [ "$_bd_exit" -eq 124 ]; then
+      echo >&2 "beads: hook 'prepare-commit-msg' timed out after ${_bd_timeout}s — continuing without beads"
+      _bd_exit=0
+    fi
+  else
+    bd hooks run prepare-commit-msg "$@" || _bd_exit=$?
+  fi
+  if [ "$_bd_exit" -eq 3 ]; then
+    echo >&2 "beads: database not initialized — skipping hook 'prepare-commit-msg'"
+    _bd_exit=0
+  fi
+  if [ "$_bd_exit" -ne 0 ]; then exit "$_bd_exit"; fi
+fi
