@@ -1,0 +1,38 @@
+# Beads issue-tracker sync after a merge/pull.
+#
+# Git honours exactly one hooks directory, and husky owns it
+# (core.hooksPath=.husky/_). That makes both .git/hooks/ and .beads/hooks/
+# inert, so this file is the only place a beads post-merge hook can run --
+# see habitcraft-8t8. Do NOT source '_/h' here: the stub .husky/_/post-merge
+# already does that, and it is what invokes this file.
+#
+# Guards carried over from the (dead) .beads/hooks/ copy:
+#   - BEADS_HOOK_TIMEOUT bounds a hung bd; 124 is timeout's own exit code,
+#     and `timeout` is absent on stock macOS, hence the command -v check.
+#   - exit 3 ("database not initialised") is DEFENSIVE, not load-bearing:
+#     bd 1.1.0 embedded returns 0 for a missing project, an empty .beads/ and
+#     a fresh clone, so nothing observed here produces a 3. Kept because bd's
+#     own hooks carry it and it may be live in server mode or other versions.
+#
+# '|| _bd_exit=$?' is load-bearing: husky runs this under `sh -e`, so a bare
+# failing command would abort the script before its status could be inspected
+# and the exit-3 guard below would never be reached.
+if command -v bd >/dev/null 2>&1; then
+  export BD_GIT_HOOK=1
+  _bd_timeout=${BEADS_HOOK_TIMEOUT:-300}
+  _bd_exit=0
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$_bd_timeout" bd hooks run post-merge "$@" || _bd_exit=$?
+    if [ "$_bd_exit" -eq 124 ]; then
+      echo >&2 "beads: hook 'post-merge' timed out after ${_bd_timeout}s — continuing without beads"
+      _bd_exit=0
+    fi
+  else
+    bd hooks run post-merge "$@" || _bd_exit=$?
+  fi
+  if [ "$_bd_exit" -eq 3 ]; then
+    echo >&2 "beads: database not initialized — skipping hook 'post-merge'"
+    _bd_exit=0
+  fi
+  if [ "$_bd_exit" -ne 0 ]; then exit "$_bd_exit"; fi
+fi
