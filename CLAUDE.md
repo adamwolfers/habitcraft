@@ -197,8 +197,8 @@ bd close <id>         # Complete work
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd dolt push
-   git push
+   git push    # .husky/pre-push pushes beads data to the Dolt remote first,
+               # and blocks the git push if that fails (habitcraft-8t8)
    git status  # MUST show "up to date with origin"
    ```
 5. **Clean up** - Clear stashes, prune remote branches

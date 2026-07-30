@@ -1,0 +1,45 @@
+# Push beads issue data to the Dolt remote alongside the code being pushed.
+#
+# This is NOT `bd hooks run pre-push`. That is bd's own managed hook, and it is
+# a no-op under the embedded backend. This runs the real push.
+#
+# BLOCKING BY DESIGN. Issue data lives in .beads/embeddeddolt/, which is
+# gitignored, so until it reaches the Dolt remote it exists on exactly one
+# machine -- the exposure habitcraft-fa3 documented. A `git push` that ships
+# the code while leaving the issue state behind is the failure this prevents,
+# so a failed beads push fails the git push rather than warning about it.
+# Measured cost: ~3s warm, ~12s cold, paid on every push (bd does no work-
+# avoidance when there is nothing new).
+#
+# Escape hatch: `git push --no-verify` skips this hook entirely.
+#
+# Unlike the post-* hooks, a timeout here is NOT normalised to success. A push
+# that did not finish did not protect the data, which is the whole point.
+#
+# husky owns the single hooks directory (core.hooksPath=.husky/_), which is why
+# this lives here and not in .beads/hooks/ -- see habitcraft-8t8. Do NOT source
+# '_/h': the stub .husky/_/pre-push does that and invokes this file.
+if command -v bd >/dev/null 2>&1; then
+  echo "beads: pushing issue data to the Dolt remote..."
+  _bd_timeout=${BEADS_PUSH_TIMEOUT:-120}
+  _bd_exit=0
+  # '|| _bd_exit=$?' is required: husky runs this under `sh -e`, so a bare
+  # failing command would abort before the diagnostics below could print.
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$_bd_timeout" bd dolt push || _bd_exit=$?
+    if [ "$_bd_exit" -eq 124 ]; then
+      echo >&2 "beads: 'bd dolt push' timed out after ${_bd_timeout}s (override with BEADS_PUSH_TIMEOUT)."
+    fi
+  else
+    bd dolt push || _bd_exit=$?
+  fi
+  if [ "$_bd_exit" -ne 0 ]; then
+    echo >&2 ""
+    echo >&2 "beads: FAILED to push issue data (exit $_bd_exit)."
+    echo >&2 "Your issue data exists only on this machine. The git push has been"
+    echo >&2 "blocked so half-pushed work is not mistaken for finished work."
+    echo >&2 ""
+    echo >&2 "Fix the beads push and retry, or bypass with: git push --no-verify"
+    exit "$_bd_exit"
+  fi
+fi
