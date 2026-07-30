@@ -22,6 +22,42 @@ git pull --rebase
 git push
 ```
 
+## Git Hooks
+
+**`.husky/` is the only hooks directory.** Git honours exactly one, and husky
+claims it via `core.hooksPath=.husky/_`. That means **`.git/hooks/` is bypassed
+entirely** — files there look installed but never run. The same applies to
+`.beads/hooks/`.
+
+**Do not run `bd hooks install`.** It was tested (habitcraft-8t8) and does not
+work here: it points `core.hooksPath` at an absolute `.beads/hooks` path, yet
+4 of 5 hooks still never fire — beads vendors husky's `_/h` dispatcher, which
+expects hooks one level *above* the hooks dir, an assumption that breaks when
+beads installs them *into* it. It also folds `.husky/pre-commit` inline while
+its own managed block calls `bd hooks run pre-commit`, so beads runs twice per
+commit. Note `bd hooks list` reports `✓ installed` throughout all of this —
+it does not consult `core.hooksPath`, so never trust it as evidence.
+
+`.husky/_/` holds generated stubs and is gitignored — it is recreated by the
+`prepare` script on `npm install`. **A fresh clone has no working hooks until
+you install dependencies.** Add real hooks as `.husky/<hook-name>`, and do not
+source `_/h` inside them; the stub already does that.
+
+| Hook | What it does |
+|---|---|
+| `pre-commit` | `bd hooks run pre-commit`, then each package's lint-staged |
+| `pre-push` | `bd dolt push` — **blocks the push if it fails** (see below) |
+| `post-merge`, `post-checkout`, `prepare-commit-msg` | beads sync via `bd hooks run <name>` |
+
+Beads issue data lives in the gitignored `.beads/embeddeddolt/`, so it reaches
+the Dolt remote only via `bd dolt push`. The `pre-push` hook does that
+automatically and **fails the `git push` if the beads push fails** — a partial
+push would leave issue state on one machine. Escape hatch: `git push
+--no-verify`. Cost is roughly 3s per push (12s cold); bd does no work-avoidance
+when there is nothing new to send.
+
+Debug a hook with `HUSKY=2 git <command>`, which traces the dispatcher.
+
 ## Development Principles
 
 1. **Security First** - Never compromise on authentication and authorization
