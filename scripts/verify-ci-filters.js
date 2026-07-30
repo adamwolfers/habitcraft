@@ -116,7 +116,10 @@ const CASES = [
   ['docs/architecture.md', false, []],
 
   // --- Other paths that must not start the workflow -------------------------
-  ['.beads/issues.jsonl', false, []],
+  // A tracked file, deliberately: issues.jsonl used to stand here but was
+  // untracked in habitcraft-fa3, and a case naming a path that can no longer
+  // appear in any diff asserts less than it looks like it does.
+  ['.beads/config.yaml', false, []],
   ['infrastructure/main.tf', false, []],
   ['.claude/settings.json', false, []],
   ['.gitattributes', false, []],
