@@ -80,6 +80,11 @@ bd close <id>         # Complete work
                # and blocks the git push if that fails (habitcraft-8t8)
    git status  # MUST show "up to date with origin"
    ```
+   A session with **no commits** never reaches `pre-push`. Those are covered by
+   the `SessionEnd`/`SessionStart` hooks in `.claude/settings.json`
+   (habitcraft-clj) — see CLAUDE.md "Claude Code hooks". If `.beads/push.log`
+   shows a `FAILED` block, the beads data did NOT reach the remote; fix it
+   rather than assuming the hook handled it.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
