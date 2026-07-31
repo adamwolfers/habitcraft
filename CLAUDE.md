@@ -58,6 +58,33 @@ when there is nothing new to send.
 
 Debug a hook with `HUSKY=2 git <command>`, which traces the dispatcher.
 
+### Claude Code hooks (beads-only sessions)
+
+`pre-push` only fires when there **is** a git push. A session that only touches
+issues — closing beads, commenting, triage — produces no commits, so nothing
+triggered it and the issue data stayed on one machine (habitcraft-clj). Two
+hooks in `.claude/settings.json` close that, both running
+`scripts/beads-push.sh`:
+
+| Hook | What it does |
+|---|---|
+| `SessionEnd` | pushes on clean exit — `exit`, Ctrl-D, `/clear` |
+| `SessionStart` | reports a prior failure, then pushes whatever an unclean exit stranded |
+
+Use `SessionEnd`, **not `Stop`** — `Stop` fires once per *assistant turn*, which
+would run a ~3s push after every response.
+
+`SessionEnd` cannot block: its output and exit code are discarded, so a failure
+there is invisible. That is why the script logs to `.beads/push.log`
+(gitignored via `*.log`) — one `ok` line when healthy, appended `FAILED` blocks
+otherwise, truncated on the next success. So **a log with any bulk in it means
+something needs attention**. The `SessionStart` run prints that log back, which
+is how a failed push surfaces at all.
+
+Neither hook covers an unclean death (crash, closed window, `kill -9`) that is
+never followed by another session on that machine; `pre-push` catches those on
+the next commit.
+
 ## Development Principles
 
 1. **Security First** - Never compromise on authentication and authorization
