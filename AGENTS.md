@@ -84,7 +84,8 @@ bd close <id>         # Complete work
    the `SessionEnd`/`SessionStart` hooks in `.claude/settings.json`
    (habitcraft-clj) — see CLAUDE.md "Claude Code hooks". If `.beads/push.log`
    shows a `FAILED` block, the beads data did NOT reach the remote; fix it
-   rather than assuming the hook handled it.
+   rather than assuming the hook handled it. `.beads/push-history.log` is the
+   append-only trace showing which hook fired and when.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session

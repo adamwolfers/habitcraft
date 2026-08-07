@@ -81,6 +81,25 @@ otherwise, truncated on the next success. So **a log with any bulk in it means
 something needs attention**. The `SessionStart` run prints that log back, which
 is how a failed push surfaces at all.
 
+Each hook passes its name as `$1`, and the script adds the `reason` (SessionEnd)
+or `source` (SessionStart) that Claude Code puts on its stdin, so every entry
+says what triggered it:
+
+```
+2026-08-07T09:19:39-07:00 [SessionEnd reason=clear] ok
+```
+
+`.beads/push-history.log` is the **append-only** companion (capped at 200 lines,
+also gitignored). `push.log` alone cannot answer *"did the hook actually fire?"*
+— it truncates on success, and a `/clear` fires `SessionEnd` then `SessionStart`
+seconds later, so the second write erases the first. The history log is the only
+place that evidence survives, and answering that question is what habitcraft-8t8
+could not do for the git hooks.
+
+The script reads stdin only when it is a pipe or regular file. `[ ! -t 0 ]` is
+**not** a sufficient guard — it is also false when fd 0 is *closed*, and `cat`
+then blocks forever, stalling session start until the 130s hook timeout.
+
 Neither hook covers an unclean death (crash, closed window, `kill -9`) that is
 never followed by another session on that machine; `pre-push` catches those on
 the next commit.
