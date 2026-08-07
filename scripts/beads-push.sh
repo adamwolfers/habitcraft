@@ -42,12 +42,16 @@ history_max=200
 # hand. Enriched below with the reason/source that Claude Code puts on stdin.
 trigger=${1:-manual}
 
-# Read the hook JSON only when stdin is genuinely a pipe (how Claude Code feeds
-# hooks) or a regular file (how the tests feed it). '[ ! -t 0 ]' is NOT enough:
-# it is also false when fd 0 is CLOSED, and 'cat' then blocks forever -- verified
-# with sh -x, which stopped dead at the 'cat'. A hang here would stall every
-# session start until the 130s hook timeout fired.
-if [ -p /dev/stdin ] || [ -f /dev/stdin ]; then
+# Read the hook JSON only when stdin is BOTH not a terminal and actually
+# readable. Both halves are load-bearing, and each was established the hard way:
+#   - '[ ! -t 0 ]' alone is not enough: it is also false when fd 0 is CLOSED,
+#     and 'cat' then blocks forever (verified with sh -x, which stopped dead at
+#     the cat). A hang here stalls session start until the 130s hook timeout.
+#   - testing the fd TYPE ('-p' pipe / '-f' regular file) is too strict: a real
+#     SessionStart logged '[SessionStart]' with no source= and no sid=, i.e. the
+#     guard rejected the live hook's stdin, which is neither. '-r' accepts it
+#     while still rejecting a closed fd 0.
+if [ ! -t 0 ] && [ -r /dev/stdin ]; then
   stdin_json=$(cat 2>/dev/null) || stdin_json=
   for field in reason source; do
     val=$(printf '%s' "$stdin_json" \
@@ -55,6 +59,12 @@ if [ -p /dev/stdin ] || [ -f /dev/stdin ]; then
       | head -1)
     [ -n "$val" ] && trigger="$trigger $field=$val"
   done
+  # Short session id, so entries stay attributable when two sessions are open in
+  # this repo at once -- they share this one log file.
+  sid=$(printf '%s' "$stdin_json" \
+    | sed -n 's/.*"session_id"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
+    | head -1 | cut -c1-8)
+  [ -n "$sid" ] && trigger="$trigger sid=$sid"
 fi
 
 command -v bd >/dev/null 2>&1 || exit 0
