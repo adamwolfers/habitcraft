@@ -25,10 +25,37 @@
 # appended FAILED blocks otherwise, truncated again on the next success. So a
 # non-trivial .beads/push.log is itself the signal that something needs looking
 # at. It is gitignored via the root .gitignore '*.log' rule.
+#
+# .beads/push-history.log is the APPEND-ONLY companion (capped, also gitignored).
+# push.log alone cannot answer "did the hook fire?": it truncates on success, and
+# a /clear fires SessionEnd then SessionStart seconds later, so the second write
+# erases the first. That is the exact question habitcraft-8t8 spent months unable
+# to answer about the git hooks -- so the trigger is recorded, not inferred.
 set -u
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd) || exit 0
 log="$repo_root/.beads/push.log"
+history="$repo_root/.beads/push-history.log"
+history_max=200
+
+# Which hook invoked us, passed from .claude/settings.json. 'manual' when run by
+# hand. Enriched below with the reason/source that Claude Code puts on stdin.
+trigger=${1:-manual}
+
+# Read the hook JSON only when stdin is genuinely a pipe (how Claude Code feeds
+# hooks) or a regular file (how the tests feed it). '[ ! -t 0 ]' is NOT enough:
+# it is also false when fd 0 is CLOSED, and 'cat' then blocks forever -- verified
+# with sh -x, which stopped dead at the 'cat'. A hang here would stall every
+# session start until the 130s hook timeout fired.
+if [ -p /dev/stdin ] || [ -f /dev/stdin ]; then
+  stdin_json=$(cat 2>/dev/null) || stdin_json=
+  for field in reason source; do
+    val=$(printf '%s' "$stdin_json" \
+      | sed -n "s/.*\"$field\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" \
+      | head -1)
+    [ -n "$val" ] && trigger="$trigger $field=$val"
+  done
+fi
 
 command -v bd >/dev/null 2>&1 || exit 0
 cd "$repo_root" || exit 0
@@ -63,15 +90,25 @@ else
 fi
 
 stamp=$(date -Iseconds 2>/dev/null || date)
+
+# Append-only trace, written for EVERY outcome and never truncated (only capped),
+# so a SessionEnd record survives the SessionStart that follows it.
+if [ "$rc" -eq 0 ]; then result=ok; else result="FAILED rc=$rc"; fi
+echo "$stamp [$trigger] $result" >>"$history" 2>/dev/null
+if [ -f "$history" ]; then
+  trimmed=$(tail -n "$history_max" "$history" 2>/dev/null) \
+    && printf '%s\n' "$trimmed" >"$history"
+fi
+
 if [ "$rc" -eq 0 ]; then
   # Truncate: a healthy log is one line, so any bulk means a real problem.
-  echo "$stamp ok" >"$log"
+  echo "$stamp ok [$trigger]" >"$log"
 else
   # First failure after a success starts a fresh log, so the report shows the
   # current failure streak rather than a stale 'ok' line above it.
   grep -q 'FAILED' "$log" 2>/dev/null || : >"$log"
   {
-    echo "$stamp FAILED rc=$rc"
+    echo "$stamp FAILED rc=$rc [$trigger]"
     [ "$rc" -eq 124 ] && echo "  timed out after ${timeout_secs}s (override with BEADS_PUSH_TIMEOUT)"
     sed 's/^/  /' "$out"
   } >>"$log"
