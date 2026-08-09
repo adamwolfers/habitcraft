@@ -314,6 +314,34 @@ export function findHabitById(habits: Habit[], id: string): Habit | undefined {
 const habit = findHabitById(habits, habitId);
 ```
 
+### Mocking the Database Pool (backend)
+
+Backend unit tests mock the pg pool and queue one result per query, in order:
+
+```javascript
+jest.mock('../db/pool');
+const pool = require('../db/pool');
+
+pool.query.mockResolvedValueOnce({ rows: [habit] });
+```
+
+**Trap:** the mock chain is positional, so adding code that issues a *new*
+query — e.g. middleware doing a `COUNT` before an `INSERT` — shifts every
+subsequent result by one and breaks **all** existing tests that mock that
+route, not just the new one. When you add a query, update the mock chains
+across the whole suite, not only the test you are working on.
+
+### Validator Chain Ordering
+
+`express-validator` chains run **in declaration order**, and the first failure
+short-circuits the rest. On the register email field
+(`backend/routes/auth.js`), `.isEmail()` precedes `.isLength({ max: 255 })`, so
+a 300-character malformed email fails on *format*, never on *length*.
+
+When testing a length validator on an email, either use a valid-format address
+that exceeds the limit, or assert that the response matches **either** error
+message. Otherwise the test passes for the wrong reason.
+
 ### Mocking API Calls
 
 Frontend tests mock the API client:

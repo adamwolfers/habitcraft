@@ -52,6 +52,29 @@ docker compose --profile seed run --rm db-seed
 
 Login at http://localhost:3100/login to start tracking habits!
 
+### Docker Troubleshooting
+
+**`npm run dev` fails in a container / dev tooling is missing.** Dev and
+production use different images. The dev compose files build
+`backend/Dockerfile.dev` and `frontend/Dockerfile.dev`, which run a plain
+`npm ci` and therefore include devDependencies (`nodemon`, `next`). The
+production `Dockerfile` runs `npm ci --omit=dev`, so it has no dev tooling and
+cannot run `npm run dev`. If you see a missing-binary error, check which
+`dockerfile:` the service resolved to — `docker-compose.override.yml` is what
+selects the dev images, and it is not committed (copy it from
+`docker-compose.override.yml.example`).
+
+**Dependency changes do not take effect.** `node_modules` lives in a named
+volume (`backend_node_modules`), which persists across `docker-compose down`
+and will happily shadow a rebuilt image with stale packages. `down -v` clears
+it along with the database; to drop just the dependency cache:
+
+```bash
+docker volume rm habitcraft_backend_node_modules
+```
+
+Then rebuild. Re-seed afterwards only if you also removed the database volume.
+
 ### Manual Development Setup
 
 For local development without Docker, see the individual setup guides:
