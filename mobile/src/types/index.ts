@@ -30,7 +30,6 @@ export interface Habit {
   icon: string;
   color: string;
   frequency: HabitFrequency;
-  target_days?: number[];
   status: 'active' | 'archived';
   createdAt: string;
   updatedAt: string;

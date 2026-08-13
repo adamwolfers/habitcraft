@@ -13,7 +13,6 @@ describe('EditHabitModal', () => {
     color: '#3b82f6',
     icon: '🏃',
     frequency: 'daily',
-    targetDays: [],
     status: 'active',
     createdAt: '2025-10-30T12:00:00.000Z',
     updatedAt: '2025-10-30T12:00:00.000Z',

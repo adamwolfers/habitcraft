@@ -26,7 +26,6 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
         h.name,
         h.description,
         h.frequency,
-        h.target_days as "targetDays",
         h.color,
         h.icon,
         h.status,
@@ -57,7 +56,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
     }
 
     queryText += ` GROUP BY h.id, h.user_id, h.name, h.description, h.frequency,
-      h.target_days, h.color, h.icon, h.status, h.created_at, h.updated_at
+      h.color, h.icon, h.status, h.created_at, h.updated_at
       ORDER BY h.created_at ASC`;
 
     const result = await query(queryText, queryParams);
@@ -78,7 +77,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
  */
 router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req, res) => {
   try {
-    const { name, description, frequency, targetDays, color, icon } = req.body;
+    const { name, description, frequency, color, icon } = req.body;
     const userId = req.userId; // Set by jwtAuthMiddleware
 
     // Check habit count limit
@@ -93,29 +92,20 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req
     // Insert habit into database
     const result = await query(
       `INSERT INTO habits
-       (user_id, name, description, frequency, target_days, color, icon)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       (user_id, name, description, frequency, color, icon)
+       VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING
          id,
          user_id as "userId",
          name,
          description,
          frequency,
-         target_days as "targetDays",
          color,
          icon,
          status,
          created_at as "createdAt",
          updated_at as "updatedAt"`,
-      [
-        userId,
-        name,
-        description || null,
-        frequency,
-        targetDays || [],
-        color || '#3B82F6',
-        icon || '⭐',
-      ]
+      [userId, name, description || null, frequency, color || '#3B82F6', icon || '⭐']
     );
 
     const habit = result.rows[0];
@@ -138,7 +128,7 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
   try {
     const { id } = req.params;
     const userId = req.userId;
-    const { name, description, frequency, targetDays, color, icon, status } = req.body;
+    const { name, description, frequency, color, icon, status } = req.body;
 
     // Validate habit ID format
     if (!id || typeof id !== 'string' || id.trim().length === 0) {
@@ -177,11 +167,6 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
       values.push(description || null);
     }
 
-    if (targetDays !== undefined) {
-      updates.push(`target_days = $${paramIndex++}`);
-      values.push(targetDays);
-    }
-
     if (color !== undefined) {
       updates.push(`color = $${paramIndex++}`);
       values.push(color);
@@ -214,7 +199,6 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
         name,
         description,
         frequency,
-        target_days as "targetDays",
         color,
         icon,
         status,

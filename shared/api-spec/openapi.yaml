@@ -815,14 +815,6 @@ components:
           type: string
           enum: [daily, weekly]
           example: daily
-        targetDays:
-          type: array
-          description: Days of the week for weekly habits (0=Sunday, 6=Saturday)
-          items:
-            type: integer
-            minimum: 0
-            maximum: 6
-          example: [1, 3, 5]
         color:
           type: string
           pattern: '^#[0-9A-Fa-f]{6}$'

@@ -37,7 +37,6 @@ describe('Habit Validator Middleware', () => {
         color: '#FF5733',
         icon: '🏃',
         status: 'active',
-        targetDays: [1, 3, 5],
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -138,44 +137,6 @@ describe('Habit Validator Middleware', () => {
       expect(mockRes.json).toHaveBeenCalledWith(
         expect.objectContaining({
           message: expect.stringContaining('must not exceed 500 characters'),
-        })
-      );
-      expect(nextFn).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('TargetDays validation', () => {
-    it('should return 400 if targetDays is not an array', () => {
-      mockReq.body = {
-        name: 'Exercise',
-        frequency: 'daily',
-        targetDays: 'not-an-array',
-      };
-
-      validateHabitInput(mockReq, mockRes, nextFn);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('targetDays must be an array'),
-        })
-      );
-      expect(nextFn).not.toHaveBeenCalled();
-    });
-
-    it('should return 400 if targetDays contains invalid values', () => {
-      mockReq.body = {
-        name: 'Exercise',
-        frequency: 'daily',
-        targetDays: [0, 1, 7],
-      };
-
-      validateHabitInput(mockReq, mockRes, nextFn);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('must contain integers between 0 and 6'),
         })
       );
       expect(nextFn).not.toHaveBeenCalled();

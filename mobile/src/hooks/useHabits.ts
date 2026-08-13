@@ -14,7 +14,6 @@ export interface CreateHabitData {
   icon: string;
   color: string;
   frequency: HabitFrequency;
-  target_days?: number[];
 }
 
 export interface UpdateHabitData {
@@ -23,7 +22,6 @@ export interface UpdateHabitData {
   icon?: string;
   color?: string;
   frequency?: HabitFrequency;
-  target_days?: number[];
   status?: 'active' | 'archived';
 }
 
@@ -73,7 +71,6 @@ export function useCreateHabit() {
           icon: data.icon,
           color: data.color,
           frequency: data.frequency,
-          target_days: data.target_days,
           status: 'active',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
