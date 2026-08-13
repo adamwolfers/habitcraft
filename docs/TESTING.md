@@ -294,6 +294,19 @@ hang on exactly the request that caused the problem.
 - Duplicate prevention (409 Conflict)
 - Habit ownership validation
 
+### `users.test.js` — Account Deletion
+- Delete account → Verify every FK-chained row is gone, other users untouched
+- Wrong password rejected, account left intact
+- Password confirmation and authentication required
+- Pooled client released on both success and failure (more requests than the
+  pool size; a leak would exhaust it)
+- Session unusable after deletion
+
+These cases must stay **integration** tests. The endpoint they cover was broken
+in production for seven months behind green unit tests (habitcraft-3h9) because
+the unit mock fabricated the pool method the route called — see "Mocking the
+Database Pool" above. Only the real pool can catch that.
+
 ## Test Patterns
 
 ### Extract Logic for Testability
@@ -330,6 +343,33 @@ query — e.g. middleware doing a `COUNT` before an `INSERT` — shifts every
 subsequent result by one and breaks **all** existing tests that mock that
 route, not just the new one. When you add a query, update the mock chains
 across the whole suite, not only the test you are working on.
+
+**Never assign a method onto the mocked module.** `db/pool` exports exactly
+`{ getPool, query, closePool }`. A line like `pool.connect = jest.fn()` does not
+mock anything — it *invents* an API the real module has never had, and every
+test written against it passes while production throws
+`TypeError: pool.connect is not a function`.
+
+That is not hypothetical: it is what habitcraft-3h9 was. `DELETE
+/api/v1/users/me` called `pool.connect()` to open a transaction, 500'd on every
+request for seven months, and eight green unit tests certified it the whole
+time. Transaction clients come from the pg Pool *behind* the module:
+
+```javascript
+// Route: reach through getPool() for a transaction client
+const client = await pool.getPool().connect();
+
+// Test: mock the exported function, never a fabricated one
+pool.getPool.mockReturnValue({ connect: jest.fn().mockResolvedValue(mockClient) });
+```
+
+`backend/routes/users.test.js` builds its mock from the real module's key set
+and `Object.seal`s it, so the mock cannot grow a method the module lacks. Prefer
+that factory when mocking `db/pool`.
+
+**A sealed mock is a backstop, not proof.** Only a test driving the real pool
+can show a route actually works, so any route taking a transaction client needs
+integration coverage — see `users.test.js` below.
 
 ### Validator Chain Ordering
 

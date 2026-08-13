@@ -135,7 +135,18 @@ router.delete('/me', jwtAuthMiddleware, accountDeleteLimiter, async (req, res) =
     return res.status(400).json({ error: 'Password confirmation required' });
   }
 
-  const client = await pool.connect();
+  // db/pool exports { getPool, query, closePool } -- there is no `connect` on
+  // the module object itself, so `pool.connect()` threw before any DELETE ran
+  // and this endpoint 500'd for every caller. The pg Pool behind getPool() is
+  // what owns .connect(). See habitcraft-3h9.
+  let client;
+  try {
+    client = await pool.getPool().connect();
+  } catch (error) {
+    console.error('Error acquiring database client for account deletion:', error);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+
   try {
     await client.query('BEGIN');
 
@@ -176,7 +187,13 @@ router.delete('/me', jwtAuthMiddleware, accountDeleteLimiter, async (req, res) =
 
     res.status(204).send();
   } catch (error) {
-    await client.query('ROLLBACK');
+    // A failing ROLLBACK (e.g. the connection itself dropped) must not replace
+    // the real error or escape before the 500 is sent.
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error rolling back account deletion:', rollbackError);
+    }
     console.error('Error deleting user account:', error);
     res.status(500).json({ error: 'Internal server error' });
   } finally {
