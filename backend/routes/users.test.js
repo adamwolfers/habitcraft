@@ -6,8 +6,23 @@ const bcrypt = require('bcrypt');
 const tokenService = require('../services/tokenService');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 
-// Mock the database pool
-jest.mock('../db/pool');
+// Mock the database pool.
+//
+// The factory mirrors the REAL module surface and seals it, deliberately. This
+// file previously did `pool.connect = jest.fn()`, inventing a method db/pool has
+// never exported; every delete-account test below then passed against an API
+// that did not exist at runtime, while DELETE /api/v1/users/me 500'd in
+// production for seven months (habitcraft-3h9). Sealing means a mock can no
+// longer grow a method the real module lacks. Take transaction clients through
+// getPool(), as the route does.
+jest.mock('../db/pool', () => {
+  const actual = jest.requireActual('../db/pool');
+  const mocked = {};
+  for (const key of Object.keys(actual)) {
+    mocked[key] = jest.fn();
+  }
+  return Object.seal(mocked);
+});
 jest.mock('bcrypt');
 jest.mock('../services/tokenService');
 jest.mock('../utils/securityLogger');
@@ -682,6 +697,7 @@ describe('Users API', () => {
 
   describe('DELETE /api/v1/users/me', () => {
     let mockClient;
+    let mockConnect;
 
     beforeEach(() => {
       // Create mock client for transaction
@@ -689,7 +705,10 @@ describe('Users API', () => {
         query: jest.fn(),
         release: jest.fn(),
       };
-      pool.connect = jest.fn().mockResolvedValue(mockClient);
+      // The transaction client comes from the pg Pool that getPool() returns --
+      // db/pool itself has no .connect(). See the jest.mock note above.
+      mockConnect = jest.fn().mockResolvedValue(mockClient);
+      pool.getPool.mockReturnValue({ connect: mockConnect });
       bcrypt.compare.mockReset();
       logSecurityEvent.mockReset();
     });
@@ -881,6 +900,70 @@ describe('Users API', () => {
       expect(response.status).toBe(500);
       expect(response.body.error).toBe('Internal server error');
       expect(mockClient.query).toHaveBeenCalledWith('ROLLBACK');
+      expect(mockClient.release).toHaveBeenCalled();
+    });
+
+    it('should take the transaction client from getPool(), not the module', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'test@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockResolvedValue({}); // DELETEs + COMMIT
+
+      bcrypt.compare.mockResolvedValueOnce(true);
+
+      await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(pool.getPool).toHaveBeenCalled();
+      expect(mockConnect).toHaveBeenCalled();
+      // Guards habitcraft-3h9: db/pool must never be expected to expose connect.
+      expect(pool.connect).toBeUndefined();
+    });
+
+    it('should return 500 if a client cannot be acquired', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
+
+      mockConnect.mockRejectedValueOnce(new Error('pool exhausted'));
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal server error');
+      // Nothing was acquired, so nothing must be released.
+      expect(mockClient.release).not.toHaveBeenCalled();
+    });
+
+    it('should still respond 500 and release the client if ROLLBACK also fails', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
+
+      mockClient.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ email: 'test@example.com', password_hash: 'hashed' }] }) // SELECT user
+        .mockRejectedValueOnce(new Error('Database error')) // DELETE completions fails
+        .mockRejectedValueOnce(new Error('Connection terminated')); // ROLLBACK fails too
+
+      bcrypt.compare.mockResolvedValueOnce(true);
+
+      const response = await request(app)
+        .delete('/api/v1/users/me')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send({ password: 'TestPass123!' });
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal server error');
       expect(mockClient.release).toHaveBeenCalled();
     });
   });
