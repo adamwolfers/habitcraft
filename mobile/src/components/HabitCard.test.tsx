@@ -12,7 +12,6 @@ describe('HabitCard', () => {
     icon: '🏃',
     color: '#10b981',
     frequency: 'daily',
-    target_days: [1, 2, 3, 4, 5],
     status: 'active',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',

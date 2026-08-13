@@ -64,7 +64,6 @@ const mockHabit: HabitWithStats = {
   icon: '💪',
   color: '#10b981',
   frequency: 'daily',
-  target_days: undefined,
   status: 'active',
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',

@@ -4,7 +4,6 @@ export interface Habit {
   name: string;
   description: string | null;
   frequency: 'daily' | 'weekly';
-  targetDays: number[]; // Array of day numbers (0-6 for weekly, empty for daily)
   color: string;
   icon: string;
   status: 'active' | 'archived';
@@ -16,7 +15,6 @@ export interface HabitFormData {
   name: string;
   description?: string;
   frequency: 'daily' | 'weekly';
-  targetDays?: number[];
   color?: string;
   icon?: string;
 }

@@ -7,7 +7,6 @@ interface CreateHabitData {
   icon: string;
   color: string;
   frequency: HabitFrequency;
-  target_days?: number[];
 }
 
 interface UpdateHabitData {
@@ -16,7 +15,6 @@ interface UpdateHabitData {
   icon?: string;
   color?: string;
   frequency?: HabitFrequency;
-  target_days?: number[];
   status?: 'active' | 'archived';
 }
 

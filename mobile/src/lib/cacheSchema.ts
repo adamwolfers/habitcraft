@@ -12,7 +12,6 @@ export const CACHE_SCHEMA = {
       'name',
       'description',
       'frequency',
-      'targetDays',
       'color',
       'icon',
       'status',

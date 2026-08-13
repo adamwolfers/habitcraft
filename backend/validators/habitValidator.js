@@ -10,7 +10,7 @@ const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 500;
 
 function validateHabitInput(req, res, next) {
-  const { name, frequency, targetDays, color, description, icon, status } = req.body;
+  const { name, frequency, color, description, icon, status } = req.body;
   const errors = [];
 
   // Validate required fields
@@ -35,18 +35,6 @@ function validateHabitInput(req, res, next) {
   // Validate frequency value
   if (frequency && !VALID_FREQUENCIES.includes(frequency)) {
     errors.push(`frequency must be one of: ${VALID_FREQUENCIES.join(', ')}`);
-  }
-
-  // Validate targetDays if provided
-  if (targetDays !== undefined) {
-    if (!Array.isArray(targetDays)) {
-      errors.push('targetDays must be an array');
-    } else {
-      const invalidDays = targetDays.filter((day) => !Number.isInteger(day) || day < 0 || day > 6);
-      if (invalidDays.length > 0) {
-        errors.push('targetDays must contain integers between 0 and 6 (0=Sunday, 6=Saturday)');
-      }
-    }
   }
 
   // Validate color if provided

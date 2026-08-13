@@ -36,7 +36,6 @@ export interface HabitInput {
   name: string;
   description?: string;
   frequency: HabitFrequency;
-  targetDays?: number[]; // 0-6 for days of week (0=Sunday)
   color?: string; // Hex color code
   icon?: string; // Emoji or icon identifier
 }

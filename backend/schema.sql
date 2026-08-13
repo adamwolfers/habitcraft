@@ -24,7 +24,6 @@ CREATE TABLE habits (
     name VARCHAR(100) NOT NULL,
     description TEXT,
     frequency VARCHAR(20) NOT NULL CHECK (frequency IN ('daily', 'weekly')),
-    target_days INTEGER[] DEFAULT '{}',  -- Array of integers (0-6 for days of week)
     color VARCHAR(7) DEFAULT '#3B82F6',
     icon VARCHAR(10) DEFAULT '⭐',
     status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'archived')),
@@ -110,6 +109,5 @@ COMMENT ON COLUMN refresh_tokens.token_hash IS 'SHA256 hash of the JWT refresh t
 COMMENT ON COLUMN refresh_tokens.revoked IS 'Whether this token has been revoked (logout or rotation)';
 
 COMMENT ON COLUMN habits.frequency IS 'How often the habit should be done: daily or weekly';
-COMMENT ON COLUMN habits.target_days IS 'For weekly habits: array of day numbers (0=Sunday, 6=Saturday)';
 COMMENT ON COLUMN habits.color IS 'Hex color code for UI display';
 COMMENT ON COLUMN habits.icon IS 'Emoji or icon identifier for UI display';

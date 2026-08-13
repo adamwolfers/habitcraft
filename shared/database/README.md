@@ -23,7 +23,6 @@ This directory contains the shared database schema used by all backend implement
    - user_id (foreign key to users)
    - name, description
    - frequency (daily, weekly)
-   - target_days (array for weekly schedules)
    - color, icon (UI customization)
    - status (active, archived)
    - timestamps
@@ -157,7 +156,6 @@ erDiagram
         varchar name
         text description
         varchar frequency
-        int_array target_days
         varchar color
         varchar icon
         varchar status

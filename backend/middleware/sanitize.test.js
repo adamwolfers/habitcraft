@@ -87,14 +87,14 @@ describe('Sanitize Middleware', () => {
       it('should not modify non-string fields', () => {
         mockReq.body = {
           name: 'Exercise',
-          targetDays: [0, 1, 2],
+          scores: [0, 1, 2],
           count: 5,
           active: true,
         };
 
         sanitizeBody(mockReq, mockRes, nextFn);
 
-        expect(mockReq.body.targetDays).toEqual([0, 1, 2]);
+        expect(mockReq.body.scores).toEqual([0, 1, 2]);
         expect(mockReq.body.count).toBe(5);
         expect(mockReq.body.active).toBe(true);
         expect(nextFn).toHaveBeenCalled();

@@ -67,7 +67,6 @@ describe('Habit CRUD Integration Tests', () => {
         name: 'Weekly Review',
         description: 'Review weekly goals and progress',
         frequency: 'weekly',
-        targetDays: [1, 5], // Monday=1, Friday=5 (0=Sunday through 6=Saturday)
         color: '#8B5CF6',
         icon: '📝',
       };
@@ -81,7 +80,6 @@ describe('Habit CRUD Integration Tests', () => {
       expect(response.body.name).toBe(newHabit.name);
       expect(response.body.description).toBe(newHabit.description);
       expect(response.body.frequency).toBe(newHabit.frequency);
-      expect(response.body.targetDays).toEqual(newHabit.targetDays);
       expect(response.body.color).toBe(newHabit.color);
       expect(response.body.icon).toBe(newHabit.icon);
     });
@@ -218,7 +216,6 @@ describe('Habit CRUD Integration Tests', () => {
         name: 'Updated Habit',
         description: 'Updated description',
         frequency: 'weekly',
-        targetDays: [2, 4], // Tuesday=2, Thursday=4 (0=Sunday through 6=Saturday)
         color: '#EF4444',
         icon: '🎯',
         status: 'archived',
@@ -233,7 +230,6 @@ describe('Habit CRUD Integration Tests', () => {
       expect(response.body.name).toBe(updates.name);
       expect(response.body.description).toBe(updates.description);
       expect(response.body.frequency).toBe(updates.frequency);
-      expect(response.body.targetDays).toEqual(updates.targetDays);
       expect(response.body.color).toBe(updates.color);
       expect(response.body.icon).toBe(updates.icon);
       expect(response.body.status).toBe(updates.status);

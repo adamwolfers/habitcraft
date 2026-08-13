@@ -53,7 +53,6 @@ describe('useHabits', () => {
       name: 'Morning Exercise',
       description: null,
       frequency: 'daily',
-      targetDays: [],
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -66,7 +65,6 @@ describe('useHabits', () => {
       name: 'Read Books',
       description: 'Read for 30 minutes',
       frequency: 'weekly',
-      targetDays: [1, 3, 5],
       color: '#FF5733',
       icon: '📚',
       status: 'active',
@@ -253,7 +251,6 @@ describe('useHabits', () => {
         name: 'Meditation',
         description: 'Meditate for 10 minutes',
         frequency: 'daily',
-        targetDays: [],
         color: '#10B981',
         icon: '🧘',
         status: 'active',
@@ -323,7 +320,6 @@ describe('useHabits', () => {
       const newHabitFormData: HabitFormData = {
         name: 'Running',
         frequency: 'weekly',
-        targetDays: [1, 3, 5],
       };
 
       const createdHabit: Habit = {
@@ -332,7 +328,6 @@ describe('useHabits', () => {
         name: 'Running',
         description: null,
         frequency: 'weekly',
-        targetDays: [1, 3, 5],
         color: '#3B82F6',
         icon: '🏃',
         status: 'active',
