@@ -137,6 +137,14 @@ stalling the whole suite. A phase killed this way is reported as
 `⏱️  TIMEOUT: phase exceeded Ns` and is distinct from an ordinary test failure.
 Raise the relevant `TIMEOUT_*` value if a phase legitimately outgrows its budget.
 
+Each watchdog is spawned under job control (`set -m`) so it is its own process
+group leader, and cancelling one uses `kill -- -$PID` to take the group. Killing
+only the watchdog subshell would leave its `sleep` running as an orphan holding
+the script's stdout open, which makes any piped or captured invocation
+(`| tail`, `| tee`, `$(...)`, a CI log collector) hang silently for the full
+timeout *after* the suite has already finished — habitcraft-da5. Keep both
+halves if you touch the watchdogs.
+
 ### Backend
 
 ```bash

@@ -61,25 +61,30 @@ run_with_timeout() {
     local timeout_secs=$1
     shift
 
-    # Job control makes the command its own process group leader, so killing
-    # the group takes jest/playwright children with it rather than orphaning
-    # them behind the npm wrapper.
+    # Job control makes each background job its own process group leader, so
+    # killing the group takes jest/playwright children with it rather than
+    # orphaning them behind the npm wrapper. It matters just as much for the
+    # watchdog: killing the watchdog subshell alone leaves its `sleep` running
+    # (reparented to PID 1), and that orphan holds this script's stdout open,
+    # so any piped invocation appears hung until the sleep expires -- see
+    # habitcraft-da5.
     set -m
     "$@" &
     local cmd_pid=$!
-    set +m
 
     (
         sleep "$timeout_secs"
         kill -9 -"$cmd_pid" 2>/dev/null || kill -9 "$cmd_pid" 2>/dev/null
     ) &
     local watchdog_pid=$!
+    set +m
 
     wait "$cmd_pid"
     local rc=$?
 
-    # Cancel the watchdog if the command finished on its own
-    kill "$watchdog_pid" 2>/dev/null
+    # Cancel the watchdog if the command finished on its own. Kill the whole
+    # group so the `sleep` inside the subshell dies with it.
+    kill -- -"$watchdog_pid" 2>/dev/null
     wait "$watchdog_pid" 2>/dev/null
 
     if [ $rc -ge 128 ]; then
@@ -241,12 +246,15 @@ echo "  Started shard 4/4 (PID $PID4)"
 # which would leave the `wait` below blocking forever.
 # Note: unlike run_with_timeout, these shards are not in their own process
 # group, so only the shard PID is killed -- killing the group would take this
-# script with it.
+# script with it. The watchdogs themselves ARE their own group leaders (set -m)
+# so that cancelling one below kills its `sleep` too -- see habitcraft-da5.
+set -m
 for shard in 1 2 3 4; do
     eval "SPID=\$PID$shard"
     ( sleep "$TIMEOUT_E2E_SHARD"; kill -9 "$SPID" 2>/dev/null ) &
     eval "WPID$shard=$!"
 done
+set +m
 
 # Wait for all shards
 E2E=1
@@ -256,9 +264,10 @@ for shard in 1 2 3 4; do
     wait $PID
     EXIT_CODE=$?
 
-    # Cancel this shard's watchdog now that it has finished
+    # Cancel this shard's watchdog now that it has finished. Kill the whole
+    # group so the `sleep` inside the subshell dies with it.
     eval "WPID=\$WPID$shard"
-    kill "$WPID" 2>/dev/null
+    kill -- -"$WPID" 2>/dev/null
     wait "$WPID" 2>/dev/null
 
     if [ $EXIT_CODE -eq 0 ]; then
