@@ -1,7 +1,12 @@
 ## General Notes
 
 - Verify that you're in the expected branch and directory before running terminal commands
-- All tests can be run sequentially using scripts/test-all.sh
+- `scripts/test-all.sh` runs every gate CI runs — lint, typecheck, and unit
+  tests for backend/frontend/mobile, plus integration and E2E — sequentially, in
+  the same order (cheap static checks first, docker phases last). A green run
+  there predicts a green CI run. Lint/typecheck failures stop the run before
+  containers start; pass `--keep-going` to run everything anyway. See
+  [docs/TESTING.md](docs/TESTING.md) for the phase table.
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
 - See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
 

@@ -143,7 +143,7 @@ See the [OpenAPI specification](./shared/api-spec/openapi.yaml) for complete API
 ### Running Tests
 
 ```bash
-# Run all tests sequentially (recommended)
+# Run every gate CI runs — lint, typecheck, unit, integration, E2E (recommended)
 ./scripts/test-all.sh
 
 # Backend unit tests

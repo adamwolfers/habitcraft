@@ -9,6 +9,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Backend Unit | Jest + Supertest | `backend/**/*.test.js` (colocated) | API endpoint and middleware testing |
 | Backend Integration | Jest + Supertest | `backend/integration/` | Full database workflows |
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
+| Mobile Unit | Jest + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
@@ -127,9 +128,46 @@ Both users have sample habits with predictable UUIDs and sample completions.
 ### All Tests
 
 ```bash
-scripts/test-all.sh           # Run all tests sequentially
-scripts/test-all.sh --rebuild # Rebuild containers first
+scripts/test-all.sh              # Run every gate CI runs, sequentially
+scripts/test-all.sh --rebuild    # Rebuild containers first
+scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
+
+The script runs **10 phases, one per CI step**, so a green local run predicts a
+green CI run (habitcraft-19a). They are ordered cheapest-first:
+
+| # | Phase | Command | Needs docker? |
+|---|-------|---------|---------------|
+| 1 | Backend Lint | `backend: npm run lint` | no |
+| 2 | Frontend Lint | `frontend: npm run lint` | no |
+| 3 | Frontend Typecheck | `frontend: npm run typecheck` | no |
+| 4 | Mobile Lint | `mobile: npm run lint` | no |
+| 5 | Mobile Typecheck | `mobile: npm run typecheck` | no |
+| 6 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 7 | Backend Unit Tests | `backend: npm test` | yes |
+| 8 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 9 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 10 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+
+Notes on that table:
+
+- **Phases 1–5 fail fast.** All five always run (so you see every static error at
+  once), but if any failed the script stops before starting containers and marks
+  the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
+  the docker phases are many minutes, so this is the main practical win of the
+  ordering. `--keep-going` runs everything regardless.
+- **Backend has no typecheck** — it is plain JS with no `typecheck` script. Its
+  absence is correct, not a gap.
+- **Mobile runs `test:coverage`, not `test`.** `mobile/jest.config.js` enforces
+  an 80% `coverageThreshold`, and that threshold only applies under `--coverage`
+  — plain `npm test` would silently skip a gate CI enforces. Backend and
+  frontend have no thresholds, so they use plain `npm test` and skip the
+  instrumentation cost.
+- **Every phase must report exactly one result.** The summary count is asserted
+  against `TOTAL_PHASES` before exit; if they disagree the run fails with an
+  internal error rather than reporting green. That guard exists because the E2E
+  phase sits inside a conditional wrapper (see the shard guard below), and a
+  phase edited across that boundary would otherwise vanish silently.
 
 Each phase runs under a wall-clock timeout (see `TIMEOUT_*` at the top of
 `scripts/test-all.sh`), so a wedged or leaked handle fails that phase instead of
@@ -163,6 +201,16 @@ npm run test:e2e              # E2E tests (headless)
 npm run test:e2e:ui           # E2E tests with Playwright UI
 npm run test:e2e:headed       # E2E tests in visible browser
 npm run test:e2e:report       # View last test report
+```
+
+### Mobile
+
+```bash
+cd mobile
+npm test                      # Unit tests
+npm run test:coverage         # Unit tests + the 80% threshold CI enforces
+npm run typecheck             # Type check
+npm run lint                  # ESLint
 ```
 
 ## E2E Sharding (and why the shard count is not arbitrary)

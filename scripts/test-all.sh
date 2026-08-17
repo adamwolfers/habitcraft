@@ -1,12 +1,18 @@
 #!/bin/bash
 
-# Run all tests sequentially
+# Run every quality gate CI runs, sequentially.
 # Usage: ./scripts/test-all.sh [options]
 #
 # Options:
-#   -r, --rebuild    Force full rebuild of containers (removes volumes, builds with --no-cache)
-#                    Use this when dependencies have changed or you're experiencing stale issues
-#   -h, --help       Show this help message
+#   -r, --rebuild      Force full rebuild of containers (removes volumes, builds with --no-cache)
+#                      Use this when dependencies have changed or you're experiencing stale issues
+#   -k, --keep-going   Run the slow phases even if a static check (lint/typecheck) failed
+#   -h, --help         Show this help message
+#
+# Phases mirror the jobs in .github/workflows/ci.yml so that a green run here
+# predicts a green run there (habitcraft-19a). The static checks and the mobile
+# suite need no docker services, so they run FIRST and a static failure aborts
+# before any container starts -- use --keep-going to override.
 #
 # By default, the script uses cached containers for faster startup (~30s vs ~3min).
 # Dependencies are auto-detected: if package-lock.json files have changed since the
@@ -19,15 +25,18 @@ LOCK_HASH_FILE="$PROJECT_ROOT/.test-deps-hash"
 
 # Parse arguments
 FORCE_REBUILD=false
+KEEP_GOING=false
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -r|--rebuild) FORCE_REBUILD=true ;;
+        -k|--keep-going) KEEP_GOING=true ;;
         -h|--help)
             echo "Usage: ./scripts/test-all.sh [options]"
             echo ""
             echo "Options:"
-            echo "  -r, --rebuild    Force full rebuild of containers"
-            echo "  -h, --help       Show this help message"
+            echo "  -r, --rebuild      Force full rebuild of containers"
+            echo "  -k, --keep-going   Run slow phases even if a static check failed"
+            echo "  -h, --help         Show this help message"
             exit 0
             ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
@@ -36,20 +45,44 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 echo "=============================================="
-echo "Running All Tests"
+echo "Running All Quality Gates"
 echo "=============================================="
 echo ""
 
-# Track results
-BACKEND_UNIT=0
-FRONTEND_UNIT=0
-INTEGRATION=0
-E2E=0
+# Phase labels. Declared once because the fail-fast path has to record the
+# phases it is skipping under the same names the summary prints.
+LBL_BACKEND_LINT="Backend Lint"
+LBL_FRONTEND_LINT="Frontend Lint"
+LBL_FRONTEND_TYPECHECK="Frontend Typecheck"
+LBL_MOBILE_LINT="Mobile Lint"
+LBL_MOBILE_TYPECHECK="Mobile Typecheck"
+LBL_MOBILE_UNIT="Mobile Unit Tests"
+LBL_BACKEND_UNIT="Backend Unit Tests"
+LBL_FRONTEND_UNIT="Frontend Unit Tests"
+LBL_INTEGRATION="Backend Integration Tests"
+LBL_E2E="E2E Tests"
+
+TOTAL_PHASES=10
+PHASE_NUM=0
+
+# Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
+# phase MUST record exactly one line -- the count is asserted before exit, so a
+# phase accidentally moved outside its wrapper block shows up as an error
+# instead of a silent pass (the hazard called out in habitcraft-u1o).
+PHASE_RESULTS=""
+DOCKER_STARTED=0
+
+record_phase() {
+    PHASE_RESULTS="${PHASE_RESULTS}${1}|${2}
+"
+}
 
 # Per-phase timeouts (seconds). A leaked handle in any phase must not be able
 # to stall the whole suite indefinitely -- see habitcraft-doz, where one
 # timed-out integration test left jest idling in its event loop forever and the
 # run sat at 0% CPU until it was killed by hand 40+ minutes later.
+TIMEOUT_STATIC=300
+TIMEOUT_MOBILE_UNIT=600
 TIMEOUT_BACKEND_UNIT=300
 TIMEOUT_FRONTEND_UNIT=600
 TIMEOUT_INTEGRATION=300
@@ -100,6 +133,81 @@ run_with_timeout() {
     return $rc
 }
 
+# Print a numbered phase banner.
+phase_header() {
+    PHASE_NUM=$((PHASE_NUM + 1))
+    echo "$1 [$PHASE_NUM/$TOTAL_PHASES] $2"
+    echo "----------------------------------------------"
+}
+
+# Run one phase: banner, timed command, recorded result.
+# Usage: run_phase <emoji> <label> <timeout> <workdir> <command...>
+# Returns the command's exit status so callers can fail fast.
+run_phase() {
+    local emoji=$1 label=$2 timeout_secs=$3 workdir=$4
+    shift 4
+
+    phase_header "$emoji" "$label"
+    cd "$workdir"
+    if run_with_timeout "$timeout_secs" "$@"; then
+        record_phase pass "$label"
+        echo "✅ $label passed"
+        echo ""
+        return 0
+    fi
+    record_phase fail "$label"
+    echo "❌ $label failed"
+    echo ""
+    return 1
+}
+
+print_summary() {
+    echo "=============================================="
+    echo "Quality Gate Summary"
+    echo "=============================================="
+    echo ""
+    printf '%s' "$PHASE_RESULTS" | while IFS='|' read -r status label; do
+        case "$status" in
+            pass) echo "✅ $label" ;;
+            fail) echo "❌ $label" ;;
+            *)    echo "⏭️  $label (not run)" ;;
+        esac
+    done
+    echo ""
+}
+
+# Print the summary, verify every phase reported, and exit accordingly.
+finish() {
+    print_summary
+
+    if [ "$DOCKER_STARTED" -eq 1 ]; then
+        echo "----------------------------------------------"
+        echo "Note: Test services are still running."
+        echo "To stop: docker compose -f docker-compose.test.yml down"
+        echo "----------------------------------------------"
+        echo ""
+    fi
+
+    local recorded
+    recorded=$(printf '%s' "$PHASE_RESULTS" | grep -c '|' || true)
+    if [ "$recorded" -ne "$TOTAL_PHASES" ]; then
+        echo "⚠️  Internal error: $recorded of $TOTAL_PHASES phases reported a result."
+        echo "   A phase did not run and did not record itself -- treat this run as invalid."
+        exit 1
+    fi
+
+    local not_passed
+    not_passed=$(printf '%s' "$PHASE_RESULTS" | grep -c -v '^pass|' || true)
+    if [ "$not_passed" -eq 0 ]; then
+        # Save dependency hash after a fully successful run
+        echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
+        echo "🎉 All quality gates passed!"
+        exit 0
+    fi
+    echo "💥 Some quality gates failed"
+    exit 1
+}
+
 # Helper function to wait for a service
 wait_for_service() {
     local url=$1
@@ -118,7 +226,65 @@ wait_for_service() {
     return 0
 }
 
-# Start all test services up front
+# Every phase below runs the workspace's own node_modules, so a missing install
+# would surface as a confusing lint failure in phase 1. Say so plainly instead.
+MISSING_DEPS=""
+for pkg in backend frontend mobile; do
+    if [ ! -d "$PROJECT_ROOT/$pkg/node_modules" ]; then
+        MISSING_DEPS="$MISSING_DEPS $pkg"
+    fi
+done
+if [ -n "$MISSING_DEPS" ]; then
+    echo "❌ Dependencies not installed for:$MISSING_DEPS"
+    for pkg in $MISSING_DEPS; do
+        echo "   (cd $pkg && npm ci)"
+    done
+    exit 1
+fi
+
+# ==============================================================================
+# Static checks -- no docker services needed, so they run first and fail fast.
+# ==============================================================================
+STATIC_FAILED=0
+
+run_phase "🧹" "$LBL_BACKEND_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/backend" \
+    npm run lint || STATIC_FAILED=1
+
+run_phase "🧹" "$LBL_FRONTEND_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/frontend" \
+    npm run lint || STATIC_FAILED=1
+
+run_phase "🔤" "$LBL_FRONTEND_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/frontend" \
+    npm run typecheck || STATIC_FAILED=1
+
+run_phase "🧹" "$LBL_MOBILE_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile" \
+    npm run lint || STATIC_FAILED=1
+
+run_phase "🔤" "$LBL_MOBILE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile" \
+    npm run typecheck || STATIC_FAILED=1
+
+if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
+    echo "🛑 Static checks failed -- stopping before the docker and E2E phases."
+    echo "   Fix the above, or re-run with --keep-going to run everything anyway."
+    echo ""
+    record_phase skip "$LBL_MOBILE_UNIT"
+    record_phase skip "$LBL_BACKEND_UNIT"
+    record_phase skip "$LBL_FRONTEND_UNIT"
+    record_phase skip "$LBL_INTEGRATION"
+    record_phase skip "$LBL_E2E"
+    finish
+fi
+
+# ==============================================================================
+# Mobile unit tests -- pure jest, no services, so they stay in the fast group.
+# Run with coverage because mobile/jest.config.js enforces an 80% threshold
+# that only applies under --coverage; `npm test` would skip that CI gate.
+# ==============================================================================
+run_phase "📱" "$LBL_MOBILE_UNIT" "$TIMEOUT_MOBILE_UNIT" "$PROJECT_ROOT/mobile" \
+    npm run test:coverage || true
+
+# ==============================================================================
+# Everything below needs the docker test services.
+# ==============================================================================
 echo "🐳 Starting test services..."
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT"
@@ -147,6 +313,7 @@ else
     echo "Starting containers (use --rebuild for fresh build)..."
     docker compose -f docker-compose.test.yml up -d
 fi
+DOCKER_STARTED=1
 
 # Wait for database to be healthy first
 echo "Waiting for database..."
@@ -178,46 +345,22 @@ fi
 echo "✅ Frontend is ready"
 echo ""
 
-# 1. Backend Unit Tests
-echo "📦 [1/4] Backend Unit Tests"
-echo "----------------------------------------------"
-cd "$PROJECT_ROOT/backend"
-if run_with_timeout "$TIMEOUT_BACKEND_UNIT" npm test; then
-    BACKEND_UNIT=1
-    echo "✅ Backend unit tests passed"
-else
-    echo "❌ Backend unit tests failed"
-fi
-echo ""
+# Backend Unit Tests
+run_phase "📦" "$LBL_BACKEND_UNIT" "$TIMEOUT_BACKEND_UNIT" "$PROJECT_ROOT/backend" \
+    npm test || true
 
-# 2. Frontend Unit Tests
-echo "🎨 [2/4] Frontend Unit Tests"
-echo "----------------------------------------------"
+# Frontend Unit Tests
+run_phase "🎨" "$LBL_FRONTEND_UNIT" "$TIMEOUT_FRONTEND_UNIT" "$PROJECT_ROOT/frontend" \
+    npm test || true
+
+# Backend Integration Tests
+run_phase "🔗" "$LBL_INTEGRATION" "$TIMEOUT_INTEGRATION" "$PROJECT_ROOT/backend" \
+    npm run test:integration || true
+
+# E2E Tests (parallel shards)
+phase_header "🌐" "$LBL_E2E ($E2E_SHARDS parallel shards)"
 cd "$PROJECT_ROOT/frontend"
-if run_with_timeout "$TIMEOUT_FRONTEND_UNIT" npm test; then
-    FRONTEND_UNIT=1
-    echo "✅ Frontend unit tests passed"
-else
-    echo "❌ Frontend unit tests failed"
-fi
-echo ""
-
-# 3. Backend Integration Tests
-echo "🔗 [3/4] Backend Integration Tests"
-echo "----------------------------------------------"
-cd "$PROJECT_ROOT/backend"
-if run_with_timeout "$TIMEOUT_INTEGRATION" npm run test:integration; then
-    INTEGRATION=1
-    echo "✅ Integration tests passed"
-else
-    echo "❌ Integration tests failed"
-fi
-echo ""
-
-# 4. E2E Tests (parallel shards)
-echo "🌐 [4/4] End-to-End Tests ($E2E_SHARDS parallel shards)"
-echo "----------------------------------------------"
-cd "$PROJECT_ROOT/frontend"
+E2E=0
 
 # Confirm the shard split still covers the suite BEFORE running anything. An
 # empty shard exits 0 and prints no summary line, so without this the run would
@@ -325,34 +468,12 @@ fi
 
 fi  # end: E2E shard split verified
 
-echo ""
-
-# Summary
-echo "=============================================="
-echo "Test Summary"
-echo "=============================================="
-echo ""
-[ $BACKEND_UNIT -eq 1 ] && echo "✅ Backend Unit Tests" || echo "❌ Backend Unit Tests"
-[ $FRONTEND_UNIT -eq 1 ] && echo "✅ Frontend Unit Tests" || echo "❌ Frontend Unit Tests"
-[ $INTEGRATION -eq 1 ] && echo "✅ Integration Tests" || echo "❌ Integration Tests"
-[ $E2E -eq 1 ] && echo "✅ E2E Tests" || echo "❌ E2E Tests"
-echo ""
-
-# Note about services
-echo "----------------------------------------------"
-echo "Note: Test services are still running."
-echo "To stop: docker compose -f docker-compose.test.yml down"
-echo "----------------------------------------------"
-echo ""
-
-# Exit with error if any tests failed
-TOTAL=$((BACKEND_UNIT + FRONTEND_UNIT + INTEGRATION + E2E))
-if [ $TOTAL -eq 4 ]; then
-    # Save dependency hash after successful run
-    echo "$CURRENT_HASH" > "$LOCK_HASH_FILE"
-    echo "🎉 All tests passed!"
-    exit 0
+# Recorded outside the guard on purpose: the skipped case must report too.
+if [ "$E2E" -eq 1 ]; then
+    record_phase pass "$LBL_E2E"
 else
-    echo "💥 Some tests failed"
-    exit 1
+    record_phase fail "$LBL_E2E"
 fi
+echo ""
+
+finish
