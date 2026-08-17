@@ -469,7 +469,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
   e2e-tests:
-    name: E2E Tests (Shard ${{ matrix.shard }}/4)
+    name: E2E Tests (Shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
     needs: [detect-changes, backend-integration-tests]
     if: |
@@ -486,8 +486,13 @@ jobs:
       )
     strategy:
       fail-fast: false
+      # Playwright shards by FILE (fullyParallel: false in playwright.config.ts),
+      # so the shard count must stay matched to the spec-file layout -- 4 shards
+      # left one running zero tests, and an empty shard reports as passed
+      # (habitcraft-u1o). Keep in sync with E2E_SHARDS in scripts/test-all.sh;
+      # the "Verify shard is non-empty" step below fails the job if it drifts.
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3]
 
     steps:
       - uses: actions/checkout@v4
@@ -546,6 +551,11 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      # Before the browser download and container boot: --list needs neither,
+      # so a broken shard split fails in seconds rather than minutes.
+      - name: Verify shard ${{ matrix.shard }}/3 is non-empty
+        run: ./scripts/check-e2e-shards.sh 3 ${{ matrix.shard }}
+
       - name: Install Playwright browsers
         working-directory: frontend
         run: npx playwright install --with-deps chromium
@@ -562,9 +572,9 @@ jobs:
           timeout 60 bash -c 'until curl -s http://localhost:3110 > /dev/null; do sleep 2; done'
           echo "Frontend is ready!"
 
-      - name: Run E2E tests (shard ${{ matrix.shard }}/4)
+      - name: Run E2E tests (shard ${{ matrix.shard }}/3)
         working-directory: frontend
-        run: npx playwright test --shard=${{ matrix.shard }}/4 --reporter=blob
+        run: npx playwright test --shard=${{ matrix.shard }}/3 --reporter=blob
 
       - name: Upload blob report (shard ${{ matrix.shard }})
         uses: actions/upload-artifact@v4
