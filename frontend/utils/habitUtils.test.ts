@@ -13,7 +13,6 @@ const mockHabit: Habit = {
   userId: 'user-1',
   name: 'Exercise',
   description: 'Daily workout',
-  frequency: 'daily',
   color: '#FF5733',
   icon: 'dumbbell',
   status: 'active',
@@ -52,7 +51,6 @@ describe('detectHabitChanges', () => {
     userId: 'user-1',
     name: 'Exercise',
     description: 'Daily workout',
-    frequency: 'daily',
     color: '#FF5733',
     icon: '🏃',
     status: 'active',
@@ -150,19 +148,6 @@ describe('detectHabitChanges', () => {
 });
 
 describe('buildHabitUpdatePayload', () => {
-  const originalHabit: Habit = {
-    id: 'habit-1',
-    userId: 'user-1',
-    name: 'Exercise',
-    description: 'Daily workout',
-    frequency: 'daily',
-    color: '#FF5733',
-    icon: '🏃',
-    status: 'active',
-    createdAt: '2025-01-01T00:00:00Z',
-    updatedAt: '2025-01-01T00:00:00Z',
-  };
-
   it('builds payload with all form values', () => {
     const formValues: HabitFormValues = {
       name: 'Morning Exercise',
@@ -170,11 +155,10 @@ describe('buildHabitUpdatePayload', () => {
       color: '#00FF00',
       icon: '💪',
     };
-    const payload = buildHabitUpdatePayload(formValues, originalHabit);
+    const payload = buildHabitUpdatePayload(formValues);
     expect(payload).toEqual({
       name: 'Morning Exercise',
       description: 'Updated workout',
-      frequency: 'daily',
       color: '#00FF00',
       icon: '💪',
     });
@@ -187,23 +171,8 @@ describe('buildHabitUpdatePayload', () => {
       color: '#FF5733',
       icon: '🏃',
     };
-    const payload = buildHabitUpdatePayload(formValues, originalHabit);
+    const payload = buildHabitUpdatePayload(formValues);
     expect(payload.description).toBeNull();
-  });
-
-  it('preserves original frequency in payload', () => {
-    const weeklyHabit: Habit = {
-      ...originalHabit,
-      frequency: 'weekly',
-    };
-    const formValues: HabitFormValues = {
-      name: 'Exercise',
-      description: 'Weekly workout',
-      color: '#FF5733',
-      icon: '🏃',
-    };
-    const payload = buildHabitUpdatePayload(formValues, weeklyHabit);
-    expect(payload.frequency).toBe('weekly');
   });
 
   it('trims whitespace from name', () => {
@@ -213,7 +182,7 @@ describe('buildHabitUpdatePayload', () => {
       color: '#FF5733',
       icon: '🏃',
     };
-    const payload = buildHabitUpdatePayload(formValues, originalHabit);
+    const payload = buildHabitUpdatePayload(formValues);
     expect(payload.name).toBe('Exercise');
   });
 
@@ -224,7 +193,7 @@ describe('buildHabitUpdatePayload', () => {
       color: '#FF5733',
       icon: '🏃',
     };
-    const payload = buildHabitUpdatePayload(formValues, originalHabit);
+    const payload = buildHabitUpdatePayload(formValues);
     expect(payload.description).toBe('Daily workout');
   });
 });

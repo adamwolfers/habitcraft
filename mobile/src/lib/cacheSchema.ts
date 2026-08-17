@@ -11,7 +11,6 @@ export const CACHE_SCHEMA = {
       'userId',
       'name',
       'description',
-      'frequency',
       'color',
       'icon',
       'status',

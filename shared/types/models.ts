@@ -29,13 +29,11 @@ export interface AuthResponse {
 }
 
 // Habit types
-export type HabitFrequency = 'daily' | 'weekly';
 export type HabitStatus = 'active' | 'archived';
 
 export interface HabitInput {
   name: string;
   description?: string;
-  frequency: HabitFrequency;
   color?: string; // Hex color code
   icon?: string; // Emoji or icon identifier
 }

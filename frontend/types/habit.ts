@@ -3,7 +3,6 @@ export interface Habit {
   userId: string;
   name: string;
   description: string | null;
-  frequency: 'daily' | 'weekly';
   color: string;
   icon: string;
   status: 'active' | 'archived';
@@ -14,7 +13,6 @@ export interface Habit {
 export interface HabitFormData {
   name: string;
   description?: string;
-  frequency: 'daily' | 'weekly';
   color?: string;
   icon?: string;
 }

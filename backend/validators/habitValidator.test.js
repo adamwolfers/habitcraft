@@ -20,7 +20,6 @@ describe('Habit Validator Middleware', () => {
     it('should call next() with valid habit input', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -32,7 +31,6 @@ describe('Habit Validator Middleware', () => {
     it('should call next() with all valid optional fields', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily',
         description: 'Daily workout routine',
         color: '#FF5733',
         icon: '🏃',
@@ -48,9 +46,7 @@ describe('Habit Validator Middleware', () => {
 
   describe('Name validation', () => {
     it('should return 400 if name is missing', () => {
-      mockReq.body = {
-        frequency: 'daily',
-      };
+      mockReq.body = {};
 
       validateHabitInput(mockReq, mockRes, nextFn);
 
@@ -66,7 +62,6 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if name is empty string', () => {
       mockReq.body = {
         name: '   ',
-        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -78,7 +73,6 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if name exceeds max length', () => {
       mockReq.body = {
         name: 'a'.repeat(101),
-        frequency: 'daily',
       };
 
       validateHabitInput(mockReq, mockRes, nextFn);
@@ -93,41 +87,10 @@ describe('Habit Validator Middleware', () => {
     });
   });
 
-  describe('Frequency validation', () => {
-    it('should return 400 if frequency is missing', () => {
-      mockReq.body = {
-        name: 'Exercise',
-      };
-
-      validateHabitInput(mockReq, mockRes, nextFn);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(nextFn).not.toHaveBeenCalled();
-    });
-
-    it('should return 400 if frequency is invalid', () => {
-      mockReq.body = {
-        name: 'Exercise',
-        frequency: 'invalid',
-      };
-
-      validateHabitInput(mockReq, mockRes, nextFn);
-
-      expect(mockRes.status).toHaveBeenCalledWith(400);
-      expect(mockRes.json).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: expect.stringContaining('must be one of: daily, weekly'),
-        })
-      );
-      expect(nextFn).not.toHaveBeenCalled();
-    });
-  });
-
   describe('Description validation', () => {
     it('should return 400 if description exceeds max length', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily',
         description: 'a'.repeat(501),
       };
 
@@ -147,7 +110,6 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if color is not a valid hex color', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily',
         color: 'not-a-color',
       };
 
@@ -167,7 +129,6 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if icon is not a string', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily',
         icon: 123,
       };
 
@@ -187,7 +148,6 @@ describe('Habit Validator Middleware', () => {
     it('should return 400 if status is invalid', () => {
       mockReq.body = {
         name: 'Exercise',
-        frequency: 'daily',
         status: 'invalid-status',
       };
 

@@ -32,7 +32,6 @@ describe('POST /api/v1/habits', () => {
       userId: TEST_USER_ID,
       name: 'Morning Exercise',
       description: null,
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -46,7 +45,6 @@ describe('POST /api/v1/habits', () => {
 
     const habitData = {
       name: 'Morning Exercise',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -58,7 +56,6 @@ describe('POST /api/v1/habits', () => {
 
     expect(response.body).toMatchObject({
       name: 'Morning Exercise',
-      frequency: 'daily',
       userId: TEST_USER_ID,
       status: 'active',
     });
@@ -73,7 +70,6 @@ describe('POST /api/v1/habits', () => {
       TEST_USER_ID,
       'Morning Exercise',
       null,
-      'daily',
       '#3B82F6',
       '⭐',
     ]);
@@ -85,7 +81,6 @@ describe('POST /api/v1/habits', () => {
       userId: TEST_USER_ID,
       name: 'Read Books',
       description: 'Read for 30 minutes',
-      frequency: 'daily',
       color: '#FF5733',
       icon: '📚',
       status: 'active',
@@ -99,7 +94,6 @@ describe('POST /api/v1/habits', () => {
     const habitData = {
       name: 'Read Books',
       description: 'Read for 30 minutes',
-      frequency: 'daily',
       color: '#FF5733',
       icon: '📚',
     };
@@ -113,7 +107,6 @@ describe('POST /api/v1/habits', () => {
     expect(response.body).toMatchObject({
       name: 'Read Books',
       description: 'Read for 30 minutes',
-      frequency: 'daily',
       color: '#FF5733',
       icon: '📚',
       status: 'active',
@@ -121,40 +114,7 @@ describe('POST /api/v1/habits', () => {
   });
 
   it('should return 400 if name is missing', async () => {
-    const habitData = {
-      frequency: 'daily',
-    };
-
-    const response = await request(app)
-      .post('/api/v1/habits')
-      .set('Authorization', `Bearer ${TEST_TOKEN}`)
-      .send(habitData)
-      .expect(400);
-
-    expect(response.body).toHaveProperty('error');
-    expect(query).not.toHaveBeenCalled();
-  });
-
-  it('should return 400 if frequency is missing', async () => {
-    const habitData = {
-      name: 'Test Habit',
-    };
-
-    const response = await request(app)
-      .post('/api/v1/habits')
-      .set('Authorization', `Bearer ${TEST_TOKEN}`)
-      .send(habitData)
-      .expect(400);
-
-    expect(response.body).toHaveProperty('error');
-    expect(query).not.toHaveBeenCalled();
-  });
-
-  it('should return 400 if frequency is invalid', async () => {
-    const habitData = {
-      name: 'Test Habit',
-      frequency: 'invalid',
-    };
+    const habitData = {};
 
     const response = await request(app)
       .post('/api/v1/habits')
@@ -169,7 +129,6 @@ describe('POST /api/v1/habits', () => {
   it('should return 400 if name is too long', async () => {
     const habitData = {
       name: 'a'.repeat(101), // Max is 100 characters
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -185,7 +144,6 @@ describe('POST /api/v1/habits', () => {
   it('should return 400 if color is invalid', async () => {
     const habitData = {
       name: 'Test Habit',
-      frequency: 'daily',
       color: 'not-a-hex-color',
     };
 
@@ -202,7 +160,6 @@ describe('POST /api/v1/habits', () => {
   it('should return 401 if user ID is not provided', async () => {
     const habitData = {
       name: 'Test Habit',
-      frequency: 'daily',
     };
 
     const response = await request(app).post('/api/v1/habits').send(habitData).expect(401);
@@ -217,7 +174,6 @@ describe('POST /api/v1/habits', () => {
       userId: TEST_USER_ID,
       name: 'Simple Habit',
       description: null,
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -230,7 +186,6 @@ describe('POST /api/v1/habits', () => {
 
     const habitData = {
       name: 'Simple Habit',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -260,7 +215,7 @@ describe('POST /api/v1/habits - Habit Limit', () => {
     const response = await request(app)
       .post('/api/v1/habits')
       .set('Authorization', `Bearer ${TEST_TOKEN}`)
-      .send({ name: 'One Too Many', frequency: 'daily' })
+      .send({ name: 'One Too Many' })
       .expect(403);
 
     expect(response.body.error).toBe('Habit limit reached');
@@ -276,7 +231,6 @@ describe('POST /api/v1/habits - Habit Limit', () => {
       userId: TEST_USER_ID,
       name: 'Under Limit',
       description: null,
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -291,7 +245,7 @@ describe('POST /api/v1/habits - Habit Limit', () => {
     const response = await request(app)
       .post('/api/v1/habits')
       .set('Authorization', `Bearer ${TEST_TOKEN}`)
-      .send({ name: 'Under Limit', frequency: 'daily' })
+      .send({ name: 'Under Limit' })
       .expect(201);
 
     expect(response.body.name).toBe('Under Limit');
@@ -331,7 +285,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'Morning Exercise',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -344,7 +297,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'Read Books',
         description: null,
-        frequency: 'weekly',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -364,13 +316,11 @@ describe('GET /api/v1/habits', () => {
     expect(response.body).toHaveLength(2);
     expect(response.body[0]).toMatchObject({
       name: 'Morning Exercise',
-      frequency: 'daily',
       userId: TEST_USER_ID,
       status: 'active',
     });
     expect(response.body[1]).toMatchObject({
       name: 'Read Books',
-      frequency: 'weekly',
       userId: TEST_USER_ID,
       status: 'active',
     });
@@ -383,7 +333,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'Morning Exercise',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -404,7 +353,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'Read Books',
         description: null,
-        frequency: 'weekly',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -437,7 +385,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'My Habit',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -469,7 +416,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'Active Habit',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -503,7 +449,6 @@ describe('GET /api/v1/habits', () => {
         userId: TEST_USER_ID,
         name: 'Archived Habit',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'archived',
@@ -647,7 +592,6 @@ describe('PUT /api/v1/habits/:id', () => {
       userId: TEST_USER_ID,
       name: 'Updated Exercise',
       description: 'New description',
-      frequency: 'weekly',
       color: '#FF5733',
       icon: '🏃',
       status: 'active',
@@ -660,7 +604,6 @@ describe('PUT /api/v1/habits/:id', () => {
     const updateData = {
       name: 'Updated Exercise',
       description: 'New description',
-      frequency: 'weekly',
       color: '#FF5733',
       icon: '🏃',
     };
@@ -676,7 +619,6 @@ describe('PUT /api/v1/habits/:id', () => {
       id: HABIT_ID,
       name: 'Updated Exercise',
       description: 'New description',
-      frequency: 'weekly',
       color: '#FF5733',
       icon: '🏃',
     });
@@ -694,7 +636,6 @@ describe('PUT /api/v1/habits/:id', () => {
       userId: TEST_USER_ID,
       name: 'New Name',
       description: 'Original description',
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -706,7 +647,6 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'New Name',
-      frequency: 'daily', // Required field
     };
 
     const response = await request(app)
@@ -724,7 +664,6 @@ describe('PUT /api/v1/habits/:id', () => {
       userId: TEST_USER_ID,
       name: 'Exercise',
       description: null,
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'archived',
@@ -736,7 +675,6 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Exercise',
-      frequency: 'daily',
       status: 'archived',
     };
 
@@ -754,7 +692,6 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -772,7 +709,6 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -794,7 +730,6 @@ describe('PUT /api/v1/habits/:id', () => {
   it('should return 401 if user ID is not provided', async () => {
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -811,7 +746,6 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Updated Name',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -825,25 +759,7 @@ describe('PUT /api/v1/habits/:id', () => {
   });
 
   it('should return 400 if name is missing', async () => {
-    const updateData = {
-      frequency: 'daily',
-    };
-
-    const response = await request(app)
-      .put(`/api/v1/habits/${HABIT_ID}`)
-      .set('Authorization', `Bearer ${TEST_TOKEN}`)
-      .send(updateData)
-      .expect(400);
-
-    expect(response.body).toHaveProperty('error');
-    expect(query).not.toHaveBeenCalled();
-  });
-
-  it('should return 400 if frequency is invalid', async () => {
-    const updateData = {
-      name: 'Valid Name',
-      frequency: 'invalid-frequency',
-    };
+    const updateData = {};
 
     const response = await request(app)
       .put(`/api/v1/habits/${HABIT_ID}`)
@@ -858,7 +774,6 @@ describe('PUT /api/v1/habits/:id', () => {
   it('should return 400 if color is invalid', async () => {
     const updateData = {
       name: 'Valid Name',
-      frequency: 'daily',
       color: 'not-a-hex-color',
     };
 
@@ -875,7 +790,6 @@ describe('PUT /api/v1/habits/:id', () => {
   it('should return 400 if status is invalid', async () => {
     const updateData = {
       name: 'Valid Name',
-      frequency: 'daily',
       status: 'invalid-status',
     };
 
@@ -894,7 +808,6 @@ describe('PUT /api/v1/habits/:id', () => {
 
     const updateData = {
       name: 'Valid Name',
-      frequency: 'daily',
     };
 
     const response = await request(app)
@@ -923,7 +836,6 @@ describe('Input sanitization', () => {
         userId: TEST_USER_ID,
         name: 'Exercise',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -936,7 +848,6 @@ describe('Input sanitization', () => {
 
       await request(app).post('/api/v1/habits').set('Authorization', `Bearer ${TEST_TOKEN}`).send({
         name: '<script>alert("xss")</script>Exercise',
-        frequency: 'daily',
       });
 
       // Check that the INSERT query was called with sanitized name (index 1, after COUNT)
@@ -952,7 +863,6 @@ describe('Input sanitization', () => {
         userId: TEST_USER_ID,
         name: 'Exercise',
         description: 'My workout routine',
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -966,7 +876,6 @@ describe('Input sanitization', () => {
       await request(app).post('/api/v1/habits').set('Authorization', `Bearer ${TEST_TOKEN}`).send({
         name: 'Exercise',
         description: '<img src=x onerror="alert(1)">My workout routine',
-        frequency: 'daily',
       });
 
       const insertCall = query.mock.calls[1]; // index 1, after COUNT
@@ -981,7 +890,6 @@ describe('Input sanitization', () => {
         userId: TEST_USER_ID,
         name: 'Exercise',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -994,7 +902,6 @@ describe('Input sanitization', () => {
 
       await request(app).post('/api/v1/habits').set('Authorization', `Bearer ${TEST_TOKEN}`).send({
         name: '  Exercise  ',
-        frequency: 'daily',
       });
 
       const insertCall = query.mock.calls[1]; // index 1, after COUNT
@@ -1010,7 +917,6 @@ describe('Input sanitization', () => {
         userId: TEST_USER_ID,
         name: 'Updated Exercise',
         description: null,
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -1025,7 +931,6 @@ describe('Input sanitization', () => {
         .set('Authorization', `Bearer ${TEST_TOKEN}`)
         .send({
           name: '<script>evil()</script>Updated Exercise',
-          frequency: 'daily',
         });
 
       const updateCall = query.mock.calls[0];
@@ -1043,7 +948,6 @@ describe('Input sanitization', () => {
         userId: TEST_USER_ID,
         name: 'Exercise',
         description: 'Trimmed description',
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '⭐',
         status: 'active',
@@ -1059,7 +963,6 @@ describe('Input sanitization', () => {
         .send({
           name: 'Exercise',
           description: '  Trimmed description  ',
-          frequency: 'daily',
         });
 
       const updateCall = query.mock.calls[0];

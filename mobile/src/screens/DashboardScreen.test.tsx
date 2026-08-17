@@ -63,7 +63,6 @@ const mockHabit: HabitWithStats = {
   description: 'Daily workout',
   icon: '💪',
   color: '#10b981',
-  frequency: 'daily',
   status: 'active',
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',

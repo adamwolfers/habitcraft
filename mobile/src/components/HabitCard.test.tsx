@@ -11,7 +11,6 @@ describe('HabitCard', () => {
     description: 'Do 30 minutes of exercise',
     icon: '🏃',
     color: '#10b981',
-    frequency: 'daily',
     status: 'active',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
@@ -92,14 +91,6 @@ describe('HabitCard', () => {
     );
 
     expect(getByTestId('complete-button').props.accessibilityState?.checked).toBe(false);
-  });
-
-  it('displays frequency badge', () => {
-    const { getByText } = render(
-      <HabitCard habit={mockHabit} onPress={mockOnPress} onComplete={mockOnComplete} />
-    );
-
-    expect(getByText('Daily')).toBeTruthy();
   });
 
   it('shows pending badge for habits with temp IDs', () => {

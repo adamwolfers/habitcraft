@@ -49,7 +49,6 @@ describe('AddHabitForm', () => {
       description: '5km jog',
       color: '#3b82f6', // Default color
       icon: '🏃', // Default icon
-      frequency: 'daily',
     });
   });
 
@@ -89,7 +88,6 @@ describe('AddHabitForm', () => {
       description: 'Workout',
       color: '#3b82f6',
       icon: '🏃',
-      frequency: 'daily',
     });
   });
 
@@ -123,7 +121,6 @@ describe('AddHabitForm', () => {
       description: '',
       color: '#10b981', // Second color in PRESET_COLORS
       icon: '🏃',
-      frequency: 'daily',
     });
   });
 
@@ -242,7 +239,6 @@ describe('AddHabitForm', () => {
         description: '',
         color: '#3b82f6',
         icon: '🏃', // Default icon
-        frequency: 'daily',
       });
     });
 
@@ -268,7 +264,6 @@ describe('AddHabitForm', () => {
         description: '',
         color: '#3b82f6',
         icon: '📚', // Selected icon
-        frequency: 'daily',
       });
     });
 
@@ -315,7 +310,6 @@ describe('AddHabitForm', () => {
       description: '',
       color: '#3b82f6',
       icon: '🏃',
-      frequency: 'daily',
     });
   });
 

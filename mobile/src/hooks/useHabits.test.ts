@@ -46,7 +46,6 @@ const mockHabit: HabitWithStats = {
   description: 'Daily workout',
   icon: '💪',
   color: '#10b981',
-  frequency: 'daily',
   status: 'active',
   createdAt: '2024-01-01T00:00:00Z',
   updatedAt: '2024-01-01T00:00:00Z',
@@ -60,7 +59,6 @@ const mockHabit2: HabitWithStats = {
   description: 'Read a book',
   icon: '📚',
   color: '#6366f1',
-  frequency: 'daily',
   status: 'active',
   createdAt: '2024-01-02T00:00:00Z',
   updatedAt: '2024-01-02T00:00:00Z',
@@ -219,7 +217,6 @@ describe('useHabits', () => {
       description: 'A new habit',
       icon: '🎯',
       color: '#ef4444',
-      frequency: 'daily' as const,
     };
 
     it('creates habit when online', async () => {
@@ -281,7 +278,6 @@ describe('useHabits', () => {
         description: createData.description,
         icon: createData.icon,
         color: createData.color,
-        frequency: createData.frequency,
         status: 'active',
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',

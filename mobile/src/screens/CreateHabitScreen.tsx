@@ -11,7 +11,6 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { colors, spacing, typography } from '@/theme';
 import { useCreateHabit } from '@/hooks';
-import { HabitFrequency } from '@/types';
 
 const ICONS = ['🏃', '📚', '💪', '🧘', '💧', '🥗', '😴', '💰', '✍️', '🎯'];
 const COLORS = [
@@ -25,12 +24,6 @@ const COLORS = [
   '#14b8a6', // teal
 ];
 
-const FREQUENCIES: { value: HabitFrequency; label: string }[] = [
-  { value: 'daily', label: 'Daily' },
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'custom', label: 'Custom' },
-];
-
 export function CreateHabitScreen() {
   const navigation = useNavigation();
   const createHabit = useCreateHabit();
@@ -39,7 +32,6 @@ export function CreateHabitScreen() {
   const [description, setDescription] = useState('');
   const [selectedIcon, setSelectedIcon] = useState(ICONS[0]);
   const [selectedColor, setSelectedColor] = useState(COLORS[0]);
-  const [selectedFrequency, setSelectedFrequency] = useState<HabitFrequency>('daily');
   const [error, setError] = useState<string | null>(null);
 
   const handleCreate = async () => {
@@ -56,7 +48,6 @@ export function CreateHabitScreen() {
         description: description.trim() || undefined,
         icon: selectedIcon,
         color: selectedColor,
-        frequency: selectedFrequency,
       });
       navigation.goBack();
     } catch (err) {
@@ -127,31 +118,6 @@ export function CreateHabitScreen() {
               onPress={() => setSelectedColor(color)}
             >
               {selectedColor === color && <Text style={styles.checkmark}>✓</Text>}
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.field}>
-        <Text style={styles.label}>Frequency</Text>
-        <View style={styles.frequencyRow}>
-          {FREQUENCIES.map((freq) => (
-            <TouchableOpacity
-              key={freq.value}
-              style={[
-                styles.frequencyButton,
-                selectedFrequency === freq.value && styles.frequencyButtonSelected,
-              ]}
-              onPress={() => setSelectedFrequency(freq.value)}
-            >
-              <Text
-                style={[
-                  styles.frequencyText,
-                  selectedFrequency === freq.value && styles.frequencyTextSelected,
-                ]}
-              >
-                {freq.label}
-              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -260,31 +226,6 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  frequencyRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  frequencyButton: {
-    flex: 1,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  frequencyButtonSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  frequencyText: {
-    ...typography.button,
-    color: colors.text,
-  },
-  frequencyTextSelected: {
-    color: colors.white,
   },
   error: {
     color: colors.error,

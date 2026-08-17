@@ -12,7 +12,6 @@ describe('EditHabitModal', () => {
     description: '30 minutes workout',
     color: '#3b82f6',
     icon: '🏃',
-    frequency: 'daily',
     status: 'active',
     createdAt: '2025-10-30T12:00:00.000Z',
     updatedAt: '2025-10-30T12:00:00.000Z',
@@ -236,7 +235,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Morning Run',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#3b82f6',
         icon: '🏃',
       });
@@ -304,7 +302,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Morning Run',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#3b82f6',
         icon: '🏃',
       });
@@ -441,7 +438,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Morning Run',
         description: 'Updated description',
-        frequency: 'daily',
         color: '#3b82f6',
         icon: '🏃',
       });
@@ -589,7 +585,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Exercise',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#10b981',
         icon: '🏃',
       });
@@ -642,7 +637,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Morning Run',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#10b981',
         icon: '🏃',
       });
@@ -753,7 +747,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Exercise',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#3b82f6',
         icon: '📚',
       });
@@ -806,7 +799,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Reading Time',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#3b82f6',
         icon: '📚',
       });
@@ -835,7 +827,6 @@ describe('EditHabitModal', () => {
       expect(mockOnUpdate).toHaveBeenCalledWith('1', {
         name: 'Exercise',
         description: '30 minutes workout',
-        frequency: 'daily',
         color: '#10b981',
         icon: '📚',
       });

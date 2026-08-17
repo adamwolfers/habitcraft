@@ -17,12 +17,6 @@ import { MainStackParamList } from '@/types';
 type HabitDetailRouteProp = RouteProp<MainStackParamList, 'HabitDetail'>;
 type HabitDetailNavigationProp = StackNavigationProp<MainStackParamList>;
 
-const FREQUENCY_LABELS: Record<string, string> = {
-  daily: 'Daily',
-  weekly: 'Weekly',
-  custom: 'Custom',
-};
-
 export function HabitDetailScreen() {
   const navigation = useNavigation<HabitDetailNavigationProp>();
   const route = useRoute<HabitDetailRouteProp>();
@@ -85,11 +79,6 @@ export function HabitDetailScreen() {
       <View style={[styles.header, { backgroundColor: habit.color + '20' }]}>
         <Text style={styles.icon}>{habit.icon}</Text>
         <Text style={styles.name}>{habit.name}</Text>
-        <View style={[styles.frequencyBadge, { backgroundColor: habit.color }]}>
-          <Text style={styles.frequencyText}>
-            {FREQUENCY_LABELS[habit.frequency] || habit.frequency}
-          </Text>
-        </View>
       </View>
 
       {habit.description ? (
@@ -155,16 +144,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     marginBottom: spacing.sm,
-  },
-  frequencyBadge: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: 16,
-  },
-  frequencyText: {
-    ...typography.button,
-    color: colors.white,
-    fontSize: 13,
   },
   description: {
     ...typography.body,

@@ -28,7 +28,6 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           description: description.trim(),
           color,
           icon,
-          frequency: 'daily', // Default to daily for now
         });
         // Only clear form and close if successful
         const resetValues = getDefaultHabitFormValues();

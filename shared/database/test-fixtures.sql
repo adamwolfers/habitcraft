@@ -32,14 +32,13 @@ ON CONFLICT (id) DO NOTHING;
 -- TEST HABITS (for Test User 1)
 -- ============================================================================
 
-INSERT INTO habits (id, user_id, name, description, frequency, color, icon, status)
+INSERT INTO habits (id, user_id, name, description, color, icon, status)
 VALUES
     (
         'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
         '11111111-1111-1111-1111-111111111111',
         'Morning Exercise',
         'Daily workout routine',
-        'daily',
         '#3B82F6',
         '🏃',
         'active'
@@ -49,7 +48,6 @@ VALUES
         '11111111-1111-1111-1111-111111111111',
         'Read Books',
         'Read for 30 minutes',
-        'daily',
         '#10B981',
         '📚',
         'active'
@@ -59,7 +57,6 @@ VALUES
         '11111111-1111-1111-1111-111111111111',
         'Archived Habit',
         'This habit is archived',
-        'daily',
         '#6B7280',
         '📦',
         'archived'
@@ -70,14 +67,13 @@ ON CONFLICT (id) DO NOTHING;
 -- TEST HABITS (for Test User 2 - user isolation testing)
 -- ============================================================================
 
-INSERT INTO habits (id, user_id, name, description, frequency, color, icon, status)
+INSERT INTO habits (id, user_id, name, description, color, icon, status)
 VALUES
     (
         'dddddddd-dddd-dddd-dddd-dddddddddddd',
         '22222222-2222-2222-2222-222222222222',
         'User 2 Habit',
         'This belongs to test user 2',
-        'daily',
         '#F59E0B',
         '⭐',
         'active'
