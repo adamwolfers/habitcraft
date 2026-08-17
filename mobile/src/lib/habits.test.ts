@@ -1,6 +1,6 @@
 import { api } from './api';
 import { habitsApi } from './habits';
-import { Habit, HabitFrequency } from '@/types';
+import { Habit } from '@/types';
 
 jest.mock('./api', () => ({
   api: {
@@ -21,7 +21,6 @@ describe('habitsApi', () => {
     description: 'Do 30 minutes of exercise',
     icon: '🏃',
     color: '#10b981',
-    frequency: 'daily' as HabitFrequency,
     status: 'active',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
@@ -55,7 +54,6 @@ describe('habitsApi', () => {
       description: 'Read for 30 minutes',
       icon: '📚',
       color: '#6366f1',
-      frequency: 'daily' as HabitFrequency,
     };
 
     it('makes POST request to /habits with data', async () => {

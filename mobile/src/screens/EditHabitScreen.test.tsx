@@ -32,7 +32,6 @@ const mockHabit = {
   description: 'Daily workout',
   icon: '💪',
   color: '#10b981',
-  frequency: 'daily' as const,
 };
 
 describe('EditHabitScreen', () => {
@@ -75,7 +74,6 @@ describe('EditHabitScreen', () => {
     expect(getByText('Description (optional)')).toBeTruthy();
     expect(getByText('Icon')).toBeTruthy();
     expect(getByText('Color')).toBeTruthy();
-    expect(getByText('Frequency')).toBeTruthy();
     expect(getByTestId('save-habit-button')).toBeTruthy();
     expect(getByTestId('delete-habit-button')).toBeTruthy();
   });

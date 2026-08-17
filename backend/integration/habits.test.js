@@ -40,7 +40,6 @@ describe('Habit CRUD Integration Tests', () => {
     it('should create a new habit with required fields', async () => {
       const newHabit = {
         name: 'Meditation',
-        frequency: 'daily',
       };
 
       const response = await request(testServer)
@@ -50,7 +49,6 @@ describe('Habit CRUD Integration Tests', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.name).toBe(newHabit.name);
-      expect(response.body.frequency).toBe(newHabit.frequency);
       expect(response.body.userId).toBe(testUsers.user1.id);
       expect(response.body.id).toBeDefined();
       expect(response.body.status).toBe('active');
@@ -66,7 +64,6 @@ describe('Habit CRUD Integration Tests', () => {
       const newHabit = {
         name: 'Weekly Review',
         description: 'Review weekly goals and progress',
-        frequency: 'weekly',
         color: '#8B5CF6',
         icon: '📝',
       };
@@ -79,7 +76,6 @@ describe('Habit CRUD Integration Tests', () => {
       expect(response.status).toBe(201);
       expect(response.body.name).toBe(newHabit.name);
       expect(response.body.description).toBe(newHabit.description);
-      expect(response.body.frequency).toBe(newHabit.frequency);
       expect(response.body.color).toBe(newHabit.color);
       expect(response.body.icon).toBe(newHabit.icon);
     });
@@ -87,7 +83,6 @@ describe('Habit CRUD Integration Tests', () => {
     it('should apply default values for optional fields', async () => {
       const newHabit = {
         name: 'Simple Habit',
-        frequency: 'daily',
       };
 
       const response = await request(testServer)
@@ -105,28 +100,15 @@ describe('Habit CRUD Integration Tests', () => {
       const response = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
-        .send({ frequency: 'daily' });
+        .send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBeDefined();
       expect(response.body.message).toContain('name');
     });
 
-    it('should return 400 for missing frequency', async () => {
-      const response = await request(testServer)
-        .post('/api/v1/habits')
-        .set('Cookie', user1Cookies)
-        .send({ name: 'Test Habit' });
-
-      expect(response.status).toBe(400);
-      expect(response.body.error).toBeDefined();
-      expect(response.body.message).toContain('frequency');
-    });
-
     it('should return 401 without authentication', async () => {
-      const response = await request(testServer)
-        .post('/api/v1/habits')
-        .send({ name: 'Test', frequency: 'daily' });
+      const response = await request(testServer).post('/api/v1/habits').send({ name: 'Test' });
 
       expect(response.status).toBe(401);
     });
@@ -188,10 +170,9 @@ describe('Habit CRUD Integration Tests', () => {
   });
 
   describe('Update Habit (PUT /api/v1/habits/:id)', () => {
-    it('should update habit name and frequency', async () => {
+    it('should update habit name', async () => {
       const updates = {
         name: 'Evening Exercise',
-        frequency: 'daily',
       };
 
       const response = await request(testServer)
@@ -215,7 +196,6 @@ describe('Habit CRUD Integration Tests', () => {
       const updates = {
         name: 'Updated Habit',
         description: 'Updated description',
-        frequency: 'weekly',
         color: '#EF4444',
         icon: '🎯',
         status: 'archived',
@@ -229,7 +209,6 @@ describe('Habit CRUD Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.name).toBe(updates.name);
       expect(response.body.description).toBe(updates.description);
-      expect(response.body.frequency).toBe(updates.frequency);
       expect(response.body.color).toBe(updates.color);
       expect(response.body.icon).toBe(updates.icon);
       expect(response.body.status).toBe(updates.status);
@@ -239,7 +218,7 @@ describe('Habit CRUD Integration Tests', () => {
       const response = await request(testServer)
         .put('/api/v1/habits/99999999-9999-9999-9999-999999999999')
         .set('Cookie', user1Cookies)
-        .send({ name: 'Test', frequency: 'daily' });
+        .send({ name: 'Test' });
 
       expect(response.status).toBe(404);
     });
@@ -248,7 +227,7 @@ describe('Habit CRUD Integration Tests', () => {
       const response = await request(testServer)
         .put('/api/v1/habits/invalid!@#id')
         .set('Cookie', user1Cookies)
-        .send({ name: 'Test', frequency: 'daily' });
+        .send({ name: 'Test' });
 
       expect(response.status).toBe(400);
     });
@@ -265,7 +244,7 @@ describe('Habit CRUD Integration Tests', () => {
     it('should return 401 without authentication', async () => {
       const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.exercise}`)
-        .send({ name: 'Test', frequency: 'daily' });
+        .send({ name: 'Test' });
 
       expect(response.status).toBe(401);
     });
@@ -334,7 +313,7 @@ describe('Habit CRUD Integration Tests', () => {
       const response = await request(testServer)
         .put(`/api/v1/habits/${testHabits.user2Habit}`)
         .set('Cookie', user1Cookies)
-        .send({ name: 'Hacked!', frequency: 'daily' });
+        .send({ name: 'Hacked!' });
 
       expect(response.status).toBe(404);
 
@@ -366,7 +345,7 @@ describe('Habit CRUD Integration Tests', () => {
       const createResponse = await request(testServer)
         .post('/api/v1/habits')
         .set('Cookie', user1Cookies)
-        .send({ name: 'User 1 Secret Habit', frequency: 'daily' });
+        .send({ name: 'User 1 Secret Habit' });
 
       const newHabitId = createResponse.body.id;
 
@@ -382,7 +361,7 @@ describe('Habit CRUD Integration Tests', () => {
       const updateResponse = await request(testServer)
         .put(`/api/v1/habits/${newHabitId}`)
         .set('Cookie', user2Cookies)
-        .send({ name: 'Stolen!', frequency: 'daily' });
+        .send({ name: 'Stolen!' });
 
       expect(updateResponse.status).toBe(404);
 
@@ -492,7 +471,6 @@ describe('Habit CRUD Integration Tests', () => {
         .send({
           name: 'Full CRUD Test',
           description: 'Testing complete workflow',
-          frequency: 'daily',
           color: '#22C55E',
           icon: '✅',
         });
@@ -515,13 +493,11 @@ describe('Habit CRUD Integration Tests', () => {
         .set('Cookie', user1Cookies)
         .send({
           name: 'Updated CRUD Test',
-          frequency: 'weekly',
           description: 'Updated description',
         });
 
       expect(updateResponse.status).toBe(200);
       expect(updateResponse.body.name).toBe('Updated CRUD Test');
-      expect(updateResponse.body.frequency).toBe('weekly');
 
       // DELETE
       const deleteResponse = await request(testServer)

@@ -800,7 +800,6 @@ components:
       type: object
       required:
         - name
-        - frequency
       properties:
         name:
           type: string
@@ -811,10 +810,6 @@ components:
           type: string
           example: 30 minutes of cardio exercise
           maxLength: 500
-        frequency:
-          type: string
-          enum: [daily, weekly]
-          example: daily
         color:
           type: string
           pattern: '^#[0-9A-Fa-f]{6}$'

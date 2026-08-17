@@ -138,12 +138,12 @@ async function resetTestDatabase() {
       `);
 
       await pool.query(`
-        INSERT INTO habits (id, user_id, name, description, frequency, color, icon, status)
+        INSERT INTO habits (id, user_id, name, description, color, icon, status)
         VALUES
-          ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Morning Exercise', 'Daily workout', 'daily', '#3B82F6', '🏃', 'active'),
-          ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'Read Books', 'Read 30 minutes', 'daily', '#10B981', '📚', 'active'),
-          ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'Archived Habit', 'Archived', 'daily', '#6B7280', '📦', 'archived'),
-          ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'User 2 Habit', 'Belongs to user 2', 'daily', '#F59E0B', '⭐', 'active')
+          ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Morning Exercise', 'Daily workout', '#3B82F6', '🏃', 'active'),
+          ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'Read Books', 'Read 30 minutes', '#10B981', '📚', 'active'),
+          ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'Archived Habit', 'Archived', '#6B7280', '📦', 'archived'),
+          ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'User 2 Habit', 'Belongs to user 2', '#F59E0B', '⭐', 'active')
         ON CONFLICT (id) DO NOTHING
       `);
       return;
@@ -200,12 +200,12 @@ async function insertFixtures() {
 
   // Insert test habits
   await pool.query(`
-    INSERT INTO habits (id, user_id, name, description, frequency, color, icon, status)
+    INSERT INTO habits (id, user_id, name, description, color, icon, status)
     VALUES
-      ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Morning Exercise', 'Daily workout', 'daily', '#3B82F6', '🏃', 'active'),
-      ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'Read Books', 'Read 30 minutes', 'daily', '#10B981', '📚', 'active'),
-      ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'Archived Habit', 'Archived', 'daily', '#6B7280', '📦', 'archived'),
-      ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'User 2 Habit', 'Belongs to user 2', 'daily', '#F59E0B', '⭐', 'active')
+      ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Morning Exercise', 'Daily workout', '#3B82F6', '🏃', 'active'),
+      ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-1111-1111-1111-111111111111', 'Read Books', 'Read 30 minutes', '#10B981', '📚', 'active'),
+      ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'Archived Habit', 'Archived', '#6B7280', '📦', 'archived'),
+      ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'User 2 Habit', 'Belongs to user 2', '#F59E0B', '⭐', 'active')
     ON CONFLICT (id) DO NOTHING
   `);
 }

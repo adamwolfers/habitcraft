@@ -25,7 +25,6 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
         h.user_id as "userId",
         h.name,
         h.description,
-        h.frequency,
         h.color,
         h.icon,
         h.status,
@@ -55,7 +54,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
       queryParams.push(status);
     }
 
-    queryText += ` GROUP BY h.id, h.user_id, h.name, h.description, h.frequency,
+    queryText += ` GROUP BY h.id, h.user_id, h.name, h.description,
       h.color, h.icon, h.status, h.created_at, h.updated_at
       ORDER BY h.created_at ASC`;
 
@@ -77,7 +76,7 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
  */
 router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req, res) => {
   try {
-    const { name, description, frequency, color, icon } = req.body;
+    const { name, description, color, icon } = req.body;
     const userId = req.userId; // Set by jwtAuthMiddleware
 
     // Check habit count limit
@@ -92,20 +91,19 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (req
     // Insert habit into database
     const result = await query(
       `INSERT INTO habits
-       (user_id, name, description, frequency, color, icon)
-       VALUES ($1, $2, $3, $4, $5, $6)
+       (user_id, name, description, color, icon)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING
          id,
          user_id as "userId",
          name,
          description,
-         frequency,
          color,
          icon,
          status,
          created_at as "createdAt",
          updated_at as "updatedAt"`,
-      [userId, name, description || null, frequency, color || '#3B82F6', icon || '⭐']
+      [userId, name, description || null, color || '#3B82F6', icon || '⭐']
     );
 
     const habit = result.rows[0];
@@ -128,7 +126,7 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
   try {
     const { id } = req.params;
     const userId = req.userId;
-    const { name, description, frequency, color, icon, status } = req.body;
+    const { name, description, color, icon, status } = req.body;
 
     // Validate habit ID format
     if (!id || typeof id !== 'string' || id.trim().length === 0) {
@@ -157,9 +155,6 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
     // Always update these core fields
     updates.push(`name = $${paramIndex++}`);
     values.push(name);
-
-    updates.push(`frequency = $${paramIndex++}`);
-    values.push(frequency);
 
     // Optional fields
     if (description !== undefined) {
@@ -198,7 +193,6 @@ router.put('/:id', jwtAuthMiddleware, sanitizeBody, validateHabitInput, async (r
         user_id as "userId",
         name,
         description,
-        frequency,
         color,
         icon,
         status,

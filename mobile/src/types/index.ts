@@ -29,13 +29,10 @@ export interface Habit {
   description?: string;
   icon: string;
   color: string;
-  frequency: HabitFrequency;
   status: 'active' | 'archived';
   createdAt: string;
   updatedAt: string;
 }
-
-export type HabitFrequency = 'daily' | 'weekly' | 'custom';
 
 export interface HabitCompletion {
   id: string;

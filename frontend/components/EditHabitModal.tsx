@@ -45,7 +45,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
 
     if (detectHabitChanges(formValues, habit)) {
       try {
-        const payload = buildHabitUpdatePayload(formValues, habit);
+        const payload = buildHabitUpdatePayload(formValues);
         await onUpdate(habit.id, payload);
       } catch (err) {
         // Handle error - extract message from Error object or use generic message

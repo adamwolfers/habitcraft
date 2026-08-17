@@ -36,7 +36,6 @@ describe('CreateHabitScreen', () => {
     expect(getByText('Description (optional)')).toBeTruthy();
     expect(getByText('Icon')).toBeTruthy();
     expect(getByText('Color')).toBeTruthy();
-    expect(getByText('Frequency')).toBeTruthy();
     expect(getByTestId('create-habit-button')).toBeTruthy();
   });
 
@@ -67,7 +66,6 @@ describe('CreateHabitScreen', () => {
         description: 'A description',
         icon: '🏃',
         color: '#10b981',
-        frequency: 'daily',
       });
     });
 
@@ -88,7 +86,6 @@ describe('CreateHabitScreen', () => {
         description: undefined,
         icon: '🏃',
         color: '#10b981',
-        frequency: 'daily',
       });
     });
   });
@@ -116,22 +113,6 @@ describe('CreateHabitScreen', () => {
 
     // The icon should be selected (we can't easily test visual state, but we can verify no crash)
     expect(getByText('📚')).toBeTruthy();
-  });
-
-  it('allows selecting different frequencies', async () => {
-    mockMutateAsync.mockResolvedValue({ id: 'new-habit' });
-
-    const { getByTestId, getByText } = render(<CreateHabitScreen />);
-
-    fireEvent.changeText(getByTestId('habit-name-input'), 'Weekly Habit');
-    fireEvent.press(getByText('Weekly'));
-    fireEvent.press(getByTestId('create-habit-button'));
-
-    await waitFor(() => {
-      expect(mockMutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ frequency: 'weekly' })
-      );
-    });
   });
 
   it('disables button while pending', () => {

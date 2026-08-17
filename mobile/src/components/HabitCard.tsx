@@ -10,10 +10,6 @@ interface HabitCardProps {
   isCompletedToday?: boolean;
 }
 
-function formatFrequency(frequency: string): string {
-  return frequency.charAt(0).toUpperCase() + frequency.slice(1);
-}
-
 function isPendingSync(habitId: string): boolean {
   return habitId.startsWith('temp-');
 }
@@ -31,7 +27,7 @@ export function HabitCard({
       onPress={() => onPress(habit)}
       activeOpacity={0.7}
       accessibilityRole="button"
-      accessibilityLabel={`${habit.name} habit, ${formatFrequency(habit.frequency)}`}
+      accessibilityLabel={`${habit.name} habit`}
       accessibilityHint="Double tap to view details"
     >
       <TouchableOpacity
@@ -65,11 +61,6 @@ export function HabitCard({
         )}
 
         <View style={styles.footer}>
-          <View style={[styles.frequencyBadge, { backgroundColor: habit.color + '20' }]}>
-            <Text style={[styles.frequencyText, { color: habit.color }]}>
-              {formatFrequency(habit.frequency)}
-            </Text>
-          </View>
           {isPendingSync(habit.id) && (
             <View
               style={styles.pendingBadge}
@@ -143,17 +134,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  frequencyBadge: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
-    borderRadius: 4,
-  },
-  frequencyText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
   pendingBadge: {
-    marginLeft: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs / 2,
     borderRadius: 4,

@@ -28,7 +28,6 @@ describe('fetchHabits', () => {
       userId: mockUserId,
       name: 'Morning Exercise',
       description: null,
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -40,7 +39,6 @@ describe('fetchHabits', () => {
       userId: mockUserId,
       name: 'Read Books',
       description: 'Read for 30 minutes',
-      frequency: 'weekly',
       color: '#FF5733',
       icon: '📚',
       status: 'active',
@@ -184,7 +182,7 @@ describe('createHabit - Habit Limit', () => {
       }),
     });
 
-    await expect(createHabit(mockUserId, { name: 'Test', frequency: 'daily' })).rejects.toThrow(
+    await expect(createHabit(mockUserId, { name: 'Test' })).rejects.toThrow(
       'You have reached the maximum of 50 habits'
     );
   });
@@ -196,7 +194,7 @@ describe('createHabit - Habit Limit', () => {
       json: async () => ({ error: 'Internal server error' }),
     });
 
-    await expect(createHabit(mockUserId, { name: 'Test', frequency: 'daily' })).rejects.toThrow(
+    await expect(createHabit(mockUserId, { name: 'Test' })).rejects.toThrow(
       'Failed to create habit: 500'
     );
   });
@@ -783,7 +781,7 @@ describe('API Client - JWT Integration', () => {
     });
 
     it('should preserve original request method and body on retry', async () => {
-      const habitData = { name: 'New Habit', frequency: 'daily' as const };
+      const habitData = { name: 'New Habit' };
       const mockRefreshResponse = { ok: true, status: 200, json: async () => ({}) };
       const mockSuccessResponse = {
         ok: true,
@@ -873,7 +871,6 @@ describe('API Client - JWT Integration', () => {
       userId: mockUserId,
       name: 'Morning Run',
       description: 'Updated description',
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '🏃',
       status: 'active',

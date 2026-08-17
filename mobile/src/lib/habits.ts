@@ -1,12 +1,11 @@
 import { api } from './api';
-import { Habit, HabitCompletion, HabitFrequency, HabitWithStats } from '@/types';
+import { Habit, HabitCompletion, HabitWithStats } from '@/types';
 
 interface CreateHabitData {
   name: string;
   description?: string;
   icon: string;
   color: string;
-  frequency: HabitFrequency;
 }
 
 interface UpdateHabitData {
@@ -14,7 +13,6 @@ interface UpdateHabitData {
   description?: string;
   icon?: string;
   color?: string;
-  frequency?: HabitFrequency;
   status?: 'active' | 'archived';
 }
 

@@ -22,7 +22,6 @@ This directory contains the shared database schema used by all backend implement
    - id (UUID, primary key)
    - user_id (foreign key to users)
    - name, description
-   - frequency (daily, weekly)
    - color, icon (UI customization)
    - status (active, archived)
    - timestamps
@@ -155,7 +154,6 @@ erDiagram
         uuid user_id FK
         varchar name
         text description
-        varchar frequency
         varchar color
         varchar icon
         varchar status

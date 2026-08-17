@@ -30,10 +30,9 @@ jest.mock('@/hooks/useHabits');
 jest.mock('@/utils/habitUtils', () => ({
   findHabitById: jest.fn(),
   detectHabitChanges: jest.fn().mockReturnValue(true),
-  buildHabitUpdatePayload: jest.fn().mockImplementation((formValues, habit) => ({
+  buildHabitUpdatePayload: jest.fn().mockImplementation((formValues) => ({
     name: formValues.name.trim(),
     description: formValues.description.trim() || null,
-    frequency: habit.frequency,
     color: formValues.color,
     icon: formValues.icon,
   })),
@@ -101,7 +100,6 @@ describe('Dashboard Page - Delete Functionality', () => {
       userId: '123e4567-e89b-12d3-a456-426614174000',
       name: 'Morning Exercise',
       description: '30 minutes of cardio',
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '🏃',
       status: 'active',
@@ -113,7 +111,6 @@ describe('Dashboard Page - Delete Functionality', () => {
       userId: '123e4567-e89b-12d3-a456-426614174000',
       name: 'Read Books',
       description: 'Read for 30 minutes',
-      frequency: 'weekly',
       color: '#FF5733',
       icon: '📚',
       status: 'active',
@@ -195,7 +192,6 @@ describe('Dashboard Page - Delete Functionality', () => {
         userId: '123e4567-e89b-12d3-a456-426614174000',
         name: 'Morning Exercise',
         description: '30 minutes of cardio',
-        frequency: 'daily',
         color: '#3B82F6',
         icon: '🏃',
         status: 'active',
@@ -350,7 +346,6 @@ describe('Dashboard Page - Delete Functionality', () => {
       userId: '123e4567-e89b-12d3-a456-426614174000',
       name: 'New Habit',
       description: 'Test description',
-      frequency: 'daily',
       color: '#3b82f6',
       icon: '⭐',
       status: 'active',
@@ -380,7 +375,6 @@ describe('Dashboard Page - Delete Functionality', () => {
         description: 'Test description',
         color: '#3b82f6',
         icon: '🏃',
-        frequency: 'daily',
       });
     });
   });
@@ -393,7 +387,6 @@ describe('Dashboard Page - Edit Functionality', () => {
       userId: '123e4567-e89b-12d3-a456-426614174000',
       name: 'Morning Exercise',
       description: '30 minutes of cardio',
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '🏃',
       status: 'active',

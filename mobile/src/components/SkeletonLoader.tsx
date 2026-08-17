@@ -59,11 +59,6 @@ export function HabitCardSkeleton() {
 
         {/* Description */}
         <SkeletonBox width="90%" height={14} style={{ marginTop: spacing.xs }} />
-
-        {/* Footer with frequency badge */}
-        <View style={styles.footer}>
-          <SkeletonBox width={60} height={20} borderRadius={4} />
-        </View>
       </View>
     </View>
   );
@@ -104,9 +99,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  footer: {
-    marginTop: spacing.sm,
   },
   dashboard: {
     paddingHorizontal: spacing.lg,

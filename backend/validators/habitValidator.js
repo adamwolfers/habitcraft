@@ -3,23 +3,18 @@
  * Validates habit creation and update requests according to the OpenAPI spec
  */
 
-const VALID_FREQUENCIES = ['daily', 'weekly'];
 const VALID_STATUSES = ['active', 'archived'];
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 500;
 
 function validateHabitInput(req, res, next) {
-  const { name, frequency, color, description, icon, status } = req.body;
+  const { name, color, description, icon, status } = req.body;
   const errors = [];
 
   // Validate required fields
   if (!name || typeof name !== 'string' || name.trim().length === 0) {
     errors.push('name is required and must be a non-empty string');
-  }
-
-  if (!frequency || typeof frequency !== 'string') {
-    errors.push('frequency is required and must be a string');
   }
 
   // Validate name length
@@ -30,11 +25,6 @@ function validateHabitInput(req, res, next) {
   // Validate description length
   if (description && description.length > MAX_DESCRIPTION_LENGTH) {
     errors.push(`description must not exceed ${MAX_DESCRIPTION_LENGTH} characters`);
-  }
-
-  // Validate frequency value
-  if (frequency && !VALID_FREQUENCIES.includes(frequency)) {
-    errors.push(`frequency must be one of: ${VALID_FREQUENCIES.join(', ')}`);
   }
 
   // Validate color if provided

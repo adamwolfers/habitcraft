@@ -52,7 +52,6 @@ describe('useHabits', () => {
       userId: mockUserId,
       name: 'Morning Exercise',
       description: null,
-      frequency: 'daily',
       color: '#3B82F6',
       icon: '⭐',
       status: 'active',
@@ -64,7 +63,6 @@ describe('useHabits', () => {
       userId: mockUserId,
       name: 'Read Books',
       description: 'Read for 30 minutes',
-      frequency: 'weekly',
       color: '#FF5733',
       icon: '📚',
       status: 'active',
@@ -240,7 +238,6 @@ describe('useHabits', () => {
       const newHabitFormData: HabitFormData = {
         name: 'Meditation',
         description: 'Meditate for 10 minutes',
-        frequency: 'daily',
         color: '#10B981',
         icon: '🧘',
       };
@@ -250,7 +247,6 @@ describe('useHabits', () => {
         userId: mockUserId,
         name: 'Meditation',
         description: 'Meditate for 10 minutes',
-        frequency: 'daily',
         color: '#10B981',
         icon: '🧘',
         status: 'active',
@@ -285,7 +281,6 @@ describe('useHabits', () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
       const newHabitFormData: HabitFormData = {
         name: 'Failed Habit',
-        frequency: 'daily',
       };
 
       mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
@@ -319,7 +314,6 @@ describe('useHabits', () => {
     it('should return the created habit from createHabit', async () => {
       const newHabitFormData: HabitFormData = {
         name: 'Running',
-        frequency: 'weekly',
       };
 
       const createdHabit: Habit = {
@@ -327,7 +321,6 @@ describe('useHabits', () => {
         userId: mockUserId,
         name: 'Running',
         description: null,
-        frequency: 'weekly',
         color: '#3B82F6',
         icon: '🏃',
         status: 'active',

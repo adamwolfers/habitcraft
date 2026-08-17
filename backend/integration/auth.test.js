@@ -248,7 +248,6 @@ describe('Authentication Integration Tests', () => {
         .set('Cookie', cookieString)
         .send({
           name: 'Hacked Habit',
-          frequency: 'daily',
         });
 
       expect(updateResponse.status).toBe(404);

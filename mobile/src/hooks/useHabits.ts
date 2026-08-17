@@ -4,7 +4,7 @@ import Toast from 'react-native-toast-message';
 import { habitsApi } from '@/lib/habits';
 import { mutationQueue, networkStatus } from '@/lib/offline';
 import { findHabitById } from '@/utils/habitUtils';
-import { Habit, HabitFrequency, HabitWithStats } from '@/types';
+import { Habit, HabitWithStats } from '@/types';
 
 const HABITS_QUERY_KEY = ['habits'];
 
@@ -13,7 +13,6 @@ export interface CreateHabitData {
   description?: string;
   icon: string;
   color: string;
-  frequency: HabitFrequency;
 }
 
 export interface UpdateHabitData {
@@ -21,7 +20,6 @@ export interface UpdateHabitData {
   description?: string;
   icon?: string;
   color?: string;
-  frequency?: HabitFrequency;
   status?: 'active' | 'archived';
 }
 
@@ -70,7 +68,6 @@ export function useCreateHabit() {
           description: data.description,
           icon: data.icon,
           color: data.color,
-          frequency: data.frequency,
           status: 'active',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),

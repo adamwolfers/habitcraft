@@ -10,7 +10,6 @@ export interface HabitFormValues {
 export interface HabitUpdatePayload {
   name: string;
   description: string | null;
-  frequency: 'daily' | 'weekly';
   color: string;
   icon: string;
 }
@@ -36,17 +35,13 @@ export function detectHabitChanges(formValues: HabitFormValues, originalHabit: H
  * Builds the update payload for a habit from form values.
  * Trims whitespace and converts empty description to null.
  */
-export function buildHabitUpdatePayload(
-  formValues: HabitFormValues,
-  originalHabit: Habit
-): HabitUpdatePayload {
+export function buildHabitUpdatePayload(formValues: HabitFormValues): HabitUpdatePayload {
   const trimmedName = formValues.name.trim();
   const trimmedDescription = formValues.description.trim();
 
   return {
     name: trimmedName,
     description: trimmedDescription || null,
-    frequency: originalHabit.frequency,
     color: formValues.color,
     icon: formValues.icon,
   };
