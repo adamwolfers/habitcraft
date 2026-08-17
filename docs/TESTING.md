@@ -340,6 +340,57 @@ test('should show error when email already taken', async ({ page }) => {
 
 Located in `backend/integration/`:
 
+### The database reset runs once per test file
+
+`jest.integration.setup.js`'s `beforeAll` calls `resetTestDatabase()`, so every
+file drops and recreates `habitcraft_test` — four resets per suite run. Locally
+that shells out to `scripts/test-db-reset.sh`; under `CI` it instead deletes and
+re-seeds the tables in-process.
+
+**If a whole file fails at once with "Failed to reset test database", it is not
+your code.** `beforeAll` failing makes jest report every test in the file as
+failed, so one broken reset reads as e.g. "28 of 99 failed" — all of
+`auth.test.js`, wearing 28 hats.
+
+The known cause of that was a race, fixed in habitcraft-lb3: the reset used to
+terminate connections and then `DROP DATABASE` from a *later* psql session,
+leaving a ~1s window. `backend-test` has a 30s healthcheck on `/health`, which
+runs `SELECT 1` against `habitcraft_test` and parks that connection in the pool
+for 30s; one landing in the window made the drop fail with `database
+"habitcraft_test" is being accessed by other users`. It reproduced at roughly
+4% of suite runs. The reset now uses a single `DROP DATABASE IF EXISTS
+habitcraft_test WITH (FORCE)` (PG13+; the test image is postgres:14-alpine),
+which terminates those sessions inside the same statement, plus up to 3 attempts
+in case one still slips in. Retries are logged — if you see them, say so, don't
+ignore them.
+
+To force the race deliberately, poll `curl http://localhost:3010/health` every
+0.1s while running `scripts/test-db-reset.sh` repeatedly. Before the fix that
+failed 4 times in 5; after it, 20 in 20 succeeded with no retry needed.
+
+**Only one thing may drive the test stack at a time.** Two suites — or a suite
+and a bare `scripts/test-db-reset.sh` — running against `docker-compose.test.yml`
+together will wreck each other, because each reset drops the database the other
+is using and `dbmate` recreates it. That produces a *different* set of errors,
+and none of them are the race above:
+
+| Error | Meaning |
+|---|---|
+| `database "habitcraft_test" is being accessed by other users` | the healthcheck race (fixed) |
+| `CREATE DATABASE ... already exists` / `duplicate key ... pg_database_datname_index` | something else recreated the database mid-reset |
+| fixture load: `database "habitcraft_test" does not exist` | something else dropped it after your `CREATE` |
+
+The bottom two mean a second runner, not a bug. This cost real time twice —
+habitcraft-duf and habitcraft-lb3 were measured concurrently against the same
+stack and each corrupted the other's numbers. Before trusting any flake
+measurement, check for a competing runner:
+`docker compose -f docker-compose.test.yml exec -T postgres-test psql -U habituser
+-d postgres -c "SELECT client_addr, query FROM pg_stat_activity WHERE datname =
+'habitcraft_test'"` — connections from anything but `backend-test` are someone
+else's suite. `ALTER SYSTEM SET log_statement='ddl'` plus a `pg_reload_conf()`
+makes every `CREATE`/`DROP DATABASE` show up in `docker logs habitcraft-db-test`
+with its client, which settles the question outright.
+
 ### Use the shared test server, not the app
 
 Integration tests must issue requests against the shared server from
