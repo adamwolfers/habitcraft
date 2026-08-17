@@ -165,6 +165,47 @@ npm run test:e2e:headed       # E2E tests in visible browser
 npm run test:e2e:report       # View last test report
 ```
 
+## E2E Sharding (and why the shard count is not arbitrary)
+
+`scripts/test-all.sh` and the CI matrix both run the E2E suite in **3 parallel
+shards**. That number is a constraint, not a preference.
+
+`playwright.config.ts` sets `fullyParallel: false`, so **Playwright shards by
+file, not by test**, and it assigns each spec file to the shard its *first* test
+falls into. There are 4 eligible spec files of very uneven size — `auth` (30),
+`completions` (33), `habits` (11), `landing` (10) — so asking for more shards
+than the layout can fill leaves one with nothing to do. At 4 shards the split
+was `30 / 33 / 0 / 21`: shard 3 ran no tests for weeks (habitcraft-u1o).
+
+An empty shard fails silently in both directions:
+
+- it **exits 0**, so the runner prints `✅ Shard 3/4 passed`;
+- it prints **no `N passed` line at all**, so it contributes nothing to the
+  summary and its absence looks like a dropped grep match rather than a shard
+  that never ran (habitcraft-7oz was filed as exactly that misreading).
+
+`--pass-with-no-tests` does **not** protect against this. Playwright's
+no-tests-found failure applies to discovery, *before* sharding; an empty shard
+slice still exits 0 (verified on Playwright 1.57.0).
+
+### The guard
+
+`scripts/check-e2e-shards.sh` is what catches drift:
+
+```bash
+./scripts/check-e2e-shards.sh 3      # every shard 1..3 has tests, and they sum to the full suite
+./scripts/check-e2e-shards.sh 3 2    # just shard 2 (used per CI matrix job)
+```
+
+`test-all.sh` runs the all-shards form before launching any shard, and each CI
+matrix job runs the single-shard form before downloading browsers or starting
+containers. Both fail the run if a shard is empty.
+
+**If you add, remove, split, or substantially resize a spec file, re-run the
+guard.** When it fails, adjust the shard count in `E2E_SHARDS`
+(`scripts/test-all.sh`) and the `shard:` matrix (`.github/workflows/ci.yml`)
+**together** — they must stay in sync.
+
 ## E2E Test Isolation Strategy
 
 ### The Problem
@@ -440,7 +481,9 @@ it('shows loading state while fetching', async () => {
 
 ## Current Test Coverage
 
-- **E2E Tests:** 50 tests across authentication, habits, and completions
+- **E2E Tests:** 84 tests across authentication (30), completions (33), habits (11), and landing (10).
+  `frontend/e2e/gcp-smoke.spec.ts` is excluded from this run — it targets deployed GCP
+  and has its own config (`playwright.gcp.config.ts`).
 - **Target Coverage:** >90% for both backend and frontend
 
 Run coverage reports:

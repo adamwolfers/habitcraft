@@ -55,6 +55,13 @@ TIMEOUT_FRONTEND_UNIT=600
 TIMEOUT_INTEGRATION=300
 TIMEOUT_E2E_SHARD=900
 
+# Number of parallel Playwright shards. This is NOT free to change: Playwright
+# shards by FILE (fullyParallel: false), so more shards than the spec-file
+# layout can fill leaves one running nothing -- which reports as passed. Keep
+# in sync with the matrix in .github/workflows/ci.yml, and let
+# scripts/check-e2e-shards.sh (run below) confirm the split still works.
+E2E_SHARDS=3
+
 # Run a command with a wall-clock limit, returning its exit code.
 # macOS has no coreutils `timeout`, so this uses a background watchdog.
 run_with_timeout() {
@@ -208,9 +215,21 @@ fi
 echo ""
 
 # 4. E2E Tests (parallel shards)
-echo "🌐 [4/4] End-to-End Tests (4 parallel shards)"
+echo "🌐 [4/4] End-to-End Tests ($E2E_SHARDS parallel shards)"
 echo "----------------------------------------------"
 cd "$PROJECT_ROOT/frontend"
+
+# Confirm the shard split still covers the suite BEFORE running anything. An
+# empty shard exits 0 and prints no summary line, so without this the run would
+# report all-green having skipped a slice -- see habitcraft-u1o.
+if ! "$PROJECT_ROOT/scripts/check-e2e-shards.sh" "$E2E_SHARDS"; then
+    echo ""
+    echo "❌ E2E shard split is broken -- not running E2E tests"
+    E2E=0
+    E2E_SKIPPED=1
+fi
+
+if [ "${E2E_SKIPPED:-0}" -eq 0 ]; then
 
 # Reset database once before running shards
 echo "  Resetting test database..."
@@ -223,23 +242,15 @@ mkdir -p "$E2E_LOG_DIR"
 # Disable set -e for parallel section (exit codes handled manually)
 set +e
 
-# Run 4 shards in parallel with SKIP_E2E_SETUP to avoid duplicate DB resets
-# Using individual variables for compatibility with older bash (macOS /bin/bash is 3.x)
-SKIP_E2E_SETUP=1 npx playwright test --shard=1/4 > "$E2E_LOG_DIR/shard-1.log" 2>&1 &
-PID1=$!
-echo "  Started shard 1/4 (PID $PID1)"
-
-SKIP_E2E_SETUP=1 npx playwright test --shard=2/4 > "$E2E_LOG_DIR/shard-2.log" 2>&1 &
-PID2=$!
-echo "  Started shard 2/4 (PID $PID2)"
-
-SKIP_E2E_SETUP=1 npx playwright test --shard=3/4 > "$E2E_LOG_DIR/shard-3.log" 2>&1 &
-PID3=$!
-echo "  Started shard 3/4 (PID $PID3)"
-
-SKIP_E2E_SETUP=1 npx playwright test --shard=4/4 > "$E2E_LOG_DIR/shard-4.log" 2>&1 &
-PID4=$!
-echo "  Started shard 4/4 (PID $PID4)"
+# Run the shards in parallel with SKIP_E2E_SETUP to avoid duplicate DB resets.
+# Using eval'd individual variables rather than an array for compatibility with
+# older bash (macOS /bin/bash is 3.x).
+for shard in $(seq 1 "$E2E_SHARDS"); do
+    SKIP_E2E_SETUP=1 npx playwright test --shard="$shard/$E2E_SHARDS" \
+        > "$E2E_LOG_DIR/shard-$shard.log" 2>&1 &
+    eval "PID$shard=$!"
+    eval "echo \"  Started shard $shard/$E2E_SHARDS (PID \$PID$shard)\""
+done
 
 # One watchdog per shard. Playwright has its own per-test timeouts, but those
 # do not cover a shard that wedges outside a test (or after the run finishes),
@@ -249,7 +260,7 @@ echo "  Started shard 4/4 (PID $PID4)"
 # script with it. The watchdogs themselves ARE their own group leaders (set -m)
 # so that cancelling one below kills its `sleep` too -- see habitcraft-da5.
 set -m
-for shard in 1 2 3 4; do
+for shard in $(seq 1 "$E2E_SHARDS"); do
     eval "SPID=\$PID$shard"
     ( sleep "$TIMEOUT_E2E_SHARD"; kill -9 "$SPID" 2>/dev/null ) &
     eval "WPID$shard=$!"
@@ -258,7 +269,7 @@ set +m
 
 # Wait for all shards
 E2E=1
-for shard in 1 2 3 4; do
+for shard in $(seq 1 "$E2E_SHARDS"); do
     eval "PID=\$PID$shard"
 
     wait $PID
@@ -271,13 +282,13 @@ for shard in 1 2 3 4; do
     wait "$WPID" 2>/dev/null
 
     if [ $EXIT_CODE -eq 0 ]; then
-        echo "  ✅ Shard $shard/4 passed"
+        echo "  ✅ Shard $shard/$E2E_SHARDS passed"
     elif [ $EXIT_CODE -ge 128 ]; then
-        echo "  ⏱️  Shard $shard/4 TIMED OUT after ${TIMEOUT_E2E_SHARD}s and was killed"
+        echo "  ⏱️  Shard $shard/$E2E_SHARDS TIMED OUT after ${TIMEOUT_E2E_SHARD}s and was killed"
         echo "     See $E2E_LOG_DIR/shard-$shard.log for details"
         E2E=0
     else
-        echo "  ❌ Shard $shard/4 failed (exit code $EXIT_CODE)"
+        echo "  ❌ Shard $shard/$E2E_SHARDS failed (exit code $EXIT_CODE)"
         echo "     See $E2E_LOG_DIR/shard-$shard.log for details"
         E2E=0
     fi
@@ -286,10 +297,21 @@ done
 # Re-enable set -e
 set -e
 
-# Show summary from shard logs
+# Show summary from shard logs. Print one line PER SHARD rather than grepping
+# all logs at once: a shard whose log has no count line has to say so out loud,
+# otherwise its absence just looks like a dropped grep match (habitcraft-7oz)
+# instead of the missing run it actually is.
 echo ""
 echo "📊 E2E Summary:"
-grep -h "passed\|failed" "$E2E_LOG_DIR"/*.log 2>/dev/null | grep -E "^\s*[0-9]+" || echo "  (no summary available)"
+for shard in $(seq 1 "$E2E_SHARDS"); do
+    COUNTS=$(grep -E "^\s*[0-9]+ (passed|failed|flaky|skipped|interrupted|did not run)" \
+        "$E2E_LOG_DIR/shard-$shard.log" 2>/dev/null | sed 's/^[[:space:]]*//' | tr '\n' ' ')
+    if [ -n "$COUNTS" ]; then
+        echo "  Shard $shard/$E2E_SHARDS: $COUNTS"
+    else
+        echo "  Shard $shard/$E2E_SHARDS: ⚠️  no test counts in log -- did it run anything?"
+    fi
+done
 
 # Clean up logs on success, keep on failure for debugging
 if [ $E2E -eq 1 ]; then
@@ -300,6 +322,9 @@ else
     echo ""
     echo "❌ E2E tests failed (some shards)"
 fi
+
+fi  # end: E2E shard split verified
+
 echo ""
 
 # Summary
