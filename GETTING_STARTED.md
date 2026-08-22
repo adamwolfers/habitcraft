@@ -140,8 +140,12 @@ Manual setup:
 # Create database
 createdb habitcraft
 
-# Run schema
-psql -d habitcraft -f shared/database/schema.sql
+# Apply the migrations -- db/migrations/ is the source of truth, and dbmate
+# records what it applied in schema_migrations. Do NOT load db/schema.sql
+# instead: it is a generated dump and leaves dbmate with no record, so the
+# next `dbmate up` would try to re-apply everything.
+export DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable"
+dbmate up
 ```
 
 ## Current Features

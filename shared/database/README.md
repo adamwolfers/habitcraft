@@ -1,127 +1,52 @@
-# Database Schema
+# Shared Database Fixtures
 
-This directory contains the shared database schema used by all backend implementations.
+This directory holds **test-fixtures.sql**, the seed data shared by development,
+CI, and the test environments. That is all it holds.
 
-## Database
+## Where the schema lives
 
-- **Type**: PostgreSQL 14+
-- **Extensions**: uuid-ossp
+`db/migrations/` is the source of truth for the database structure. It is what
+dbmate executes, in every environment:
 
-## Schema Overview
+| Environment | What runs the migrations |
+|---|---|
+| dev | `db-migrate` service in `docker-compose.yml` |
+| test | `db-migrate-test` service in `docker-compose.test.yml`, plus `dbmate up` in the `backend-integration-tests` CI job |
+| prod | Cloud Run Job `habitcraft-migrations` |
 
-### Tables
+To **read** the current schema, open `db/schema.sql`. It is a generated
+`pg_dump` of what the migrations add up to, committed for reviewability;
+`scripts/schema-dump.sh --check` regenerates it and CI fails on any diff, which
+is the only reason it can be trusted. Never edit it by hand, and never run it —
+see [db/README.md](../../db/README.md).
 
-1. **users** - User accounts
-   - id (UUID, primary key)
-   - email (unique)
-   - password_hash
-   - name
-   - timestamps
+This directory used to carry its own `schema.sql` and a second `migrations/`
+directory. Nothing executed either one, nothing verified them, and they had
+already drifted from the real schema and from each other. Both were deleted in
+habitcraft-by9. If you are here because a document sent you looking for
+`shared/database/schema.sql`, `db/schema.sql` is what you want.
 
-2. **habits** - User habits to track
-   - id (UUID, primary key)
-   - user_id (foreign key to users)
-   - name, description
-   - color, icon (UI customization)
-   - status (active, archived)
-   - timestamps
+## test-fixtures.sql
 
-3. **completions** - Habit completion records
-   - id (UUID, primary key)
-   - habit_id (foreign key to habits)
-   - date (unique per habit)
-   - notes
-   - created_at
-
-4. **refresh_tokens** - JWT refresh token storage
-   - id (UUID, primary key)
-   - user_id (foreign key to users)
-   - token_hash (SHA256 hash, unique)
-   - expires_at
-   - revoked (boolean)
-   - created_at
-
-### Relationships
-
-```
-users (1) ──< (N) habits (1) ──< (N) completions
-users (1) ──< (N) refresh_tokens
-```
-
-## Files
-
-- **schema.sql** - Database schema definition (tables, indexes, triggers, views)
-- **test-fixtures.sql** - Seed data for development, CI, and test environments
-- **migrations/** - SQL migration scripts for schema changes
-  - `001_add_refresh_tokens.sql` - Adds refresh_tokens table for token rotation
-
-The seed data is loaded on demand (`docker compose --profile seed run --rm db-seed`) and includes:
-- Test user 1 (ID: `11111111-1111-1111-1111-111111111111`, email: `test@example.com`, password: `Test1234!`)
-- Test user 2 (ID: `22222222-2222-2222-2222-222222222222`, email: `test2@example.com`, password: `Test1234!`)
-- Sample habits and completions for testing
-
-## Usage
-
-### Automated Setup (Recommended)
-
-When using docker-compose (from project root), the database is initialized with the schema
-automatically; seed data is loaded as a separate, explicit step:
+Loaded on demand in development:
 
 ```bash
-docker-compose up postgres
 docker compose --profile seed run --rm db-seed
 ```
 
-This will:
-1. Create the database and apply migrations
-2. Load seed data with test users and sample habits (test-fixtures.sql)
-3. Make the app immediately usable for testing
+It creates:
 
-### Creating the Database Manually
+- Test user 1 — id `11111111-1111-1111-1111-111111111111`, `test@example.com`, password `Test1234!`
+- Test user 2 — id `22222222-2222-2222-2222-222222222222`, `test2@example.com`, password `Test1234!`
+- Sample habits and completions for those users
 
-```bash
-# Connect to PostgreSQL
-psql -U postgres
-
-# Create database
-CREATE DATABASE habitcraft;
-
-# Connect to the database
-\c habitcraft
-
-# Run the schema
-\i schema.sql
-```
-
-### Using Docker
-
-```bash
-# Start PostgreSQL with Docker
-docker run --name habitcraft-db \
-  -e POSTGRES_DB=habitcraft \
-  -e POSTGRES_USER=habituser \
-  -e POSTGRES_PASSWORD=habitpass \
-  -p 5432:5432 \
-  -d postgres:14
-
-# Import schema
-docker exec -i habitcraft-db psql -U habituser -d habitcraft < schema.sql
-```
-
-### Migrations
-
-For production use, consider using migration tools specific to your backend:
-
-- **Node.js**: Prisma, TypeORM, Knex
-- **Python**: Alembic, Django migrations
-- **Go**: golang-migrate, goose
-- **Java**: Flyway, Liquibase
-
-The `schema.sql` file serves as the source of truth for the database structure.
+The same file seeds the test database (`docker-compose.test.yml`) and the CI
+integration job, so a fixture change lands everywhere at once. It assumes the
+migrations have already been applied; it creates no tables.
 
 ## Environment Variables
 
-All backends should use these environment variables for database connection:
+All backends use these for the database connection:
 
 ```env
 DB_HOST=localhost
@@ -131,69 +56,3 @@ DB_USER=habituser
 DB_PASSWORD=habitpass
 DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habitcraft
 ```
-
-## Data Model Diagram
-
-```mermaid
-erDiagram
-    USERS ||--o{ HABITS : creates
-    HABITS ||--o{ COMPLETIONS : tracks
-    USERS ||--o{ REFRESH_TOKENS : has
-
-    USERS {
-        uuid id PK
-        varchar email UK
-        varchar password_hash
-        varchar name
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    HABITS {
-        uuid id PK
-        uuid user_id FK
-        varchar name
-        text description
-        varchar color
-        varchar icon
-        varchar status
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    COMPLETIONS {
-        uuid id PK
-        uuid habit_id FK
-        date date
-        text notes
-        timestamp created_at
-    }
-
-    REFRESH_TOKENS {
-        uuid id PK
-        uuid user_id FK
-        varchar token_hash UK
-        timestamp expires_at
-        boolean revoked
-        timestamp created_at
-    }
-```
-
-## Indexes
-
-The schema includes indexes on:
-- `users.email` - for authentication lookups
-- `habits.user_id` - for user's habits queries
-- `habits.status` - for filtering active/archived
-- `completions.habit_id` - for habit completions
-- `completions.date` - for date range queries
-- `refresh_tokens.user_id` - for user's tokens lookup
-- `refresh_tokens.token_hash` - for token validation
-- `refresh_tokens.expires_at` - for cleanup of expired tokens
-
-## Notes
-
-- All timestamps are stored in UTC
-- UUIDs are used for all primary keys
-- Cascade deletes ensure data integrity
-- The `updated_at` column is automatically maintained by triggers

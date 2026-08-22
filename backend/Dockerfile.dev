@@ -14,9 +14,6 @@ RUN npm ci
 # Copy application code
 COPY backend/ .
 
-# Copy schema for migrations from shared database
-COPY shared/database/schema.sql ./
-
 EXPOSE 3000
 
 # Health check using /health endpoint

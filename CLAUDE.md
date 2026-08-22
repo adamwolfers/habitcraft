@@ -254,6 +254,15 @@ docker compose up -d
 2. Add SQL to `-- migrate:up` section
 3. Leave `-- migrate:down` as comment (forward-only strategy)
 4. Test: `docker compose down -v && docker compose up -d`
+5. Regenerate the committed schema dump: `./scripts/schema-dump.sh`
+
+`db/migrations/` is the **only** source of truth for the schema, and the only
+migrations directory. `db/schema.sql` is a generated `pg_dump` of those
+migrations, committed so schema changes are reviewable as a diff — nothing
+executes it and it must never be hand-edited. `scripts/schema-dump.sh --check`
+regenerates and diffs it; it runs as the `verify-schema-dump` CI job and as a
+phase of `scripts/test-all.sh`, so a migration without a regenerated dump turns
+CI red. See [db/README.md](db/README.md#the-generated-schema-dump-dbschemasql).
 
 ### Forward-Only Strategy
 

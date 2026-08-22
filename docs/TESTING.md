@@ -92,7 +92,7 @@ A separate Docker container runs the test database to avoid conflicts with devel
 | Container | `docker-compose.test.yml` |
 | Database | `habitcraft_test` |
 | Port | 5433 (dev uses 5432) |
-| Schema | Same as production (`shared/database/schema.sql`) |
+| Schema | Built from `db/migrations/` by dbmate — the same migrations dev and production run |
 
 ### Setup Scripts
 
@@ -133,7 +133,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **10 phases, one per CI step**, so a green local run predicts a
+The script runs **11 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -143,19 +143,29 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 3 | Frontend Typecheck | `frontend: npm run typecheck` | no |
 | 4 | Mobile Lint | `mobile: npm run lint` | no |
 | 5 | Mobile Typecheck | `mobile: npm run typecheck` | no |
-| 6 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 7 | Backend Unit Tests | `backend: npm test` | yes |
-| 8 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 9 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 10 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 6 | Generated Schema Check | `scripts/schema-dump.sh --check` | daemon only |
+| 7 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 8 | Backend Unit Tests | `backend: npm test` | yes |
+| 9 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 10 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 11 | E2E Tests | `frontend: playwright, 3 shards` | yes |
 
 Notes on that table:
 
-- **Phases 1–5 fail fast.** All five always run (so you see every static error at
+- **Phases 1–6 fail fast.** All six always run (so you see every static error at
   once), but if any failed the script stops before starting containers and marks
   the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
   ordering. `--keep-going` runs everything regardless.
+- **Phase 6 needs the docker *daemon*, but not the compose stack.**
+  `scripts/schema-dump.sh` starts a throwaway postgres of its own, applies
+  `db/migrations/`, dumps the result, and diffs it against the committed
+  `db/schema.sql`; the whole phase is about five seconds. It sits in the
+  fail-fast group deliberately — a docker daemon that is down should be
+  reported here rather than after several minutes of lint and typecheck. In CI
+  the same check is the `verify-schema-dump` job. See
+  [db/README.md](../db/README.md#the-generated-schema-dump-dbschemasql) for why
+  the dump is generated rather than hand-maintained.
 - **Backend has no typecheck** — it is plain JS with no `typecheck` script. Its
   absence is correct, not a gap.
 - **Mobile runs `test:coverage`, not `test`.** `mobile/jest.config.js` enforces

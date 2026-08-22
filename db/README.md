@@ -68,6 +68,12 @@ dbmate up
    docker compose down -v && docker compose up -d
    ```
 
+4. Regenerate the committed schema dump and commit it alongside the migration:
+   ```bash
+   ./scripts/schema-dump.sh
+   ```
+   CI fails if you skip this -- see [The Generated Schema Dump](#the-generated-schema-dump-dbschemasql).
+
 ## Migration Strategy
 
 ### Forward-Only
@@ -103,22 +109,59 @@ For high-risk migrations (data changes, column drops):
 - [ ] **Dry-run on clone**: Test against a cloned instance first
 - [ ] **Communication sent**: Notify team of planned migration window
 
+## The Generated Schema Dump (`db/schema.sql`)
+
+`db/migrations/` is the only thing that is ever executed. `db/schema.sql` is a
+`pg_dump` of what those migrations add up to, committed so that schema changes
+show up as a readable diff in review. **Nothing runs it, and nothing should
+edit it by hand.**
+
+It is trustworthy only because it is re-derived and compared, never because it
+is asserted to be correct:
+
+```bash
+./scripts/schema-dump.sh          # regenerate after adding a migration
+./scripts/schema-dump.sh --check  # fail if it no longer matches migrations/
+```
+
+`--check` runs in two places, so a migration committed without a regenerated
+dump cannot reach `master` quietly:
+
+- the `verify-schema-dump` job in `.github/workflows/ci.yml`
+- the "Generated Schema Check" phase of `scripts/test-all.sh`
+
+The dump is produced in a **throwaway** postgres container, not against the dev
+or test database, so it cannot pick up hand-applied local changes and needs
+nothing else to be running. Both images are **pinned by digest** inside
+`scripts/schema-dump.sh`: `pg_dump` output shifts with both the client and the
+server version, so a moving tag would eventually turn CI red without any schema
+change at all. Bump both digests in one commit and regenerate. The two
+`-- Dumped ... version` header comments are stripped for the same reason.
+
+This replaced three unverified copies of the schema (`backend/schema.sql`,
+`shared/database/schema.sql`, `shared/database/migrations/`), which had already
+drifted apart from each other before anyone noticed -- see habitcraft-by9.
+
 ## CI/CD Pipeline
 
-1. **Integration tests**: Migrations run via dbmate before tests
-2. **Production deploy**: Cloud Run Job executes migrations before service deployments
-3. **Sequencing**: migrate → deploy backend → deploy frontend
+1. **Schema drift**: `verify-schema-dump` regenerates `schema.sql` and fails on any diff
+2. **Integration tests**: Migrations run via dbmate before tests
+3. **Production deploy**: Cloud Run Job executes migrations before service deployments
+4. **Sequencing**: migrate → deploy backend → deploy frontend
 
 ## Files
 
 ```
 db/
-├── migrations/           # Migration SQL files
+├── migrations/           # Migration SQL files -- THE SOURCE OF TRUTH
 │   └── 20260117000000_baseline.sql
-├── Dockerfile           # Migration container for Cloud Run Job
-└── README.md            # This file
+├── schema.sql            # Generated from migrations/; never edited by hand
+├── Dockerfile            # Migration container for Cloud Run Job
+├── entrypoint.sh         # Builds DATABASE_URL from component env vars
+└── README.md             # This file
 
-.dbmaterc                # dbmate configuration
+.dbmaterc                 # dbmate configuration
+scripts/schema-dump.sh    # Regenerates and verifies schema.sql
 ```
 
 ## Production

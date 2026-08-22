@@ -231,6 +231,29 @@ jobs:
         run: node scripts/verify-ci-filters.js
 
   # ===========================================
+  # Schema Drift Check
+  # ===========================================
+  verify-schema-dump:
+    name: Verify Generated Schema
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    # `db` covers db/migrations/ and the generated db/schema.sql; `tooling`
+    # covers scripts/schema-dump.sh, which decides what the dump looks like.
+    if: |
+      needs.detect-changes.outputs.db == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Brings up its own throwaway postgres in docker (both images pinned by
+      # digest inside the script), so this needs no service container and is
+      # byte-for-byte the same dump a developer gets locally.
+      - name: Verify db/schema.sql matches db/migrations/
+        run: ./scripts/schema-dump.sh --check
+
+  # ===========================================
   # Unit Tests
   # ===========================================
   backend-unit-tests:
