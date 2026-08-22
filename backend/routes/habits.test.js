@@ -326,6 +326,11 @@ describe('GET /api/v1/habits', () => {
     });
   });
 
+  // NOTE: this test mocks the pg query, so it asserts the mock's own shape and
+  // cannot catch a change to the SQL aliases. The real guard for the embedded
+  // completion wire shape is the integration test
+  // 'should embed completions using the same field names the completions
+  // endpoint returns' in integration/habits.test.js (habitcraft-34d.1).
   it('should include completions array on each habit', async () => {
     const mockHabits = [
       {
@@ -341,10 +346,10 @@ describe('GET /api/v1/habits', () => {
         completions: [
           {
             id: 'c-1',
-            habit_id: 'habit-1',
-            completed_date: '2026-07-10',
-            note: null,
-            created_at: new Date().toISOString(),
+            habitId: 'habit-1',
+            date: '2026-07-10',
+            notes: null,
+            createdAt: new Date().toISOString(),
           },
         ],
       },
@@ -371,8 +376,8 @@ describe('GET /api/v1/habits', () => {
 
     expect(response.body[0].completions).toHaveLength(1);
     expect(response.body[0].completions[0]).toMatchObject({
-      habit_id: 'habit-1',
-      completed_date: '2026-07-10',
+      habitId: 'habit-1',
+      date: '2026-07-10',
     });
     expect(response.body[1].completions).toEqual([]);
   });

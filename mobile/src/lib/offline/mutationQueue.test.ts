@@ -184,7 +184,7 @@ describe('mutationQueue', () => {
       const mutation: QueuedMutation = {
         id: 'mut-1',
         type: 'completeHabit',
-        payload: { id: 'temp-123', data: { completed_date: '2024-01-01' } },
+        payload: { id: 'temp-123', data: { date: '2024-01-01' } },
         timestamp: Date.now(),
         retryCount: 0,
       };
@@ -195,7 +195,7 @@ describe('mutationQueue', () => {
 
       expect(mockOfflineStorage.saveMutationQueue).toHaveBeenCalledWith([
         expect.objectContaining({
-          payload: { id: 'real-456', data: { completed_date: '2024-01-01' } },
+          payload: { id: 'real-456', data: { date: '2024-01-01' } },
         }),
       ]);
     });

@@ -115,7 +115,7 @@ describe('habitsApi', () => {
 
     it('makes POST request to /habits/:id/completions', async () => {
       mockApi.post.mockResolvedValueOnce({
-        data: { id: 'completion-1', habit_id: '1', ...completionData },
+        data: { id: 'completion-1', habitId: '1', ...completionData },
       });
 
       await habitsApi.completeHabit('1', completionData);
@@ -126,9 +126,9 @@ describe('habitsApi', () => {
     it('returns completion data', async () => {
       const completion = {
         id: 'completion-1',
-        habit_id: '1',
+        habitId: '1',
         ...completionData,
-        created_at: '2024-01-15T00:00:00Z',
+        createdAt: '2024-01-15T00:00:00Z',
       };
       mockApi.post.mockResolvedValueOnce({ data: completion });
 

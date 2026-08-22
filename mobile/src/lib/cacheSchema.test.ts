@@ -6,8 +6,8 @@ describe('CACHE_SCHEMA', () => {
   });
 
   it('defines completions shape', () => {
-    expect(CACHE_SCHEMA.habits.completions).toContain('completed_date');
-    expect(CACHE_SCHEMA.habits.completions).toContain('habit_id');
+    expect(CACHE_SCHEMA.habits.completions).toContain('date');
+    expect(CACHE_SCHEMA.habits.completions).toContain('habitId');
   });
 });
 

@@ -167,6 +167,69 @@ describe('Habit CRUD Integration Tests', () => {
 
       expect(response.status).toBe(401);
     });
+
+    // Regression: habitcraft-34d.1. GET /habits used to embed completions with
+    // snake_case keys (habit_id/completed_date/note/created_at) while the
+    // /completions endpoints returned camelCase, so one entity had two wire
+    // shapes. These tests pin the single shape and the cross-endpoint match.
+    it('should embed completions using the same field names the completions endpoint returns', async () => {
+      const createRes = await request(testServer)
+        .post(`/api/v1/habits/${testHabits.exercise}/completions`)
+        .set('Cookie', user1Cookies)
+        .send({ date: '2026-07-10', notes: 'felt great' });
+      expect(createRes.status).toBe(201);
+
+      const listRes = await request(testServer)
+        .get(`/api/v1/habits/${testHabits.exercise}/completions`)
+        .set('Cookie', user1Cookies);
+      expect(listRes.status).toBe(200);
+      const standalone = listRes.body.find((c) => c.date === '2026-07-10');
+      expect(standalone).toBeDefined();
+
+      const habitsRes = await request(testServer).get('/api/v1/habits').set('Cookie', user1Cookies);
+      expect(habitsRes.status).toBe(200);
+      const habit = habitsRes.body.find((h) => h.id === testHabits.exercise);
+      const embedded = habit.completions.find((c) => c.date === '2026-07-10');
+      expect(embedded).toBeDefined();
+
+      // The same row must serialize identically wherever it appears.
+      expect(embedded).toEqual(standalone);
+    });
+
+    it('should embed completions with camelCase keys and no snake_case aliases', async () => {
+      await request(testServer)
+        .post(`/api/v1/habits/${testHabits.exercise}/completions`)
+        .set('Cookie', user1Cookies)
+        .send({ date: '2026-07-11', notes: 'a note' })
+        .expect(201);
+
+      const response = await request(testServer).get('/api/v1/habits').set('Cookie', user1Cookies);
+
+      const habit = response.body.find((h) => h.id === testHabits.exercise);
+      const embedded = habit.completions.find((c) => c.date === '2026-07-11');
+
+      expect(Object.keys(embedded).sort()).toEqual(
+        ['createdAt', 'date', 'habitId', 'id', 'notes'].sort()
+      );
+      expect(embedded.habitId).toBe(testHabits.exercise);
+      expect(embedded.date).toBe('2026-07-11');
+      expect(embedded.notes).toBe('a note');
+    });
+
+    it('should embed a null notes field rather than omitting it', async () => {
+      await request(testServer)
+        .post(`/api/v1/habits/${testHabits.exercise}/completions`)
+        .set('Cookie', user1Cookies)
+        .send({ date: '2026-07-12' })
+        .expect(201);
+
+      const response = await request(testServer).get('/api/v1/habits').set('Cookie', user1Cookies);
+
+      const habit = response.body.find((h) => h.id === testHabits.exercise);
+      const embedded = habit.completions.find((c) => c.date === '2026-07-12');
+
+      expect(embedded.notes).toBeNull();
+    });
   });
 
   describe('Update Habit (PUT /api/v1/habits/:id)', () => {

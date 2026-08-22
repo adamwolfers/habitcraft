@@ -18,7 +18,7 @@ export const CACHE_SCHEMA = {
       'updatedAt',
       'completions',
     ],
-    completions: ['id', 'habit_id', 'completed_date', 'note', 'created_at'],
+    completions: ['id', 'habitId', 'date', 'notes', 'createdAt'],
   },
 } as const;
 
