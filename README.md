@@ -111,7 +111,8 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[GCP Architecture](./docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[AWS Architecture](./docs/AWS_ARCHITECTURE.md)** - Legacy deployment guide (Lightsail + RDS) - archived
 - **[API Specification](./shared/api-spec/openapi.yaml)** - OpenAPI/Swagger specification
-- **[Database Schema](./shared/database/schema.sql)** - PostgreSQL schema and migrations
+- **[Database Migrations](./db/README.md)** - dbmate migrations, the source of truth for the schema
+- **[Generated Schema](./db/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
 
 ## API Endpoints
 

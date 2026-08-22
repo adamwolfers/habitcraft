@@ -25,7 +25,7 @@ const user: User = {
 All type definitions should:
 
 1. Match the OpenAPI specification in `shared/api-spec/openapi.yaml`
-2. Match the database schema in `shared/database/schema.sql`
+2. Match the database schema, which is defined by `db/migrations/` and readable in the generated `db/schema.sql`
 3. Use consistent naming conventions (camelCase)
 4. Include proper validation rules
 

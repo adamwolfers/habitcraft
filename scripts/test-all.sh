@@ -56,13 +56,14 @@ LBL_FRONTEND_LINT="Frontend Lint"
 LBL_FRONTEND_TYPECHECK="Frontend Typecheck"
 LBL_MOBILE_LINT="Mobile Lint"
 LBL_MOBILE_TYPECHECK="Mobile Typecheck"
+LBL_SCHEMA_DUMP="Generated Schema Check"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
 LBL_BACKEND_UNIT="Backend Unit Tests"
 LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 
-TOTAL_PHASES=10
+TOTAL_PHASES=11
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -243,7 +244,12 @@ if [ -n "$MISSING_DEPS" ]; then
 fi
 
 # ==============================================================================
-# Static checks -- no docker services needed, so they run first and fail fast.
+# Static checks -- none of these need the compose stack, so they run first and
+# fail fast. The schema check is the one exception to "no docker": it starts a
+# throwaway postgres of its own (see scripts/schema-dump.sh). It sits here
+# rather than with the docker phases because it is cheap (~5s), needs nothing
+# else to be up, and a docker daemon that is down should be reported now rather
+# than after five minutes of lint and typecheck.
 # ==============================================================================
 STATIC_FAILED=0
 
@@ -261,6 +267,12 @@ run_phase "🧹" "$LBL_MOBILE_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile" \
 
 run_phase "🔤" "$LBL_MOBILE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile" \
     npm run typecheck || STATIC_FAILED=1
+
+# db/migrations/ is the sole source of truth; db/schema.sql is generated from
+# it and committed. This regenerates and diffs, so a migration landing without
+# a regenerated dump fails here exactly as it does in CI (habitcraft-by9).
+run_phase "🗄️ " "$LBL_SCHEMA_DUMP" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
+    "$PROJECT_ROOT/scripts/schema-dump.sh" --check || STATIC_FAILED=1
 
 if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "🛑 Static checks failed -- stopping before the docker and E2E phases."

@@ -127,11 +127,14 @@ CREATE INDEX idx_sms_log_status ON sms_send_log(status);
 
 ### Step 4: Migration File
 
-**File:** `shared/database/migrations/005_sms_reminders.sql`
+**File:** `db/migrations/<YYYYMMDDHHMMSS>_sms_reminders.sql` — create it with
+`dbmate new add_sms_reminders`, which stamps the timestamp for you.
+`db/migrations/` is the only migrations directory; there is no
+`shared/database/migrations/`.
 
 - [ ] Create up migration with all three tables
-- [ ] Create down migration to rollback
-- [ ] Update `schema.sql` with new tables
+- [ ] Leave `-- migrate:down` as a comment (forward-only — see [db/README.md](../../../db/README.md))
+- [ ] Regenerate the committed schema dump: `./scripts/schema-dump.sh` (CI fails if you skip it)
 - [ ] Add test fixtures for SMS preferences
 
 ---
@@ -550,8 +553,8 @@ function generateVerificationSms({ code }) {
 ### Database
 | File | Changes |
 |------|---------|
-| `shared/database/migrations/005_sms_reminders.sql` | New migration file |
-| `shared/database/schema.sql` | Add new tables |
+| `db/migrations/<timestamp>_sms_reminders.sql` | New migration file (`dbmate new add_sms_reminders`) |
+| `db/schema.sql` | Regenerate with `./scripts/schema-dump.sh` |
 | `shared/database/test-fixtures.sql` | Add test data |
 
 ### Backend

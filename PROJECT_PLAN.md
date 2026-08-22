@@ -469,6 +469,6 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
 - **GCP Architecture:** `/docs/GCP_ARCHITECTURE.md`
 - **Main README:** `/README.md`
 - **API Specification:** `/shared/api-spec/openapi.yaml`
-- **Database Schema:** `/shared/database/schema.sql`
+- **Database Migrations:** `/db/README.md` (schema source of truth; generated dump in `/db/schema.sql`)
 - **Backend README:** `/backend/README.md`
 - **Frontend README:** `/frontend/README.md`
