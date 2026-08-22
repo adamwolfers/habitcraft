@@ -508,10 +508,10 @@ describe('useHabits', () => {
       mockNetworkStatus.isOnline.mockResolvedValue(true);
       const completion = {
         id: 'completion-1',
-        habit_id: 'habit-1',
-        completed_date: '2024-01-15',
-        note: 'Great workout!',
-        created_at: '2024-01-15T10:00:00Z',
+        habitId: 'habit-1',
+        date: '2024-01-15',
+        notes: 'Great workout!',
+        createdAt: '2024-01-15T10:00:00Z',
       };
       mockHabitsApi.completeHabit.mockResolvedValue(completion);
 
@@ -543,8 +543,8 @@ describe('useHabits', () => {
       expect(mockHabitsApi.completeHabit).not.toHaveBeenCalled();
       expect(completion).toMatchObject({
         id: 'temp-completion-mock-uuid',
-        habit_id: 'habit-1',
-        completed_date: '2024-01-15',
+        habitId: 'habit-1',
+        date: '2024-01-15',
       });
     });
   });

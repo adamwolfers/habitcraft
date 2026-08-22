@@ -29,7 +29,7 @@ export function DashboardScreen() {
 
   const handleComplete = (habitId: string) => {
     const habit = habits?.find((h) => h.id === habitId);
-    const isCompleted = habit?.completions?.some((c) => c.completed_date === today);
+    const isCompleted = habit?.completions?.some((c) => c.date === today);
     if (isCompleted) {
       uncompleteHabit.mutate({ id: habitId, completedDate: today });
     } else {
@@ -90,7 +90,7 @@ export function DashboardScreen() {
             habit={item}
             onPress={handleHabitPress}
             onComplete={handleComplete}
-            isCompletedToday={(item.completions ?? []).some((c) => c.completed_date === today)}
+            isCompletedToday={(item.completions ?? []).some((c) => c.date === today)}
           />
         )}
         contentContainerStyle={styles.list}

@@ -261,9 +261,10 @@ describe('DashboardScreen', () => {
       completions: [
         {
           id: 'comp-1',
-          habit_id: 'habit-1',
-          completed_date: today,
-          created_at: '2024-01-01T00:00:00Z',
+          habitId: 'habit-1',
+          date: today,
+          notes: null,
+          createdAt: '2024-01-01T00:00:00Z',
         },
       ],
     };
@@ -287,9 +288,10 @@ describe('DashboardScreen', () => {
       completions: [
         {
           id: 'comp-1',
-          habit_id: 'habit-1',
-          completed_date: today,
-          created_at: '2024-01-01T00:00:00Z',
+          habitId: 'habit-1',
+          date: today,
+          notes: null,
+          createdAt: '2024-01-01T00:00:00Z',
         },
       ],
     };

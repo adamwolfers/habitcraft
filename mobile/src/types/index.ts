@@ -36,10 +36,12 @@ export interface Habit {
 
 export interface HabitCompletion {
   id: string;
-  habit_id: string;
-  completed_date: string;
-  note?: string;
-  created_at: string;
+  habitId: string;
+  /** YYYY-MM-DD */
+  date: string;
+  /** Backend returns SQL NULL, not undefined, when no note was given. */
+  notes: string | null;
+  createdAt: string;
 }
 
 export interface HabitWithStats extends Habit {

@@ -839,6 +839,17 @@ components:
             updatedAt:
               type: string
               format: date-time
+            completions:
+              type: array
+              description: >-
+                Completions recorded for this habit. Populated by
+                GET /habits (which embeds them) and absent from the
+                single-habit and write responses. Each element uses the
+                same field names as the Completion schema returned by
+                /habits/{habitId}/completions -- one entity, one wire
+                shape (habitcraft-34d.1).
+              items:
+                $ref: '#/components/schemas/Completion'
 
     Completion:
       type: object

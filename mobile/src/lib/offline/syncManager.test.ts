@@ -133,23 +133,24 @@ describe('syncManager', () => {
       const mutation: QueuedMutation = {
         id: 'mut-1',
         type: 'completeHabit',
-        payload: { id: 'habit-1', data: { completed_date: '2024-01-15' } },
+        payload: { id: 'habit-1', data: { date: '2024-01-15' } },
         timestamp: Date.now(),
         retryCount: 0,
       };
       mockMutationQueue.getAll.mockResolvedValue([mutation]);
       mockHabitsApi.completeHabit.mockResolvedValue({
         id: 'completion-1',
-        habit_id: 'habit-1',
-        completed_date: '2024-01-15',
-        created_at: new Date().toISOString(),
+        habitId: 'habit-1',
+        date: '2024-01-15',
+        notes: null,
+        createdAt: new Date().toISOString(),
       });
       mockMutationQueue.remove.mockResolvedValue(undefined);
 
       const result = await syncManager.sync();
 
       expect(mockHabitsApi.completeHabit).toHaveBeenCalledWith('habit-1', {
-        completed_date: '2024-01-15',
+        date: '2024-01-15',
       });
       expect(mockMutationQueue.remove).toHaveBeenCalledWith('mut-1');
       expect(result.processedCount).toBe(1);

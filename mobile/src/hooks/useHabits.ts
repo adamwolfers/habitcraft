@@ -250,10 +250,10 @@ export function useCompleteHabit() {
         // Return optimistic completion
         return {
           id: `temp-completion-${uuidv4()}`,
-          habit_id: id,
-          completed_date: data.date,
-          note: data.notes,
-          created_at: new Date().toISOString(),
+          habitId: id,
+          date: data.date,
+          notes: data.notes ?? null,
+          createdAt: new Date().toISOString(),
         };
       }
 

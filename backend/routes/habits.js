@@ -34,10 +34,17 @@ router.get('/', jwtAuthMiddleware, async (req, res) => {
           json_agg(
             json_build_object(
               'id', c.id,
-              'habit_id', c.habit_id,
-              'completed_date', TO_CHAR(c.date, 'YYYY-MM-DD'),
-              'note', c.notes,
-              'created_at', c.created_at
+              'habitId', c.habit_id,
+              'date', TO_CHAR(c.date, 'YYYY-MM-DD'),
+              'notes', c.notes,
+              -- Match res.json()'s serialization of a JS Date exactly
+              -- (ISO 8601, millisecond precision, 'Z'). json_build_object
+              -- would otherwise emit Postgres's own timestamptz text format
+              -- (microseconds, '+00:00'), giving one row two wire formats.
+              'createdAt', TO_CHAR(
+                c.created_at AT TIME ZONE 'UTC',
+                'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+              )
             )
           ) FILTER (WHERE c.id IS NOT NULL),
           '[]'
