@@ -24,10 +24,11 @@ habittracker_fullstack/
 ├── backend/              # Node.js + Express backend
 ├── frontend/             # Next.js frontend
 ├── mobile/               # React Native (Expo) mobile app
-├── db/                   # dbmate SQL migrations
+├── db/                   # dbmate SQL migrations (schema source of truth)
+│                         #   + schema.sql, generated from them
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI specification
-│   ├── database/         # PostgreSQL schema and migrations
+│   ├── database/         # Test fixtures / seed data
 │   └── types/            # Shared type definitions
 ├── docker-compose.yml    # Docker orchestration
 ├── PROJECT_PLAN.md       # Development roadmap
