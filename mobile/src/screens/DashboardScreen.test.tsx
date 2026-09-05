@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 import { DashboardScreen } from './DashboardScreen';
 import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
 import { HabitWithStats } from '@/types';
@@ -312,5 +312,51 @@ describe('DashboardScreen', () => {
       completedDate: today,
     });
     expect(mockMutate).not.toHaveBeenCalled();
+  });
+
+  it('does not show the pull-to-refresh spinner during a background refetch', () => {
+    mockUseHabits.mockReturnValue({
+      data: [mockHabit],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: true,
+    });
+
+    const { getByTestId } = render(<DashboardScreen />);
+
+    expect(getByTestId('habit-list').props.refreshControl.props.refreshing).toBe(false);
+  });
+
+  it('shows the spinner only while an explicit pull-to-refresh is in flight', async () => {
+    let resolveRefetch: () => void = () => {};
+    mockRefetch.mockReturnValueOnce(
+      new Promise<void>((resolve) => {
+        resolveRefetch = resolve;
+      })
+    );
+    mockUseHabits.mockReturnValue({
+      data: [mockHabit],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: false,
+    });
+
+    const { getByTestId } = render(<DashboardScreen />);
+    expect(getByTestId('habit-list').props.refreshControl.props.refreshing).toBe(false);
+
+    await act(async () => {
+      getByTestId('habit-list').props.refreshControl.props.onRefresh();
+    });
+
+    expect(mockRefetch).toHaveBeenCalled();
+    expect(getByTestId('habit-list').props.refreshControl.props.refreshing).toBe(true);
+
+    await act(async () => {
+      resolveRefetch();
+    });
+
+    expect(getByTestId('habit-list').props.refreshControl.props.refreshing).toBe(false);
   });
 });
