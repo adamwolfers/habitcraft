@@ -17,6 +17,7 @@ const http = require('http');
 const { execSync } = require('child_process');
 const path = require('path');
 const { findProjectRoot } = require('../utils/findProjectRoot');
+const { interceptResponse } = require('../openapi/httpInterceptor');
 const app = require('../app');
 
 // Test database configuration (from .env.test)
@@ -51,7 +52,14 @@ let testServerReady = null;
  */
 function getTestServer() {
   if (!testServer) {
-    testServer = http.createServer(app);
+    // Every response is checked against shared/api-spec/openapi.yaml on its
+    // way out (habitcraft-34d.2). Wrapping the server rather than adding
+    // express middleware means nothing can opt out: a route mounted later, or
+    // a response express generates by itself, is still seen.
+    testServer = http.createServer((req, res) => {
+      interceptResponse(req, res);
+      app(req, res);
+    });
     testServerReady = new Promise((resolve, reject) => {
       testServer.once('listening', resolve);
       testServer.once('error', reject);

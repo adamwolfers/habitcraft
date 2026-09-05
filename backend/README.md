@@ -103,6 +103,9 @@ JWT_SECRET=your-secret-key-change-in-production
 - `GET /api/v1/users/me` - Get current user profile
 
 See the [OpenAPI specification](../shared/api-spec/openapi.yaml) for complete API documentation.
+The integration suite validates every response against it, so changing a
+response shape means changing the spec in the same commit — see
+[openapi/README.md](./openapi/README.md).
 
 ## Project Structure
 
@@ -143,7 +146,17 @@ backend/
 ├── integration/                   # Integration tests (real database)
 │   ├── setup.js                  # Test database setup utilities
 │   ├── auth.test.js              # Authentication flow tests
+│   ├── health.test.js            # Health/hello endpoint tests
+│   ├── users.test.js             # Account deletion tests
+│   ├── completions.test.js       # Completion tracking tests
 │   └── habits.test.js            # Habit CRUD integration tests
+├── openapi/                       # OpenAPI enforcement (test-only)
+│   ├── spec.js                   # Spec loader and operation matcher
+│   ├── responseValidator.js      # ajv validation + operation coverage
+│   ├── httpInterceptor.js        # Captures what went on the wire
+│   ├── globalSetup.js            # Clears the coverage file
+│   ├── globalTeardown.js         # Coverage gate
+│   └── README.md                 # Why the spec is enforced, and how
 ├── package.json                   # Dependencies and scripts
 └── README.md                      # This file
 ```

@@ -27,7 +27,7 @@ habittracker_fullstack/
 ├── db/                   # dbmate SQL migrations (schema source of truth)
 │                         #   + schema.sql, generated from them
 ├── shared/               # Shared resources
-│   ├── api-spec/         # OpenAPI specification
+│   ├── api-spec/         # OpenAPI spec (enforced by the integration suite)
 │   ├── database/         # Test fixtures / seed data
 │   └── types/            # Shared type definitions
 ├── docker-compose.yml    # Docker orchestration
@@ -111,7 +111,7 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](./docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[AWS Architecture](./docs/AWS_ARCHITECTURE.md)** - Legacy deployment guide (Lightsail + RDS) - archived
-- **[API Specification](./shared/api-spec/openapi.yaml)** - OpenAPI/Swagger specification
+- **[API Specification](./shared/api-spec/openapi.yaml)** - OpenAPI spec, enforced against every backend integration response ([how](./backend/openapi/README.md))
 - **[Database Migrations](./db/README.md)** - dbmate migrations, the source of truth for the schema
 - **[Generated Schema](./db/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
 
@@ -139,6 +139,9 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - `DELETE /api/v1/habits/:habitId/completions/:date` - Remove completion
 
 See the [OpenAPI specification](./shared/api-spec/openapi.yaml) for complete API documentation.
+It is enforced, not descriptive: the backend integration suite validates every
+response against it and fails on any mismatch, so a shape documented there is a
+shape the API actually returns. See [backend/openapi/README.md](./backend/openapi/README.md).
 
 ## Development
 

@@ -93,7 +93,7 @@ habittracker_fullstack/
 ├── db/                   # dbmate SQL migrations (schema source of truth)
 │                         #   + schema.sql, generated from them
 ├── shared/               # Shared resources
-│   ├── api-spec/         # OpenAPI specification
+│   ├── api-spec/         # OpenAPI spec (enforced by the integration suite)
 │   ├── database/         # Test fixtures / seed data
 │   └── types/            # Shared type definitions
 ├── docker-compose.yml    # Docker orchestration
@@ -282,6 +282,14 @@ The OpenAPI specification is available at:
 - File: `shared/api-spec/openapi.yaml`
 - View online: Use [Swagger Editor](https://editor.swagger.io/) and paste the file contents
 
+It is **enforced, not descriptive**. The backend integration suite validates
+every response against it and fails the run on any mismatch — a renamed field,
+a stray field, an undocumented status — and also fails if an operation it
+documents is never exercised by a test. So if you change a response shape,
+change the spec in the same commit; if you add an endpoint, document it *and*
+add an integration test for it. See
+[backend/openapi/README.md](backend/openapi/README.md).
+
 ## Documentation
 
 - **[PROJECT_PLAN.md](PROJECT_PLAN.md)** - Complete development roadmap and task list
@@ -289,7 +297,7 @@ The OpenAPI specification is available at:
 - **[GCP Architecture](docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[README.md](README.md)** - Project overview
 - **[backend/README.md](backend/README.md)** - Backend setup and API reference
-- **[shared/api-spec/openapi.yaml](shared/api-spec/openapi.yaml)** - OpenAPI specification
+- **[shared/api-spec/openapi.yaml](shared/api-spec/openapi.yaml)** - OpenAPI specification (enforced; see [backend/openapi/README.md](backend/openapi/README.md))
 
 ## Common Issues
 
