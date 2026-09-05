@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -17,11 +17,25 @@ function getTodayDateString(): string {
 
 export function DashboardScreen() {
   const navigation = useNavigation<DashboardNavigationProp>();
-  const { data: habits, isLoading, error, refetch, isRefetching } = useHabits();
+  const { data: habits, isLoading, error, refetch } = useHabits();
   const completeHabit = useCompleteHabit();
   const uncompleteHabit = useUncompleteHabit();
 
   const today = getTodayDateString();
+
+  // Drive the spinner from an explicit pull only. Binding it to the query's
+  // isRefetching would also open it for the background refetch that every
+  // complete/uncomplete triggers, bouncing the list (habitcraft-wut).
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+
+  const handlePullToRefresh = useCallback(async () => {
+    setIsPullRefreshing(true);
+    try {
+      await refetch();
+    } finally {
+      setIsPullRefreshing(false);
+    }
+  }, [refetch]);
 
   const handleHabitPress = (habit: Habit) => {
     navigation.navigate('HabitDetail', { habitId: habit.id });
@@ -96,8 +110,8 @@ export function DashboardScreen() {
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={refetch}
+            refreshing={isPullRefreshing}
+            onRefresh={handlePullToRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
           />
