@@ -155,6 +155,7 @@ jobs:
               - '!**/*.md'
               - '!**/*.test.*'
               - '!backend/integration/**'
+              - '!backend/openapi/**'
               - '!backend/jest*.js'
               - '!backend/.env.test'
             frontend-deploy:

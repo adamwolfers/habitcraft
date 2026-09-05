@@ -7,7 +7,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Type | Framework | Location | Purpose |
 |------|-----------|----------|---------|
 | Backend Unit | Jest + Supertest | `backend/**/*.test.js` (colocated) | API endpoint and middleware testing |
-| Backend Integration | Jest + Supertest | `backend/integration/` | Full database workflows |
+| Backend Integration | Jest + Supertest | `backend/integration/` | Full database workflows; every response validated against `shared/api-spec/openapi.yaml` |
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
 | Mobile Unit | Jest + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
@@ -430,6 +430,35 @@ The shared server is started once per suite and torn down in `afterAll` with
 is load-bearing: `close()` on its own waits for in-flight connections and would
 hang on exactly the request that caused the problem.
 
+### Every response is checked against the OpenAPI spec
+
+`integration/setup.js` wraps the shared test server so that every response the
+suite provokes is validated against `shared/api-spec/openapi.yaml` on its way
+out, and `globalTeardown` fails the run if any operation the spec documents was
+never exercised. That makes the spec load-bearing rather than decorative — it
+had zero code references before habitcraft-34d.2, and had drifted from the
+handlers in every layer.
+
+What this means day to day:
+
+- **Changing a response shape fails the suite until you change the spec too.**
+  A renamed field, an added field, a removed field, a status code the spec does
+  not document — all of them turn the specific test that provoked the response
+  red, with the offending body in the failure message.
+- **A new endpoint needs both halves.** Document it in `openapi.yaml` *and* add
+  an integration test that calls it. The spec alone fails the coverage check;
+  the test alone fails as an undocumented path.
+- **Failures are attributed to the test that caused them**, by an `afterEach` in
+  `jest.integration.setup.js`, not thrown inside the response — a throw there
+  would surface as a 500 from the route and blame the wrong thing.
+- **Running a subset is still fine.** `npm run test:integration -- habits.test.js`
+  reports missing coverage without failing on it, because `globalTeardown` only
+  enforces once every integration test file has reported.
+
+`backend/openapi/README.md` covers the mechanism, including the two JSON Schema
+traps it has to work around (`allOf` versus `additionalProperties: false`, and
+ajv silently ignoring OpenAPI's `nullable`).
+
 ### `auth.test.js` — Authentication Flows
 - Register → Login → Access Protected Route
 - Login → Token Refresh → Continue Session
@@ -451,6 +480,14 @@ hang on exactly the request that caused the problem.
 - Delete completion → Verify removal
 - Duplicate prevention (409 Conflict)
 - Habit ownership validation
+
+### `health.test.js` — Health and Hello
+
+- `GET /health` reports the service healthy with a live database connection
+- `GET /hello` returns its message
+
+Trivial, but both are part of the contract, and the OpenAPI coverage check
+fails the run for any documented operation no integration test exercises.
 
 ### `users.test.js` — Account Deletion
 - Delete account → Verify every FK-chained row is gone, other users untouched

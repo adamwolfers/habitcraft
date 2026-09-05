@@ -3,7 +3,25 @@ info:
   title: HabitCraft API
   description: |
     REST API specification for the HabitCraft application.
-    All backend implementations should follow this specification.
+
+    This spec is LOAD-BEARING, not documentation. Every response returned during
+    the backend integration suite is validated against the schemas below, and a
+    mismatch -- a renamed field, a missing field, a stray field, an undocumented
+    status code -- fails the suite. A coverage check additionally fails the run
+    if any operation documented here is never exercised by an integration test.
+    See backend/openapi/README.md and habitcraft-34d.2.
+
+    Consequences for editors:
+
+    - Response schemas describe what the handlers ACTUALLY return, not what they
+      ideally would. Fixing an ugly shape means changing the handler and the
+      spec together.
+    - Every response schema sets `additionalProperties: false` and lists every
+      field in `required`. That is what makes drift detectable in both
+      directions; do not relax it to make a test pass.
+    - Paths are absolute from the server origin, INCLUDING the /api/v1 prefix,
+      because /health and /hello are served from the root and a single prefixed
+      server URL could not describe both.
   version: 1.0.0
   contact:
     name: API Support
@@ -11,9 +29,9 @@ info:
     name: MIT
 
 servers:
-  - url: http://localhost:3000/api/v1
+  - url: http://localhost:3000
     description: Local development server
-  - url: https://api.habitcraft.example.com/v1
+  - url: https://api.habitcraft.example.com
     description: Production server
 
 tags:
@@ -34,32 +52,31 @@ paths:
       tags:
         - Health
       summary: Health check
-      description: Returns API health status
+      description: |
+        Reports service liveness and database connectivity. Returns 503 (not an
+        error body) when the database probe fails, so load balancers can read
+        the same shape either way.
       operationId: healthCheck
       responses:
         '200':
-          description: API is healthy
+          description: API is healthy and the database is reachable
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: ok
-                  timestamp:
-                    type: string
-                    format: date-time
-                  version:
-                    type: string
-                    example: 1.0.0
+                $ref: '#/components/schemas/Health'
+        '503':
+          description: Database probe failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnhealthyHealth'
 
   /hello:
     get:
       tags:
         - Health
       summary: Hello World endpoint
-      description: Simple hello world response for testing
+      description: Simple hello world response for smoke testing
       operationId: helloWorld
       responses:
         '200':
@@ -67,21 +84,18 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: Hello World!
+                $ref: '#/components/schemas/Message'
 
-  /auth/register:
+  /api/v1/auth/register:
     post:
       tags:
         - Auth
       summary: Register new user
       description: |
-        Create a new user account. On success, sets HttpOnly cookies for authentication:
-        - accessToken (15 min expiry)
-        - refreshToken (7 day expiry)
+        Create a new user account. On success, sets HttpOnly cookies
+        (accessToken, 15 min; refreshToken, 7 days) AND returns both tokens in
+        the body -- the body copies exist for the mobile client, which has no
+        cookie jar.
       operationId: register
       requestBody:
         required: true
@@ -97,14 +111,18 @@ paths:
                 email:
                   type: string
                   format: email
+                  maxLength: 255
                   example: user@example.com
                 password:
                   type: string
                   format: password
                   minLength: 8
+                  maxLength: 72
                   example: SecurePass123!
                 name:
                   type: string
+                  minLength: 1
+                  maxLength: 100
                   example: John Doe
       responses:
         '201':
@@ -114,23 +132,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/ValidationFailed'
         '409':
-          description: Email already exists
+          description: Email already registered
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /auth/login:
+  /api/v1/auth/login:
     post:
       tags:
         - Auth
       summary: Login user
       description: |
-        Authenticate user with email and password. On success, sets HttpOnly cookies:
-        - accessToken (15 min expiry)
-        - refreshToken (7 day expiry)
+        Authenticate with email and password. Sets HttpOnly cookies and returns
+        both tokens in the body (see /api/v1/auth/register).
       operationId: login
       requestBody:
         required: true
@@ -157,21 +178,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/ValidationFailed'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /auth/refresh:
+  /api/v1/auth/refresh:
     post:
       tags:
         - Auth
       summary: Refresh access token
       description: |
-        Get new tokens using the refresh token from cookies.
-        Implements token rotation:
-        - Validates refresh token signature and database record
-        - Revokes the old refresh token
-        - Generates new access AND refresh tokens
-        - Sets new HttpOnly cookies for both tokens
+        Exchange the refresh token (cookie or body) for a new pair. Rotates:
+        the presented refresh token is revoked and a new access AND refresh
+        token are issued, set as cookies and returned in the body.
       operationId: refreshToken
       responses:
         '200':
@@ -179,13 +207,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  accessToken:
-                    type: string
-                    description: New access token (also set as HttpOnly cookie)
-              example:
-                accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                $ref: '#/components/schemas/TokenPair'
         '400':
           description: Refresh token missing
           content:
@@ -193,7 +215,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Refresh token is required"
+                error: Refresh token is required
         '401':
           description: Invalid, expired, or revoked refresh token
           content:
@@ -203,22 +225,26 @@ paths:
               examples:
                 expired:
                   value:
-                    error: "Refresh token expired"
+                    error: Refresh token expired
                 revoked:
                   value:
-                    error: "Token has been revoked"
+                    error: Token has been revoked
                 invalid:
                   value:
-                    error: "Invalid refresh token"
+                    error: Invalid refresh token
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /auth/logout:
+  /api/v1/auth/logout:
     post:
       tags:
         - Auth
       summary: Logout user
       description: |
-        Revoke the refresh token and clear authentication cookies.
-        The refresh token is marked as revoked in the database.
+        Revoke the refresh token and clear authentication cookies. Always 200 --
+        logging out with no token is not an error.
       operationId: logout
       responses:
         '200':
@@ -226,19 +252,15 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
               example:
-                message: "Logged out successfully"
+                message: Logged out successfully
 
-  /users/me:
+  /api/v1/users/me:
     get:
       tags:
         - Users
       summary: Get current user profile
-      description: Get the authenticated user's profile. Requires valid access token in cookie.
       operationId: getCurrentUser
       security:
         - bearerAuth: []
@@ -252,19 +274,17 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/UserNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     put:
       tags:
         - Users
       summary: Update current user profile
       description: |
-        Update the authenticated user's profile. At least one field (name or email) must be provided.
-        Email updates will normalize to lowercase and check for uniqueness.
+        Update name and/or email. At least one must be provided. Email is
+        lowercased and checked for uniqueness.
       operationId: updateCurrentUser
       security:
         - bearerAuth: []
@@ -280,26 +300,11 @@ paths:
                   minLength: 1
                   maxLength: 100
                   example: John Doe
-                  description: User's display name
                 email:
                   type: string
                   format: email
+                  maxLength: 255
                   example: newemail@example.com
-                  description: User's email address (must be unique)
-            examples:
-              updateName:
-                summary: Update name only
-                value:
-                  name: New Name
-              updateEmail:
-                summary: Update email only
-                value:
-                  email: newemail@example.com
-              updateBoth:
-                summary: Update both name and email
-                value:
-                  name: New Name
-                  email: newemail@example.com
       responses:
         '200':
           description: Profile updated successfully
@@ -308,58 +313,80 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
         '400':
-          description: Validation error or no fields provided
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  errors:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        msg:
-                          type: string
-                        path:
-                          type: string
-              examples:
-                noFields:
-                  summary: No fields provided
-                  value:
-                    errors:
-                      - msg: "At least one field (name or email) is required"
-                invalidEmail:
-                  summary: Invalid email format
-                  value:
-                    errors:
-                      - msg: "Invalid email format"
-                        path: "email"
+          $ref: '#/components/responses/ValidationFailed'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/UserNotFound'
         '409':
-          description: Email is already in use by another user
+          description: Email already in use by another user
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Email is already in use"
+                error: Email is already in use
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /users/me/password:
+    delete:
+      tags:
+        - Users
+      summary: Delete current user account
+      description: |
+        Permanently delete the account and everything under it (completions,
+        habits, refresh tokens) in one transaction. Requires the account
+        password in the body as confirmation.
+      operationId: deleteCurrentUser
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                  description: The account's current password, as confirmation
+      responses:
+        '204':
+          description: Account deleted; no content returned
+        '400':
+          description: Password confirmation missing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Password confirmation required
+        '401':
+          description: Missing/invalid access token, or wrong password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: Invalid password
+        '404':
+          $ref: '#/components/responses/UserNotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /api/v1/users/me/password:
     put:
       tags:
         - Users
       summary: Change password
       description: |
-        Change the authenticated user's password. Requires current password verification.
-        On success, all refresh tokens are revoked (user must re-login on other devices).
+        Change the password after verifying the current one. On success every
+        refresh token for the user is revoked, forcing re-login elsewhere.
       operationId: changePassword
       security:
         - bearerAuth: []
@@ -377,96 +404,50 @@ paths:
                 currentPassword:
                   type: string
                   format: password
-                  description: User's current password
                 newPassword:
                   type: string
                   format: password
                   minLength: 8
-                  description: New password (minimum 8 characters)
+                  maxLength: 72
                 confirmPassword:
                   type: string
                   format: password
                   description: Must match newPassword
-            example:
-              currentPassword: "OldPass123!"
-              newPassword: "NewSecure456!"
-              confirmPassword: "NewSecure456!"
       responses:
         '200':
           description: Password changed successfully
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
+                $ref: '#/components/schemas/Message'
               example:
-                message: "Password changed successfully"
+                message: Password changed successfully
         '400':
-          description: Validation error
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  errors:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        msg:
-                          type: string
-                        path:
-                          type: string
-              examples:
-                missingField:
-                  summary: Missing required field
-                  value:
-                    errors:
-                      - msg: "Current password is required"
-                        path: "currentPassword"
-                passwordTooShort:
-                  summary: Password too short
-                  value:
-                    errors:
-                      - msg: "New password must be at least 8 characters"
-                        path: "newPassword"
-                passwordMismatch:
-                  summary: Passwords don't match
-                  value:
-                    errors:
-                      - msg: "Passwords do not match"
-                        path: "confirmPassword"
+          $ref: '#/components/responses/ValidationFailed'
         '401':
-          description: Invalid current password or missing authentication
+          description: Missing/invalid access token, or wrong current password
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
               example:
-                error: "Invalid current password"
+                error: Invalid current password
         '404':
-          description: User not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+          $ref: '#/components/responses/UserNotFound'
         '429':
-          description: Too many requests (rate limited)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: "Too many password change attempts, please try again later"
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /habits:
+  /api/v1/habits:
     get:
       tags:
         - Habits
       summary: List habits
-      description: Get all habits for the authenticated user
+      description: |
+        All habits for the authenticated user, each with its completions
+        embedded. This is the ONLY response that carries the completions array;
+        every other habit response omits it (see HabitWithCompletions).
       operationId: listHabits
       security:
         - bearerAuth: []
@@ -479,21 +460,22 @@ paths:
             enum: [active, archived]
       responses:
         '200':
-          description: List of habits
+          description: List of habits with embedded completions
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Habit'
+                  $ref: '#/components/schemas/HabitWithCompletions'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/HabitInternalError'
 
     post:
       tags:
         - Habits
       summary: Create habit
-      description: Create a new habit
       operationId: createHabit
       security:
         - bearerAuth: []
@@ -511,16 +493,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/Habit'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/HabitBadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Per-user habit limit reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefError'
+              example:
+                error: Habit limit reached
+                message: You have reached the maximum of 50 habits. Please delete or archive existing habits before creating new ones.
+        '500':
+          $ref: '#/components/responses/HabitInternalError'
 
-  /habits/{habitId}:
+  /api/v1/habits/{habitId}:
     put:
       tags:
         - Habits
       summary: Update habit
-      description: Update an existing habit
       operationId: updateHabit
       security:
         - bearerAuth: []
@@ -540,17 +532,18 @@ paths:
               schema:
                 $ref: '#/components/schemas/Habit'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/HabitBadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/HabitNotFound'
+        '500':
+          $ref: '#/components/responses/HabitInternalError'
 
     delete:
       tags:
         - Habits
       summary: Delete habit
-      description: Delete a habit
       operationId: deleteHabit
       security:
         - bearerAuth: []
@@ -558,18 +551,21 @@ paths:
         - $ref: '#/components/parameters/HabitId'
       responses:
         '204':
-          description: Habit deleted
+          description: Habit deleted; no content returned
+        '400':
+          $ref: '#/components/responses/HabitBadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/HabitNotFound'
+        '500':
+          $ref: '#/components/responses/HabitInternalError'
 
-  /habits/{habitId}/completions:
+  /api/v1/habits/{habitId}/completions:
     get:
       tags:
         - Completions
       summary: List completions
-      description: Get all completions for a habit
       operationId: listCompletions
       security:
         - bearerAuth: []
@@ -577,19 +573,19 @@ paths:
         - $ref: '#/components/parameters/HabitId'
         - name: startDate
           in: query
-          description: Filter completions from this date
+          description: Include completions on or after this date
           schema:
             type: string
             format: date
         - name: endDate
           in: query
-          description: Filter completions until this date
+          description: Include completions on or before this date
           schema:
             type: string
             format: date
       responses:
         '200':
-          description: List of completions
+          description: List of completions, newest first
           content:
             application/json:
               schema:
@@ -601,13 +597,14 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/CompletionNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     post:
       tags:
         - Completions
       summary: Mark habit complete
-      description: Mark a habit as completed for a specific date
       operationId: createCompletion
       security:
         - bearerAuth: []
@@ -625,10 +622,12 @@ paths:
                 date:
                   type: string
                   format: date
-                  example: "2024-01-15"
+                  example: '2024-01-15'
                 notes:
                   type: string
-                  example: "Went for a 30-minute run"
+                  nullable: true
+                  maxLength: 500
+                  example: Went for a 30-minute run
       responses:
         '201':
           description: Completion recorded
@@ -643,32 +642,29 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/CompletionNotFound'
         '409':
           description: Already completed for this date
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+              example:
+                error: Habit already completed for this date
+        '500':
+          $ref: '#/components/responses/InternalError'
 
-  /habits/{habitId}/completions/{date}:
+  /api/v1/habits/{habitId}/completions/{date}:
     put:
       tags:
         - Completions
       summary: Update completion note
-      description: Update the note for an existing habit completion
       operationId: updateCompletionNote
       security:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
-        - name: date
-          in: path
-          required: true
-          description: Date of the completion to update
-          schema:
-            type: string
-            format: date
+        - $ref: '#/components/parameters/CompletionDate'
       requestBody:
         required: true
         content:
@@ -680,8 +676,8 @@ paths:
                   type: string
                   nullable: true
                   maxLength: 500
-                  example: "Went for a 45-minute run in the park"
-                  description: Note content (pass null to clear the note)
+                  description: Note content; pass null to clear it
+                  example: Went for a 45-minute run in the park
       responses:
         '200':
           description: Completion note updated
@@ -696,50 +692,37 @@ paths:
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/CompletionNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
     delete:
       tags:
         - Completions
       summary: Remove completion
-      description: Remove a habit completion for a specific date
       operationId: deleteCompletion
       security:
         - bearerAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
-        - name: date
-          in: path
-          required: true
-          description: Date of the completion to remove
-          schema:
-            type: string
-            format: date
+        - $ref: '#/components/parameters/CompletionDate'
       responses:
         '200':
           description: Completion removed
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  habitId:
-                    type: string
-                  date:
-                    type: string
-                    format: date
-              example:
-                message: "Completion deleted successfully"
-                habitId: "abc123"
-                date: "2024-01-15"
+                $ref: '#/components/schemas/CompletionDeleted'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/CompletionNotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
 
 components:
   securitySchemes:
@@ -757,10 +740,80 @@ components:
       schema:
         type: string
         format: uuid
+    CompletionDate:
+      name: date
+      in: path
+      required: true
+      description: Completion date (YYYY-MM-DD)
+      schema:
+        type: string
+        format: date
 
   schemas:
+    # ---------------------------------------------------------------------
+    # Response schemas.
+    #
+    # Every one of these is checked against real responses by the backend
+    # integration suite, so each lists ALL its fields in `required` and sets
+    # `additionalProperties: false`. Optional-looking fields are genuinely
+    # absent from some responses, never "we were not sure".
+    # ---------------------------------------------------------------------
+
+    Health:
+      type: object
+      additionalProperties: false
+      required: [service, version, status, timestamp, database]
+      properties:
+        service:
+          type: string
+          example: habittracker-api
+        version:
+          type: string
+          example: 1.0.0
+        status:
+          type: string
+          enum: [healthy]
+        timestamp:
+          type: string
+          format: date-time
+        database:
+          type: string
+          enum: [connected]
+
+    UnhealthyHealth:
+      type: object
+      additionalProperties: false
+      required: [service, version, status, timestamp, database, error]
+      properties:
+        service:
+          type: string
+        version:
+          type: string
+        status:
+          type: string
+          enum: [unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        database:
+          type: string
+          enum: [disconnected]
+        error:
+          type: string
+          description: The database driver's error message
+
+    Message:
+      type: object
+      additionalProperties: false
+      required: [message]
+      properties:
+        message:
+          type: string
+
     User:
       type: object
+      additionalProperties: false
+      required: [id, email, name, createdAt]
       properties:
         id:
           type: string
@@ -776,25 +829,32 @@ components:
         createdAt:
           type: string
           format: date-time
-        updatedAt:
-          type: string
-          format: date-time
 
     AuthResponse:
       type: object
       description: |
-        Authentication response. Tokens are set as HttpOnly cookies, not returned in body.
-        - accessToken cookie: 15 minute expiry
-        - refreshToken cookie: 7 day expiry
+        Register/login response. The tokens are BOTH set as HttpOnly cookies and
+        returned here: the web client reads the cookies and ignores these, the
+        mobile client has no cookie jar and reads these.
+      additionalProperties: false
+      required: [user, accessToken, refreshToken]
       properties:
         user:
           $ref: '#/components/schemas/User'
-      example:
-        user:
-          id: "123e4567-e89b-12d3-a456-426614174000"
-          email: "user@example.com"
-          name: "John Doe"
-          createdAt: "2024-01-15T10:30:00Z"
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+
+    TokenPair:
+      type: object
+      additionalProperties: false
+      required: [accessToken, refreshToken]
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
 
     HabitInput:
       type: object
@@ -803,56 +863,114 @@ components:
       properties:
         name:
           type: string
-          example: Morning Exercise
           minLength: 1
+          maxLength: 100
+          example: Morning Exercise
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+          example: 30 minutes of cardio exercise
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: '#3B82F6'
+        icon:
+          type: string
+          example: 🏃
+        status:
+          type: string
+          enum: [active, archived]
+
+    Habit:
+      type: object
+      description: |
+        A habit as returned by the single-habit and write endpoints. It has NO
+        completions field -- only GET /api/v1/habits embeds those, and that
+        response uses HabitWithCompletions.
+      additionalProperties: false
+      required: [id, userId, name, description, color, icon, status, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
           maxLength: 100
         description:
           type: string
-          example: 30 minutes of cardio exercise
+          nullable: true
           maxLength: 500
         color:
           type: string
           pattern: '^#[0-9A-Fa-f]{6}$'
-          example: "#3B82F6"
         icon:
           type: string
-          example: "🏃"
+        status:
+          type: string
+          enum: [active, archived]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
-    Habit:
-      allOf:
-        - $ref: '#/components/schemas/HabitInput'
-        - type: object
-          properties:
-            id:
-              type: string
-              format: uuid
-            userId:
-              type: string
-              format: uuid
-            status:
-              type: string
-              enum: [active, archived]
-              example: active
-            createdAt:
-              type: string
-              format: date-time
-            updatedAt:
-              type: string
-              format: date-time
-            completions:
-              type: array
-              description: >-
-                Completions recorded for this habit. Populated by
-                GET /habits (which embeds them) and absent from the
-                single-habit and write responses. Each element uses the
-                same field names as the Completion schema returned by
-                /habits/{habitId}/completions -- one entity, one wire
-                shape (habitcraft-34d.1).
-              items:
-                $ref: '#/components/schemas/Completion'
+    HabitWithCompletions:
+      type: object
+      description: |
+        A habit with its completions embedded, as returned by GET
+        /api/v1/habits. Each element of `completions` is byte-identical to what
+        /api/v1/habits/{habitId}/completions returns for the same row -- one
+        entity, one wire shape (habitcraft-34d.1).
+
+        Spelled out in full rather than as `allOf: [Habit, ...]`: under JSON
+        Schema, `additionalProperties: false` inside an allOf branch is
+        evaluated against the whole object, so the Habit branch would reject
+        `completions` and nothing could ever validate.
+      additionalProperties: false
+      required:
+        [id, userId, name, description, color, icon, status, createdAt, updatedAt, completions]
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 500
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        icon:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        completions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Completion'
 
     Completion:
       type: object
+      additionalProperties: false
+      required: [id, habitId, date, notes, createdAt]
       properties:
         id:
           type: string
@@ -863,60 +981,218 @@ components:
         date:
           type: string
           format: date
-          example: "2024-01-15"
+          example: '2024-01-15'
         notes:
           type: string
-          example: "Went for a 30-minute run"
+          nullable: true
+          maxLength: 500
+          example: Went for a 30-minute run
         createdAt:
           type: string
           format: date-time
-      example:
-        id: "abc123"
-        habitId: "habit-456"
-        date: "2024-01-15"
-        notes: "Went for a 30-minute run"
-        createdAt: "2024-01-15T08:30:00Z"
+
+    CompletionDeleted:
+      type: object
+      additionalProperties: false
+      required: [message, habitId, date]
+      properties:
+        message:
+          type: string
+        habitId:
+          type: string
+        date:
+          type: string
+          format: date
 
     Error:
       type: object
+      description: The bare error shape used by the auth, user and completion routes.
+      additionalProperties: false
+      required: [error]
       properties:
         error:
           type: string
-          example: Resource not found
+          example: Habit not found
+
+    BriefError:
+      type: object
+      description: |
+        An error with a human-readable detail but no statusCode. Only the
+        habit-limit 403 uses this; every other habits-route error is a
+        DetailedError.
+      additionalProperties: false
+      required: [error, message]
+      properties:
+        error:
+          type: string
         message:
           type: string
-          example: The requested habit does not exist
+
+    DetailedError:
+      type: object
+      description: |
+        The error shape used by the habits routes and by every rate limiter,
+        where statusCode is echoed in the body as well as the status line.
+      additionalProperties: false
+      required: [error, message, statusCode]
+      properties:
+        error:
+          type: string
+          example: Habit not found
+        message:
+          type: string
+          example: Habit not found or access denied
         statusCode:
           type: integer
           example: 404
 
+    ValidationErrors:
+      type: object
+      description: |
+        express-validator failures, as returned by the auth and user routes.
+        `errors` holds one entry per failed field.
+      additionalProperties: false
+      required: [errors]
+      properties:
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ValidationError'
+
+    ValidationError:
+      type: object
+      description: |
+        One express-validator error. `msg` is the only field always present:
+        the "at least one field is required" check is raised by hand and
+        carries nothing else.
+      additionalProperties: false
+      required: [msg]
+      properties:
+        type:
+          type: string
+          example: field
+        value:
+          description: The rejected value, of whatever type was submitted
+        msg:
+          type: string
+          example: Invalid email format
+        path:
+          type: string
+          example: email
+        location:
+          type: string
+          example: body
+
   responses:
     BadRequest:
-      description: Bad request - validation error
+      description: Bad request
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+
+    ValidationFailed:
+      description: Request body failed validation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationErrors'
 
     Unauthorized:
-      description: Unauthorized - invalid or missing token
+      description: Missing, malformed or expired access token
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          examples:
+            noToken:
+              value:
+                error: No token provided
+            expired:
+              value:
+                error: Token expired
 
     Forbidden:
-      description: Forbidden - access denied to this resource
+      description: The habit exists but belongs to another user
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
           example:
-            error: "Access denied"
+            error: Access denied
 
-    NotFound:
-      description: Resource not found
+    UserNotFound:
+      description: User not found
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+          example:
+            error: User not found
+
+    CompletionNotFound:
+      description: Habit or completion not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            habit:
+              value:
+                error: Habit not found
+            completion:
+              value:
+                error: Completion not found
+
+    HabitBadRequest:
+      description: Invalid habit ID or habit body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DetailedError'
+          example:
+            error: Validation error
+            message: name is required and must be a non-empty string
+            statusCode: 400
+
+    HabitNotFound:
+      description: Habit not found, or owned by another user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DetailedError'
+          example:
+            error: Habit not found
+            message: Habit not found or access denied
+            statusCode: 404
+
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: Internal server error
+
+    HabitInternalError:
+      description: Unexpected server error in a habits route
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DetailedError'
+          example:
+            error: Internal server error
+            message: Failed to fetch habits
+            statusCode: 500
+
+    RateLimited:
+      description: Too many requests from this IP
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/DetailedError'
+          example:
+            error: Too many login attempts
+            message: Too many login attempts from this IP, please try again after 15 minutes
+            statusCode: 429
