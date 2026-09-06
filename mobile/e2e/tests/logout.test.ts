@@ -12,7 +12,7 @@ describe('Logout', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
     // Register a test user
-    await registerTestUser(testUser.email, testUser.password);
+    await registerTestUser(testUser);
   });
 
   describe('Logout Flow', () => {

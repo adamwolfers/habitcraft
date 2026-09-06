@@ -1,5 +1,6 @@
 import { device, element, by, expect, waitFor } from 'detox';
 import { generateTestUser, waitForElement } from '../config/testSetup';
+import { requestLimits } from '../../src/types/apiLimits.generated';
 
 describe('Authentication', () => {
   beforeAll(async () => {
@@ -19,6 +20,7 @@ describe('Authentication', () => {
       await waitForElement('register-email-input');
 
       // Fill registration form
+      await element(by.id('register-name-input')).typeText(testUser.name);
       await element(by.id('register-email-input')).typeText(testUser.email);
       await element(by.id('register-password-input')).typeText(testUser.password);
       await element(by.id('register-confirm-password-input')).typeText(testUser.password);
@@ -38,6 +40,7 @@ describe('Authentication', () => {
       await waitForElement('register-email-input');
 
       // Fill form with mismatched passwords
+      await element(by.id('register-name-input')).typeText('Test User');
       await element(by.id('register-email-input')).typeText('test@example.com');
       await element(by.id('register-password-input')).typeText('password123');
       await element(by.id('register-confirm-password-input')).typeText('different456');
@@ -56,6 +59,7 @@ describe('Authentication', () => {
       await waitForElement('register-email-input');
 
       // Fill form with invalid email
+      await element(by.id('register-name-input')).typeText('Test User');
       await element(by.id('register-email-input')).typeText('invalid-email');
       await element(by.id('register-password-input')).typeText('password123');
       await element(by.id('register-confirm-password-input')).typeText('password123');
@@ -73,10 +77,12 @@ describe('Authentication', () => {
       await element(by.id('login-signup-link')).tap();
       await waitForElement('register-email-input');
 
-      // Fill form with short password
+      // Fill form with a password below the spec's minimum. 'short' is 5
+      // characters, under the 8 openapi.yaml declares (habitcraft-h7q7).
+      await element(by.id('register-name-input')).typeText('Test User');
       await element(by.id('register-email-input')).typeText('test@example.com');
-      await element(by.id('register-password-input')).typeText('12345');
-      await element(by.id('register-confirm-password-input')).typeText('12345');
+      await element(by.id('register-password-input')).typeText('short');
+      await element(by.id('register-confirm-password-input')).typeText('short');
 
       // Submit form
       await element(by.id('register-button')).tap();
@@ -84,7 +90,7 @@ describe('Authentication', () => {
       // Verify error is shown
       await expect(element(by.id('register-error'))).toBeVisible();
       await expect(element(by.id('register-error'))).toHaveText(
-        'Password must be at least 6 characters'
+        `Password must be at least ${requestLimits.register.password.minLength} characters`
       );
     });
 
@@ -109,6 +115,7 @@ describe('Authentication', () => {
       await element(by.id('login-signup-link')).tap();
       await waitForElement('register-email-input');
 
+      await element(by.id('register-name-input')).typeText(testUser.name);
       await element(by.id('register-email-input')).typeText(testUser.email);
       await element(by.id('register-password-input')).typeText(testUser.password);
       await element(by.id('register-confirm-password-input')).typeText(testUser.password);
