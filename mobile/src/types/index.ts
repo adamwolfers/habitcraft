@@ -1,4 +1,4 @@
-import type { components } from './api.generated';
+import type { components, operations } from './api.generated';
 
 /**
  * The wire types, aliased from the generated OpenAPI tree.
@@ -13,21 +13,22 @@ import type { components } from './api.generated';
  * `components["schemas"][...]` out of every call site. The names that differ
  * from the spec's (HabitCompletion, HabitWithStats) are kept as-is -- renaming
  * them is churn unrelated to this change.
+ *
+ * Request bodies come off `operations`, not `components`: the auth bodies are
+ * declared inline in the spec rather than as $ref'd schemas, so they have no
+ * entry under `components["schemas"]`. Aliasing them anyway is what stops the
+ * drift that broke registration -- RegisterData was hand-written as
+ * `{ email, password }` against a server that has always required `name`, and
+ * nothing failed until a real device hit a 400 (habitcraft-7ggs).
  */
 export type User = components['schemas']['User'];
 
 // Auth types
 export type AuthTokens = components['schemas']['TokenPair'];
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
+export type LoginCredentials = operations['login']['requestBody']['content']['application/json'];
 
-export interface RegisterData {
-  email: string;
-  password: string;
-}
+export type RegisterData = operations['register']['requestBody']['content']['application/json'];
 
 // Habit types
 export type Habit = components['schemas']['Habit'];

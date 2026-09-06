@@ -212,7 +212,9 @@ describe('AuthContext', () => {
           <Text testID="error">{error || 'no-error'}</Text>
           <Text
             testID="register-button"
-            onPress={() => register({ email: 'new@example.com', password: 'password' })}
+            onPress={() =>
+              register({ email: 'new@example.com', password: 'password', name: 'Test User' })
+            }
           >
             Register
           </Text>

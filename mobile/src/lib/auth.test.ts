@@ -104,6 +104,7 @@ describe('authApi', () => {
     const registerData = {
       email: 'new@example.com',
       password: 'password123',
+      name: 'Test User',
     };
 
     const mockResponse = {
