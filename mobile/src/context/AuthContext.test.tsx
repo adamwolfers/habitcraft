@@ -54,7 +54,12 @@ const TestConsumer: React.FC = () => {
 };
 
 describe('AuthContext', () => {
-  const mockUser = { id: '1', email: 'test@example.com', created_at: '2024-01-01' };
+  const mockUser = {
+    id: '1',
+    email: 'test@example.com',
+    name: 'Test User',
+    createdAt: '2024-01-01',
+  };
   const mockTokens = { accessToken: 'access', refreshToken: 'refresh' };
 
   beforeEach(() => {

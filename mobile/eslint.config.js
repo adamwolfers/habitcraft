@@ -19,6 +19,11 @@ module.exports = [
       'metro.config.js',
       'jest.config.js',
       'jest.setup.js',
+      // Generated from shared/api-spec/openapi.yaml by scripts/api-codegen.js.
+      // Linting them would fight the generator: `npm run api:codegen -- --check`
+      // compares the committed bytes against what the generator emits, so a
+      // prettier --fix pass afterwards makes every run report drift.
+      '**/*.generated.ts',
     ],
   },
   // TypeScript/TSX files configuration

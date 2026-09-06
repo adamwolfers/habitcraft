@@ -22,6 +22,8 @@ const eslintConfig = defineConfig([
     'jest.setup.js',
     // Generated files
     'coverage/**',
+    // Generated from shared/api-spec/openapi.yaml -- see .prettierignore.
+    '**/*.generated.ts',
   ]),
 ]);
 

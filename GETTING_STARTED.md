@@ -93,9 +93,10 @@ habittracker_fullstack/
 ├── db/                   # dbmate SQL migrations (schema source of truth)
 │                         #   + schema.sql, generated from them
 ├── shared/               # Shared resources
-│   ├── api-spec/         # OpenAPI spec (enforced by the integration suite)
+│   ├── api-spec/         # OpenAPI spec: enforced against responses, and
+│   │                     #   generates each client's types + validation limits
 │   ├── database/         # Test fixtures / seed data
-│   └── types/            # Shared type definitions
+│   └── types/            # Superseded by api-spec/ codegen (habitcraft-brj)
 ├── docker-compose.yml    # Docker orchestration
 ├── PROJECT_PLAN.md       # Detailed development roadmap
 ├── GETTING_STARTED.md    # Quick start guide (this file)
@@ -282,13 +283,23 @@ The OpenAPI specification is available at:
 - File: `shared/api-spec/openapi.yaml`
 - View online: Use [Swagger Editor](https://editor.swagger.io/) and paste the file contents
 
-It is **enforced, not descriptive**. The backend integration suite validates
-every response against it and fails the run on any mismatch — a renamed field,
-a stray field, an undocumented status — and also fails if an operation it
-documents is never exercised by a test. So if you change a response shape,
-change the spec in the same commit; if you add an endpoint, document it *and*
-add an integration test for it. See
-[backend/openapi/README.md](backend/openapi/README.md).
+It is **the contract, not documentation**, and three gates enforce that:
+
+1. The backend integration suite validates every response against it and fails
+   the run on any mismatch — a renamed field, a stray field, an undocumented
+   status — and also fails if an operation it documents is never exercised by a
+   test. See [backend/openapi/README.md](backend/openapi/README.md).
+2. The frontend's and mobile app's types and validation limits are **generated**
+   from it. After changing the spec, run `npm run api:codegen` from the repo
+   root and commit the regenerated files; CI fails if they are stale.
+3. `npm run api:breaking` fails on a change that would break a client already
+   deployed — the mobile app above all, which cannot be updated in lockstep.
+
+So if you change a response shape, change the handler and the spec in the same
+commit and regenerate; if you add an endpoint, document it *and* add an
+integration test for it. See
+[shared/api-spec/README.md](shared/api-spec/README.md) for how the three fit
+together.
 
 ## Documentation
 
@@ -297,7 +308,7 @@ add an integration test for it. See
 - **[GCP Architecture](docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[README.md](README.md)** - Project overview
 - **[backend/README.md](backend/README.md)** - Backend setup and API reference
-- **[shared/api-spec/openapi.yaml](shared/api-spec/openapi.yaml)** - OpenAPI specification (enforced; see [backend/openapi/README.md](backend/openapi/README.md))
+- **[shared/api-spec/README.md](shared/api-spec/README.md)** - The API contract: what enforces [openapi.yaml](shared/api-spec/openapi.yaml), what it generates, and how to change it
 
 ## Common Issues
 

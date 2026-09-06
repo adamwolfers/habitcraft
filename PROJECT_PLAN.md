@@ -468,7 +468,7 @@ See [docs/plans/completed/code-quality-testability-refactors.md](docs/plans/comp
 - **Testing Guide:** `/docs/TESTING.md`
 - **GCP Architecture:** `/docs/GCP_ARCHITECTURE.md`
 - **Main README:** `/README.md`
-- **API Specification:** `/shared/api-spec/openapi.yaml` (enforced against integration responses; see `/backend/openapi/README.md`)
+- **API Specification:** `/shared/api-spec/openapi.yaml` (enforced against integration responses, generates the clients' types and limits, gated for breaking changes; see `/shared/api-spec/README.md`)
 - **Database Migrations:** `/db/README.md` (schema source of truth; generated dump in `/db/schema.sql`)
 - **Backend README:** `/backend/README.md`
 - **Frontend README:** `/frontend/README.md`

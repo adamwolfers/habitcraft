@@ -27,9 +27,10 @@ habittracker_fullstack/
 ├── db/                   # dbmate SQL migrations (schema source of truth)
 │                         #   + schema.sql, generated from them
 ├── shared/               # Shared resources
-│   ├── api-spec/         # OpenAPI spec (enforced by the integration suite)
+│   ├── api-spec/         # OpenAPI spec: enforced against responses, and
+│   │                     #   generates each client's types + validation limits
 │   ├── database/         # Test fixtures / seed data
-│   └── types/            # Shared type definitions
+│   └── types/            # Superseded by api-spec/ codegen (habitcraft-brj)
 ├── docker-compose.yml    # Docker orchestration
 ├── PROJECT_PLAN.md       # Development roadmap
 ├── GETTING_STARTED.md    # Quick start guide
@@ -111,7 +112,7 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](./docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[AWS Architecture](./docs/AWS_ARCHITECTURE.md)** - Legacy deployment guide (Lightsail + RDS) - archived
-- **[API Specification](./shared/api-spec/openapi.yaml)** - OpenAPI spec, enforced against every backend integration response ([how](./backend/openapi/README.md))
+- **[API Specification](./shared/api-spec/openapi.yaml)** - The API contract: enforced against every backend integration response, generates the clients' types and limits, and gated for breaking changes ([how](./shared/api-spec/README.md))
 - **[Database Migrations](./db/README.md)** - dbmate migrations, the source of truth for the schema
 - **[Generated Schema](./db/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
 

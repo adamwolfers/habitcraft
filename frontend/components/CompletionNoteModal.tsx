@@ -2,6 +2,14 @@
 
 import { useState } from 'react';
 import { parseLocalDateFromString } from '@/utils/dateUtils';
+import { requestLimits } from '@/types/apiLimits.generated';
+
+// From the spec, not a literal (habitcraft-467). updateCompletionNote declares
+// the same limit -- this modal drives both operations.
+const MAX_LENGTH = requestLimits.createCompletion.notes.maxLength;
+
+// Turn the counter amber for the last 10% of the budget.
+const WARN_LENGTH = Math.floor(MAX_LENGTH * 0.9);
 
 interface CompletionNoteModalProps {
   habitName: string;
@@ -28,7 +36,6 @@ export default function CompletionNoteModal({
   onClose,
 }: CompletionNoteModalProps) {
   const [note, setNote] = useState(existingNote || '');
-  const MAX_LENGTH = 500;
 
   const handleSave = () => {
     const trimmedNote = note.trim();
@@ -42,7 +49,7 @@ export default function CompletionNoteModal({
   const getCharCountClass = () => {
     const length = note.length;
     if (length >= MAX_LENGTH) return 'text-red-500';
-    if (length >= 450) return 'text-yellow-500';
+    if (length >= WARN_LENGTH) return 'text-yellow-500';
     return 'text-gray-400';
   };
 

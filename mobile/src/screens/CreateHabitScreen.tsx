@@ -9,8 +9,15 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { schemaLimits } from '@/types/apiLimits.generated';
 import { colors, spacing, typography } from '@/theme';
 import { useCreateHabit } from '@/hooks';
+
+// From the spec, not literals (habitcraft-467). These used to read 50 and 200
+// against a server that has always accepted 100 and 500, so a mobile user's
+// keystrokes simply stopped with no error (habitcraft-34d.3).
+const NAME_MAX_LENGTH = schemaLimits.HabitInput.name.maxLength;
+const DESCRIPTION_MAX_LENGTH = schemaLimits.HabitInput.description.maxLength;
 
 const ICONS = ['🏃', '📚', '💪', '🧘', '💧', '🥗', '😴', '💰', '✍️', '🎯'];
 const COLORS = [
@@ -66,7 +73,7 @@ export function CreateHabitScreen() {
           placeholderTextColor={colors.textMuted}
           value={name}
           onChangeText={setName}
-          maxLength={50}
+          maxLength={NAME_MAX_LENGTH}
           accessibilityLabel="Habit name"
           accessibilityHint="Enter a name for your habit"
         />
@@ -83,7 +90,7 @@ export function CreateHabitScreen() {
           onChangeText={setDescription}
           multiline
           numberOfLines={3}
-          maxLength={200}
+          maxLength={DESCRIPTION_MAX_LENGTH}
           accessibilityLabel="Habit description, optional"
           accessibilityHint="Enter a description for your habit"
         />

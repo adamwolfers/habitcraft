@@ -65,7 +65,10 @@ export function useCreateHabit() {
           id: tempId,
           userId: 'pending',
           name: data.name,
-          description: data.description,
+          // The server stores an absent description as SQL NULL, so the
+          // optimistic habit must too -- otherwise the card re-renders with a
+          // different value the moment the queued mutation syncs.
+          description: data.description ?? null,
           icon: data.icon,
           color: data.color,
           status: 'active',

@@ -268,6 +268,34 @@ CI red. See [db/README.md](db/README.md#the-generated-schema-dump-dbschemasql).
 
 We don't rollback migrations. If something breaks, fix forward with a new migration. See `db/README.md` for rationale.
 
+## The API Contract
+
+`shared/api-spec/openapi.yaml` is the **only** source of truth for the HTTP
+interface, and the same generate-and-verify shape as `db/schema.sql` applies to
+it. Three gates make it load-bearing:
+
+| Gate | Question | CI job |
+|---|---|---|
+| Response validation | Does the server return what the spec says? | backend integration suite |
+| Consumer codegen | Do the clients read the spec's shapes and limits? | `verify-api-codegen` |
+| Breaking-change diff | Is this change safe for a deployed client? | `verify-openapi-breaking` |
+
+After changing the spec:
+
+```bash
+npm run api:codegen            # regenerate; commit the result
+npm run api:codegen -- --check # what CI runs
+npm run api:breaking           # fails on a change that breaks a deployed client
+```
+
+`<consumer>/types/api.generated.ts` and `apiLimits.generated.ts` are generated
+into `frontend/` and `mobile/` and **must never be hand-edited** — the same rule
+as `db/schema.sql`. Do not write a validation limit as a literal in a component;
+import it from the generated limits (habitcraft-467). `shared/types/models.ts`
+is a superseded hand-written mirror that nothing imports — do not add to it.
+
+See [shared/api-spec/README.md](shared/api-spec/README.md).
+
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker

@@ -1,15 +1,23 @@
-// User types
-export interface User {
-  id: string;
-  email: string;
-  created_at: string;
-}
+import type { components } from './api.generated';
+
+/**
+ * The wire types, aliased from the generated OpenAPI tree.
+ *
+ * These were hand-written until habitcraft-467 and had drifted: `User` said
+ * `created_at` and had no `name`, against a server that has always returned
+ * `createdAt` and `name`. `api.generated.ts` is regenerated from
+ * shared/api-spec/openapi.yaml by `npm run api:codegen` and CI fails if it is
+ * stale, so a spec change now lands here instead of rotting.
+ *
+ * Keep the short local names: they are what the screens import, and they keep
+ * `components["schemas"][...]` out of every call site. The names that differ
+ * from the spec's (HabitCompletion, HabitWithStats) are kept as-is -- renaming
+ * them is churn unrelated to this change.
+ */
+export type User = components['schemas']['User'];
 
 // Auth types
-export interface AuthTokens {
-  accessToken: string;
-  refreshToken: string;
-}
+export type AuthTokens = components['schemas']['TokenPair'];
 
 export interface LoginCredentials {
   email: string;
@@ -22,31 +30,13 @@ export interface RegisterData {
 }
 
 // Habit types
-export interface Habit {
-  id: string;
-  userId: string;
-  name: string;
-  description?: string;
-  icon: string;
-  color: string;
-  status: 'active' | 'archived';
-  createdAt: string;
-  updatedAt: string;
-}
+export type Habit = components['schemas']['Habit'];
 
-export interface HabitCompletion {
-  id: string;
-  habitId: string;
-  /** YYYY-MM-DD */
-  date: string;
-  /** Backend returns SQL NULL, not undefined, when no note was given. */
-  notes: string | null;
-  createdAt: string;
-}
+export type HabitInput = components['schemas']['HabitInput'];
 
-export interface HabitWithStats extends Habit {
-  completions: HabitCompletion[];
-}
+export type HabitCompletion = components['schemas']['Completion'];
+
+export type HabitWithStats = components['schemas']['HabitWithCompletions'];
 
 // API types
 export interface ApiError {
