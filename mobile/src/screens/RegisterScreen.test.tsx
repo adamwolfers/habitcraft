@@ -4,6 +4,7 @@ import { RegisterScreen } from './RegisterScreen';
 import { AuthProvider } from '@/context/AuthContext';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
+import { requestLimits } from '@/types/apiLimits.generated';
 
 // Mock navigation
 const mockNavigate = jest.fn();
@@ -59,6 +60,24 @@ describe('RegisterScreen', () => {
       });
     });
 
+    it('renders name input field', async () => {
+      const { getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        expect(getByPlaceholderText('Name')).toBeTruthy();
+      });
+    });
+
+    it('caps the name input at the length the spec declares', async () => {
+      const { getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        expect(getByPlaceholderText('Name').props.maxLength).toBe(
+          requestLimits.register.name.maxLength
+        );
+      });
+    });
+
     it('renders email input field', async () => {
       const { getByPlaceholderText } = renderRegisterScreen();
 
@@ -101,10 +120,26 @@ describe('RegisterScreen', () => {
   });
 
   describe('form validation', () => {
+    it('shows error when submitting with empty name', async () => {
+      const { getByText, getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
+        fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
+        fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'password123');
+        fireEvent.press(getByText('Sign Up'));
+      });
+
+      await waitFor(() => {
+        expect(getByText('Name is required')).toBeTruthy();
+      });
+    });
+
     it('shows error when submitting with empty email', async () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
         fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
         fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'password123');
         fireEvent.press(getByText('Sign Up'));
@@ -119,6 +154,7 @@ describe('RegisterScreen', () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
         fireEvent.changeText(getByPlaceholderText('Email'), 'invalid-email');
         fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
         fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'password123');
@@ -134,6 +170,7 @@ describe('RegisterScreen', () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
         fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
         fireEvent.press(getByText('Sign Up'));
       });
@@ -147,6 +184,7 @@ describe('RegisterScreen', () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
         fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
         fireEvent.changeText(getByPlaceholderText('Password'), '12345');
         fireEvent.changeText(getByPlaceholderText('Confirm Password'), '12345');
@@ -162,6 +200,7 @@ describe('RegisterScreen', () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
         fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
         fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
         fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'different123');
@@ -175,9 +214,13 @@ describe('RegisterScreen', () => {
   });
 
   describe('registration submission', () => {
+    // The exact body POST /auth/register requires -- `name` included. The
+    // server rejects a body without it (400), and this assertion is what would
+    // have caught habitcraft-7ggs.
     const validData = {
       email: 'new@example.com',
       password: 'password123',
+      name: 'Test User',
     };
 
     it('calls register API with correct data', async () => {
@@ -195,6 +238,28 @@ describe('RegisterScreen', () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), validData.name);
+        fireEvent.changeText(getByPlaceholderText('Email'), validData.email);
+        fireEvent.changeText(getByPlaceholderText('Password'), validData.password);
+        fireEvent.changeText(getByPlaceholderText('Confirm Password'), validData.password);
+        fireEvent.press(getByText('Sign Up'));
+      });
+
+      await waitFor(() => {
+        expect(mockAuthApi.register).toHaveBeenCalledWith(validData);
+      });
+    });
+
+    it('trims whitespace from the name before sending it', async () => {
+      mockAuthApi.register.mockResolvedValue({
+        user: { id: '1', email: validData.email, name: validData.name, createdAt: '2024-01-01' },
+        tokens: { accessToken: 'token', refreshToken: 'refresh' },
+      });
+
+      const { getByText, getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), `  ${validData.name}  `);
         fireEvent.changeText(getByPlaceholderText('Email'), validData.email);
         fireEvent.changeText(getByPlaceholderText('Password'), validData.password);
         fireEvent.changeText(getByPlaceholderText('Confirm Password'), validData.password);
@@ -212,6 +277,7 @@ describe('RegisterScreen', () => {
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), validData.name);
         fireEvent.changeText(getByPlaceholderText('Email'), validData.email);
         fireEvent.changeText(getByPlaceholderText('Password'), validData.password);
         fireEvent.changeText(getByPlaceholderText('Confirm Password'), validData.password);

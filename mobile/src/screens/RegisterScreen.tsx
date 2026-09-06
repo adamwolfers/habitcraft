@@ -10,8 +10,12 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { requestLimits } from '@/types/apiLimits.generated';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
+
+// From the spec, not a literal (habitcraft-467).
+const NAME_MAX_LENGTH = requestLimits.register.name.maxLength;
 
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -22,6 +26,7 @@ export function RegisterScreen() {
   const navigation = useNavigation();
   const { register, error: authError } = useAuthContext();
 
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,6 +35,13 @@ export function RegisterScreen() {
 
   const handleRegister = async () => {
     setValidationError(null);
+
+    // Validate name -- the server requires it (users.name is NOT NULL), so a
+    // body without it comes back 400 (habitcraft-7ggs).
+    if (!name.trim()) {
+      setValidationError('Name is required');
+      return;
+    }
 
     // Validate email
     if (!email.trim()) {
@@ -61,7 +73,7 @@ export function RegisterScreen() {
 
     setIsLoading(true);
     try {
-      await register({ email: email.trim(), password });
+      await register({ email: email.trim(), password, name: name.trim() });
     } catch {
       // Error is handled by AuthContext
     } finally {
@@ -85,6 +97,21 @@ export function RegisterScreen() {
         <Text style={styles.subtitle}>Join HabitCraft and start building better habits</Text>
 
         <View style={styles.form}>
+          <TextInput
+            testID="register-name-input"
+            style={styles.input}
+            placeholder="Name"
+            placeholderTextColor={colors.textMuted}
+            value={name}
+            onChangeText={setName}
+            maxLength={NAME_MAX_LENGTH}
+            autoCapitalize="words"
+            autoCorrect={false}
+            editable={!isLoading}
+            accessibilityLabel="Name"
+            accessibilityHint="Enter your name"
+          />
+
           <TextInput
             testID="register-email-input"
             style={styles.input}
