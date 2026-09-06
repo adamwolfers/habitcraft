@@ -13,16 +13,16 @@ module.exports = {
     'ios.debug': {
       type: 'ios.app',
       binaryPath:
-        'ios/build/Build/Products/Debug-iphonesimulator/mobile.app',
+        'ios/build/Build/Products/Debug-iphonesimulator/HabitCraft.app',
       build:
-        'xcodebuild -workspace ios/mobile.xcworkspace -scheme mobile -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
+        'xcodebuild -workspace ios/HabitCraft.xcworkspace -scheme HabitCraft -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build',
     },
     'ios.release': {
       type: 'ios.app',
       binaryPath:
-        'ios/build/Build/Products/Release-iphonesimulator/mobile.app',
+        'ios/build/Build/Products/Release-iphonesimulator/HabitCraft.app',
       build:
-        'xcodebuild -workspace ios/mobile.xcworkspace -scheme mobile -configuration Release -sdk iphonesimulator -derivedDataPath ios/build',
+        'xcodebuild -workspace ios/HabitCraft.xcworkspace -scheme HabitCraft -configuration Release -sdk iphonesimulator -derivedDataPath ios/build',
     },
     'android.debug': {
       type: 'android.apk',
@@ -38,17 +38,21 @@ module.exports = {
         'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
     },
   },
+  // Device names are overridable because a hard-coded model is guaranteed to
+  // rot: this file shipped 'iPhone 15' and 'Pixel_7_API_34', neither of which
+  // existed on the machine that first ran the suite (habitcraft-bqhe.2). CI
+  // pins its own via these variables rather than editing the file.
   devices: {
     simulator: {
       type: 'ios.simulator',
       device: {
-        type: 'iPhone 15',
+        type: process.env.DETOX_IOS_DEVICE || 'iPhone 17',
       },
     },
     emulator: {
       type: 'android.emulator',
       device: {
-        avdName: 'Pixel_7_API_34',
+        avdName: process.env.DETOX_AVD_NAME || 'Pixel_7_API_34',
       },
     },
   },
