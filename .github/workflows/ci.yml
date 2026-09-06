@@ -255,6 +255,86 @@ jobs:
         run: ./scripts/schema-dump.sh --check
 
   # ===========================================
+  # API Contract Checks
+  # ===========================================
+  # Comments belong ABOVE the `if:` key, never indented under it: those gates
+  # are YAML literal block scalars, so a '#' line inside one becomes part of the
+  # expression string rather than a comment.
+  #
+  # `shared` covers openapi.yaml itself; `frontend`/`mobile` cover the generated
+  # files, which live in those trees and could be hand-edited; `tooling` covers
+  # scripts/api-codegen.js and the root package.json that pins the generator.
+  verify-api-codegen:
+    name: Verify Generated API Artifacts
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.frontend == 'true' ||
+      needs.detect-changes.outputs.mobile == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Regenerates from shared/api-spec/openapi.yaml and diffs, so a spec edit
+      # that did not regenerate the consumers' types and limits fails here --
+      # the same shape as verify-schema-dump above (habitcraft-467).
+      - name: Verify generated API artifacts match openapi.yaml
+        run: npm run api:codegen -- --check
+
+  # `shared` covers the spec; `tooling` covers the script and the pinned image
+  # digest that decides what counts as breaking.
+  verify-openapi-breaking:
+    name: Verify No Breaking API Changes
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
+
+    steps:
+      # fetch-depth: 0 because the check compares against a base revision, which
+      # a shallow clone would not contain.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine base revision
+        id: base
+        run: |
+          if [ -n "${{ github.base_ref }}" ]; then
+            # Pull request: the merge target is what clients are running.
+            BASE="origin/${{ github.base_ref }}"
+          elif git rev-parse --verify --quiet "${{ github.event.before }}^{commit}" > /dev/null; then
+            # Push to an existing branch: what it pointed at before this push.
+            BASE="${{ github.event.before }}"
+          else
+            # First push of a new branch (`before` is all-zeros), or a manual
+            # workflow_dispatch, where there is no pushed-from revision at all.
+            BASE="HEAD~1"
+          fi
+          echo "Comparing against $BASE"
+          echo "ref=$BASE" >> "$GITHUB_OUTPUT"
+
+      # Runs oasdiff in docker (image pinned by digest inside the script), so
+      # this is byte-for-byte the check a developer gets locally.
+      - name: Check openapi.yaml for breaking changes
+        run: ./scripts/openapi-breaking.sh "${{ steps.base.outputs.ref }}"
+
+  # ===========================================
   # Unit Tests
   # ===========================================
   backend-unit-tests:

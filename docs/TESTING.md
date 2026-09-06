@@ -144,20 +144,22 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 4 | Mobile Lint | `mobile: npm run lint` | no |
 | 5 | Mobile Typecheck | `mobile: npm run typecheck` | no |
 | 6 | Generated Schema Check | `scripts/schema-dump.sh --check` | daemon only |
-| 7 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 8 | Backend Unit Tests | `backend: npm test` | yes |
-| 9 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 10 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 11 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 7 | Generated API Artifacts Check | `npm run api:codegen -- --check` | no |
+| 8 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
+| 9 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 10 | Backend Unit Tests | `backend: npm test` | yes |
+| 11 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 12 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 13 | E2E Tests | `frontend: playwright, 3 shards` | yes |
 
 Notes on that table:
 
-- **Phases 1–6 fail fast.** All six always run (so you see every static error at
-  once), but if any failed the script stops before starting containers and marks
-  the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
+- **Phases 1–8 fail fast.** All eight always run (so you see every static error
+  at once), but if any failed the script stops before starting containers and
+  marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
   ordering. `--keep-going` runs everything regardless.
-- **Phase 6 needs the docker *daemon*, but not the compose stack.**
+- **Phases 6 and 8 need the docker *daemon*, but not the compose stack.**
   `scripts/schema-dump.sh` starts a throwaway postgres of its own, applies
   `db/migrations/`, dumps the result, and diffs it against the committed
   `db/schema.sql`; the whole phase is about five seconds. It sits in the
@@ -166,6 +168,16 @@ Notes on that table:
   the same check is the `verify-schema-dump` job. See
   [db/README.md](../db/README.md#the-generated-schema-dump-dbschemasql) for why
   the dump is generated rather than hand-maintained.
+- **Phases 7 and 8 are the API contract's two halves.** Phase 7 regenerates
+  each consumer's `api.generated.ts` and `apiLimits.generated.ts` from
+  `shared/api-spec/openapi.yaml` and diffs them against the committed files, so
+  a spec edit that skipped `npm run api:codegen` fails here — the same idea as
+  phase 6, one layer up. Phase 8 asks the different question of whether the
+  spec change is safe to ship at all: it runs oasdiff (in a pinned container,
+  hence the daemon) against `origin/master` and fails on a change that would
+  break a client already deployed. In CI these are the `verify-api-codegen` and
+  `verify-openapi-breaking` jobs. See
+  [shared/api-spec/README.md](../shared/api-spec/README.md).
 - **Backend has no typecheck** — it is plain JS with no `typecheck` script. Its
   absence is correct, not a gap.
 - **Mobile runs `test:coverage`, not `test`.** `mobile/jest.config.js` enforces

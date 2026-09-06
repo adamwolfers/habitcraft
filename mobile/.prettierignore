@@ -1,15 +1,3 @@
-node_modules/
-.next/
-out/
-build/
-coverage/
-playwright-report/
-playwright-report-gcp/
-playwright-results/
-playwright-results-gcp/
-next-env.d.ts
-tsconfig.tsbuildinfo
-
 # Generated from shared/api-spec/openapi.yaml by scripts/api-codegen.js.
 # Formatting them would fight the generator: `npm run api:codegen -- --check`
 # compares the committed bytes against what the generator emits, so a prettier

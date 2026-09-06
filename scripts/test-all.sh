@@ -57,13 +57,15 @@ LBL_FRONTEND_TYPECHECK="Frontend Typecheck"
 LBL_MOBILE_LINT="Mobile Lint"
 LBL_MOBILE_TYPECHECK="Mobile Typecheck"
 LBL_SCHEMA_DUMP="Generated Schema Check"
+LBL_API_CODEGEN="Generated API Artifacts Check"
+LBL_API_BREAKING="OpenAPI Breaking Changes"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
 LBL_BACKEND_UNIT="Backend Unit Tests"
 LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 
-TOTAL_PHASES=11
+TOTAL_PHASES=13
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -229,8 +231,10 @@ wait_for_service() {
 
 # Every phase below runs the workspace's own node_modules, so a missing install
 # would surface as a confusing lint failure in phase 1. Say so plainly instead.
+# The repo root is in this list too: the generated-API check runs from there,
+# against the generator pinned in the root package.json.
 MISSING_DEPS=""
-for pkg in backend frontend mobile; do
+for pkg in . backend frontend mobile; do
     if [ ! -d "$PROJECT_ROOT/$pkg/node_modules" ]; then
         MISSING_DEPS="$MISSING_DEPS $pkg"
     fi
@@ -273,6 +277,19 @@ run_phase "🔤" "$LBL_MOBILE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile
 # a regenerated dump fails here exactly as it does in CI (habitcraft-by9).
 run_phase "🗄️ " "$LBL_SCHEMA_DUMP" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
     "$PROJECT_ROOT/scripts/schema-dump.sh" --check || STATIC_FAILED=1
+
+# The consumer half of the same idea: shared/api-spec/openapi.yaml is the source
+# of truth and each consumer's api.generated.ts / apiLimits.generated.ts are
+# derived from it, so a spec edit that skipped regeneration fails here exactly
+# as it does in CI (habitcraft-467).
+run_phase "📜" "$LBL_API_CODEGEN" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
+    npm run api:codegen -- --check || STATIC_FAILED=1
+
+# And whether the spec change is safe to ship at all. Needs docker (oasdiff runs
+# in a pinned container) and compares against origin/master, which is what CI
+# compares against for a pull request.
+run_phase "🚦" "$LBL_API_BREAKING" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
+    "$PROJECT_ROOT/scripts/openapi-breaking.sh" || STATIC_FAILED=1
 
 if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "🛑 Static checks failed -- stopping before the docker and E2E phases."

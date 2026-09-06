@@ -181,7 +181,12 @@ describe('RegisterScreen', () => {
     };
 
     it('calls register API with correct data', async () => {
-      const mockUser = { id: '1', email: 'new@example.com', created_at: '2024-01-01' };
+      const mockUser = {
+        id: '1',
+        email: 'new@example.com',
+        name: 'Test User',
+        createdAt: '2024-01-01',
+      };
       mockAuthApi.register.mockResolvedValue({
         user: mockUser,
         tokens: { accessToken: 'token', refreshToken: 'refresh' },

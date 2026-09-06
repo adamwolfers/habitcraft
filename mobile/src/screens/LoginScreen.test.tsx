@@ -170,7 +170,12 @@ describe('LoginScreen', () => {
     };
 
     it('calls login API with correct credentials', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', created_at: '2024-01-01' };
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2024-01-01',
+      };
       mockAuthApi.login.mockResolvedValue({
         user: mockUser,
         tokens: { accessToken: 'token', refreshToken: 'refresh' },

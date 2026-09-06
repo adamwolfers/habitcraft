@@ -1,10 +1,14 @@
 {
   "devDependencies": {
     "husky": "^9.1.7",
+    "js-yaml": "5.4.1",
+    "openapi-typescript": "7.13.0",
     "picomatch": "4.0.5"
   },
   "scripts": {
     "prepare": "husky",
-    "verify:ci-filters": "node scripts/verify-ci-filters.js"
+    "verify:ci-filters": "node scripts/verify-ci-filters.js",
+    "api:codegen": "node scripts/api-codegen.js",
+    "api:breaking": "./scripts/openapi-breaking.sh"
   }
 }

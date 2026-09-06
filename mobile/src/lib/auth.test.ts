@@ -39,7 +39,7 @@ describe('authApi', () => {
 
     const mockResponse = {
       data: {
-        user: { id: '1', email: 'test@example.com', created_at: '2024-01-01' },
+        user: { id: '1', email: 'test@example.com', name: 'Test User', createdAt: '2024-01-01' },
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
       },
@@ -108,7 +108,7 @@ describe('authApi', () => {
 
     const mockResponse = {
       data: {
-        user: { id: '2', email: 'new@example.com', created_at: '2024-01-01' },
+        user: { id: '2', email: 'new@example.com', name: 'Test User', createdAt: '2024-01-01' },
         accessToken: 'new-access-token',
         refreshToken: 'new-refresh-token',
       },
@@ -267,7 +267,12 @@ describe('authApi', () => {
 
   describe('getCurrentUser', () => {
     it('makes GET request to /users/me via the shared api instance', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', created_at: '2024-01-01' };
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2024-01-01',
+      };
       mockStorage.getTokens.mockResolvedValueOnce({
         accessToken: 'token',
         refreshToken: 'refresh',
@@ -280,7 +285,12 @@ describe('authApi', () => {
     });
 
     it('returns user data', async () => {
-      const mockUser = { id: '1', email: 'test@example.com', created_at: '2024-01-01' };
+      const mockUser = {
+        id: '1',
+        email: 'test@example.com',
+        name: 'Test User',
+        createdAt: '2024-01-01',
+      };
       mockStorage.getTokens.mockResolvedValueOnce({
         accessToken: 'token',
         refreshToken: 'refresh',

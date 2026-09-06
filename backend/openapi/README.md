@@ -56,8 +56,12 @@ it.
 ## Working with it
 
 **A response changed on purpose.** Update the schema in `openapi.yaml`
-alongside the handler. Both clients read that spec; changing one without the
-other is the drift this exists to catch.
+alongside the handler, then run `npm run api:codegen` from the repo root and
+commit the regenerated client files. Both clients now *generate* their types
+and validation limits from that spec (habitcraft-467), so changing one without
+the other is the drift this exists to catch — and a separate CI job catches the
+half this one cannot see. See
+[shared/api-spec/README.md](../../shared/api-spec/README.md).
 
 **A new endpoint.** Document it in `openapi.yaml` and add an integration test
 that calls it. Either half alone fails the run — the spec half fails coverage,
