@@ -14,8 +14,13 @@ import { requestLimits } from '@/types/apiLimits.generated';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
 
-// From the spec, not a literal (habitcraft-467).
+// From the spec, not literals (habitcraft-467). The server validates the same
+// numbers, so a literal that drifts below them just moves the rejection from
+// this screen to a 400 the user cannot act on (habitcraft-h7q7).
 const NAME_MAX_LENGTH = requestLimits.register.name.maxLength;
+const EMAIL_MAX_LENGTH = requestLimits.register.email.maxLength;
+const PASSWORD_MIN_LENGTH = requestLimits.register.password.minLength;
+const PASSWORD_MAX_LENGTH = requestLimits.register.password.maxLength;
 
 function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -54,14 +59,27 @@ export function RegisterScreen() {
       return;
     }
 
+    if (email.trim().length > EMAIL_MAX_LENGTH) {
+      setValidationError(`Email must be ${EMAIL_MAX_LENGTH} characters or less`);
+      return;
+    }
+
     // Validate password
     if (!password) {
       setValidationError('Password is required');
       return;
     }
 
-    if (password.length < 6) {
-      setValidationError('Password must be at least 6 characters');
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setValidationError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
+      return;
+    }
+
+    // Capped rather than truncated with maxLength on the input: silently
+    // trimming a pasted passphrase here would leave the account with a password
+    // the user cannot type back into the login screen.
+    if (password.length > PASSWORD_MAX_LENGTH) {
+      setValidationError(`Password must be ${PASSWORD_MAX_LENGTH} characters or less`);
       return;
     }
 
@@ -137,7 +155,7 @@ export function RegisterScreen() {
             secureTextEntry
             editable={!isLoading}
             accessibilityLabel="Password"
-            accessibilityHint="Enter a password with at least 6 characters"
+            accessibilityHint={`Enter a password with at least ${PASSWORD_MIN_LENGTH} characters`}
           />
 
           <TextInput

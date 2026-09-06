@@ -34,6 +34,10 @@ jest.mock('@/lib/storage', () => ({
   },
 }));
 
+const PASSWORD_MIN_LENGTH = requestLimits.register.password.minLength;
+const PASSWORD_MAX_LENGTH = requestLimits.register.password.maxLength;
+const EMAIL_MAX_LENGTH = requestLimits.register.email.maxLength;
+
 const mockAuthApi = authApi as jest.Mocked<typeof authApi>;
 const mockStorage = storage as jest.Mocked<typeof storage>;
 
@@ -74,6 +78,16 @@ describe('RegisterScreen', () => {
       await waitFor(() => {
         expect(getByPlaceholderText('Name').props.maxLength).toBe(
           requestLimits.register.name.maxLength
+        );
+      });
+    });
+
+    it('tells screen readers the password minimum the spec declares', async () => {
+      const { getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        expect(getByPlaceholderText('Password').props.accessibilityHint).toBe(
+          `Enter a password with at least ${PASSWORD_MIN_LENGTH} characters`
         );
       });
     });
@@ -180,20 +194,87 @@ describe('RegisterScreen', () => {
       });
     });
 
-    it('shows error when password is too short', async () => {
+    it("shows error when password is shorter than the spec's minimum", async () => {
+      const short = 'a'.repeat(PASSWORD_MIN_LENGTH - 1);
       const { getByText, getByPlaceholderText } = renderRegisterScreen();
 
       await waitFor(() => {
         fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
         fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
-        fireEvent.changeText(getByPlaceholderText('Password'), '12345');
-        fireEvent.changeText(getByPlaceholderText('Confirm Password'), '12345');
+        fireEvent.changeText(getByPlaceholderText('Password'), short);
+        fireEvent.changeText(getByPlaceholderText('Confirm Password'), short);
         fireEvent.press(getByText('Sign Up'));
       });
 
       await waitFor(() => {
-        expect(getByText('Password must be at least 6 characters')).toBeTruthy();
+        expect(
+          getByText(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`)
+        ).toBeTruthy();
       });
+      expect(mockAuthApi.register).not.toHaveBeenCalled();
+    });
+
+    it("accepts a password at exactly the spec's minimum", async () => {
+      const atMin = 'a'.repeat(PASSWORD_MIN_LENGTH);
+      mockAuthApi.register.mockResolvedValue({
+        user: { id: '1', email: 'test@example.com', name: 'Test User', createdAt: '2024-01-01' },
+        tokens: { accessToken: 'token', refreshToken: 'refresh' },
+      });
+      const { getByText, getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
+        fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
+        fireEvent.changeText(getByPlaceholderText('Password'), atMin);
+        fireEvent.changeText(getByPlaceholderText('Confirm Password'), atMin);
+        fireEvent.press(getByText('Sign Up'));
+      });
+
+      await waitFor(() => {
+        expect(mockAuthApi.register).toHaveBeenCalledWith(
+          expect.objectContaining({ password: atMin })
+        );
+      });
+    });
+
+    it("shows error when password is longer than the spec's maximum", async () => {
+      // bcrypt truncates past 72 bytes, so the spec caps it and the server 400s.
+      const long = 'a'.repeat(PASSWORD_MAX_LENGTH + 1);
+      const { getByText, getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
+        fireEvent.changeText(getByPlaceholderText('Email'), 'test@example.com');
+        fireEvent.changeText(getByPlaceholderText('Password'), long);
+        fireEvent.changeText(getByPlaceholderText('Confirm Password'), long);
+        fireEvent.press(getByText('Sign Up'));
+      });
+
+      await waitFor(() => {
+        expect(
+          getByText(`Password must be ${PASSWORD_MAX_LENGTH} characters or less`)
+        ).toBeTruthy();
+      });
+      expect(mockAuthApi.register).not.toHaveBeenCalled();
+    });
+
+    it("shows error when email is longer than the spec's maximum", async () => {
+      const domain = '@example.com';
+      const long = 'a'.repeat(EMAIL_MAX_LENGTH + 1 - domain.length) + domain;
+      const { getByText, getByPlaceholderText } = renderRegisterScreen();
+
+      await waitFor(() => {
+        fireEvent.changeText(getByPlaceholderText('Name'), 'Test User');
+        fireEvent.changeText(getByPlaceholderText('Email'), long);
+        fireEvent.changeText(getByPlaceholderText('Password'), 'password123');
+        fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'password123');
+        fireEvent.press(getByText('Sign Up'));
+      });
+
+      await waitFor(() => {
+        expect(getByText(`Email must be ${EMAIL_MAX_LENGTH} characters or less`)).toBeTruthy();
+      });
+      expect(mockAuthApi.register).not.toHaveBeenCalled();
     });
 
     it('shows error when passwords do not match', async () => {

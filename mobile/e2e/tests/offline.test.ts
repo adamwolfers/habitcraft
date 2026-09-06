@@ -7,7 +7,7 @@ describe('Offline Functionality', () => {
   beforeAll(async () => {
     await device.launchApp({ newInstance: true });
     // Register and login a test user
-    await registerTestUser(testUser.email, testUser.password);
+    await registerTestUser(testUser);
   });
 
   beforeEach(async () => {

@@ -9,6 +9,9 @@ export const API_URL = process.env.E2E_API_URL || 'http://localhost:3010';
 export function generateTestUser() {
   const timestamp = Date.now();
   return {
+    // name is required -- users.name is NOT NULL and the register body must
+    // carry it (habitcraft-7ggs).
+    name: 'E2E Test User',
     email: `e2e-test-${timestamp}@habitcraft.test`,
     password: 'TestPassword123!',
   };
@@ -45,13 +48,14 @@ export async function loginTestUser(email: string, password: string) {
 /**
  * Register a new test user
  */
-export async function registerTestUser(email: string, password: string) {
+export async function registerTestUser(user: ReturnType<typeof generateTestUser>) {
   await element(by.id('login-signup-link')).tap();
   await waitForElement('register-email-input');
 
-  await element(by.id('register-email-input')).typeText(email);
-  await element(by.id('register-password-input')).typeText(password);
-  await element(by.id('register-confirm-password-input')).typeText(password);
+  await element(by.id('register-name-input')).typeText(user.name);
+  await element(by.id('register-email-input')).typeText(user.email);
+  await element(by.id('register-password-input')).typeText(user.password);
+  await element(by.id('register-confirm-password-input')).typeText(user.password);
   await element(by.id('register-button')).tap();
   await waitForElement('dashboard-screen');
 }
