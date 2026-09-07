@@ -36,9 +36,31 @@ export async function waitForElementToDisappear(testID: string, timeout = 10000)
 }
 
 /**
+ * Open the login form.
+ *
+ * Welcome is the auth stack's initial route, so neither form is on screen when
+ * the app launches -- every auth spec starts by choosing one.
+ */
+export async function gotoLogin() {
+  await waitForElement('welcome-screen');
+  await element(by.id('welcome-login-button')).tap();
+  await waitForElement('login-email-input');
+}
+
+/**
+ * Open the registration form.
+ */
+export async function gotoRegister() {
+  await waitForElement('welcome-screen');
+  await element(by.id('welcome-signup-button')).tap();
+  await waitForElement('register-email-input');
+}
+
+/**
  * Login with test credentials
  */
 export async function loginTestUser(email: string, password: string) {
+  await gotoLogin();
   await element(by.id('login-email-input')).typeText(email);
   await element(by.id('login-password-input')).typeText(password);
   await element(by.id('login-button')).tap();
@@ -46,28 +68,32 @@ export async function loginTestUser(email: string, password: string) {
 }
 
 /**
- * Register a new test user
+ * Register a new test user.
+ *
+ * Three fields, not four: the Confirm Password field was replaced by a reveal
+ * toggle on the password itself.
  */
 export async function registerTestUser(user: ReturnType<typeof generateTestUser>) {
-  await element(by.id('login-signup-link')).tap();
-  await waitForElement('register-email-input');
+  await gotoRegister();
 
   await element(by.id('register-name-input')).typeText(user.name);
   await element(by.id('register-email-input')).typeText(user.email);
   await element(by.id('register-password-input')).typeText(user.password);
-  await element(by.id('register-confirm-password-input')).typeText(user.password);
   await element(by.id('register-button')).tap();
   await waitForElement('dashboard-screen');
 }
 
 /**
- * Logout the current user
+ * Logout the current user.
+ *
+ * Logging out returns to Welcome, the auth stack's initial route -- not
+ * straight to the login form.
  */
 export async function logoutUser() {
   await element(by.text('Profile')).tap();
   await waitForElement('profile-screen');
   await element(by.id('logout-button')).tap();
-  await waitForElement('login-button');
+  await waitForElement('welcome-screen');
 }
 
 /**

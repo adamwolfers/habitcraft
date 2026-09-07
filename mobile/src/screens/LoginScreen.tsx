@@ -1,49 +1,63 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
+// Imported directly, not through '@/components': that barrel pulls in
+// SkeletonLoader -> react-native-reanimated, whose jest mock throws
+// WorkletsError at module load and takes the whole suite down with an error
+// pointing nowhere near the cause (habitcraft-ma03). Restore the barrel import
+// once that is fixed.
+import { FormField } from '@/components/FormField';
+import { AuthStackParamList } from '@/types';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
+import { validateLoginForm, hasErrors, LoginFieldErrors } from '@/utils/authUtils';
 
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
+type LoginNavigation = StackNavigationProp<AuthStackParamList, 'Login'>;
+type LoginRoute = RouteProp<AuthStackParamList, 'Login'>;
 
 export function LoginScreen() {
-  const navigation = useNavigation();
-  const { login, error: authError } = useAuthContext();
+  const navigation = useNavigation<LoginNavigation>();
+  const route = useRoute<LoginRoute>();
+  const { login, error: authError, clearError } = useAuthContext();
 
-  const [email, setEmail] = useState('');
+  // Prefilled when Register hands a user over after a duplicate-email 409.
+  const [email, setEmail] = useState(route.params?.email ?? '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
+
+  const passwordRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  const handleChange = (setValue: (value: string) => void, field: keyof LoginFieldErrors) => {
+    return (value: string) => {
+      setValue(value);
+      setFieldErrors((errors) => ({ ...errors, [field]: undefined }));
+      if (authError) {
+        clearError();
+      }
+    };
+  };
 
   const handleLogin = async () => {
-    setValidationError(null);
-
-    // Validate email
-    if (!email.trim()) {
-      setValidationError('Email is required');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setValidationError('Please enter a valid email');
-      return;
-    }
-
-    // Validate password
-    if (!password) {
-      setValidationError('Password is required');
+    const errors = validateLoginForm({ email, password });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) {
       return;
     }
 
@@ -51,65 +65,76 @@ export function LoginScreen() {
     try {
       await login({ email: email.trim(), password });
     } catch {
-      // Error is handled by AuthContext
+      // Surfaced through the context's error state.
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleSignUpPress = () => {
-    navigation.navigate('Register' as never);
-  };
-
-  const displayError = validationError || authError;
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>HabitCraft</Text>
-        <Text style={styles.subtitle}>Track your habits, build your future</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
+        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Log in to keep your streak going</Text>
 
         <View style={styles.form}>
-          <TextInput
+          <FormField
+            label="Email"
             testID="login-email-input"
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.textMuted}
+            placeholder="you@example.com"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleChange(setEmail, 'email')}
+            error={fieldErrors.email}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            // `username` rather than `emailAddress`: it is what pairs an email
+            // with a password in the OS credential store, so the account saved
+            // at sign-up is offered back here.
+            textContentType="username"
+            autoComplete="email"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
             editable={!isLoading}
-            accessibilityLabel="Email address"
-            accessibilityHint="Enter your email address"
           />
 
-          <TextInput
+          <FormField
+            ref={passwordRef}
+            label="Password"
             testID="login-password-input"
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textMuted}
+            placeholder="••••••••"
             value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+            onChangeText={handleChange(setPassword, 'password')}
+            error={fieldErrors.password}
+            secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="password"
+            autoComplete="current-password"
+            returnKeyType="go"
+            onSubmitEditing={handleLogin}
             editable={!isLoading}
-            accessibilityLabel="Password"
-            accessibilityHint="Enter your password"
           />
 
-          {displayError && (
-            <Text
-              testID="login-error"
-              style={styles.error}
-              accessibilityRole="alert"
-              accessibilityLiveRegion="polite"
-            >
-              {displayError}
-            </Text>
+          {authError && (
+            <View style={styles.errorBanner}>
+              <Text
+                testID="login-error"
+                style={styles.error}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+              >
+                {authError}
+              </Text>
+            </View>
           )}
 
           <TouchableOpacity
@@ -131,7 +156,7 @@ export function LoginScreen() {
 
         <TouchableOpacity
           testID="login-signup-link"
-          onPress={handleSignUpPress}
+          onPress={() => navigation.navigate('Register')}
           disabled={isLoading}
           accessibilityRole="link"
           accessibilityLabel="Don't have an account? Sign up"
@@ -139,7 +164,7 @@ export function LoginScreen() {
         >
           <Text style={styles.signUpLink}>Don&apos;t have an account? Sign up</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -150,7 +175,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -170,16 +195,16 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
   },
-  input: {
-    backgroundColor: colors.surface,
+  errorBanner: {
+    backgroundColor: colors.errorLight,
     borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-    fontSize: 16,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  error: {
+    color: colors.error,
+    fontSize: 14,
+    textAlign: 'center',
   },
   button: {
     backgroundColor: colors.primary,
@@ -194,12 +219,6 @@ const styles = StyleSheet.create({
   buttonText: {
     ...typography.button,
     color: colors.white,
-  },
-  error: {
-    color: colors.error,
-    fontSize: 14,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
   },
   signUpLink: {
     ...typography.body,

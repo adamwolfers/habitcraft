@@ -305,6 +305,66 @@ function ProtectedRoute({ children }) {
 }
 ```
 
+## Mobile Implementation (React Native / Expo)
+
+The mobile client shares the backend but not the web client's mechanics: it has
+no cookie jar, so it reads the `accessToken` / `refreshToken` copies the auth
+endpoints put in the response **body** and stores them in the device keychain
+(`expo-secure-store`, via `mobile/src/lib/storage.ts`).
+
+### Screens
+
+The auth stack (`mobile/src/navigation/AuthNavigator.tsx`) is:
+
+```
+Welcome  ──"Get Started"──▶  Register  ──success──▶  Dashboard
+   │                            │
+   │                            └──"Log in"──┐
+   └────"Log In"────────────────────────────▶ Login ──success──▶ Dashboard
+                                                │
+                                                └──"Sign up"──▶ Register
+```
+
+`Welcome` is the initial route, so signing up and logging in carry equal weight
+for someone opening the app for the first time. Logging out returns here.
+
+**Registration asks for three fields — name, email, password.** There is no
+confirm-password field; the password input carries a reveal toggle instead,
+which is what lets a user check what they typed without typing it twice. Both
+screens build their inputs from `mobile/src/components/FormField.tsx`, which
+keeps each error attached to the field that caused it.
+
+### Two things that are easy to break
+
+**Autofill is entirely `textContentType` / `autoComplete`.** Without them iOS
+never offers Strong Password and never saves to the Keychain, and Android never
+fills. The pairing matters: Register's password is `newPassword` /
+`new-password` and carries `passwordRules` describing the 8–72 range so the
+generated password passes server validation; Login's email is `username` (not
+`emailAddress`), which is what pairs an address with a password in the OS
+credential store so sign-up's saved credential comes back at login.
+
+**Validation limits come from the generated file, never literals.**
+`mobile/src/utils/authUtils.ts` reads `requestLimits.register.*` from
+`mobile/src/types/apiLimits.generated.ts`. A literal that drifts below the
+server's limit does not tighten anything — it just moves the rejection from the
+form to a 400 the user cannot act on (habitcraft-h7q7, habitcraft-467).
+
+### Error shapes
+
+The auth routes return three different error bodies and only one has a
+`message` key, so `extractErrorMessage` in `mobile/src/lib/auth.ts` reads all
+three in order — `errors[].msg` (`ValidationErrors`), then `message`
+(`DetailedError`, e.g. rate limits), then `error` (`Error`, e.g. the
+duplicate-email 409 and the login 401). `message` must precede `error`: a
+`DetailedError` carries both, and `error` is the terse label while `message` is
+the sentence a user can act on.
+
+Reading only `message` is what made a duplicate-email signup report "Request
+failed with status code 409" (habitcraft-tvro.1). Registration now recognises
+that status and offers a **"Log in instead"** action carrying the email over to
+a prefilled login form.
+
 ## Database Schema
 
 **Note:** The users table already exists with all required fields.

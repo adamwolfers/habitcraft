@@ -39,7 +39,7 @@ describe('Logout', () => {
       await expect(element(by.id('profile-email'))).toHaveText(testUser.email);
     });
 
-    it('should logout and return to login screen', async () => {
+    it('should logout and return to the welcome screen', async () => {
       // Navigate to profile screen
       await element(by.text('Profile')).tap();
       await waitForElement('profile-screen');
@@ -47,22 +47,21 @@ describe('Logout', () => {
       // Tap logout button
       await element(by.id('logout-button')).tap();
 
-      // Verify returned to login screen
-      await waitFor(element(by.id('login-button')))
+      // Welcome is the auth stack's initial route, so that is where logging out
+      // lands -- not the login form.
+      await waitFor(element(by.id('welcome-screen')))
         .toBeVisible()
         .withTimeout(5000);
 
-      // Verify we can see login form elements
-      await expect(element(by.id('login-email-input'))).toBeVisible();
-      await expect(element(by.id('login-password-input'))).toBeVisible();
+      await expect(element(by.id('welcome-signup-button'))).toBeVisible();
+      await expect(element(by.id('welcome-login-button'))).toBeVisible();
     });
 
     it('should require login after logout', async () => {
-      // After logout, trying to access dashboard should not work
-      // We should be on login screen
-      await expect(element(by.id('login-button'))).toBeVisible();
+      // After logout we are back in the auth stack...
+      await expect(element(by.id('welcome-screen'))).toBeVisible();
 
-      // Dashboard should not be visible
+      // ...and the dashboard is gone with it.
       await expect(element(by.id('dashboard-screen'))).not.toBeVisible();
     });
 
@@ -84,13 +83,13 @@ describe('Logout', () => {
       await element(by.text('Profile')).tap();
       await waitForElement('profile-screen');
       await element(by.id('logout-button')).tap();
-      await waitForElement('login-button');
+      await waitForElement('welcome-screen');
 
       // Restart app
       await device.reloadReactNative();
 
-      // Should still be on login screen (session was cleared)
-      await expect(element(by.id('login-button'))).toBeVisible();
+      // Should still be logged out (session was cleared)
+      await expect(element(by.id('welcome-screen'))).toBeVisible();
     });
 
     it('should persist session across app restarts when logged in', async () => {

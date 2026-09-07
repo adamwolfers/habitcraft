@@ -60,7 +60,10 @@ export type RootStackParamList = {
 };
 
 export type AuthStackParamList = {
-  Login: undefined;
+  Welcome: undefined;
+  // `email` is prefilled when Register sends a user here after a 409, so the
+  // duplicate-email dead end becomes a one-tap recovery.
+  Login: { email?: string } | undefined;
   Register: undefined;
 };
 

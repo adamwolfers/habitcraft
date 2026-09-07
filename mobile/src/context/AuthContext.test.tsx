@@ -344,6 +344,62 @@ describe('AuthContext', () => {
     });
   });
 
+  describe('clearError', () => {
+    // The error lives in the context, so it outlives the screen that caused it:
+    // a failed login used to render above the Register screen's empty form
+    // until this was wired up (habitcraft-tvro.2).
+    const ClearErrorTestComponent: React.FC = () => {
+      const { login, error, clearError } = useAuthContext();
+      return (
+        <>
+          <Text testID="error">{error || 'no-error'}</Text>
+          <Text
+            testID="login-button"
+            onPress={() => login({ email: 'test@example.com', password: 'password' })}
+          >
+            Login
+          </Text>
+          <Text testID="clear-button" onPress={() => clearError()}>
+            Clear
+          </Text>
+        </>
+      );
+    };
+
+    it('clears an error the previous screen left behind', async () => {
+      mockStorage.hasTokens.mockResolvedValue(false);
+      mockAuthApi.login.mockRejectedValue(new Error('Invalid credentials'));
+
+      const { getByTestId } = render(
+        <AuthProvider>
+          <ClearErrorTestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(getByTestId('error').props.children).toBe('no-error');
+      });
+
+      await act(async () => {
+        try {
+          await getByTestId('login-button').props.onPress();
+        } catch {
+          // The screen swallows this; the error state is what matters.
+        }
+      });
+
+      await waitFor(() => {
+        expect(getByTestId('error').props.children).toBe('Invalid credentials');
+      });
+
+      await act(async () => {
+        getByTestId('clear-button').props.onPress();
+      });
+
+      expect(getByTestId('error').props.children).toBe('no-error');
+    });
+  });
+
   describe('useAuthContext', () => {
     it('throws error when used outside AuthProvider', () => {
       // Suppress console.error for this test

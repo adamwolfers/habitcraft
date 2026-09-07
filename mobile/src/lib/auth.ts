@@ -10,25 +10,85 @@ interface AuthResponse {
   tokens: AuthTokens;
 }
 
-function extractErrorMessage(error: unknown): string {
-  // Handle axios-like errors (including mocks)
-  if (
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response &&
-    typeof error.response === 'object' &&
-    'data' in error.response &&
-    error.response.data &&
-    typeof error.response.data === 'object' &&
-    'message' in error.response.data
-  ) {
-    return (error.response.data as { message: string }).message;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function getResponseBody(error: unknown): Record<string, unknown> | undefined {
+  if (!isRecord(error) || !isRecord(error.response)) {
+    return undefined;
   }
+  return isRecord(error.response.data) ? error.response.data : undefined;
+}
+
+function getResponseStatus(error: unknown): number | undefined {
+  if (!isRecord(error) || !isRecord(error.response)) {
+    return undefined;
+  }
+  return typeof error.response.status === 'number' ? error.response.status : undefined;
+}
+
+/**
+ * The auth routes do not speak one error shape. shared/api-spec/openapi.yaml
+ * declares three, and this reads all of them in the order that yields the most
+ * actionable sentence:
+ *
+ *   1. ValidationErrors -- `errors[].msg`, express-validator's 400.
+ *   2. DetailedError    -- `message`, e.g. every rate limiter's 429.
+ *   3. Error/BriefError -- `error`, e.g. the duplicate-email 409 and login 401.
+ *
+ * `message` must precede `error`: a DetailedError carries both, where `error`
+ * is a terse label ("Too many registration attempts") and `message` is the
+ * sentence a user can act on ("...please try again after an hour").
+ *
+ * This used to read `message` alone, which none of the shapes the register
+ * route returns actually has -- so signing up with an address already on file
+ * told the user "Request failed with status code 409" (habitcraft-tvro.1).
+ */
+function extractErrorMessage(error: unknown): string {
+  const body = getResponseBody(error);
+
+  if (body) {
+    if (Array.isArray(body.errors)) {
+      const failure = body.errors.find((entry) => isRecord(entry) && typeof entry.msg === 'string');
+      if (isRecord(failure) && typeof failure.msg === 'string') {
+        return failure.msg;
+      }
+    }
+
+    if (typeof body.message === 'string' && body.message) {
+      return body.message;
+    }
+
+    if (typeof body.error === 'string' && body.error) {
+      return body.error;
+    }
+  }
+
   if (error instanceof Error) {
     return error.message;
   }
+
   return 'An unexpected error occurred';
+}
+
+/**
+ * An Error carrying the HTTP status alongside the message, so a screen can
+ * treat a specific failure specially -- RegisterScreen turns a 409 into a
+ * "Log in instead" shortcut rather than a dead end.
+ *
+ * Built by hand rather than as an `extends Error` subclass: Babel's class
+ * transform does not reliably preserve `instanceof Error` for built-in
+ * subclasses, and AuthContext branches on exactly that.
+ */
+export interface AuthApiError extends Error {
+  status?: number;
+}
+
+function toAuthApiError(error: unknown): AuthApiError {
+  const authError = new Error(extractErrorMessage(error)) as AuthApiError;
+  authError.status = getResponseStatus(error);
+  return authError;
 }
 
 export const authApi = {
@@ -44,7 +104,7 @@ export const authApi = {
         tokens: { accessToken, refreshToken },
       };
     } catch (error) {
-      throw new Error(extractErrorMessage(error));
+      throw toAuthApiError(error);
     }
   },
 
@@ -60,7 +120,7 @@ export const authApi = {
         tokens: { accessToken, refreshToken },
       };
     } catch (error) {
-      throw new Error(extractErrorMessage(error));
+      throw toAuthApiError(error);
     }
   },
 
@@ -94,7 +154,7 @@ export const authApi = {
 
       return { accessToken, refreshToken: newRefreshToken };
     } catch (error) {
-      throw new Error(extractErrorMessage(error));
+      throw toAuthApiError(error);
     }
   },
 
@@ -108,7 +168,7 @@ export const authApi = {
       const response = await api.get('/users/me');
       return response.data;
     } catch (error) {
-      throw new Error(extractErrorMessage(error));
+      throw toAuthApiError(error);
     }
   },
 };
