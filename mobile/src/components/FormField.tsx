@@ -69,10 +69,15 @@ export const FormField = forwardRef<TextInput, FormFieldProps>(function FormFiel
             style={styles.reveal}
             accessibilityRole="button"
             accessibilityLabel={isRevealed ? 'Hide password' : 'Show password'}
-            // The eye is a small glyph; widen what a thumb has to hit.
+            // A small target; widen what a thumb has to hit.
             hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           >
-            <Text style={styles.revealIcon}>{isRevealed ? '🙈' : '👁'}</Text>
+            {/*
+              A word, not an eye glyph: the emoji renders as a full-colour 3D
+              eye on iOS that fights the form, and no icon distinguishes "show"
+              from "hide" unambiguously.
+            */}
+            <Text style={styles.revealLabel}>{isRevealed ? 'Hide' : 'Show'}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -128,8 +133,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
-  revealIcon: {
-    fontSize: 18,
+  revealLabel: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
   hint: {
     color: colors.textMuted,
