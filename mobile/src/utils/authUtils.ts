@@ -100,6 +100,11 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
   return errors;
 }
 
+/**
+ * Counts values, not keys: clearing one field's error writes `undefined` over
+ * it rather than deleting it, so a key-count would report a failure that is no
+ * longer there.
+ */
 export function hasErrors(errors: RegisterFieldErrors | LoginFieldErrors): boolean {
-  return Object.keys(errors).length > 0;
+  return Object.values(errors).some((message) => message !== undefined);
 }

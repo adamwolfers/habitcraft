@@ -207,4 +207,14 @@ describe('hasErrors', () => {
   it('is true when any field failed', () => {
     expect(hasErrors({ email: 'Email is required' })).toBe(true);
   });
+
+  it('is false when a cleared field left an undefined behind', () => {
+    // Clearing one field's error writes `undefined` over it rather than
+    // deleting the key, so counting keys would report a stale failure.
+    expect(hasErrors({ email: undefined, password: undefined })).toBe(false);
+  });
+
+  it('is true when one field is cleared but another still failed', () => {
+    expect(hasErrors({ email: undefined, password: 'Password is required' })).toBe(true);
+  });
 });

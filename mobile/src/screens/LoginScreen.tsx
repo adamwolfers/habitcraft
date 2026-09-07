@@ -33,7 +33,8 @@ export function LoginScreen() {
   const { login, error: authError, clearError } = useAuthContext();
 
   // Prefilled when Register hands a user over after a duplicate-email 409.
-  const [email, setEmail] = useState(route.params?.email ?? '');
+  const routeEmail = route.params?.email;
+  const [email, setEmail] = useState(routeEmail ?? '');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
@@ -43,6 +44,15 @@ export function LoginScreen() {
   useEffect(() => {
     clearError();
   }, [clearError]);
+
+  // Not just the useState initial value: navigating here from Register pops
+  // back to an ALREADY-MOUNTED Login screen when the user reached Register via
+  // Login, and initial state does not re-read on that path.
+  useEffect(() => {
+    if (routeEmail) {
+      setEmail(routeEmail);
+    }
+  }, [routeEmail]);
 
   const handleChange = (setValue: (value: string) => void, field: keyof LoginFieldErrors) => {
     return (value: string) => {

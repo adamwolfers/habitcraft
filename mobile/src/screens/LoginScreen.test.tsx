@@ -128,6 +128,25 @@ describe('LoginScreen', () => {
         expect(getByTestId('login-email-input').props.value).toBe('taken@example.com')
       );
     });
+
+    it('prefills on a return to an already-mounted screen, not just on mount', async () => {
+      // Welcome -> Log In -> Sign up -> 409 -> "Log in instead" pops back to
+      // THIS screen instead of mounting a new one, so initial state never
+      // re-reads the params.
+      const utils = renderLoginScreen();
+      await waitFor(() => expect(utils.getByTestId('login-email-input').props.value).toBe(''));
+
+      mockRouteParams = { email: 'taken@example.com' };
+      utils.rerender(
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>
+      );
+
+      await waitFor(() =>
+        expect(utils.getByTestId('login-email-input').props.value).toBe('taken@example.com')
+      );
+    });
   });
 
   describe('advancing between fields', () => {
