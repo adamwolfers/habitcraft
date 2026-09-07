@@ -1,185 +1,201 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { requestLimits } from '@/types/apiLimits.generated';
+import type { StackNavigationProp } from '@react-navigation/stack';
+// Imported directly, not through '@/components': that barrel pulls in
+// SkeletonLoader -> react-native-reanimated, whose jest mock throws
+// WorkletsError at module load and takes the whole suite down with an error
+// pointing nowhere near the cause (habitcraft-ma03). Restore the barrel import
+// once that is fixed.
+import { FormField } from '@/components/FormField';
+import { AuthStackParamList } from '@/types';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
+import {
+  validateRegisterForm,
+  hasErrors,
+  RegisterFieldErrors,
+  NAME_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_MAX_LENGTH,
+} from '@/utils/authUtils';
 
-// From the spec, not literals (habitcraft-467). The server validates the same
-// numbers, so a literal that drifts below them just moves the rejection from
-// this screen to a 400 the user cannot act on (habitcraft-h7q7).
-const NAME_MAX_LENGTH = requestLimits.register.name.maxLength;
-const EMAIL_MAX_LENGTH = requestLimits.register.email.maxLength;
-const PASSWORD_MIN_LENGTH = requestLimits.register.password.minLength;
-const PASSWORD_MAX_LENGTH = requestLimits.register.password.maxLength;
+type RegisterNavigation = StackNavigationProp<AuthStackParamList, 'Register'>;
 
-function isValidEmail(email: string): boolean {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
+/**
+ * iOS reads these rules to generate a Strong Password that the server will
+ * actually accept, instead of one the 72-character cap would reject.
+ */
+const PASSWORD_RULES = `minlength: ${PASSWORD_MIN_LENGTH}; maxlength: ${PASSWORD_MAX_LENGTH};`;
 
 export function RegisterScreen() {
-  const navigation = useNavigation();
-  const { register, error: authError } = useAuthContext();
+  const navigation = useNavigation<RegisterNavigation>();
+  const { register, error: authError, clearError } = useAuthContext();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({});
+  const [emailInUse, setEmailInUse] = useState(false);
+
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
+
+  // The auth error lives in the context and outlives the screen that caused
+  // it, so a failed login used to render above this empty form
+  // (habitcraft-tvro.2).
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
+
+  const handleChange = (setValue: (value: string) => void, field: keyof RegisterFieldErrors) => {
+    return (value: string) => {
+      setValue(value);
+      // Clear the complaint the moment the user acts on it, rather than making
+      // them submit again to find out whether they fixed it.
+      setFieldErrors((errors) => ({ ...errors, [field]: undefined }));
+      setEmailInUse(false);
+      if (authError) {
+        clearError();
+      }
+    };
+  };
 
   const handleRegister = async () => {
-    setValidationError(null);
-
-    // Validate name -- the server requires it (users.name is NOT NULL), so a
-    // body without it comes back 400 (habitcraft-7ggs).
-    if (!name.trim()) {
-      setValidationError('Name is required');
-      return;
-    }
-
-    // Validate email
-    if (!email.trim()) {
-      setValidationError('Email is required');
-      return;
-    }
-
-    if (!isValidEmail(email)) {
-      setValidationError('Please enter a valid email');
-      return;
-    }
-
-    if (email.trim().length > EMAIL_MAX_LENGTH) {
-      setValidationError(`Email must be ${EMAIL_MAX_LENGTH} characters or less`);
-      return;
-    }
-
-    // Validate password
-    if (!password) {
-      setValidationError('Password is required');
-      return;
-    }
-
-    if (password.length < PASSWORD_MIN_LENGTH) {
-      setValidationError(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
-      return;
-    }
-
-    // Capped rather than truncated with maxLength on the input: silently
-    // trimming a pasted passphrase here would leave the account with a password
-    // the user cannot type back into the login screen.
-    if (password.length > PASSWORD_MAX_LENGTH) {
-      setValidationError(`Password must be ${PASSWORD_MAX_LENGTH} characters or less`);
-      return;
-    }
-
-    // Validate confirm password
-    if (password !== confirmPassword) {
-      setValidationError('Passwords do not match');
+    setEmailInUse(false);
+    const errors = validateRegisterForm({ name, email, password });
+    setFieldErrors(errors);
+    if (hasErrors(errors)) {
       return;
     }
 
     setIsLoading(true);
     try {
       await register({ email: email.trim(), password, name: name.trim() });
-    } catch {
-      // Error is handled by AuthContext
+    } catch (err) {
+      // The server owns the definitive answer on whether this email is taken;
+      // a 409 gets a way forward rather than a dead end.
+      if (err && typeof err === 'object' && 'status' in err && err.status === 409) {
+        setEmailInUse(true);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLoginPress = () => {
-    navigation.goBack();
+  const goToLogin = () => {
+    // navigate, not goBack: Welcome sits under this screen now, so going back
+    // would land on Welcome rather than Login.
+    navigation.navigate('Login', { email: email.trim() || undefined });
   };
-
-  const displayError = validationError || authError;
 
   return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.content}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         <Text style={styles.title}>Create Account</Text>
         <Text style={styles.subtitle}>Join HabitCraft and start building better habits</Text>
 
         <View style={styles.form}>
-          <TextInput
+          <FormField
+            label="Name"
             testID="register-name-input"
-            style={styles.input}
-            placeholder="Name"
-            placeholderTextColor={colors.textMuted}
+            placeholder="Your name"
             value={name}
-            onChangeText={setName}
+            onChangeText={handleChange(setName, 'name')}
+            error={fieldErrors.name}
             maxLength={NAME_MAX_LENGTH}
             autoCapitalize="words"
             autoCorrect={false}
+            textContentType="name"
+            autoComplete="name"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => emailRef.current?.focus()}
             editable={!isLoading}
-            accessibilityLabel="Name"
-            accessibilityHint="Enter your name"
           />
 
-          <TextInput
+          <FormField
+            ref={emailRef}
+            label="Email"
             testID="register-email-input"
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={colors.textMuted}
+            placeholder="you@example.com"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={handleChange(setEmail, 'email')}
+            error={fieldErrors.email}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            textContentType="emailAddress"
+            autoComplete="email"
+            returnKeyType="next"
+            blurOnSubmit={false}
+            onSubmitEditing={() => passwordRef.current?.focus()}
             editable={!isLoading}
-            accessibilityLabel="Email address"
-            accessibilityHint="Enter your email address"
           />
 
-          <TextInput
+          <FormField
+            ref={passwordRef}
+            label="Password"
             testID="register-password-input"
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textMuted}
+            placeholder="••••••••"
             value={password}
-            onChangeText={setPassword}
-            secureTextEntry
+            onChangeText={handleChange(setPassword, 'password')}
+            error={fieldErrors.password}
+            // Stated up front. This used to live only in an accessibilityHint,
+            // so a sighted user learned the minimum by being rejected.
+            hint={`At least ${PASSWORD_MIN_LENGTH} characters`}
+            secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            textContentType="newPassword"
+            autoComplete="new-password"
+            passwordRules={PASSWORD_RULES}
+            returnKeyType="go"
+            onSubmitEditing={handleRegister}
             editable={!isLoading}
-            accessibilityLabel="Password"
-            accessibilityHint={`Enter a password with at least ${PASSWORD_MIN_LENGTH} characters`}
           />
 
-          <TextInput
-            testID="register-confirm-password-input"
-            style={styles.input}
-            placeholder="Confirm Password"
-            placeholderTextColor={colors.textMuted}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            editable={!isLoading}
-            accessibilityLabel="Confirm password"
-            accessibilityHint="Re-enter your password to confirm"
-          />
+          {authError && (
+            <View testID="register-error-container" style={styles.errorBanner}>
+              <Text
+                testID="register-error"
+                style={styles.error}
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+              >
+                {authError}
+              </Text>
 
-          {displayError && (
-            <Text
-              testID="register-error"
-              style={styles.error}
-              accessibilityRole="alert"
-              accessibilityLiveRegion="polite"
-            >
-              {displayError}
-            </Text>
+              {emailInUse && (
+                <TouchableOpacity
+                  testID="register-login-instead"
+                  onPress={goToLogin}
+                  accessibilityRole="link"
+                  accessibilityLabel="Log in instead"
+                  accessibilityHint="Double tap to log in with this email"
+                >
+                  <Text style={styles.errorAction}>Log in instead</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           )}
 
           <TouchableOpacity
@@ -201,7 +217,7 @@ export function RegisterScreen() {
 
         <TouchableOpacity
           testID="register-login-link"
-          onPress={handleLoginPress}
+          onPress={goToLogin}
           disabled={isLoading}
           accessibilityRole="link"
           accessibilityLabel="Already have an account? Log in"
@@ -209,7 +225,7 @@ export function RegisterScreen() {
         >
           <Text style={styles.loginLink}>Already have an account? Log in</Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -220,7 +236,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: spacing.lg,
@@ -240,16 +256,23 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
   },
-  input: {
-    backgroundColor: colors.surface,
+  errorBanner: {
+    backgroundColor: colors.errorLight,
     borderRadius: 8,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.md,
-    fontSize: 16,
-    color: colors.text,
-    borderWidth: 1,
-    borderColor: colors.border,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  error: {
+    color: colors.error,
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  errorAction: {
+    ...typography.body,
+    color: colors.primary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: colors.primary,
@@ -264,12 +287,6 @@ const styles = StyleSheet.create({
   buttonText: {
     ...typography.button,
     color: colors.white,
-  },
-  error: {
-    color: colors.error,
-    fontSize: 14,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
   },
   loginLink: {
     ...typography.body,

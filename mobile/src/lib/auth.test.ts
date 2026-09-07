@@ -85,7 +85,7 @@ describe('authApi', () => {
       const error = {
         response: {
           status: 401,
-          data: { message: 'Invalid credentials' },
+          data: { error: 'Invalid credentials' },
         },
       };
       mockAxios.post.mockRejectedValueOnce(error);
@@ -155,12 +155,14 @@ describe('authApi', () => {
       const error = {
         response: {
           status: 409,
-          data: { message: 'Email already registered' },
+          data: { error: 'User with this email already exists' },
         },
       };
       mockAxios.post.mockRejectedValueOnce(error);
 
-      await expect(authApi.register(registerData)).rejects.toThrow('Email already registered');
+      await expect(authApi.register(registerData)).rejects.toThrow(
+        'User with this email already exists'
+      );
     });
   });
 
@@ -257,7 +259,7 @@ describe('authApi', () => {
       const error = {
         response: {
           status: 401,
-          data: { message: 'Invalid refresh token' },
+          data: { error: 'Invalid refresh token' },
         },
       };
       mockAxios.post.mockRejectedValueOnce(error);
@@ -311,5 +313,116 @@ describe('authApi', () => {
       expect(result).toBeNull();
       expect(mockApi.get).not.toHaveBeenCalled();
     });
+  });
+});
+
+/**
+ * The auth routes do not speak one error shape. shared/api-spec/openapi.yaml
+ * declares three, and only one of them carries `message` -- which is all the
+ * client used to read, so a duplicate-email signup surfaced as axios's own
+ * "Request failed with status code 409" (habitcraft-tvro.1).
+ *
+ * These cases use the shapes the server actually sends. The suite previously
+ * asserted against `{ message }` bodies for 401 and 409, which the server has
+ * never returned, so it passed while the flow was broken.
+ */
+describe('server error shapes', () => {
+  const credentials = { email: 'test@example.com', password: 'password123' };
+  const registerData = {
+    email: 'test@example.com',
+    password: 'password123',
+    name: 'Test User',
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('reads the express-validator message out of a 400 ValidationErrors body', async () => {
+    mockAxios.post.mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: {
+          errors: [
+            { type: 'field', path: 'password', msg: 'Password must be at least 8 characters' },
+          ],
+        },
+      },
+    });
+
+    await expect(authApi.register(registerData)).rejects.toThrow(
+      'Password must be at least 8 characters'
+    );
+  });
+
+  it('reads `error` out of the 409 the duplicate-email path returns', async () => {
+    mockAxios.post.mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: { error: 'User with this email already exists' },
+      },
+    });
+
+    await expect(authApi.register(registerData)).rejects.toThrow(
+      'User with this email already exists'
+    );
+  });
+
+  it('exposes the status so the screen can offer a 409 a way out', async () => {
+    mockAxios.post.mockRejectedValueOnce({
+      response: {
+        status: 409,
+        data: { error: 'User with this email already exists' },
+      },
+    });
+
+    await expect(authApi.register(registerData)).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('prefers `message` over `error` on a rate-limit body that carries both', async () => {
+    // The limiter sends both: `error` is the terse label, `message` the
+    // sentence telling the user how long to wait.
+    mockAxios.post.mockRejectedValueOnce({
+      response: {
+        status: 429,
+        data: {
+          error: 'Too many registration attempts',
+          message: 'Too many accounts created from this IP, please try again after an hour',
+          statusCode: 429,
+        },
+      },
+    });
+
+    await expect(authApi.register(registerData)).rejects.toThrow(
+      'Too many accounts created from this IP, please try again after an hour'
+    );
+  });
+
+  it('reads `error` out of the 401 a bad login returns', async () => {
+    mockAxios.post.mockRejectedValueOnce({
+      response: { status: 401, data: { error: 'Invalid credentials' } },
+    });
+
+    await expect(authApi.login(credentials)).rejects.toThrow('Invalid credentials');
+  });
+
+  it('falls back to the axios message when the response carries no body', async () => {
+    mockAxios.post.mockRejectedValueOnce(new Error('Network Error'));
+
+    await expect(authApi.login(credentials)).rejects.toThrow('Network Error');
+  });
+
+  it('falls back to a generic message when nothing recognisable is thrown', async () => {
+    mockAxios.post.mockRejectedValueOnce('kaboom');
+
+    await expect(authApi.login(credentials)).rejects.toThrow('An unexpected error occurred');
+  });
+
+  it('ignores an empty errors array rather than reading errors[0].msg off it', async () => {
+    mockAxios.post.mockRejectedValueOnce({
+      response: { status: 400, data: { errors: [], error: 'Bad request' } },
+    });
+
+    await expect(authApi.register(registerData)).rejects.toThrow('Bad request');
   });
 });
