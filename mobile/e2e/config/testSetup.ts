@@ -1,4 +1,4 @@
-import { element, by, waitFor } from 'detox';
+import { device, element, by, waitFor } from 'detox';
 
 // Value entry here is replaceText(), never typeText(). typeText() delivers one
 // keystroke at a time and does not reliably land a full string in a
@@ -23,6 +23,67 @@ export function generateTestUser() {
     email: `e2e-test-${timestamp}@habitcraft.test`,
     password: 'TestPassword123!',
   };
+}
+
+/**
+ * Create a user over HTTP and return the tokens the app needs to be signed in.
+ *
+ * The suite does not register through the UI, because iOS answers any
+ * successful credential submit with its AutoFill "Save Password?" prompt, which
+ * Detox can neither see nor dismiss (habitcraft-bqhe.11).
+ */
+export async function createUserViaApi(user: ReturnType<typeof generateTestUser>): Promise<{
+  accessToken: string;
+  refreshToken: string;
+}> {
+  const response = await fetch(`${API_URL}/api/v1/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: user.name, email: user.email, password: user.password }),
+  });
+
+  if (response.status !== 201) {
+    // Say which backend was asked and what it said. The usual cause is no
+    // backend on API_URL at all, which otherwise surfaces much later as an
+    // unexplained wait timing out on the dashboard.
+    const body = await response.text();
+    throw new Error(
+      `Could not create an E2E user via ${API_URL}: HTTP ${response.status} ${body.slice(0, 200)}`
+    );
+  }
+
+  const body = (await response.json()) as { accessToken?: string; refreshToken?: string };
+  if (!body.accessToken || !body.refreshToken) {
+    throw new Error('Register returned no tokens; the response shape has changed');
+  }
+
+  return { accessToken: body.accessToken, refreshToken: body.refreshToken };
+}
+
+/**
+ * Launch the app already signed in as a freshly created user.
+ *
+ * This is how every spec should authenticate. The tokens travel as Detox launch
+ * arguments and the app seeds its secure store from them at startup
+ * (src/lib/e2eSession.ts), so no password is ever typed and the AutoFill prompt
+ * is never offered.
+ */
+export async function launchAuthenticated(
+  user: ReturnType<typeof generateTestUser> = generateTestUser()
+): Promise<ReturnType<typeof generateTestUser>> {
+  const tokens = await createUserViaApi(user);
+
+  await device.launchApp({
+    delete: true,
+    newInstance: true,
+    launchArgs: {
+      e2eAccessToken: tokens.accessToken,
+      e2eRefreshToken: tokens.refreshToken,
+    },
+  });
+
+  await waitForElement('dashboard-screen', 30000);
+  return user;
 }
 
 /**

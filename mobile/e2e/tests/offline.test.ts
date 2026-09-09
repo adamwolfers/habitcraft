@@ -1,13 +1,13 @@
 import { device, element, by, expect, waitFor } from 'detox';
-import { generateTestUser, registerTestUser, waitForElement } from '../config/testSetup';
+import { generateTestUser, launchAuthenticated, waitForElement } from '../config/testSetup';
 
 describe('Offline Functionality', () => {
   const testUser = generateTestUser();
 
   beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
-    // Register and login a test user
-    await registerTestUser(testUser);
+    // See habitcraft-bqhe.11: no password is typed anywhere in this suite
+    // except the specs that exist to test the credential forms.
+    await launchAuthenticated(testUser);
   });
 
   beforeEach(async () => {

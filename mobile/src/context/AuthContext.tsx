@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { User, LoginCredentials, RegisterData } from '@/types';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
+import { seedE2ESession } from '@/lib/e2eSession';
 import { mutationQueue, offlineStorage } from '@/lib/offline';
 
 interface AuthContextType {
@@ -28,6 +29,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Before the first read, so an E2E launch comes up already signed in.
+        // No-op in every build that does not set EXPO_PUBLIC_E2E.
+        await seedE2ESession();
         const hasTokens = await storage.hasTokens();
         if (hasTokens) {
           const currentUser = await authApi.getCurrentUser();
