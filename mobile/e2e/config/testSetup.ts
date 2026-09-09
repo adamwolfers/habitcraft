@@ -1,3 +1,4 @@
+import { execFileSync } from 'child_process';
 import { device, element, by, waitFor } from 'detox';
 
 // Value entry here is replaceText(), never typeText(). typeText() delivers one
@@ -61,6 +62,70 @@ export async function createUserViaApi(user: ReturnType<typeof generateTestUser>
 }
 
 /**
+ * Clear the session that survives everything the app itself can do.
+ *
+ * expo-secure-store keeps its items in the iOS keychain, which is not part of
+ * the app container. So the session outlives reloadReactNative(), a
+ * launchApp({ newInstance: true }), and even launchApp({ delete: true }) --
+ * that last one uninstalls and reinstalls the app and still comes up
+ * authenticated (habitcraft-bqhe.7, confirmed by probe). `simctl keychain
+ * reset` is the cheapest thing that does clear it; `simctl erase` also works
+ * but wipes the whole device.
+ *
+ * ANDROID IS A DELIBERATE NO-OP. There the tokens live in app data, which a
+ * reinstall clears, so launchApp({ delete: true }) already yields a logged-out
+ * app and there is nothing to reset. The CI target for this epic is Android,
+ * so this guard is the common path there, not an edge case.
+ *
+ * FAILS LOUDLY. An unreported reset failure is the worst shape this can take:
+ * the whole suite then runs against a surviving session and every logged-out
+ * assertion fails somewhere far away from the cause. That exact mistake cost
+ * 36 of 38 tests in scripts/prepare-ios-simulator.sh before the error was
+ * unsuppressed.
+ */
+export function clearDeviceSession(): void {
+  if (device.getPlatform() !== 'ios') {
+    return;
+  }
+
+  try {
+    execFileSync('xcrun', ['simctl', 'keychain', device.id, 'reset'], { stdio: 'pipe' });
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    throw new Error(
+      `Could not clear the keychain on simulator ${device.id}, so the app would ` +
+        `start from the previous spec's session: ${detail}`
+    );
+  }
+}
+
+/**
+ * Launch the app with no session at all, on the Welcome screen.
+ *
+ * Welcome is the auth stack's initial route, so this is what "logged out" looks
+ * like -- not the login form, which is a screen further in.
+ */
+export async function launchLoggedOut(): Promise<void> {
+  clearDeviceSession();
+  await device.launchApp({ delete: true, newInstance: true });
+  await waitForElement('welcome-screen', 30000);
+}
+
+/**
+ * Return an already-running app to the logged-out state, between tests.
+ *
+ * Cheaper than launchLoggedOut(): reloading the JS bundle remounts
+ * AuthProvider, whose mount effect re-reads storage.hasTokens(), so clearing
+ * the keychain first is enough to make it come up signed out. Use this in a
+ * beforeEach; use launchLoggedOut() for the first launch in a file.
+ */
+export async function returnToLoggedOut(): Promise<void> {
+  clearDeviceSession();
+  await device.reloadReactNative();
+  await waitForElement('welcome-screen', 30000);
+}
+
+/**
  * Launch the app already signed in as a freshly created user.
  *
  * This is how every spec should authenticate. The tokens travel as Detox launch
@@ -72,6 +137,12 @@ export async function launchAuthenticated(
   user: ReturnType<typeof generateTestUser> = generateTestUser()
 ): Promise<ReturnType<typeof generateTestUser>> {
   const tokens = await createUserViaApi(user);
+
+  // Even though the launch arguments overwrite whatever tokens are already
+  // there, clear first: a spec that reaches this with a stale session and a
+  // seeding failure would silently test the previous user's account instead of
+  // failing (habitcraft-bqhe.7).
+  clearDeviceSession();
 
   await device.launchApp({
     delete: true,
