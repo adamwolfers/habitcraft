@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -27,6 +28,9 @@ function SkeletonBox({
 
   useEffect(() => {
     shimmer.value = withRepeat(withTiming(1, { duration: 1000 }), -1, true);
+    // withRepeat(-1) never ends on its own, so unmounting the skeleton would
+    // otherwise leave it running for the life of the process.
+    return () => cancelAnimation(shimmer);
   }, [shimmer]);
 
   const animatedStyle = useAnimatedStyle(() => ({
