@@ -4,6 +4,8 @@ import {
   launchAuthenticated,
   waitForElement,
   createHabit,
+  habitCard,
+  returnToDashboard,
 } from '../config/testSetup';
 
 describe('Habit CRUD Operations', () => {
@@ -16,9 +18,14 @@ describe('Habit CRUD Operations', () => {
     await launchAuthenticated(testUser);
   });
 
+  // Put the app back on the dashboard rather than checking that it happens to
+  // be there. Waiting alone made every test after the first a casualty of the
+  // one before it: the validation test below leaves the create-habit modal
+  // open, the dashboard is behind it, and the remaining ten tests all failed
+  // on a dashboard timeout that said nothing about what they were testing
+  // (habitcraft-bqhe.14).
   beforeEach(async () => {
-    // Ensure we're on the dashboard
-    await waitForElement('dashboard-screen');
+    await returnToDashboard();
   });
 
   describe('Create Habit', () => {
@@ -41,7 +48,7 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('dashboard-screen');
 
       // Verify habit appears in list
-      await expect(element(by.text(habitName))).toBeVisible();
+      await expect(habitCard(habitName)).toBeVisible();
     });
 
     it('should show error when creating habit without name', async () => {
@@ -71,7 +78,7 @@ describe('Habit CRUD Operations', () => {
 
       // Verify back on dashboard with habit visible
       await waitForElement('dashboard-screen');
-      await expect(element(by.text(habitName))).toBeVisible();
+      await expect(habitCard(habitName)).toBeVisible();
     });
   });
 
@@ -109,7 +116,7 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('dashboard-screen');
 
       // Tap on the habit to view details
-      await element(by.text(originalName)).tap();
+      await habitCard(originalName).tap();
 
       // Wait for detail screen and navigate to edit
       // Note: This depends on HabitDetailScreen having an edit button
@@ -126,7 +133,7 @@ describe('Habit CRUD Operations', () => {
 
       // Verify back on dashboard with updated name
       await waitForElement('dashboard-screen');
-      await expect(element(by.text(updatedName))).toBeVisible();
+      await expect(habitCard(updatedName)).toBeVisible();
     });
   });
 
@@ -139,10 +146,10 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('dashboard-screen');
 
       // Verify habit exists
-      await expect(element(by.text(habitName))).toBeVisible();
+      await expect(habitCard(habitName)).toBeVisible();
 
       // Tap on the habit to open edit screen
-      await element(by.text(habitName)).tap();
+      await habitCard(habitName).tap();
       await waitForElement('delete-habit-button');
 
       // Tap delete button
@@ -153,7 +160,7 @@ describe('Habit CRUD Operations', () => {
 
       // Verify back on dashboard and habit is gone
       await waitForElement('dashboard-screen');
-      await expect(element(by.text(habitName))).not.toBeVisible();
+      await expect(habitCard(habitName)).not.toBeVisible();
     });
 
     it('should cancel deletion when dismissed', async () => {
@@ -164,7 +171,7 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('dashboard-screen');
 
       // Open edit screen
-      await element(by.text(habitName)).tap();
+      await habitCard(habitName).tap();
       await waitForElement('delete-habit-button');
 
       // Tap delete button
@@ -178,7 +185,7 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('dashboard-screen');
 
       // Verify habit still exists
-      await expect(element(by.text(habitName))).toBeVisible();
+      await expect(habitCard(habitName)).toBeVisible();
     });
   });
 
