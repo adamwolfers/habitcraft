@@ -1,7 +1,7 @@
 import { device, element, by, expect, waitFor } from 'detox';
 import {
   generateTestUser,
-  registerTestUser,
+  launchAuthenticated,
   waitForElement,
   loginTestUser,
 } from '../config/testSetup';
@@ -10,9 +10,11 @@ describe('Logout', () => {
   const testUser = generateTestUser();
 
   beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
-    // Register a test user
-    await registerTestUser(testUser);
+    // Injected session rather than the registration form (habitcraft-bqhe.11).
+    // The loginTestUser calls further down stay as they are: logging in again
+    // after a logout is what those tests are about, and the credential UI works
+    // once scripts/prepare-ios-simulator.sh has turned AutoFill prompts off.
+    await launchAuthenticated(testUser);
   });
 
   describe('Logout Flow', () => {

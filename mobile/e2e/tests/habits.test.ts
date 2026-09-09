@@ -1,7 +1,7 @@
 import { device, element, by, expect, waitFor } from 'detox';
 import {
   generateTestUser,
-  registerTestUser,
+  launchAuthenticated,
   waitForElement,
   createHabit,
 } from '../config/testSetup';
@@ -10,9 +10,10 @@ describe('Habit CRUD Operations', () => {
   const testUser = generateTestUser();
 
   beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
-    // Register and login a test user
-    await registerTestUser(testUser);
+    // Signed in via injected tokens rather than the registration form: iOS
+    // answers any credential submit with its AutoFill prompt, which Detox
+    // cannot dismiss (habitcraft-bqhe.11).
+    await launchAuthenticated(testUser);
   });
 
   beforeEach(async () => {
