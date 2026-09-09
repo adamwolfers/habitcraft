@@ -301,8 +301,12 @@ export async function logoutUser() {
  * navigates, and Detox reports 'Multiple elements found' instead of anything
  * about the behaviour under test (habitcraft-bqhe.14).
  */
+export function habitCardMatcher(name: string) {
+  return by.id('habit-card').withDescendant(by.text(name));
+}
+
 export function habitCard(name: string) {
-  return element(by.id('habit-card').withDescendant(by.text(name)));
+  return element(habitCardMatcher(name));
 }
 
 /**

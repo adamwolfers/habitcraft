@@ -43,7 +43,15 @@ export function HabitCard({
         accessibilityLabel={`Mark ${habit.name} as ${isCompletedToday ? 'incomplete' : 'complete'}`}
         accessibilityHint={isCompletedToday ? 'Double tap to uncheck' : 'Double tap to check'}
       >
-        {isCompletedToday && <Text style={[styles.checkmark, { color: habit.color }]}>✓</Text>}
+        {/* The only rendered difference between a completed habit and an
+            uncompleted one, so it is what the detox completion specs assert
+            against -- accessibilityState is not visible to them
+            (habitcraft-bqhe.9). */}
+        {isCompletedToday && (
+          <Text testID="habit-completed-check" style={[styles.checkmark, { color: habit.color }]}>
+            ✓
+          </Text>
+        )}
       </TouchableOpacity>
 
       <View style={styles.content}>
