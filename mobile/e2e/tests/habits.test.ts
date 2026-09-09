@@ -30,8 +30,8 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('habit-name-input');
 
       // Fill habit form
-      await element(by.id('habit-name-input')).typeText(habitName);
-      await element(by.id('habit-description-input')).typeText(habitDescription);
+      await element(by.id('habit-name-input')).replaceText(habitName);
+      await element(by.id('habit-description-input')).replaceText(habitDescription);
 
       // Submit form
       await element(by.id('create-habit-button')).tap();
@@ -63,7 +63,7 @@ describe('Habit CRUD Operations', () => {
       await waitForElement('habit-name-input');
 
       // Fill only name
-      await element(by.id('habit-name-input')).typeText(habitName);
+      await element(by.id('habit-name-input')).replaceText(habitName);
 
       // Submit form
       await element(by.id('create-habit-button')).tap();
@@ -117,9 +117,8 @@ describe('Habit CRUD Operations', () => {
         .toBeVisible()
         .withTimeout(5000);
 
-      // Clear and update the name
-      await element(by.id('habit-name-input')).clearText();
-      await element(by.id('habit-name-input')).typeText(updatedName);
+      // replaceText() sets the field outright, so no clearText() first.
+      await element(by.id('habit-name-input')).replaceText(updatedName);
 
       // Save changes
       await element(by.id('save-habit-button')).tap();

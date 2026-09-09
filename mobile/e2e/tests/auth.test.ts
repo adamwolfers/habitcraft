@@ -25,9 +25,9 @@ describe('Authentication', () => {
 
       await gotoRegister();
 
-      await element(by.id('register-name-input')).typeText(testUser.name);
-      await element(by.id('register-email-input')).typeText(testUser.email);
-      await element(by.id('register-password-input')).typeText(testUser.password);
+      await element(by.id('register-name-input')).replaceText(testUser.name);
+      await element(by.id('register-email-input')).replaceText(testUser.email);
+      await element(by.id('register-password-input')).replaceText(testUser.password);
 
       await element(by.id('register-button')).tap();
 
@@ -40,7 +40,7 @@ describe('Authentication', () => {
       // The reveal toggle is what replaced the Confirm Password field.
       await gotoRegister();
 
-      await element(by.id('register-password-input')).typeText('password123');
+      await element(by.id('register-password-input')).replaceText('password123');
       await element(by.id('register-password-input-reveal')).tap();
 
       await expect(element(by.id('register-password-input'))).toHaveText('password123');
@@ -49,8 +49,8 @@ describe('Authentication', () => {
     it('should show a missing name under the name field', async () => {
       await gotoRegister();
 
-      await element(by.id('register-email-input')).typeText('test@example.com');
-      await element(by.id('register-password-input')).typeText('password123');
+      await element(by.id('register-email-input')).replaceText('test@example.com');
+      await element(by.id('register-password-input')).replaceText('password123');
       await element(by.id('register-button')).tap();
 
       await expect(element(by.id('register-name-input-error'))).toBeVisible();
@@ -60,9 +60,9 @@ describe('Authentication', () => {
     it('should show an invalid email under the email field', async () => {
       await gotoRegister();
 
-      await element(by.id('register-name-input')).typeText('Test User');
-      await element(by.id('register-email-input')).typeText('invalid-email');
-      await element(by.id('register-password-input')).typeText('password123');
+      await element(by.id('register-name-input')).replaceText('Test User');
+      await element(by.id('register-email-input')).replaceText('invalid-email');
+      await element(by.id('register-password-input')).replaceText('password123');
       await element(by.id('register-button')).tap();
 
       await expect(element(by.id('register-email-input-error'))).toBeVisible();
@@ -76,9 +76,9 @@ describe('Authentication', () => {
       // (habitcraft-h7q7).
       await gotoRegister();
 
-      await element(by.id('register-name-input')).typeText('Test User');
-      await element(by.id('register-email-input')).typeText('test@example.com');
-      await element(by.id('register-password-input')).typeText('short');
+      await element(by.id('register-name-input')).replaceText('Test User');
+      await element(by.id('register-email-input')).replaceText('test@example.com');
+      await element(by.id('register-password-input')).replaceText('short');
       await element(by.id('register-button')).tap();
 
       await expect(element(by.id('register-password-input-error'))).toBeVisible();
@@ -103,18 +103,18 @@ describe('Authentication', () => {
       const testUser = generateTestUser();
 
       await gotoRegister();
-      await element(by.id('register-name-input')).typeText(testUser.name);
-      await element(by.id('register-email-input')).typeText(testUser.email);
-      await element(by.id('register-password-input')).typeText(testUser.password);
+      await element(by.id('register-name-input')).replaceText(testUser.name);
+      await element(by.id('register-email-input')).replaceText(testUser.email);
+      await element(by.id('register-password-input')).replaceText(testUser.password);
       await element(by.id('register-button')).tap();
       await waitForElement('dashboard-screen');
 
       // Same address, second time around.
       await device.reloadReactNative();
       await gotoRegister();
-      await element(by.id('register-name-input')).typeText(testUser.name);
-      await element(by.id('register-email-input')).typeText(testUser.email);
-      await element(by.id('register-password-input')).typeText(testUser.password);
+      await element(by.id('register-name-input')).replaceText(testUser.name);
+      await element(by.id('register-email-input')).replaceText(testUser.email);
+      await element(by.id('register-password-input')).replaceText(testUser.password);
       await element(by.id('register-button')).tap();
 
       await waitFor(element(by.id('register-login-instead')))
@@ -140,9 +140,9 @@ describe('Authentication', () => {
       const testUser = generateTestUser();
 
       await gotoRegister();
-      await element(by.id('register-name-input')).typeText(testUser.name);
-      await element(by.id('register-email-input')).typeText(testUser.email);
-      await element(by.id('register-password-input')).typeText(testUser.password);
+      await element(by.id('register-name-input')).replaceText(testUser.name);
+      await element(by.id('register-email-input')).replaceText(testUser.email);
+      await element(by.id('register-password-input')).replaceText(testUser.password);
       await element(by.id('register-button')).tap();
       await waitForElement('dashboard-screen');
 
@@ -152,8 +152,8 @@ describe('Authentication', () => {
       await waitForElement('welcome-screen');
 
       await gotoLogin();
-      await element(by.id('login-email-input')).typeText(testUser.email);
-      await element(by.id('login-password-input')).typeText(testUser.password);
+      await element(by.id('login-email-input')).replaceText(testUser.email);
+      await element(by.id('login-password-input')).replaceText(testUser.password);
       await element(by.id('login-button')).tap();
 
       await waitFor(element(by.id('dashboard-screen')))
@@ -164,8 +164,8 @@ describe('Authentication', () => {
     it('should show error for invalid credentials', async () => {
       await gotoLogin();
 
-      await element(by.id('login-email-input')).typeText('nonexistent@example.com');
-      await element(by.id('login-password-input')).typeText('wrongpassword');
+      await element(by.id('login-email-input')).replaceText('nonexistent@example.com');
+      await element(by.id('login-password-input')).replaceText('wrongpassword');
       await element(by.id('login-button')).tap();
 
       await waitFor(element(by.id('login-error')))
@@ -176,7 +176,7 @@ describe('Authentication', () => {
     it('should show a missing email under the email field', async () => {
       await gotoLogin();
 
-      await element(by.id('login-password-input')).typeText('password123');
+      await element(by.id('login-password-input')).replaceText('password123');
       await element(by.id('login-button')).tap();
 
       await expect(element(by.id('login-email-input-error'))).toBeVisible();
@@ -186,7 +186,7 @@ describe('Authentication', () => {
     it('should show a missing password under the password field', async () => {
       await gotoLogin();
 
-      await element(by.id('login-email-input')).typeText('test@example.com');
+      await element(by.id('login-email-input')).replaceText('test@example.com');
       await element(by.id('login-button')).tap();
 
       await expect(element(by.id('login-password-input-error'))).toBeVisible();
@@ -196,8 +196,8 @@ describe('Authentication', () => {
     it('should show an invalid email under the email field', async () => {
       await gotoLogin();
 
-      await element(by.id('login-email-input')).typeText('invalid-email');
-      await element(by.id('login-password-input')).typeText('password123');
+      await element(by.id('login-email-input')).replaceText('invalid-email');
+      await element(by.id('login-password-input')).replaceText('password123');
       await element(by.id('login-button')).tap();
 
       await expect(element(by.id('login-email-input-error'))).toBeVisible();

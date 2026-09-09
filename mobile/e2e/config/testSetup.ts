@@ -1,5 +1,13 @@
 import { element, by, waitFor } from 'detox';
 
+// Value entry here is replaceText(), never typeText(). typeText() delivers one
+// keystroke at a time and does not reliably land a full string in a
+// secureTextEntry field -- a 16-character password arrived as 7 or fewer, so
+// the form rejected itself before any request was sent (habitcraft-bqhe.6).
+// replaceText() sets the field atomically and is proven against the real app.
+// An eslint rule keeps typeText() out of e2e/; a test that genuinely needs
+// incremental typing must disable it explicitly and say why.
+
 // API base URL for test backend
 export const API_URL = process.env.E2E_API_URL || 'http://localhost:3010';
 
@@ -61,8 +69,8 @@ export async function gotoRegister() {
  */
 export async function loginTestUser(email: string, password: string) {
   await gotoLogin();
-  await element(by.id('login-email-input')).typeText(email);
-  await element(by.id('login-password-input')).typeText(password);
+  await element(by.id('login-email-input')).replaceText(email);
+  await element(by.id('login-password-input')).replaceText(password);
   await element(by.id('login-button')).tap();
   await waitForElement('dashboard-screen');
 }
@@ -76,9 +84,9 @@ export async function loginTestUser(email: string, password: string) {
 export async function registerTestUser(user: ReturnType<typeof generateTestUser>) {
   await gotoRegister();
 
-  await element(by.id('register-name-input')).typeText(user.name);
-  await element(by.id('register-email-input')).typeText(user.email);
-  await element(by.id('register-password-input')).typeText(user.password);
+  await element(by.id('register-name-input')).replaceText(user.name);
+  await element(by.id('register-email-input')).replaceText(user.email);
+  await element(by.id('register-password-input')).replaceText(user.password);
   await element(by.id('register-button')).tap();
   await waitForElement('dashboard-screen');
 }
@@ -103,9 +111,9 @@ export async function createHabit(name: string, description?: string) {
   await element(by.id('create-habit-fab')).tap();
   await waitForElement('habit-name-input');
 
-  await element(by.id('habit-name-input')).typeText(name);
+  await element(by.id('habit-name-input')).replaceText(name);
   if (description) {
-    await element(by.id('habit-description-input')).typeText(description);
+    await element(by.id('habit-description-input')).replaceText(description);
   }
   await element(by.id('create-habit-button')).tap();
   await waitForElement('dashboard-screen');

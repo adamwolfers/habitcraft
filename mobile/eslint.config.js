@@ -93,4 +93,23 @@ module.exports = [
       },
     },
   },
+  // Detox specs only. typeText() types one keystroke at a time and does not
+  // reliably land a full string in a secureTextEntry field -- a 16-character
+  // password arrived as 7 or fewer, and the form rejected itself before any
+  // request went out (habitcraft-bqhe.6). replaceText() sets the value
+  // atomically. Nothing in the suite exercises incremental typing today; a
+  // test that genuinely needs it must disable this rule and say why.
+  {
+    files: ['e2e/**/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: "CallExpression > MemberExpression[property.name='typeText']",
+          message:
+            'Use replaceText() instead of typeText() -- typeText() truncates secureTextEntry input (habitcraft-bqhe.6).',
+        },
+      ],
+    },
+  },
 ];
