@@ -278,6 +278,17 @@ guard.** When it fails, adjust the shard count in `E2E_SHARDS`
 
 ## E2E Test Isolation Strategy
 
+A test must not depend on anything the test before it left behind. There are
+two kinds of leftover, and they need different answers:
+
+| Leftover | Answer |
+|---|---|
+| **Data** — habits, completions, profile fields | Create unique entities; never modify fixtures. Covered directly below. |
+| **UI state** — the screen, an open modal, the selected tab | Restore a known screen in a `beforeEach` hook. See [UI State Isolation](#ui-state-isolation). |
+
+Both apply to the Playwright suite (`frontend/e2e/`) and the Detox suite
+(`mobile/e2e/`).
+
 ### The Problem
 
 Tests that modify fixture data (habits, user profile, completions) without restoration cause:
@@ -343,6 +354,41 @@ test('should show error when email already taken', async ({ page }) => {
 - "Track completions independently" test creates two unique habits
 - Navigation/display tests use fixture habits (read-only, safe)
 
+### UI State Isolation
+
+A test that navigates leaves the app somewhere. If the next test assumes it is
+back where it started, the two are coupled, and the first failure knocks over
+every test after it.
+
+**Restore the screen in a hook, not in each test.** A hook is what makes the
+precondition a guarantee; restating it per test leaves it one new test away
+from being forgotten. `mobile/e2e/config/testSetup.ts` exports three, one per
+starting point: `returnToLoggedOut()`, `returnToDashboard()` and
+`relaunchAuthenticated()`.
+
+**Restore by resetting, not by navigating back.** Tapping a back control encodes
+a guess about where the previous test finished, which is the coupling being
+removed. Reloading the app is state-independent: an open modal, a pushed screen
+and a switched tab all go away together. Reach for a full relaunch only when a
+reload cannot restore the precondition — in `mobile/e2e/tests/logout.test.ts`
+the tests log out, and the session is seeded at process start, so only a
+relaunch brings it back.
+
+**Match elements by testID when a label is not unique.** A label that is
+unique on one screen may not be on the next: the Profile tab and the Profile
+screen's own heading share their text, so `by.text('Profile')` starts failing
+with "Multiple elements found" the moment a test is already on that screen.
+That failure names neither the test nor the defect. Tab buttons carry testIDs
+for this reason (`tabBarButtonTestID` in `mobile/src/navigation/MainTabNavigator.tsx`),
+and a habit is matched through its card with `habitCard(name)` rather than by
+its name alone.
+
+**Why this is worth the seconds it costs.** Both mechanisms above were found in
+the Detox suite, where 10 of 11 habit tests and 6 of 7 logout tests failed as
+one cascade from a single open modal and a single ambiguous matcher
+(habitcraft-bqhe.14). A wall of red that hides which test actually broke is
+more expensive than the reload.
+
 ### Guidelines for New E2E Tests
 
 1. **Never modify fixture users or their existing data**
@@ -357,6 +403,8 @@ test('should show error when email already taken', async ({ page }) => {
    ```
 4. **Read-only operations can use fixture data safely**
 5. **Clean up is handled by `test-db-reset.sh` between full test runs**
+6. **Restore the starting screen in a `beforeEach`** — never assume the previous
+   test left the app where you need it (see [UI State Isolation](#ui-state-isolation))
 
 ## Backend Integration Tests
 

@@ -158,7 +158,7 @@ describe('Authentication', () => {
       await element(by.id('register-button')).tap();
       await waitForElement('dashboard-screen');
 
-      await element(by.text('Profile')).tap();
+      await element(by.id('tab-profile')).tap();
       await waitForElement('profile-screen');
       await element(by.id('logout-button')).tap();
       await waitForElement('welcome-screen');

@@ -26,6 +26,12 @@ export function generateTestUser() {
   };
 }
 
+/** The pair of tokens that seeds a signed-in app through launch arguments. */
+export interface E2ESession {
+  accessToken: string;
+  refreshToken: string;
+}
+
 /**
  * Create a user over HTTP and return the tokens the app needs to be signed in.
  *
@@ -33,10 +39,9 @@ export function generateTestUser() {
  * successful credential submit with its AutoFill "Save Password?" prompt, which
  * Detox can neither see nor dismiss (habitcraft-bqhe.11).
  */
-export async function createUserViaApi(user: ReturnType<typeof generateTestUser>): Promise<{
-  accessToken: string;
-  refreshToken: string;
-}> {
+export async function createUserViaApi(
+  user: ReturnType<typeof generateTestUser>
+): Promise<E2ESession> {
   const response = await fetch(`${API_URL}/api/v1/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -135,7 +140,7 @@ export async function returnToLoggedOut(): Promise<void> {
  */
 export async function launchAuthenticated(
   user: ReturnType<typeof generateTestUser> = generateTestUser()
-): Promise<ReturnType<typeof generateTestUser>> {
+): Promise<{ user: ReturnType<typeof generateTestUser>; session: E2ESession }> {
   const tokens = await createUserViaApi(user);
 
   // Even though the launch arguments overwrite whatever tokens are already
@@ -154,7 +159,54 @@ export async function launchAuthenticated(
   });
 
   await waitForElement('dashboard-screen', 30000);
-  return user;
+  return { user, session: tokens };
+}
+
+/**
+ * Bring an already-created session back up on a fresh app process.
+ *
+ * For a beforeEach in a file whose tests log out: the tokens are seeded from
+ * launch arguments at process start, so a relaunch restores the session no
+ * matter what the previous test did to it. Takes the session that
+ * launchAuthenticated() returned, because re-registering the same address would
+ * be a 409 rather than a second session.
+ *
+ * No `delete: true` here. That reinstalls the app, which costs about ten
+ * seconds per test and clears nothing clearDeviceSession() has not already
+ * cleared.
+ */
+export async function relaunchAuthenticated(session: E2ESession): Promise<void> {
+  clearDeviceSession();
+
+  await device.launchApp({
+    newInstance: true,
+    launchArgs: {
+      e2eAccessToken: session.accessToken,
+      e2eRefreshToken: session.refreshToken,
+    },
+  });
+
+  await waitForElement('dashboard-screen', 30000);
+}
+
+/**
+ * Return an already-signed-in app to the dashboard, between tests.
+ *
+ * WHY A RELOAD RATHER THAN NAVIGATING BACK. This has to work without knowing
+ * where the previous test finished, and a reload is the only step that does:
+ * it remounts the whole tree, so an open modal, a pushed detail screen and a
+ * switched tab all go away together. Tapping a back control instead would
+ * encode an assumption about the previous test -- which is the bug
+ * (habitcraft-bqhe.14), not the fix.
+ *
+ * The session survives, so the app comes back up on the dashboard: on iOS the
+ * tokens are in the keychain, which a reload does not touch
+ * (habitcraft-bqhe.7). Use relaunchAuthenticated() instead in a file whose
+ * tests log out.
+ */
+export async function returnToDashboard(): Promise<void> {
+  await device.reloadReactNative();
+  await waitForElement('dashboard-screen', 30000);
 }
 
 /**
@@ -228,12 +280,29 @@ export async function registerTestUser(user: ReturnType<typeof generateTestUser>
  *
  * Logging out returns to Welcome, the auth stack's initial route -- not
  * straight to the login form.
+ *
+ * The tab is tapped by testID, never by its label: ProfileScreen renders a
+ * 'Profile' heading of its own, so by.text('Profile') matches twice over as
+ * soon as the app is already on that screen (habitcraft-bqhe.14).
  */
 export async function logoutUser() {
-  await element(by.text('Profile')).tap();
+  await element(by.id('tab-profile')).tap();
   await waitForElement('profile-screen');
   await element(by.id('logout-button')).tap();
   await waitForElement('welcome-screen');
+}
+
+/**
+ * The dashboard card for the habit with this name.
+ *
+ * Prefer this over a bare by.text(name). A habit's name is rendered in more
+ * than one place -- the card, the detail screen's title, the edit form's name
+ * field -- so an unscoped text matcher stops being unique as soon as a test
+ * navigates, and Detox reports 'Multiple elements found' instead of anything
+ * about the behaviour under test (habitcraft-bqhe.14).
+ */
+export function habitCard(name: string) {
+  return element(by.id('habit-card').withDescendant(by.text(name)));
 }
 
 /**

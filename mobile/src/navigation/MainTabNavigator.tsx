@@ -27,8 +27,24 @@ export function MainTabNavigator() {
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Dashboard" component={DashboardScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      {/*
+        The testIDs exist so the E2E suite never has to tap a tab by its label.
+        A tab's label is not unique on screen -- ProfileScreen renders its own
+        'Profile' heading, so by.text('Profile') matches the tab AND the heading
+        the moment a test is already on that screen, and Detox fails with
+        'Multiple elements found' rather than anything about the behaviour under
+        test (habitcraft-bqhe.14).
+      */}
+      <Tab.Screen
+        name="Dashboard"
+        component={DashboardScreen}
+        options={{ tabBarButtonTestID: 'tab-dashboard' }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ tabBarButtonTestID: 'tab-profile' }}
+      />
     </Tab.Navigator>
   );
 }

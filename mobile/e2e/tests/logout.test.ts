@@ -1,52 +1,61 @@
 import { device, element, by, expect, waitFor } from 'detox';
 import {
+  createUserViaApi,
   generateTestUser,
-  launchAuthenticated,
-  waitForElement,
   loginTestUser,
+  logoutUser,
+  relaunchAuthenticated,
+  waitForElement,
+  type E2ESession,
 } from '../config/testSetup';
 
 describe('Logout', () => {
   const testUser = generateTestUser();
+  let session: E2ESession;
 
   beforeAll(async () => {
-    // Injected session rather than the registration form (habitcraft-bqhe.11).
-    // The loginTestUser calls further down stay as they are: logging in again
-    // after a logout is what those tests are about, and the credential UI works
-    // once scripts/prepare-ios-simulator.sh has turned AutoFill prompts off.
-    await launchAuthenticated(testUser);
+    // The session is obtained over HTTP rather than through the login form:
+    // iOS answers any credential submit with its AutoFill prompt, which Detox
+    // cannot dismiss (habitcraft-bqhe.11). Created once, because registering
+    // the same address twice is a 409.
+    session = await createUserViaApi(testUser);
+  });
+
+  // Every test in this file starts signed in on the dashboard because this hook
+  // makes it so, not because the previous test happened to leave it that way.
+  // A reload would not be enough here: most of these tests log out, and the
+  // session is seeded from launch arguments at process start, so getting it
+  // back means a fresh launch.
+  //
+  // The tests below also stopped tapping the Profile tab by its label. Test 1
+  // used to leave the app on Profile, and test 2's by.text('Profile') then
+  // matched both the tab and the screen's own heading -- six of seven tests in
+  // this file failed on that cascade (habitcraft-bqhe.14).
+  beforeEach(async () => {
+    await relaunchAuthenticated(session);
   });
 
   describe('Logout Flow', () => {
     it('should navigate to profile screen from dashboard', async () => {
-      // Ensure we're on the dashboard
-      await waitForElement('dashboard-screen');
+      await element(by.id('tab-profile')).tap();
 
-      // Tap on Profile tab
-      await element(by.text('Profile')).tap();
-
-      // Verify profile screen is visible
       await waitFor(element(by.id('profile-screen')))
         .toBeVisible()
         .withTimeout(5000);
     });
 
     it('should display user email on profile screen', async () => {
-      // Navigate to profile if not already there
-      await element(by.text('Profile')).tap();
+      await element(by.id('tab-profile')).tap();
       await waitForElement('profile-screen');
 
-      // Verify email is displayed
       await expect(element(by.id('profile-email'))).toBeVisible();
       await expect(element(by.id('profile-email'))).toHaveText(testUser.email);
     });
 
     it('should logout and return to the welcome screen', async () => {
-      // Navigate to profile screen
-      await element(by.text('Profile')).tap();
+      await element(by.id('tab-profile')).tap();
       await waitForElement('profile-screen');
 
-      // Tap logout button
       await element(by.id('logout-button')).tap();
 
       // Welcome is the auth stack's initial route, so that is where logging out
@@ -60,7 +69,9 @@ describe('Logout', () => {
     });
 
     it('should require login after logout', async () => {
-      // After logout we are back in the auth stack...
+      await logoutUser();
+
+      // Back in the auth stack...
       await expect(element(by.id('welcome-screen'))).toBeVisible();
 
       // ...and the dashboard is gone with it.
@@ -68,41 +79,26 @@ describe('Logout', () => {
     });
 
     it('should allow login again after logout', async () => {
-      // Login with the same credentials
+      await logoutUser();
+
       await loginTestUser(testUser.email, testUser.password);
 
-      // Verify back on dashboard
       await waitForElement('dashboard-screen');
     });
   });
 
   describe('Session Persistence', () => {
     it('should clear session data on logout', async () => {
-      // Login user
-      await waitForElement('dashboard-screen');
+      await logoutUser();
 
-      // Logout
-      await element(by.text('Profile')).tap();
-      await waitForElement('profile-screen');
-      await element(by.id('logout-button')).tap();
-      await waitForElement('welcome-screen');
-
-      // Restart app
       await device.reloadReactNative();
 
-      // Should still be logged out (session was cleared)
       await expect(element(by.id('welcome-screen'))).toBeVisible();
     });
 
     it('should persist session across app restarts when logged in', async () => {
-      // Login
-      await loginTestUser(testUser.email, testUser.password);
-      await waitForElement('dashboard-screen');
-
-      // Restart app
       await device.reloadReactNative();
 
-      // Should still be logged in
       await waitFor(element(by.id('dashboard-screen')))
         .toBeVisible()
         .withTimeout(10000);
