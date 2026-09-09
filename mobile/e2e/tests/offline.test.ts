@@ -71,7 +71,7 @@ describe('Offline Functionality', () => {
       await element(by.id('create-habit-fab')).tap();
       await waitForElement('habit-name-input');
 
-      await element(by.id('habit-name-input')).typeText(habitName);
+      await element(by.id('habit-name-input')).replaceText(habitName);
       await element(by.id('create-habit-button')).tap();
 
       // Verify back on dashboard
@@ -138,13 +138,13 @@ describe('Offline Functionality', () => {
       // Create multiple habits to queue
       await element(by.id('create-habit-fab')).tap();
       await waitForElement('habit-name-input');
-      await element(by.id('habit-name-input')).typeText('Queued Habit 1');
+      await element(by.id('habit-name-input')).replaceText('Queued Habit 1');
       await element(by.id('create-habit-button')).tap();
       await waitForElement('dashboard-screen');
 
       await element(by.id('create-habit-fab')).tap();
       await waitForElement('habit-name-input');
-      await element(by.id('habit-name-input')).typeText('Queued Habit 2');
+      await element(by.id('habit-name-input')).replaceText('Queued Habit 2');
       await element(by.id('create-habit-button')).tap();
       await waitForElement('dashboard-screen');
 
