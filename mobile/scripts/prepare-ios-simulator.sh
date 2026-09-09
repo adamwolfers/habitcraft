@@ -18,6 +18,12 @@
 #      session in place and every spec that expects a logged-out app fails
 #      (habitcraft-bqhe.7).
 #
+#      The reset below only covers the FIRST spec file -- it runs once, before
+#      the run. Clearing between files is the suite's own job, and
+#      e2e/config/perFileSetup.ts does it in a beforeAll that jest runs once
+#      per test file. Do not read this script as the whole answer to a
+#      surviving session.
+#
 # MEASURED, not assumed. On a fresh iPhone 17 Pro (iOS 26.5), registering
 # through the form timed out after 20s with the prompt up; with
 # AutoFillPasswords written false it passed in 146ms. Same device, same build,

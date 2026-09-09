@@ -1,14 +1,25 @@
-import { device, element, by, expect, waitFor } from 'detox';
-import { generateTestUser, waitForElement, gotoLogin, gotoRegister } from '../config/testSetup';
+import { element, by, expect, waitFor } from 'detox';
+import {
+  generateTestUser,
+  waitForElement,
+  gotoLogin,
+  gotoRegister,
+  launchLoggedOut,
+  returnToLoggedOut,
+} from '../config/testSetup';
 import { requestLimits } from '../../src/types/apiLimits.generated';
 
 describe('Authentication', () => {
   beforeAll(async () => {
-    await device.launchApp({ newInstance: true });
+    await launchLoggedOut();
   });
 
+  // Not a bare reloadReactNative(). Several tests below sign in, and the
+  // session they leave behind lives in the keychain, which a reload does not
+  // touch -- so every later test in this file would start on the dashboard and
+  // never find the Welcome screen it is looking for (habitcraft-bqhe.7).
   beforeEach(async () => {
-    await device.reloadReactNative();
+    await returnToLoggedOut();
   });
 
   describe('Welcome screen', () => {
@@ -109,8 +120,9 @@ describe('Authentication', () => {
       await element(by.id('register-button')).tap();
       await waitForElement('dashboard-screen');
 
-      // Same address, second time around.
-      await device.reloadReactNative();
+      // Same address, second time around. Getting back to the register form
+      // means dropping the session the successful registration just created.
+      await returnToLoggedOut();
       await gotoRegister();
       await element(by.id('register-name-input')).replaceText(testUser.name);
       await element(by.id('register-email-input')).replaceText(testUser.email);
