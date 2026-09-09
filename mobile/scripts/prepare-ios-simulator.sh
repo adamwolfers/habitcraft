@@ -80,5 +80,16 @@ for udid in $udids; do
     exit 1
   fi
 
+  # Leave it as we found it. This script boots the device only because the
+  # keychain reset demands it, and every device left booted puts a window on
+  # screen if Simulator.app happens to be running. Detox boots the one it wants.
+  xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true
+
   echo "prepare-ios-simulator:   AutoFill prompts disabled, keychain cleared"
 done
+
+if pgrep -xq Simulator; then
+  echo "prepare-ios-simulator: Simulator.app is open, so the device will show a"
+  echo "prepare-ios-simulator: window. Quit it for a run with no window at all;"
+  echo "prepare-ios-simulator: --headless only stops Detox from opening it."
+fi
