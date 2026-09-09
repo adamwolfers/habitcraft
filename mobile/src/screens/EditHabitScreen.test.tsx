@@ -76,6 +76,10 @@ describe('EditHabitScreen', () => {
     expect(getByText('Color')).toBeTruthy();
     expect(getByTestId('save-habit-button')).toBeTruthy();
     expect(getByTestId('delete-habit-button')).toBeTruthy();
+    // The detox edit spec addresses these two by testID. They carried none
+    // until habitcraft-bqhe.15, so the spec had nothing to type into.
+    expect(getByTestId('edit-habit-name-input')).toBeTruthy();
+    expect(getByTestId('edit-habit-description-input')).toBeTruthy();
   });
 
   it('shows delete confirmation dialog when delete button pressed', () => {

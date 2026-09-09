@@ -116,6 +116,7 @@ export function EditHabitScreen() {
       <View style={styles.field}>
         <Text style={styles.label}>Name</Text>
         <TextInput
+          testID="edit-habit-name-input"
           style={styles.input}
           placeholder="e.g., Morning Exercise"
           placeholderTextColor={colors.textMuted}
@@ -130,6 +131,7 @@ export function EditHabitScreen() {
       <View style={styles.field}>
         <Text style={styles.label}>Description (optional)</Text>
         <TextInput
+          testID="edit-habit-description-input"
           style={[styles.input, styles.textArea]}
           placeholder="What's this habit about?"
           placeholderTextColor={colors.textMuted}

@@ -1,4 +1,4 @@
-import { device, element, by, expect, waitFor } from 'detox';
+import { device, element, by, expect } from 'detox';
 import {
   generateTestUser,
   launchAuthenticated,
@@ -115,24 +115,30 @@ describe('Habit CRUD Operations', () => {
       await createHabit(originalName);
       await waitForElement('dashboard-screen');
 
-      // Tap on the habit to view details
+      // Tap on the habit to view details, then edit from there. The card
+      // opens HabitDetailScreen, not the edit form; only the detail screen's
+      // edit button reaches EditHabitScreen, which owns save-habit-button
+      // (habitcraft-bqhe.15).
       await habitCard(originalName).tap();
-
-      // Wait for detail screen and navigate to edit
-      // Note: This depends on HabitDetailScreen having an edit button
-      // For now, we'll tap the habit card which might open edit directly
-      await waitFor(element(by.id('save-habit-button')))
-        .toBeVisible()
-        .withTimeout(5000);
+      await waitForElement('edit-habit-button');
+      await element(by.id('edit-habit-button')).tap();
+      await waitForElement('save-habit-button');
 
       // replaceText() sets the field outright, so no clearText() first.
-      await element(by.id('habit-name-input')).replaceText(updatedName);
+      await element(by.id('edit-habit-name-input')).replaceText(updatedName);
 
       // Save changes
       await element(by.id('save-habit-button')).tap();
 
-      // Verify back on dashboard with updated name
-      await waitForElement('dashboard-screen');
+      // Saving goes back one screen, to the detail screen the edit was opened
+      // from -- not to the dashboard. Wait for that, so a save that silently
+      // failed and left the form up is still a failure here.
+      await waitForElement('edit-habit-button');
+
+      // Reload to the dashboard rather than tapping back. It refetches, so the
+      // renamed card proves the update reached the server rather than only the
+      // local cache (habitcraft-bqhe.15).
+      await returnToDashboard();
       await expect(habitCard(updatedName)).toBeVisible();
     });
   });
