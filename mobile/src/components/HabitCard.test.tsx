@@ -78,10 +78,11 @@ describe('HabitCard', () => {
     );
 
     expect(getByTestId('complete-button').props.accessibilityState?.checked).toBe(true);
+    expect(getByTestId('habit-completed-check')).toBeTruthy();
   });
 
   it('shows uncompleted state when isCompletedToday is false', () => {
-    const { getByTestId } = render(
+    const { getByTestId, queryByTestId } = render(
       <HabitCard
         habit={mockHabit}
         onPress={mockOnPress}
@@ -91,6 +92,7 @@ describe('HabitCard', () => {
     );
 
     expect(getByTestId('complete-button').props.accessibilityState?.checked).toBe(false);
+    expect(queryByTestId('habit-completed-check')).toBeNull();
   });
 
   it('shows pending badge for habits with temp IDs', () => {

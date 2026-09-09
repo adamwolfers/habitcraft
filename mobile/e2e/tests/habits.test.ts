@@ -1,10 +1,11 @@
-import { device, element, by, expect } from 'detox';
+import { device, element, by, expect, waitFor } from 'detox';
 import {
   generateTestUser,
   launchAuthenticated,
   waitForElement,
   createHabit,
   habitCard,
+  habitCardMatcher,
   returnToDashboard,
 } from '../config/testSetup';
 
@@ -26,6 +27,21 @@ describe('Habit CRUD Operations', () => {
   // (habitcraft-bqhe.14).
   beforeEach(async () => {
     await returnToDashboard();
+  });
+
+  // FIRST, AND IT HAS TO BE. Every other describe below leaves habits behind,
+  // and this account is generated per run, so the only moment the empty state
+  // is real is before the first create. The version this replaces had no body
+  // at all -- just a comment saying a fresh user would see the empty state --
+  // so it passed against any app whatsoever (habitcraft-bqhe.9).
+  //
+  // RNTL covers the empty state too, but only from mocked props. This is the
+  // one that says a new account really comes back from the API with no habits.
+  describe('Empty State', () => {
+    it('should show the empty state before any habit exists', async () => {
+      await expect(element(by.id('empty-state'))).toBeVisible();
+      await expect(element(by.id('habit-card'))).not.toExist();
+    });
   });
 
   describe('Create Habit', () => {
@@ -91,19 +107,19 @@ describe('Habit CRUD Operations', () => {
       await expect(element(by.id('habit-card')).atIndex(0)).toBeVisible();
     });
 
-    it('should show empty state when no habits exist', async () => {
-      // This test would need to run with a fresh user
-      // For now, we verify the empty state element exists in the component
-      // A fresh test user would see the empty state initially
-    });
-
-    it('should support pull-to-refresh', async () => {
-      // Pull down on the habit list to refresh
-      await element(by.id('habit-list')).scroll(200, 'down');
-
-      // The list should still be visible after refresh
-      await expect(element(by.id('habit-list'))).toBeVisible();
-    });
+    // NO PULL-TO-REFRESH SPEC HERE, deliberately. The one that used to sit at
+    // this point called element(by.id('habit-list')).scroll(200, 'down'), which
+    // is not the pull gesture and failed with 'Unable to scroll down in '. It
+    // left the RefreshControl mid-gesture and the run loop permanently awake,
+    // so every later test in this file failed on a 30s timeout that had nothing
+    // to do with its subject -- and a reload did not clear it. Its only
+    // assertion was that habit-list was still visible, which holds whether or
+    // not a refresh happened, so nothing was lost by removing it.
+    //
+    // The behaviour itself is pinned by RNTL in DashboardScreen.test.tsx, which
+    // drives refreshControl.onRefresh directly and asserts the spinner both
+    // opens for an explicit pull and stays shut for a background refetch --
+    // the distinction habitcraft-wut established (habitcraft-bqhe.9).
   });
 
   describe('Update Habit', () => {
@@ -196,24 +212,42 @@ describe('Habit CRUD Operations', () => {
   });
 
   describe('Complete Habit', () => {
+    // habit-completed-check renders only for a habit completed today, so its
+    // presence IS the completion state. The two specs this replaces tapped
+    // complete-button and then asserted complete-button was still visible,
+    // which holds for a completely broken toggle (habitcraft-bqhe.9).
+    //
+    // Both matchers are scoped to one named card rather than atIndex(0), and
+    // each spec creates the habit it drives. So neither depends on how many
+    // habits the file made before it, on where the list puts a new one, or on
+    // what the other spec left behind -- and both run in isolation.
+    const completeButtonFor = (name: string) =>
+      element(by.id('complete-button').withAncestor(habitCardMatcher(name)));
+    const checkFor = (name: string) =>
+      element(by.id('habit-completed-check').withAncestor(habitCardMatcher(name)));
+
     it('should mark a habit as complete for today', async () => {
-      // Find the first habit card's complete button
-      await expect(element(by.id('complete-button')).atIndex(0)).toBeVisible();
+      const habitName = 'Habit to Complete';
+      await createHabit(habitName);
 
-      // Tap to complete
-      await element(by.id('complete-button')).atIndex(0).tap();
+      await expect(checkFor(habitName)).not.toExist();
 
-      // The button should still be visible (toggle state changed visually)
-      await expect(element(by.id('complete-button')).atIndex(0)).toBeVisible();
+      await completeButtonFor(habitName).tap();
+
+      await waitFor(checkFor(habitName)).toBeVisible().withTimeout(10000);
     });
 
     it('should toggle completion status', async () => {
-      // Tap complete button twice to toggle
-      await element(by.id('complete-button')).atIndex(0).tap();
-      await element(by.id('complete-button')).atIndex(0).tap();
+      const habitName = 'Habit to Toggle';
+      await createHabit(habitName);
 
-      // Button should still be functional
-      await expect(element(by.id('complete-button')).atIndex(0)).toBeVisible();
+      // Complete ...
+      await completeButtonFor(habitName).tap();
+      await waitFor(checkFor(habitName)).toBeVisible().withTimeout(10000);
+
+      // ... and uncomplete, which is the half a single tap cannot show.
+      await completeButtonFor(habitName).tap();
+      await waitFor(checkFor(habitName)).not.toExist().withTimeout(10000);
     });
   });
 });
