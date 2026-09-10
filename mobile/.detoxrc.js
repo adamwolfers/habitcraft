@@ -3,7 +3,14 @@ module.exports = {
   testRunner: {
     args: {
       $0: 'jest',
-      config: 'e2e/jest.config.js',
+      // Which jest config runs is a variable for the same reason the device
+      // names below are: so CI can select the smoke subset without editing
+      // this file. Detox has no CLI flag to override the runner's config, and
+      // it re-invokes jest through a shell, so a --testNamePattern on the
+      // command line is a shell-quoting hazard (habitcraft-bqhe.17). Set
+      // DETOX_JEST_CONFIG=e2e/jest.smoke.config.js for the 9-case CI gate
+      // (habitcraft-bqhe.12); unset runs all 37.
+      config: process.env.DETOX_JEST_CONFIG || 'e2e/jest.config.js',
     },
     jest: {
       setupTimeout: 120000,

@@ -31,7 +31,7 @@ describe('Authentication', () => {
   });
 
   describe('Registration Flow', () => {
-    it('should register a new user successfully', async () => {
+    it('should register a new user successfully @smoke', async () => {
       const testUser = generateTestUser();
 
       await gotoRegister();
@@ -148,7 +148,7 @@ describe('Authentication', () => {
   });
 
   describe('Login Flow', () => {
-    it('should login with valid credentials', async () => {
+    it('should login with valid credentials @smoke', async () => {
       const testUser = generateTestUser();
 
       await gotoRegister();
