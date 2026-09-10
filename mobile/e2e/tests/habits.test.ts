@@ -38,14 +38,14 @@ describe('Habit CRUD Operations', () => {
   // RNTL covers the empty state too, but only from mocked props. This is the
   // one that says a new account really comes back from the API with no habits.
   describe('Empty State', () => {
-    it('should show the empty state before any habit exists', async () => {
+    it('should show the empty state before any habit exists @smoke', async () => {
       await expect(element(by.id('empty-state'))).toBeVisible();
       await expect(element(by.id('habit-card'))).not.toExist();
     });
   });
 
   describe('Create Habit', () => {
-    it('should create a new habit successfully', async () => {
+    it('should create a new habit successfully @smoke', async () => {
       const habitName = 'Morning Exercise';
       const habitDescription = '30 minutes of cardio';
 
@@ -123,7 +123,7 @@ describe('Habit CRUD Operations', () => {
   });
 
   describe('Update Habit', () => {
-    it('should edit an existing habit', async () => {
+    it('should edit an existing habit @smoke', async () => {
       // First create a habit to edit
       const originalName = 'Habit to Edit';
       const updatedName = 'Updated Habit Name';
@@ -160,7 +160,7 @@ describe('Habit CRUD Operations', () => {
   });
 
   describe('Delete Habit', () => {
-    it('should delete a habit with confirmation', async () => {
+    it('should delete a habit with confirmation @smoke', async () => {
       // First create a habit to delete
       const habitName = 'Habit to Delete';
 
@@ -226,7 +226,7 @@ describe('Habit CRUD Operations', () => {
     const checkFor = (name: string) =>
       element(by.id('habit-completed-check').withAncestor(habitCardMatcher(name)));
 
-    it('should mark a habit as complete for today', async () => {
+    it('should mark a habit as complete for today @smoke', async () => {
       const habitName = 'Habit to Complete';
       await createHabit(habitName);
 

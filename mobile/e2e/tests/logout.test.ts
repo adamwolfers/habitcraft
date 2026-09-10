@@ -52,7 +52,7 @@ describe('Logout', () => {
       await expect(element(by.id('profile-email'))).toHaveText(testUser.email);
     });
 
-    it('should logout and return to the welcome screen', async () => {
+    it('should logout and return to the welcome screen @smoke', async () => {
       await element(by.id('tab-profile')).tap();
       await waitForElement('profile-screen');
 
@@ -68,7 +68,7 @@ describe('Logout', () => {
       await expect(element(by.id('welcome-login-button'))).toBeVisible();
     });
 
-    it('should require login after logout', async () => {
+    it('should require login after logout @smoke', async () => {
       await logoutUser();
 
       // Back in the auth stack...
