@@ -94,7 +94,7 @@ describe('Logout', () => {
   // the app seeding once per launch (habitcraft-bqhe.16) -- without that, the
   // session came back whatever the test had just done to it.
   describe('Session Persistence', () => {
-    it('should not restore the session on a reload after logout', async () => {
+    it('should not restore the session on a reload after logout @smoke', async () => {
       await logoutUser();
 
       await device.reloadReactNative();
@@ -102,7 +102,7 @@ describe('Logout', () => {
       await expect(element(by.id('welcome-screen'))).toBeVisible();
     });
 
-    it('should not restore the session on a restart after logout', async () => {
+    it('should not restore the session on a restart after logout @smoke', async () => {
       await logoutUser();
 
       await relaunchWithoutSeeding();
@@ -110,7 +110,7 @@ describe('Logout', () => {
       await waitForElement('welcome-screen', 30000);
     });
 
-    it('should persist the session across a restart when logged in', async () => {
+    it('should persist the session across a restart when logged in @smoke', async () => {
       await relaunchWithoutSeeding();
 
       await waitForElement('dashboard-screen', 30000);
