@@ -8,11 +8,12 @@ const baseConfig = require('./jest.config');
  * relevant push, and habitcraft-5et already names E2E as the pipeline's long
  * pole. A large share of the full suite asserts client-side form validation,
  * which RNTL covers in milliseconds from mocked props -- running it on a
- * device buys nothing. The nine cases marked @smoke are the ones RNTL cannot
+ * device buys nothing. The cases marked @smoke are the ones RNTL cannot
  * reach: habit CRUD against the real backend, a real account returning an
- * empty list, the native delete alert, and the keychain actually clearing on
- * logout. Every dropped case was checked against a named RNTL case in
- * mobile/src; the mapping is on habitcraft-bqhe.12.
+ * empty list, the native delete alert, and what a logout, a reload and a
+ * process restart each do to the keychain session. Every dropped case was
+ * checked against a named RNTL case in mobile/src; the mapping is on
+ * habitcraft-bqhe.12.
  *
  * WHY testNamePattern AND NOT A SEPARATE SPEC FILE. A dedicated smoke file
  * would duplicate nine test bodies, and the duplicate is what rots when a
