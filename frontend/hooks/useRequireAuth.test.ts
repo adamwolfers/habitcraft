@@ -29,6 +29,7 @@ describe('useRequireAuth', () => {
       refresh: jest.fn(),
       replace: jest.fn(),
       prefetch: jest.fn(),
+      bfcacheId: 'test-bfcache-id',
     } as ReturnType<typeof useRouter>);
   });
 
