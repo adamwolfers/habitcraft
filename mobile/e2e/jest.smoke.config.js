@@ -24,15 +24,8 @@ const baseConfig = require('./jest.config');
  * run with EPIPE, exit 127 (habitcraft-bqhe.17). A pattern in a config file
  * never reaches a shell.
  *
- * TWO KNOWN HOLES, both tracked, both deliberate:
- * - No offline coverage. All six offline cases are unusable until
- *   habitcraft-bqhe.10 lands (setURLBlacklist is a Detox-side request
- *   interceptor and cannot move NetInfo, which reports device connectivity).
- *   Offline sync is real detox-only coverage, so this gate does not cover it.
- * - No session-across-relaunch coverage. habitcraft-bqhe.16 has E2E seeding
- *   re-running on every JS reload, so a reloaded app always comes up signed
- *   in: one Session Persistence case fails and the other cannot fail.
- *   habitcraft-bqhe.18 adds that leg once .16 lands.
+ * This gate does not cover everything detox could. What it leaves out, and
+ * why, is tracked on habitcraft-bqhe.12 rather than restated here.
  */
 module.exports = {
   ...baseConfig,
