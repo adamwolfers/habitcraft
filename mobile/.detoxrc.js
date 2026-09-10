@@ -31,18 +31,25 @@ module.exports = {
       build:
         'xcodebuild -workspace ios/HabitCraft.xcworkspace -scheme HabitCraft -configuration Release -sdk iphonesimulator -derivedDataPath ios/build',
     },
+    // Gradle tasks are :app:-scoped on purpose. The unqualified
+    // 'assembleAndroidTest' builds an androidTest variant for EVERY module,
+    // including third-party library modules, and react-native-worklets-core
+    // fails that build: its androidTest merge finds libhermestooling.so twice,
+    // once from its own JNI output and once from the react-android artifact.
+    // Detox only ever installs the app's test APK, so building the others is
+    // both the cause of the failure and wasted work (habitcraft-bqhe.1).
     'android.debug': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/debug/app-debug.apk',
       build:
-        'cd android && ./gradlew assembleDebug assembleAndroidTest -DtestBuildType=debug',
+        'cd android && ./gradlew :app:assembleDebug :app:assembleAndroidTest -DtestBuildType=debug',
       reversePorts: [3010],
     },
     'android.release': {
       type: 'android.apk',
       binaryPath: 'android/app/build/outputs/apk/release/app-release.apk',
       build:
-        'cd android && ./gradlew assembleRelease assembleAndroidTest -DtestBuildType=release',
+        'cd android && ./gradlew :app:assembleRelease :app:assembleAndroidTest -DtestBuildType=release',
     },
   },
   // Device names are overridable because a hard-coded model is guaranteed to
