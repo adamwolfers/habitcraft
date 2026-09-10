@@ -2,8 +2,32 @@ const express = require('express');
 const pool = require('../db/pool');
 const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
 const { sanitizeBody } = require('../middleware/sanitize');
+const { requestLimits } = require('../validators/apiLimits.generated');
 
 const router = express.Router({ mergeParams: true });
+
+// The spec has always declared this limit, and the frontend's note editor has
+// always honoured it -- but nothing on the server did, so a client that ignored
+// it could store a note the API's own contract says cannot exist. The column is
+// `notes text`, so Postgres does not backstop it either; this check is the only
+// enforcement (habitcraft-34d.3).
+//
+// It runs inside the handler, i.e. AFTER sanitizeBody, on purpose: escaping can
+// lengthen a note, and it is the stored, escaped string that comes back in the
+// response the spec validates.
+const MAX_NOTES_LENGTH = requestLimits.createCompletion.notes.maxLength;
+
+/**
+ * Returns an error message when notes is present and too long, else null.
+ * @param {unknown} notes The request body's notes field
+ * @returns {string|null}
+ */
+function validateNotesLength(notes) {
+  if (typeof notes !== 'string' || notes.length <= MAX_NOTES_LENGTH) {
+    return null;
+  }
+  return `Notes must be ${MAX_NOTES_LENGTH} characters or less`;
+}
 
 // Helper function to validate date format (YYYY-MM-DD)
 function isValidDate(dateString) {
@@ -54,6 +78,11 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, async (req, res) => {
     // Check if date is in the future
     if (isFutureDate(date)) {
       return res.status(400).json({ error: 'Cannot mark completions for future dates' });
+    }
+
+    const notesError = validateNotesLength(notes);
+    if (notesError) {
+      return res.status(400).json({ error: notesError });
     }
 
     // Verify habit exists and belongs to user
@@ -162,6 +191,11 @@ router.put('/:date', jwtAuthMiddleware, sanitizeBody, async (req, res) => {
     // Validate date
     if (!isValidDate(date)) {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
+    }
+
+    const notesError = validateNotesLength(notes);
+    if (notesError) {
+      return res.status(400).json({ error: notesError });
     }
 
     // Verify habit exists and belongs to user

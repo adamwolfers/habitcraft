@@ -7,10 +7,16 @@ const { passwordChangeLimiter, accountDeleteLimiter } = require('../middleware/r
 const { sanitizeBody } = require('../middleware/sanitize');
 const tokenService = require('../services/tokenService');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
+const { requestLimits } = require('../validators/apiLimits.generated');
 
 const router = express.Router();
 
 const USER_COLUMNS = 'id, email, name, created_at AS "createdAt"';
+
+// Lengths come from the spec via apiLimits.generated.js, messages included --
+// see the note in routes/auth.js (habitcraft-34d.3).
+const PROFILE_LIMITS = requestLimits.updateCurrentUser;
+const PASSWORD_LIMITS = requestLimits.changePassword.newPassword;
 
 const updateProfileValidation = [
   body('name')
@@ -18,8 +24,8 @@ const updateProfileValidation = [
     .trim()
     .notEmpty()
     .withMessage('Name is required')
-    .isLength({ max: 100 })
-    .withMessage('Name must be 100 characters or less'),
+    .isLength({ max: PROFILE_LIMITS.name.maxLength })
+    .withMessage(`Name must be ${PROFILE_LIMITS.name.maxLength} characters or less`),
   body('email')
     .optional()
     .trim()
@@ -28,17 +34,17 @@ const updateProfileValidation = [
     .withMessage('Email is required')
     .isEmail()
     .withMessage('Invalid email format')
-    .isLength({ max: 255 })
-    .withMessage('Email must be 255 characters or less'),
+    .isLength({ max: PROFILE_LIMITS.email.maxLength })
+    .withMessage(`Email must be ${PROFILE_LIMITS.email.maxLength} characters or less`),
 ];
 
 const changePasswordValidation = [
   body('currentPassword').notEmpty().withMessage('Current password is required'),
   body('newPassword')
-    .isLength({ min: 8 })
-    .withMessage('New password must be at least 8 characters')
-    .isLength({ max: 72 })
-    .withMessage('New password must be 72 characters or less'),
+    .isLength({ min: PASSWORD_LIMITS.minLength })
+    .withMessage(`New password must be at least ${PASSWORD_LIMITS.minLength} characters`)
+    .isLength({ max: PASSWORD_LIMITS.maxLength })
+    .withMessage(`New password must be ${PASSWORD_LIMITS.maxLength} characters or less`),
   body('confirmPassword').custom((value, { req }) => {
     if (value !== req.body.newPassword) {
       throw new Error('Passwords do not match');

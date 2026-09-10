@@ -289,10 +289,17 @@ npm run api:breaking           # fails on a change that breaks a deployed client
 ```
 
 `<consumer>/types/api.generated.ts` and `apiLimits.generated.ts` are generated
-into `frontend/` and `mobile/` and **must never be hand-edited** — the same rule
-as `db/schema.sql`. Do not write a validation limit as a literal in a component;
-import it from the generated limits (habitcraft-467). `shared/types/models.ts`
-is a superseded hand-written mirror that nothing imports — do not add to it.
+into `frontend/` and `mobile/`, and `backend/validators/apiLimits.generated.js`
+is the same numbers as CommonJS for the backend. All of them **must never be
+hand-edited** — the same rule as `db/schema.sql`.
+
+**Never write a validation limit as a literal** — not in a component, not in a
+backend validator, not in an error message, and not in a test. Import it from
+the generated limits (habitcraft-467, habitcraft-34d.3). The one number that
+cannot be imported is a migration's `VARCHAR` width;
+`backend/validators/apiLimits.test.js` parses `db/schema.sql` and fails if a
+column disagrees with the spec. `shared/types/models.ts` is a superseded
+hand-written mirror that nothing imports — do not add to it.
 
 See [shared/api-spec/README.md](shared/api-spec/README.md).
 

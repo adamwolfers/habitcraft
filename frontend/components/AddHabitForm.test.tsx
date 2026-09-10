@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import AddHabitForm from './AddHabitForm';
+import { schemaLimits } from '@/types/apiLimits.generated';
 
 describe('AddHabitForm', () => {
   const mockOnAdd = jest.fn();
@@ -24,6 +25,24 @@ describe('AddHabitForm', () => {
     expect(screen.getByLabelText(/habit name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
     expect(screen.getByText(/color/i)).toBeInTheDocument();
+  });
+
+  it('should cap both fields at the lengths the API accepts', async () => {
+    const user = userEvent.setup();
+    render(<AddHabitForm onAdd={mockOnAdd} />);
+
+    await user.click(screen.getByText('+ Add New Habit'));
+
+    // Asserted against the generated limits rather than literals: a literal
+    // here would be a fifth restatement of the number (habitcraft-34d.3).
+    expect(screen.getByLabelText(/habit name/i)).toHaveAttribute(
+      'maxLength',
+      String(schemaLimits.HabitInput.name.maxLength)
+    );
+    expect(screen.getByLabelText(/description/i)).toHaveAttribute(
+      'maxLength',
+      String(schemaLimits.HabitInput.description.maxLength)
+    );
   });
 
   it('should call onAdd with correct data when form is submitted', async () => {

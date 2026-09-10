@@ -8,6 +8,11 @@ import {
   detectHabitChanges,
   buildHabitUpdatePayload,
 } from '@/utils/habitUtils';
+import { schemaLimits } from '@/types/apiLimits.generated';
+
+// From the spec -- see the note in AddHabitForm.tsx (habitcraft-34d.3).
+const NAME_MAX_LENGTH = schemaLimits.HabitInput.name.maxLength;
+const DESCRIPTION_MAX_LENGTH = schemaLimits.HabitInput.description.maxLength;
 
 interface EditHabitModalProps {
   habit: Habit;
@@ -103,6 +108,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                   setError(null);
                 }}
                 required
+                maxLength={NAME_MAX_LENGTH}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -119,6 +125,7 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
                   setError(null);
                 }}
                 rows={3}
+                maxLength={DESCRIPTION_MAX_LENGTH}
                 className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 placeholder="Optional description"
               />

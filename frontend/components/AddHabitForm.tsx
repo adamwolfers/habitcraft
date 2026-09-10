@@ -4,6 +4,13 @@ import { useState } from 'react';
 import { HabitFormData } from '@/types/habit';
 import { PRESET_COLORS, PRESET_ICONS } from '@/utils/habitUtils';
 import { getDefaultHabitFormValues } from '@/utils/formUtils';
+import { schemaLimits } from '@/types/apiLimits.generated';
+
+// From the spec, so the form stops exactly where the API stops. Written out as
+// a literal, this became a fifth independent copy of the number and drifted
+// (habitcraft-34d.3).
+const NAME_MAX_LENGTH = schemaLimits.HabitInput.name.maxLength;
+const DESCRIPTION_MAX_LENGTH = schemaLimits.HabitInput.description.maxLength;
 
 interface AddHabitFormProps {
   onAdd: (habit: HabitFormData) => Promise<void> | void;
@@ -78,6 +85,7 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           }}
           placeholder="e.g., Morning Exercise"
           className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          maxLength={NAME_MAX_LENGTH}
           required
           autoFocus
         />
@@ -94,6 +102,7 @@ export default function AddHabitForm({ onAdd }: AddHabitFormProps) {
           onChange={(e) => setDescription(e.target.value)}
           placeholder="e.g., 30 minutes of cardio"
           className="w-full px-4 py-2 bg-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          maxLength={DESCRIPTION_MAX_LENGTH}
         />
       </div>
 

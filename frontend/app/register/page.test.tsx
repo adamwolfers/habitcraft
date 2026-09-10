@@ -182,6 +182,21 @@ describe('Registration Page - Form Validation', () => {
       expect(passwordInput).toBeRequired();
     });
 
+    it.each([
+      ['name', /name/i],
+      ['email', /email/i],
+      ['password', /^password$/i],
+    ])('should not silently truncate the %s field', (_field, label) => {
+      render(<RegisterPage />);
+
+      // No maxLength anywhere on this form is deliberate: the over-length cases
+      // are reported by validateRegistrationForm with a message naming the
+      // field, which is why the tests below can provoke them by typing. A cap
+      // would make the value differ from what the user typed without saying so
+      // (habitcraft-34d.3).
+      expect(screen.getByLabelText(label)).not.toHaveAttribute('maxLength');
+    });
+
     it('should have required attribute on confirm password field', () => {
       render(<RegisterPage />);
 

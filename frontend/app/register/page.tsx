@@ -7,6 +7,12 @@ import { useAuth } from '@/context/AuthContext';
 import { validateRegistrationForm } from '@/utils/authUtils';
 import PasswordInput from '@/components/PasswordInput';
 
+// No field here carries a maxLength on purpose. Truncating a name, an email or
+// a password silently produces a value the user did not type and cannot see is
+// wrong -- a half-pasted email address fails at the login screen, not here.
+// validateRegistrationForm holds all three to the spec's limits and says which
+// one is too long (habitcraft-34d.3).
+
 export default function RegisterPage() {
   const router = useRouter();
   const { register, isAuthenticated } = useAuth();
