@@ -169,10 +169,13 @@ Notes on that table:
   [db/README.md](../db/README.md#the-generated-schema-dump-dbschemasql) for why
   the dump is generated rather than hand-maintained.
 - **Phases 7 and 8 are the API contract's two halves.** Phase 7 regenerates
-  each consumer's `api.generated.ts` and `apiLimits.generated.ts` from
+  each consumer's `api.generated.ts` and `apiLimits.generated.ts`, plus the
+  backend's CommonJS `apiLimits.generated.js`, from
   `shared/api-spec/openapi.yaml` and diffs them against the committed files, so
   a spec edit that skipped `npm run api:codegen` fails here — the same idea as
-  phase 6, one layer up. Phase 8 asks the different question of whether the
+  phase 6, one layer up. The limits a migration states in SQL are held to the
+  same numbers by `backend/validators/apiLimits.test.js`, which runs with the
+  backend unit tests rather than here. Phase 8 asks the different question of whether the
   spec change is safe to ship at all: it runs oasdiff (in a pinned container,
   hence the daemon) against `origin/master` and fails on a change that would
   break a client already deployed. In CI these are the `verify-api-codegen` and

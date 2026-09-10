@@ -2,6 +2,7 @@ const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const app = require('../app');
 const pool = require('../db/pool');
+const { requestLimits } = require('../validators/apiLimits.generated');
 
 // Mock the database pool
 jest.mock('../db/pool');
@@ -101,6 +102,46 @@ describe('Completions API', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('date');
+    });
+
+    it('should return 400 if notes exceed the spec maximum', async () => {
+      const max = requestLimits.createCompletion.notes.maxLength;
+
+      const response = await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ date: mockDate, notes: 'a'.repeat(max + 1) });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain(String(max));
+      // Rejected before the habit lookup, so nothing reached the database.
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    it('should accept notes of exactly the maximum length', async () => {
+      const max = requestLimits.createCompletion.notes.maxLength;
+      const notes = 'a'.repeat(max);
+
+      pool.query.mockResolvedValueOnce({ rows: [{ id: mockHabitId, user_id: mockUserId }] });
+      pool.query.mockResolvedValueOnce({
+        rows: [
+          {
+            id: mockCompletionId,
+            habitId: mockHabitId,
+            date: mockDate,
+            notes,
+            createdAt: '2025-01-15T10:00:00.000Z',
+          },
+        ],
+      });
+
+      const response = await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ date: mockDate, notes });
+
+      expect(response.status).toBe(201);
+      expect(response.body.notes).toBe(notes);
     });
 
     it('should return 404 if habit does not exist', async () => {
@@ -481,6 +522,45 @@ describe('Completions API', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.error).toContain('date');
+    });
+
+    it('should return 400 if notes exceed the spec maximum', async () => {
+      const max = requestLimits.updateCompletionNote.notes.maxLength;
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes: 'a'.repeat(max + 1) });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toContain(String(max));
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
+    it('should accept notes of exactly the maximum length', async () => {
+      const max = requestLimits.updateCompletionNote.notes.maxLength;
+      const notes = 'a'.repeat(max);
+
+      pool.query.mockResolvedValueOnce({ rows: [{ id: mockHabitId, user_id: mockUserId }] });
+      pool.query.mockResolvedValueOnce({
+        rows: [
+          {
+            id: mockCompletionId,
+            habitId: mockHabitId,
+            date: mockDate,
+            notes,
+            createdAt: '2025-01-15T10:00:00.000Z',
+          },
+        ],
+      });
+
+      const response = await request(app)
+        .put(`/api/v1/habits/${mockHabitId}/completions/${mockDate}`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ notes });
+
+      expect(response.status).toBe(200);
+      expect(response.body.notes).toBe(notes);
     });
 
     it('should return 404 when completion does not exist', async () => {

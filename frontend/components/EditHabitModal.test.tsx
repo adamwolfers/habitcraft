@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import EditHabitModal from './EditHabitModal';
 import { Habit } from '@/types/habit';
 import { PRESET_COLORS, PRESET_ICONS } from '@/utils/habitUtils';
+import { schemaLimits } from '@/types/apiLimits.generated';
 
 describe('EditHabitModal', () => {
   const mockHabit: Habit = {
@@ -23,6 +24,30 @@ describe('EditHabitModal', () => {
   beforeEach(() => {
     mockOnClose.mockClear();
     mockOnUpdate.mockClear();
+  });
+
+  describe('Field limits', () => {
+    it('should cap both fields at the lengths the API accepts', () => {
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Asserted against the generated limits rather than literals: a literal
+      // here would be a fifth restatement of the number (habitcraft-34d.3).
+      expect(screen.getByLabelText(/habit name/i)).toHaveAttribute(
+        'maxLength',
+        String(schemaLimits.HabitInput.name.maxLength)
+      );
+      expect(screen.getByLabelText(/description/i)).toHaveAttribute(
+        'maxLength',
+        String(schemaLimits.HabitInput.description.maxLength)
+      );
+    });
   });
 
   describe('Modal Open/Close', () => {

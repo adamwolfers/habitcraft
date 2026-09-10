@@ -63,15 +63,38 @@ const { default: openapiTS, astToString } = require('openapi-typescript');
 const PROJECT_ROOT = path.join(__dirname, '..');
 const SPEC_PATH = path.join(PROJECT_ROOT, 'shared/api-spec/openapi.yaml');
 
-// Where each consumer's generated files land. Both sit beside that consumer's
-// hand-written types module, which re-exports them.
-const CONSUMERS = [
-  { name: 'frontend', dir: path.join(PROJECT_ROOT, 'frontend/types') },
-  { name: 'mobile', dir: path.join(PROJECT_ROOT, 'mobile/src/types') },
-];
-
 const TYPES_FILE = 'api.generated.ts';
 const LIMITS_FILE = 'apiLimits.generated.ts';
+const LIMITS_FILE_CJS = 'apiLimits.generated.js';
+
+// Where each consumer's generated files land, and which files each one gets.
+//
+// The TypeScript consumers take both files, beside their hand-written types
+// module, which re-exports them. The backend takes the limits alone, as
+// CommonJS: it is plain JS with no build step, so it can neither require() a
+// .ts file nor parse the spec at runtime (js-yaml is a devDependency and the
+// production image does not ship shared/). It has no use for the request and
+// response TYPES either -- ajv already validates its responses against the
+// spec directly (habitcraft-34d.2). What it lacked was the NUMBERS
+// (habitcraft-34d.3): habitValidator.js and the auth routes restated every
+// maxLength as a literal.
+const CONSUMERS = [
+  {
+    name: 'frontend',
+    dir: path.join(PROJECT_ROOT, 'frontend/types'),
+    files: [TYPES_FILE, LIMITS_FILE],
+  },
+  {
+    name: 'mobile',
+    dir: path.join(PROJECT_ROOT, 'mobile/src/types'),
+    files: [TYPES_FILE, LIMITS_FILE],
+  },
+  {
+    name: 'backend',
+    dir: path.join(PROJECT_ROOT, 'backend/validators'),
+    files: [LIMITS_FILE_CJS],
+  },
+];
 
 // Every JSON Schema keyword this extracts. Deliberately only the length
 // constraints: they are the ones a client restates (a TextInput maxLength, a
@@ -174,14 +197,16 @@ function renderObject(value, indent = '  ') {
   return `{\n${entries.join('\n')}\n${indent.slice(2)}}`;
 }
 
-function renderLimitsFile(spec) {
+/**
+ * Both limit sets, with the guard that a silently empty walk cannot be written
+ * out. An empty file would otherwise sail through --check by matching the
+ * equally empty committed one -- the trap schema-dump.sh guards with its
+ * CREATE TABLE check.
+ */
+function collectLimits(spec) {
   const schemaLimits = collectSchemaLimits(spec);
   const requestLimits = collectRequestLimits(spec);
 
-  // A spec walk that silently found nothing would otherwise be written out as a
-  // legitimately empty file, and in --check mode an empty file matching an
-  // empty file reports success -- the same trap schema-dump.sh guards with its
-  // CREATE TABLE check.
   if (Object.keys(schemaLimits).length === 0 || Object.keys(requestLimits).length === 0) {
     throw new Error(
       'Extracted no limits from the spec -- refusing to write an empty file. ' +
@@ -189,22 +214,65 @@ function renderLimitsFile(spec) {
     );
   }
 
-  return `${BANNER(spec)}
-/**
+  return { schemaLimits, requestLimits };
+}
+
+const SCHEMA_LIMITS_DOC = `/**
  * Length constraints declared on the components/schemas entries, keyed by
  * schema name: \`schemaLimits.HabitInput.name.maxLength\`.
  *
  * Use these for the UI limits on a body a client SENDS -- the *Input schemas
  * are the request shapes. The response schemas (Habit, Completion) carry the
  * same numbers because they describe the same stored column.
- */
-export const schemaLimits = ${renderObject(schemaLimits)} as const;
+ */`;
 
-/**
+const REQUEST_LIMITS_DOC = `/**
  * Length constraints on inline request bodies that are not $refs to a
  * component, keyed by operationId: \`requestLimits.createCompletion.notes\`.
- */
+ */`;
+
+function renderLimitsFile(spec) {
+  const { schemaLimits, requestLimits } = collectLimits(spec);
+
+  return `${BANNER(spec)}
+${SCHEMA_LIMITS_DOC}
+export const schemaLimits = ${renderObject(schemaLimits)} as const;
+
+${REQUEST_LIMITS_DOC}
 export const requestLimits = ${renderObject(requestLimits)} as const;
+`;
+}
+
+/**
+ * The same numbers as a CommonJS module, for the backend.
+ *
+ * Frozen rather than `as const`: JS has no compile step to make the literal
+ * read-only, and these are process-wide singletons that validation code reaches
+ * into on every request. A stray write would silently change the limit the
+ * server enforces for the rest of the process's life.
+ */
+function renderLimitsFileCjs(spec) {
+  const { schemaLimits, requestLimits } = collectLimits(spec);
+
+  return `${BANNER(spec)}
+/**
+ * Freezes the nested literals too -- Object.freeze alone is shallow, and every
+ * number here sits one or two levels down.
+ */
+function deepFreeze(value) {
+  for (const inner of Object.values(value)) {
+    if (inner && typeof inner === 'object') deepFreeze(inner);
+  }
+  return Object.freeze(value);
+}
+
+${SCHEMA_LIMITS_DOC}
+const schemaLimits = deepFreeze(${renderObject(schemaLimits)});
+
+${REQUEST_LIMITS_DOC}
+const requestLimits = deepFreeze(${renderObject(requestLimits)});
+
+module.exports = { schemaLimits, requestLimits };
 `;
 }
 
@@ -244,6 +312,7 @@ async function main() {
   const generated = {
     [TYPES_FILE]: await renderTypesFile(spec),
     [LIMITS_FILE]: renderLimitsFile(spec),
+    [LIMITS_FILE_CJS]: renderLimitsFileCjs(spec),
   };
 
   // Guard against openapi-typescript producing a file that parses but says
@@ -257,7 +326,8 @@ async function main() {
 
   const stale = [];
   for (const consumer of CONSUMERS) {
-    for (const [file, contents] of Object.entries(generated)) {
+    for (const file of consumer.files) {
+      const contents = generated[file];
       const target = path.join(consumer.dir, file);
       const relative = path.relative(PROJECT_ROOT, target);
 

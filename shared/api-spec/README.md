@@ -34,10 +34,11 @@ so the third gate asks whether the change is shippable at all.
 `npm run api:codegen -- --check` verifies:
 
 ```
-frontend/types/api.generated.ts        openapi-typescript's paths/components tree
-frontend/types/apiLimits.generated.ts  the spec's minLength/maxLength values
+frontend/types/api.generated.ts          openapi-typescript's paths/components tree
+frontend/types/apiLimits.generated.ts    the spec's minLength/maxLength values
 mobile/src/types/api.generated.ts
 mobile/src/types/apiLimits.generated.ts
+backend/validators/apiLimits.generated.js   the same numbers, as CommonJS
 ```
 
 Two files rather than one because `openapi-typescript` does not emit
@@ -45,18 +46,48 @@ Two files rather than one because `openapi-typescript` does not emit
 the numbers a `<TextInput maxLength>` needs would be lost. The limits file is
 walked out of the spec separately.
 
+**The backend takes the limits alone, and takes them as CommonJS.** It is plain
+JS with no build step, so it can neither `require()` a `.ts` file nor read the
+spec at runtime — `js-yaml` is a devDependency and the production image does not
+ship `shared/`. It has no use for the request and response *types* either, since
+response validation already holds it to the spec directly. What it lacked was
+the *numbers*: `validateHabitInput` and the auth routes each wrote out a
+`maxLength` the spec had already stated, error messages included
+(habitcraft-34d.3).
+
 **Generated into each consumer, not into `shared/`.** A single shared artifact
 becomes a build-tree coupling point between components that otherwise share
 nothing; per-consumer generation couples them to an interface instead. The
 duplication is fine because it is derived and CI-verified — the same reasoning
 that makes a committed `db/schema.sql` acceptable.
 
-Nothing imports the generated files directly. Each consumer's own types module
+### The one link that cannot be an import
+
+A migration's `VARCHAR(100)` is the same fact written in SQL, and no amount of
+codegen can make Postgres import a constant. `backend/validators/apiLimits.test.js`
+parses the column widths out of `db/schema.sql` and fails if any of them
+disagrees with the generated limit. A width narrower than the spec means the
+server promises to accept input Postgres will reject; wider means the column
+tolerates rows the spec says cannot exist.
+
+`completions.notes` is the exception on purpose: it is `text`, so there is no
+width to compare and the limit is enforced solely by the route. That is asserted
+too, so narrowing the column later forces the cross-check to be added.
+
+Nothing imports the generated *types* directly. Each consumer's own types module
 (`frontend/types/habit.ts`, `mobile/src/types/index.ts`) re-exports the aliases
 its components use, so a bad regeneration fails that consumer's typecheck.
 That indirection is the point: `shared/types/models.ts` is a hand-written mirror
 of this spec that **nothing in the repo imports**, which is why nothing ever
 caught it drifting. Generated output nobody reads would be the same corpse.
+
+The limits are imported straight from the generated module instead, by the form
+or validator that needs them. There is nothing for a re-export layer to add: a
+name that no longer resolves fails the build just as loudly, and a hand-written
+alias between the spec and the input would be one more place for a number to be
+restated. Every layer now reads the same one — the backend validators, both
+clients' forms, and the tests, which assert against the generated value rather
+than a literal of their own.
 
 ## Changing the spec
 

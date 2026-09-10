@@ -8,6 +8,7 @@ const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware
 const { sanitizeBody, sanitizeEmail } = require('../middleware/sanitize');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 const tokenService = require('../services/tokenService');
+const { requestLimits } = require('../validators/apiLimits.generated');
 const {
   JWT_SECRET,
   JWT_ALGORITHM,
@@ -54,23 +55,29 @@ function generateTokens(userId) {
   return { accessToken, refreshToken };
 }
 
-// Validation middleware
+// Validation middleware.
+//
+// Every length below comes from the spec via apiLimits.generated.js, messages
+// included -- a number written into the message text is a restatement that
+// drifts just as readily as the check itself (habitcraft-34d.3).
+const REGISTER_LIMITS = requestLimits.register;
+
 const registerValidation = [
   body('email')
     .isEmail()
     .withMessage('Valid email is required')
-    .isLength({ max: 255 })
-    .withMessage('Email must be 255 characters or less'),
+    .isLength({ max: REGISTER_LIMITS.email.maxLength })
+    .withMessage(`Email must be ${REGISTER_LIMITS.email.maxLength} characters or less`),
   body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters')
-    .isLength({ max: 72 })
-    .withMessage('Password must be 72 characters or less'),
+    .isLength({ min: REGISTER_LIMITS.password.minLength })
+    .withMessage(`Password must be at least ${REGISTER_LIMITS.password.minLength} characters`)
+    .isLength({ max: REGISTER_LIMITS.password.maxLength })
+    .withMessage(`Password must be ${REGISTER_LIMITS.password.maxLength} characters or less`),
   body('name')
     .notEmpty()
     .withMessage('Name is required')
-    .isLength({ max: 100 })
-    .withMessage('Name must be 100 characters or less'),
+    .isLength({ max: REGISTER_LIMITS.name.maxLength })
+    .withMessage(`Name must be ${REGISTER_LIMITS.name.maxLength} characters or less`),
 ];
 
 const loginValidation = [

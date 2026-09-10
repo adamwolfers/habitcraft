@@ -3,10 +3,19 @@
  * Validates habit creation and update requests according to the OpenAPI spec
  */
 
+const { schemaLimits } = require('./apiLimits.generated');
+
 const VALID_STATUSES = ['active', 'archived'];
 const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
-const MAX_NAME_LENGTH = 100;
-const MAX_DESCRIPTION_LENGTH = 500;
+
+// From the spec, not restated here: these numbers also live in the DB column
+// widths and in both clients' inputs, and used to be written out independently
+// in each -- mobile capped the name at 50 against a server that took 100
+// (habitcraft-34d.3). apiLimits.generated.js is derived from openapi.yaml and
+// CI fails if it drifts; validators/apiLimits.test.js holds the DB widths to
+// the same numbers.
+const MAX_NAME_LENGTH = schemaLimits.HabitInput.name.maxLength;
+const MAX_DESCRIPTION_LENGTH = schemaLimits.HabitInput.description.maxLength;
 
 function validateHabitInput(req, res, next) {
   const { name, color, description, icon, status } = req.body;
