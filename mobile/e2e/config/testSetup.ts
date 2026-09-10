@@ -105,6 +105,30 @@ export function clearDeviceSession(): void {
 }
 
 /**
+ * The launch arguments that seed a signed-in app, with the per-launch id that
+ * tells the app this is a new launch and not one of the reloads that follow it.
+ *
+ * The tokens alone were not enough. They live in the process's argument domain,
+ * so device.reloadReactNative() -- which restarts the JS bundle but not the
+ * process -- could still read them and put the session back after a test had
+ * deliberately ended it (habitcraft-bqhe.16). The app seeds once per id, so a
+ * fresh id here means a fresh seeding and a reload means none.
+ */
+let launchCount = 0;
+
+function seedLaunchArgs(session: E2ESession) {
+  launchCount += 1;
+  // The clock alone would repeat if two launches landed in the same
+  // millisecond; the counter alone would repeat across test files, which run in
+  // separate processes.
+  return {
+    e2eAccessToken: session.accessToken,
+    e2eRefreshToken: session.refreshToken,
+    e2eSeedId: `${Date.now()}-${launchCount}`,
+  };
+}
+
+/**
  * Launch the app with no session at all, on the Welcome screen.
  *
  * Welcome is the auth stack's initial route, so this is what "logged out" looks
@@ -152,10 +176,7 @@ export async function launchAuthenticated(
   await device.launchApp({
     delete: true,
     newInstance: true,
-    launchArgs: {
-      e2eAccessToken: tokens.accessToken,
-      e2eRefreshToken: tokens.refreshToken,
-    },
+    launchArgs: seedLaunchArgs(tokens),
   });
 
   await waitForElement('dashboard-screen', 30000);
@@ -180,13 +201,22 @@ export async function relaunchAuthenticated(session: E2ESession): Promise<void> 
 
   await device.launchApp({
     newInstance: true,
-    launchArgs: {
-      e2eAccessToken: session.accessToken,
-      e2eRefreshToken: session.refreshToken,
-    },
+    launchArgs: seedLaunchArgs(session),
   });
 
   await waitForElement('dashboard-screen', 30000);
+}
+
+/**
+ * Restart the app process with nothing that could seed a session.
+ *
+ * For the specs about what a restart does to a session: they have to see the
+ * app read its own stored session, so the launch must carry no seeding
+ * arguments at all. Nothing is cleared first, which is the point -- whatever
+ * the previous step left in storage is what the app comes back with.
+ */
+export async function relaunchWithoutSeeding(): Promise<void> {
+  await device.launchApp({ newInstance: true, launchArgs: {} });
 }
 
 /**

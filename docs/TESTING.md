@@ -374,6 +374,17 @@ reload cannot restore the precondition — in `mobile/e2e/tests/logout.test.ts`
 the tests log out, and the session is seeded at process start, so only a
 relaunch brings it back.
 
+**A test whose subject is the session must not be handed one.** The Detox
+suite signs in by passing tokens as launch arguments, which the app writes to
+storage at startup (`mobile/src/lib/e2eSession.ts`) — no password is typed, so
+iOS never offers its AutoFill prompt. Launch arguments belong to the process,
+though, and a reload restarts only the JS bundle, so seeding on every mount put
+the session back after a test had deliberately ended it. The app now seeds once
+per launch, keyed by an id the helpers generate per `launchApp()` call
+(habitcraft-bqhe.16). The session-persistence tests go further and restart
+through `relaunchWithoutSeeding()`, which passes no tokens at all, so what comes
+back is only what the app itself had stored.
+
 **Match elements by testID when a label is not unique.** A label that is
 unique on one screen may not be on the next: the Profile tab and the Profile
 screen's own heading share their text, so `by.text('Profile')` starts failing

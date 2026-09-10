@@ -5,6 +5,7 @@ import {
   loginTestUser,
   logoutUser,
   relaunchAuthenticated,
+  relaunchWithoutSeeding,
   waitForElement,
   type E2ESession,
 } from '../config/testSetup';
@@ -87,8 +88,13 @@ describe('Logout', () => {
     });
   });
 
+  // These three are the only specs in the suite whose subject is the stored
+  // session itself, so they are the only ones that must not be handed one.
+  // Every launch here carries no seeding arguments, and the reload relies on
+  // the app seeding once per launch (habitcraft-bqhe.16) -- without that, the
+  // session came back whatever the test had just done to it.
   describe('Session Persistence', () => {
-    it('should clear session data on logout', async () => {
+    it('should not restore the session on a reload after logout', async () => {
       await logoutUser();
 
       await device.reloadReactNative();
@@ -96,12 +102,18 @@ describe('Logout', () => {
       await expect(element(by.id('welcome-screen'))).toBeVisible();
     });
 
-    it('should persist session across app restarts when logged in', async () => {
-      await device.reloadReactNative();
+    it('should not restore the session on a restart after logout', async () => {
+      await logoutUser();
 
-      await waitFor(element(by.id('dashboard-screen')))
-        .toBeVisible()
-        .withTimeout(10000);
+      await relaunchWithoutSeeding();
+
+      await waitForElement('welcome-screen', 30000);
+    });
+
+    it('should persist the session across a restart when logged in', async () => {
+      await relaunchWithoutSeeding();
+
+      await waitForElement('dashboard-screen', 30000);
     });
   });
 });

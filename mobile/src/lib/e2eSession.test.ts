@@ -1,5 +1,8 @@
 const mockSaveTokens = jest.fn();
 const mockGet = jest.fn();
+const mockGetInfoAsync = jest.fn();
+const mockReadAsStringAsync = jest.fn();
+const mockWriteAsStringAsync = jest.fn();
 
 jest.mock('./storage', () => ({
   storage: { saveTokens: mockSaveTokens },
@@ -12,6 +15,23 @@ jest.mock('./storage', () => ({
 jest.mock('react-native/Libraries/Settings/Settings', () => ({
   default: { get: mockGet, set: jest.fn() },
 }));
+
+// Local, for the same reason: jest.setup.js's global expo-file-system mock is
+// rebuilt by resetModules, so its spies would not be the ones these tests hold.
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: '/mock/documents/',
+  getInfoAsync: mockGetInfoAsync,
+  readAsStringAsync: mockReadAsStringAsync,
+  writeAsStringAsync: mockWriteAsStringAsync,
+}));
+
+const SEEDED_ID_PATH = '/mock/documents/e2e-seeded-id';
+
+/** Stand in for the record a previous seeding on this install would have left. */
+function seededIdOnDisk(id: string | null) {
+  mockGetInfoAsync.mockResolvedValue({ exists: id !== null });
+  mockReadAsStringAsync.mockResolvedValue(id);
+}
 
 /**
  * The flag is read at module load, because Expo inlines EXPO_PUBLIC_* at bundle
@@ -28,11 +48,24 @@ function loadWithFlag(flag: string | undefined) {
   return require('./e2eSession') as typeof import('./e2eSession');
 }
 
+/** Answer Settings.get() from a table, so a case only states what it cares about. */
+function launchArgs(args: Record<string, unknown>) {
+  mockGet.mockImplementation((key: string) => args[key] ?? null);
+}
+
+const TOKEN_ARGS = {
+  e2eAccessToken: 'access-token',
+  e2eRefreshToken: 'refresh-token',
+  e2eSeedId: 'launch-1',
+};
+
 describe('seedE2ESession', () => {
   const originalFlag = process.env.EXPO_PUBLIC_E2E;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // No previous launch has seeded, unless a case says otherwise.
+    seededIdOnDisk(null);
   });
 
   afterAll(() => {
@@ -61,9 +94,7 @@ describe('seedE2ESession', () => {
   });
 
   it('saves both tokens when the launch arguments carry them', async () => {
-    mockGet.mockImplementation((key: string) =>
-      key === 'e2eAccessToken' ? 'access-token' : 'refresh-token'
-    );
+    launchArgs(TOKEN_ARGS);
     const { seedE2ESession } = loadWithFlag('1');
 
     await expect(seedE2ESession()).resolves.toBe(true);
@@ -76,7 +107,7 @@ describe('seedE2ESession', () => {
   it('saves nothing when only one of the two tokens is present', async () => {
     // Half a session would send the app into a refresh it cannot complete,
     // which reads as a mysterious logout rather than a missing launch argument.
-    mockGet.mockImplementation((key: string) => (key === 'e2eAccessToken' ? 'access-token' : null));
+    launchArgs({ e2eAccessToken: 'access-token', e2eSeedId: 'launch-1' });
     const { seedE2ESession } = loadWithFlag('1');
 
     await expect(seedE2ESession()).resolves.toBe(false);
@@ -97,5 +128,57 @@ describe('seedE2ESession', () => {
 
     await expect(seedE2ESession()).resolves.toBe(false);
     expect(mockSaveTokens).not.toHaveBeenCalled();
+  });
+
+  describe('once per launch', () => {
+    it('records the seed id it consumed', async () => {
+      launchArgs(TOKEN_ARGS);
+      const { seedE2ESession } = loadWithFlag('1');
+
+      await seedE2ESession();
+
+      expect(mockWriteAsStringAsync).toHaveBeenCalledWith(SEEDED_ID_PATH, 'launch-1');
+    });
+
+    it('does not seed again for a seed id it has already consumed', async () => {
+      // What a JS reload looks like from here: the module is evaluated afresh,
+      // so no in-memory flag survives, but the process keeps its launch
+      // arguments and the store keeps the record of the last seeding.
+      launchArgs(TOKEN_ARGS);
+      seededIdOnDisk('launch-1');
+      const { seedE2ESession } = loadWithFlag('1');
+
+      await expect(seedE2ESession()).resolves.toBe(false);
+      expect(mockSaveTokens).not.toHaveBeenCalled();
+    });
+
+    it('seeds again when a new launch brings a new seed id', async () => {
+      launchArgs({ ...TOKEN_ARGS, e2eSeedId: 'launch-2' });
+      seededIdOnDisk('launch-1');
+      const { seedE2ESession } = loadWithFlag('1');
+
+      await expect(seedE2ESession()).resolves.toBe(true);
+      expect(mockWriteAsStringAsync).toHaveBeenCalledWith(SEEDED_ID_PATH, 'launch-2');
+    });
+
+    it('seeds when the record cannot be read at all', async () => {
+      // Better to seed and let the reload specs fail than to start every spec
+      // logged out because one file read went wrong.
+      launchArgs(TOKEN_ARGS);
+      mockGetInfoAsync.mockRejectedValue(new Error('no such directory'));
+      const { seedE2ESession } = loadWithFlag('1');
+
+      await expect(seedE2ESession()).resolves.toBe(true);
+    });
+
+    it('does not seed a token pair that carries no seed id', async () => {
+      // Without one there is no way to tell a relaunch from a reload, and
+      // seeding anyway is the bug this guards (habitcraft-bqhe.16).
+      launchArgs({ e2eAccessToken: 'access-token', e2eRefreshToken: 'refresh-token' });
+      const { seedE2ESession } = loadWithFlag('1');
+
+      await expect(seedE2ESession()).resolves.toBe(false);
+      expect(mockSaveTokens).not.toHaveBeenCalled();
+    });
   });
 });
