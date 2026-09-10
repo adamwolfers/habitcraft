@@ -422,6 +422,30 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete security and deployment 
 4. **XSS:** Sanitize inputs, CSP headers
 5. **CSRF:** SameSite cookies, CSRF tokens
 
+### Rate limiting depends on a bounded proxy trust boundary
+
+Every limiter in `backend/middleware/rateLimiter.js` keys on `req.ip`, which
+Express derives from `X-Forwarded-For` — a header the caller writes. How much of
+that chain is believed is the `trust proxy` setting, so it is a security control,
+not deployment plumbing.
+
+`trust proxy` must never be `true`. Blanket trust accepts the whole
+caller-supplied chain, which lets anyone send a fresh address per request and
+walk past the login, password-change and account-delete limiters. It reads as
+protected in code review while doing nothing at runtime (habitcraft-jxo).
+
+`backend/config/proxy.js` supplies a **hop count** instead: the number of
+proxies actually in front of the service. Production is Cloud Run with a domain
+mapping and no external load balancer, so that is `1` — one Google front end,
+which appends the connecting address and makes the last entry the only unforgeable
+one. `TRUSTED_PROXY_HOPS` overrides it if the topology gains a hop, and an
+unusable value throws at startup rather than falling back, because a silently
+wrong count either restores the bypass or collapses every client into one bucket.
+
+For the same reason, security log entries take `req.ip` rather than the leftmost
+`X-Forwarded-For` entry. Reading the header directly let a caller choose the
+address recorded against their own failed logins.
+
 ### Tokens pin their algorithm
 
 `config/jwt.js` exports `JWT_ALGORITHM` / `JWT_ALGORITHMS`, and both `jwt.sign`

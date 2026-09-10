@@ -4,14 +4,16 @@ const cors = require('cors');
 const helmet = require('helmet');
 const cookieParser = require('cookie-parser');
 const { query } = require('./db/pool');
+const { getTrustedProxyHops } = require('./config/proxy');
 const habitsRouter = require('./routes/habits');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
 const app = express();
 
-// Trust proxy headers (required for Cloud Run / load balancers)
-// This enables express-rate-limit to correctly identify clients via X-Forwarded-For
-app.set('trust proxy', true);
+// Trust a bounded number of proxy hops (required for Cloud Run / load
+// balancers) so express-rate-limit can identify clients via X-Forwarded-For.
+// Never `true` here -- see config/proxy.js for why the count is bounded.
+app.set('trust proxy', getTrustedProxyHops());
 
 // Security headers (helmet)
 app.use(

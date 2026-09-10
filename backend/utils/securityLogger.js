@@ -15,13 +15,12 @@ const SECURITY_EVENTS = {
 };
 
 function getClientIp(req) {
-  // Check x-forwarded-for header for proxied requests
-  const forwardedFor = req.get('x-forwarded-for');
-  if (forwardedFor) {
-    // Take the first IP (original client)
-    return forwardedFor.split(',')[0].trim();
-  }
-  return req.ip;
+  // Use req.ip, which Express resolves from X-Forwarded-For using the bounded
+  // 'trust proxy' hop count (config/proxy.js). Reading the header here instead
+  // would take its leftmost entry, which any caller can forge, so an attacker
+  // could choose the address recorded against their own failed logins
+  // (habitcraft-jxo).
+  return req.ip ?? null;
 }
 
 function logSecurityEvent(event, req, details = {}) {
