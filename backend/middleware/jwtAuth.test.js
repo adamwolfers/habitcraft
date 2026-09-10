@@ -130,6 +130,35 @@ describe('JWT Auth Middleware', () => {
     expect(nextFn).not.toHaveBeenCalled();
   });
 
+  it('should return 401 for a token signed with an algorithm outside the allowlist', () => {
+    // Same secret, different HMAC algorithm. Verification pins algorithms to
+    // HS256 (config/jwt.js), so the token's own alg header cannot widen what
+    // this service will accept (habitcraft-ibob.1).
+    const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, {
+      algorithm: 'HS512',
+      expiresIn: '15m',
+    });
+    mockReq.headers.authorization = `Bearer ${token}`;
+
+    jwtAuthMiddleware(mockReq, mockRes, nextFn);
+
+    expect(mockRes.status).toHaveBeenCalledWith(401);
+    expect(mockRes.json).toHaveBeenCalledWith({ error: 'Invalid token' });
+    expect(nextFn).not.toHaveBeenCalled();
+  });
+
+  it('should issue and accept HS256 access tokens', () => {
+    const token = jwt.sign({ userId: 'user-123', type: 'access' }, JWT_SECRET, {
+      expiresIn: '15m',
+    });
+    expect(JSON.parse(Buffer.from(token.split('.')[0], 'base64url').toString()).alg).toBe('HS256');
+
+    mockReq.headers.authorization = `Bearer ${token}`;
+    jwtAuthMiddleware(mockReq, mockRes, nextFn);
+
+    expect(nextFn).toHaveBeenCalled();
+  });
+
   describe('Security Event Logging', () => {
     beforeEach(() => {
       logSecurityEvent.mockClear();

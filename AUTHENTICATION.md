@@ -422,6 +422,15 @@ See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete security and deployment 
 4. **XSS:** Sanitize inputs, CSP headers
 5. **CSRF:** SameSite cookies, CSRF tokens
 
+### Tokens pin their algorithm
+
+`config/jwt.js` exports `JWT_ALGORITHM` / `JWT_ALGORITHMS`, and both `jwt.sign`
+and both `jwt.verify` call sites pass them. Tokens are signed with a shared
+secret, so HS256 is the only algorithm this service uses, and an allowlist means
+a token's own `alg` header can never widen what verification accepts. This is
+defence in depth: jsonwebtoken 9.x already rejects `alg=none` and refuses an
+asymmetric algorithm against a string key.
+
 ## Related Documentation
 
 - [Getting Started Guide](GETTING_STARTED.md)

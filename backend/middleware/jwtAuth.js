@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { JWT_SECRET } = require('../config/jwt');
+const { JWT_SECRET, JWT_ALGORITHMS } = require('../config/jwt');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 
 function jwtAuthMiddleware(req, res, next) {
@@ -35,7 +35,7 @@ function jwtAuthMiddleware(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: JWT_ALGORITHMS });
 
     if (decoded.type !== 'access') {
       logSecurityEvent(SECURITY_EVENTS.AUTH_FAILURE, req, {

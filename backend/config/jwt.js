@@ -43,8 +43,18 @@ function getJwtSecret() {
 // Initialize and validate on module load
 const JWT_SECRET = getJwtSecret();
 
+// Tokens are signed with a shared secret, so HMAC-SHA256 is the only algorithm
+// this service ever uses. Pinning it on both sign and verify is defence in
+// depth: jsonwebtoken 9.x already rejects alg=none and refuses an asymmetric
+// algorithm against a string key, but an allowlist means a verifier can never
+// be talked into a different algorithm by the token itself (habitcraft-ibob.1).
+const JWT_ALGORITHM = 'HS256';
+const JWT_ALGORITHMS = [JWT_ALGORITHM];
+
 module.exports = {
   JWT_SECRET,
+  JWT_ALGORITHM,
+  JWT_ALGORITHMS,
   ACCESS_TOKEN_EXPIRES: '15m',
   REFRESH_TOKEN_EXPIRES: '7d',
   ACCESS_TOKEN_MAX_AGE: 15 * 60 * 1000, // 15 minutes in ms

@@ -180,6 +180,22 @@ describe('Auth API - Token Security Enhancements', () => {
     });
   });
 
+  describe('Algorithm allowlist', () => {
+    it('rejects a refresh token signed with an algorithm outside the allowlist', async () => {
+      // Same secret, different HMAC algorithm. /refresh pins verification to
+      // HS256, so it never reaches the database lookup (habitcraft-ibob.1).
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        algorithm: 'HS512',
+        expiresIn: '7d',
+      });
+
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
+
+      expect(response.status).toBe(401);
+      expect(tokenService.validateRefreshToken).not.toHaveBeenCalled();
+    });
+  });
+
   describe('Token revocation on logout', () => {
     it('should revoke refresh token on logout', async () => {
       const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
