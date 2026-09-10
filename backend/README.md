@@ -75,9 +75,18 @@ PORT=3000
 DATABASE_URL=postgresql://habituser:habitpass@localhost:5432/habitcraft
 FRONTEND_URL=http://localhost:3100
 JWT_SECRET=your-secret-key-change-in-production
+TRUSTED_PROXY_HOPS=1
 ```
 
 **Note:** Token expiration times are hardcoded (access token: 15 minutes, refresh token: 7 days) in `routes/auth.js`.
+
+**`TRUSTED_PROXY_HOPS`** is the number of proxies in front of this service and
+feeds Express's `trust proxy` setting, which decides how much of a caller's
+`X-Forwarded-For` header becomes `req.ip`. Every IP rate limiter keys on
+`req.ip`, so this is a security control: it defaults to `1` for Cloud Run with a
+domain mapping, and it must never be `true`. An unusable value throws at
+startup. See `config/proxy.js` and
+[AUTHENTICATION.md](../AUTHENTICATION.md#rate-limiting-depends-on-a-bounded-proxy-trust-boundary).
 
 ## API Endpoints
 

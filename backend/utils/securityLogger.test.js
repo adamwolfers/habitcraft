@@ -159,10 +159,12 @@ describe('Security Logger', () => {
       expect(loggedData.userAgent).toBeNull();
     });
 
-    it('should handle x-forwarded-for header for proxied requests', () => {
+    it('should log the proxy-resolved req.ip, not a client-supplied x-forwarded-for entry', () => {
       const mockReq = {
-        ip: '10.0.0.1',
+        // What Express resolved under the bounded 'trust proxy' hop count.
+        ip: '70.41.3.18',
         get: jest.fn().mockImplementation((header) => {
+          // The leftmost entry is whatever the caller sent, so it is forgeable.
           if (header === 'x-forwarded-for') return '203.0.113.195, 70.41.3.18';
           if (header === 'user-agent') return 'Mozilla/5.0';
           return null;
@@ -172,8 +174,19 @@ describe('Security Logger', () => {
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, mockReq, { email: 'test@example.com' });
 
       const loggedData = parseLogOutput(consoleSpy.mock.calls[0]);
-      // Should use first IP from x-forwarded-for
-      expect(loggedData.ip).toBe('203.0.113.195');
+      expect(loggedData.ip).toBe('70.41.3.18');
+      expect(loggedData.ip).not.toBe('203.0.113.195');
+    });
+
+    it('should log a null ip when Express could not resolve one', () => {
+      const mockReq = {
+        get: jest.fn().mockReturnValue(null),
+      };
+
+      logSecurityEvent(SECURITY_EVENTS.LOGIN_FAILURE, mockReq, { email: 'test@example.com' });
+
+      const loggedData = parseLogOutput(consoleSpy.mock.calls[0]);
+      expect(loggedData.ip).toBeNull();
     });
 
     it('should log AUTH_FAILURE events with path', () => {
