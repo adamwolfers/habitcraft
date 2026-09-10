@@ -10,6 +10,8 @@ const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger')
 const tokenService = require('../services/tokenService');
 const {
   JWT_SECRET,
+  JWT_ALGORITHM,
+  JWT_ALGORITHMS,
   ACCESS_TOKEN_EXPIRES,
   REFRESH_TOKEN_EXPIRES,
   ACCESS_TOKEN_MAX_AGE,
@@ -42,9 +44,11 @@ function setAuthCookies(res, accessToken, refreshToken) {
 // Generate tokens with unique jti claims
 function generateTokens(userId) {
   const accessToken = jwt.sign({ userId, type: 'access', jti: crypto.randomUUID() }, JWT_SECRET, {
+    algorithm: JWT_ALGORITHM,
     expiresIn: ACCESS_TOKEN_EXPIRES,
   });
   const refreshToken = jwt.sign({ userId, type: 'refresh', jti: crypto.randomUUID() }, JWT_SECRET, {
+    algorithm: JWT_ALGORITHM,
     expiresIn: REFRESH_TOKEN_EXPIRES,
   });
   return { accessToken, refreshToken };
@@ -233,7 +237,7 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
-    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+    const decoded = jwt.verify(refreshToken, JWT_SECRET, { algorithms: JWT_ALGORITHMS });
 
     if (decoded.type !== 'refresh') {
       logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_FAILURE, req, {
