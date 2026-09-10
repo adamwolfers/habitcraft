@@ -59,6 +59,7 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
+    "@config-plugins/detox": "^11.0.0",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "29.5.14",
     "@types/react": "~19.1.0",
@@ -81,6 +82,11 @@
     "prettier": "^3.8.0",
     "ts-jest": "^29.2.0",
     "typescript": "~5.9.2"
+  },
+  "overrides": {
+    "@config-plugins/detox": {
+      "expo": "$expo"
+    }
   },
   "lint-staged": {
     "**/*.{ts,tsx}": [
