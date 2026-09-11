@@ -13,6 +13,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
+| Dependency Advisories | plain node + `npm audit` | `scripts/audit-advisories.js` | Weekly report of advisories new since `scripts/audit-baseline.json`; never gates a push |
 
 ### CI Path Filter Verification
 
@@ -80,6 +81,51 @@ fail for reasons unrelated to this repo and would make the gate flaky.
 code blocks (shell commands like `cd ../..` or
 `docker compose -f ../../docker-compose.test.yml`) are invisible to any link
 checker and must still be updated by hand when a directory moves.
+
+### Dependency Advisory Reporting
+
+`npm audit` counts were never read by anything, which is how 132 advisories
+accumulated across four packages before anyone noticed (habitcraft-ibob.5).
+`scripts/audit-advisories.js` closes that, and the shape of it was a deliberate
+decision rather than a default.
+
+**It reports; it does not block.** An advisory appears when a third party
+publishes, not when this repo changes. A gate on a push would redden the trunk
+on a stranger's schedule for something nobody here can fix in the moment, and
+that gate gets muted within a month. So the check runs on a weekly schedule via
+`.github/workflows/dependency-audit.yml`, and a scheduled run that finds
+something exits non-zero — GitHub emails the repo owner on a failed scheduled
+run, and the findings land in the job summary. Runs triggered by a push to
+`master` pass `--report-only`, so a lockfile change can never put master red.
+
+**It compares against a baseline, not a threshold.** Raw counts are not a usable
+signal here. `mobile/` reports dozens of advisories on its "production" surface
+because npm marks `expo` as a production dependency, dragging the whole
+Expo/Metro/Babel build toolchain in — almost none of which reaches a device. A
+count gate would be permanently red or tuned until it said nothing. An allowlist
+would need dozens of hand-written entries on day one and would itself rot. So
+`scripts/audit-baseline.json` records what is currently accepted, and the script
+answers the question that matters: what appeared since somebody last looked?
+
+```bash
+node scripts/audit-advisories.js            # what is new since the baseline
+node scripts/audit-advisories.js --json     # same, machine-readable
+node scripts/audit-advisories.js --update   # accept today's set as the baseline
+```
+
+Exit codes are 0 for nothing new, 1 for new advisories, 2 for an error. Every
+package is audited with `--omit=dev`: a dev-only advisory is reachable solely by
+someone already running this repo's code on their own machine, which is a
+different risk from what a user's browser or phone touches.
+
+The baseline is generated — refresh it with `--update` after triaging, and do
+not hand-edit it. `npm audit` reads the lockfile and queries the registry, so no
+`npm ci` is needed to run any of this.
+
+**Not part of `scripts/test-all.sh`.** That script exists to predict a CI run,
+and this check deliberately never gates one. Advisory findings depend on the
+registry rather than on the working tree, so a phase there would make a local
+run fail for reasons the diff did not cause.
 
 ## Test Infrastructure
 
