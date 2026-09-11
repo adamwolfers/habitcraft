@@ -859,6 +859,28 @@ describe('API Client - JWT Integration', () => {
 
       expect(onAuthFailure).toHaveBeenCalled();
     });
+
+    it('should warn instead of navigating when no callback is registered', async () => {
+      // The module has no router, so a missing callback means it was used outside
+      // the React tree. It must not fall back to a full-page location assignment.
+      setOnAuthFailure(null);
+      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+
+      const mock401Response = {
+        ok: false,
+        status: 401,
+        json: async () => ({ error: 'Unauthorized' }),
+      };
+      global.fetch = jest.fn(() => Promise.resolve(mock401Response as Response)) as jest.Mock;
+
+      await expect(fetchHabits(mockUserId)).rejects.toThrow();
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('no auth failure handler is registered')
+      );
+
+      warnSpy.mockRestore();
+    });
   });
 
   describe('updateHabit', () => {
@@ -943,6 +965,10 @@ describe('API Client - JWT Integration', () => {
     });
 
     it('should throw error when update fails due to unauthorized', async () => {
+      // Register a handler so the 401 does not fall through to the unhandled warning
+      const onAuthFailure = jest.fn();
+      setOnAuthFailure(onAuthFailure);
+
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
         status: 401,
@@ -951,6 +977,8 @@ describe('API Client - JWT Integration', () => {
       await expect(updateHabit(mockUserId, mockHabitId, { name: 'New Name' })).rejects.toThrow(
         'Failed to update habit: 401'
       );
+
+      setOnAuthFailure(null);
     });
 
     it('should throw error when update fails due to validation error', async () => {

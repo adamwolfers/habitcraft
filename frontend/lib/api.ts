@@ -8,7 +8,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3
 // Track if a refresh is already in progress to avoid multiple concurrent refreshes
 let refreshPromise: Promise<boolean> | null = null;
 
-// Callback to handle authentication failures (e.g., redirect to login)
+// Callback to handle authentication failures (clears auth state; see handleAuthFailure)
 let onAuthFailureCallback: (() => void) | null = null;
 
 /**
@@ -34,30 +34,35 @@ async function refreshAccessToken(): Promise<boolean> {
       return true;
     }
 
-    // If refresh fails with 401, redirect to login (refresh token expired/invalid)
+    // If refresh fails with 401, clear auth state (refresh token expired/invalid)
     if (response.status === 401) {
-      redirectToLogin();
+      handleAuthFailure();
     }
 
     return false;
   } catch {
-    // Network error during refresh - redirect to login
-    redirectToLogin();
+    // Network error during refresh - clear auth state
+    handleAuthFailure();
     return false;
   }
 }
 
 /**
- * Handle authentication failure
- * Calls the configured callback or falls back to window.location redirect
+ * Handle authentication failure by clearing auth state through the registered callback.
+ *
+ * This module is not a component, so it has no router and does not navigate itself.
+ * AuthProvider registers the callback from the root layout; it clears the user, and
+ * ProtectedRoute then does the client-side redirect to /login. A missing callback
+ * means this module was used outside the React tree, which is a wiring bug rather
+ * than a state to recover from by reloading the page.
  */
-function redirectToLogin(): void {
+function handleAuthFailure(): void {
   if (onAuthFailureCallback) {
     onAuthFailureCallback();
-  } else if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-    // Fallback to direct redirect if no callback configured
-    window.location.href = '/login';
+    return;
   }
+
+  console.warn('Authentication failed but no auth failure handler is registered');
 }
 
 /**
