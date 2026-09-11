@@ -59,8 +59,9 @@ on:
       - '.dbmaterc'
       - 'lychee.toml'
       - '**/*.example'
-      # Has its own workflow with its own triggers; nothing here tests it.
+      # Each has its own workflow with its own triggers; nothing here tests them.
       - '.github/workflows/link-check.yml'
+      - '.github/workflows/dependency-audit.yml'
   pull_request:
     branches: [main, master]
     # Kept in sync with the push trigger above (enforced by
@@ -81,8 +82,9 @@ on:
       - '.dbmaterc'
       - 'lychee.toml'
       - '**/*.example'
-      # Has its own workflow with its own triggers; nothing here tests it.
+      # Each has its own workflow with its own triggers; nothing here tests them.
       - '.github/workflows/link-check.yml'
+      - '.github/workflows/dependency-audit.yml'
 
 jobs:
   # ===========================================
