@@ -81,7 +81,7 @@ const CASES = [
   // --- Other packages -------------------------------------------------------
   ['db/migrations/20250101000000_init.sql', true, ['db']],
   ['shared/database/test-fixtures.sql', true, ['shared']],
-  ['shared/types/habit.ts', true, ['shared']],
+  ['shared/api-spec/openapi.yaml', true, ['shared']],
 
   // --- e2e-infra ------------------------------------------------------------
   // Regression: under predicate-quantifier 'every' these three alternatives
@@ -108,7 +108,7 @@ const CASES = [
   ['.github/workflows/link-check.yml', false, []],
 
   // --- Markdown: ignored at the trigger, and matched by no filter -----------
-  // The six READMEs that live inside package directories. Each matches a
+  // The five READMEs that live inside package directories. Each matches a
   // package pattern on path alone, so only '!**/*.md' plus paths-ignore keeps
   // a README edit from firing migrations and deploys.
   ['backend/README.md', false, []],
@@ -116,7 +116,6 @@ const CASES = [
   ['frontend/README.md', false, []],
   ['db/README.md', false, []],
   ['shared/database/README.md', false, []],
-  ['shared/types/README.md', false, []],
   ['README.md', false, []],
   ['docs/architecture.md', false, []],
 

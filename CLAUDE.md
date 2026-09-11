@@ -298,8 +298,11 @@ backend validator, not in an error message, and not in a test. Import it from
 the generated limits (habitcraft-467, habitcraft-34d.3). The one number that
 cannot be imported is a migration's `VARCHAR` width;
 `backend/validators/apiLimits.test.js` parses `db/schema.sql` and fails if a
-column disagrees with the spec. `shared/types/models.ts` is a superseded
-hand-written mirror that nothing imports — do not add to it.
+column disagrees with the spec.
+
+`shared/` now holds only the spec and the test fixtures. The hand-written type
+mirror that used to sit in `shared/types/` was deleted in habitcraft-brj — do
+not reintroduce a hand-written copy of a generated artifact anywhere.
 
 See [shared/api-spec/README.md](shared/api-spec/README.md).
 

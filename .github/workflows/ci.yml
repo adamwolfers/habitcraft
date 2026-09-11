@@ -26,12 +26,12 @@ on:
     #   backend/README.md, backend/db/README.md   -> backend
     #   frontend/README.md                -> frontend
     #   db/README.md                              -> db
-    #   shared/{database,types}/README.md         -> shared
+    #   shared/database/README.md                 -> shared
     #
     # paths-filter matches on path alone and cannot tell a README from source.
     # Without this paths-ignore, editing db/README.md on master would fire
     # run-migrations-gcp (Cloud SQL backup + production migration job), and
-    # editing shared/types/README.md would fire deploy-backend-gcp and
+    # editing shared/database/README.md would fire deploy-backend-gcp and
     # deploy-frontend-gcp. Those jobs are gated on `db`/`shared` being true,
     # which a README edit satisfies.
     #
