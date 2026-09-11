@@ -31,11 +31,12 @@
  * to an INTERFACE instead: each gets the slice it needs, in its own idiom, and
  * the duplication is fine because it is derived and CI-verified.
  *
- * shared/types/models.ts is the cautionary tale -- a hand-written mirror of the
- * spec that nothing in the repo imports, so nothing ever caught it drifting.
- * Generated output that nothing imports is the same corpse; every file below is
- * re-exported by the consumer's own types module, so a bad regeneration fails
- * that consumer's typecheck rather than sitting there looking authoritative.
+ * shared/types/models.ts was the cautionary tale -- a hand-written mirror of the
+ * spec that nothing in the repo imported, so nothing ever caught it drifting
+ * (deleted in habitcraft-brj). Generated output that nothing imports is the same
+ * corpse; every types file below is re-exported by the consumer's own types
+ * module, so a bad regeneration fails that consumer's typecheck rather than
+ * sitting there looking authoritative.
  *
  * WHAT IS GENERATED
  *

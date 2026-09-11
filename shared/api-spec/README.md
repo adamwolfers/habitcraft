@@ -77,9 +77,11 @@ too, so narrowing the column later forces the cross-check to be added.
 Nothing imports the generated *types* directly. Each consumer's own types module
 (`frontend/types/habit.ts`, `mobile/src/types/index.ts`) re-exports the aliases
 its components use, so a bad regeneration fails that consumer's typecheck.
-That indirection is the point: `shared/types/models.ts` is a hand-written mirror
-of this spec that **nothing in the repo imports**, which is why nothing ever
-caught it drifting. Generated output nobody reads would be the same corpse.
+That indirection is the point. `shared/types/models.ts` used to be a
+hand-written mirror of this spec that **nothing in the repo imports**, which is
+why nothing ever caught it typing `createdAt` as a `Date` that JSON cannot carry,
+or an auth response with a `token` field the API does not return. It was deleted
+in habitcraft-brj. Generated output nobody reads would be the same corpse.
 
 The limits are imported straight from the generated module instead, by the form
 or validator that needs them. There is nothing for a re-export layer to add: a
