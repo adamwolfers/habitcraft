@@ -1,0 +1,71 @@
+name: Dependency Audit
+
+# Deliberately a scheduled workflow rather than a job inside ci.yml.
+#
+# An advisory appears when somebody else publishes, not when this repo changes.
+# Gating a push on that would redden the trunk on a stranger's schedule, for a
+# reason nobody here can fix in the moment -- and a gate that does that gets
+# muted within a month, which is how 132 advisories accumulated unnoticed in the
+# first place (habitcraft-ibob.5).
+#
+# So this reports instead of blocking. Failing a SCHEDULED run costs nobody a
+# push, and still reaches a human: GitHub emails the repo owner when a scheduled
+# workflow fails. The findings also land in the job summary.
+
+on:
+  schedule:
+    # Mondays 09:00 UTC. Weekly is the right cadence for advisory publication --
+    # daily would train the owner to ignore the mail, monthly would let a real
+    # one sit too long.
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+  # Also runs when the checker itself or a lockfile changes, so a broken script
+  # or a stale baseline surfaces at that commit rather than days later. These
+  # runs are report-only (see the step below) to keep the no-blocking promise.
+  push:
+    branches: [master]
+    paths:
+      - 'scripts/audit-advisories.js'
+      - 'scripts/audit-baseline.json'
+      - '.github/workflows/dependency-audit.yml'
+      - '**/package-lock.json'
+
+jobs:
+  audit:
+    name: New Advisories Since Baseline
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # No `npm ci` in any of the four packages: npm audit reads package.json and
+      # package-lock.json and queries the registry, so installing would add
+      # minutes and change nothing. Verified against a lockfile-only copy.
+      - name: Report advisories new since the baseline
+        env:
+          # A push run must never fail -- it would put master red over a
+          # third-party publish. The scheduled run is the one that reports.
+          REPORT_ONLY: ${{ github.event_name == 'push' && '--report-only' || '' }}
+        run: |
+          set +e
+          node scripts/audit-advisories.js $REPORT_ONLY 2>&1 | tee "$RUNNER_TEMP/audit.txt"
+          status=${PIPESTATUS[0]}
+          set -e
+
+          {
+            echo '## npm advisories, production surface only'
+            echo
+            echo '```'
+            cat "$RUNNER_TEMP/audit.txt"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$status" -eq 1 ]; then
+            echo "::error title=New advisories::Advisories appeared since the recorded baseline. Triage them, then refresh with 'node scripts/audit-advisories.js --update'."
+          fi
+
+          exit "$status"
