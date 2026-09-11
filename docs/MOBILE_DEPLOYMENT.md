@@ -14,11 +14,13 @@ The HabitCraft mobile app uses [EAS Build](https://docs.expo.dev/build/introduct
 
 ### Preview Builds (Automatic)
 
-Triggers on push to `master` when `mobile/` or `shared/` changes. Requires `mobile-unit-tests` to pass first.
+Triggers on push to `master` when `mobile/` changes, excluding mobile test files. Requires `mobile-unit-tests` to pass first. Deliberately **not** gated on `shared/` — mobile does not depend on it.
 
 - Runs `eas build --profile preview --platform android --non-interactive --no-wait` (Android-only until iOS credentials are configured)
 - Uses `--no-wait` so CI doesn't block on EAS cloud build completion
 - Builds are available in the Expo dashboard for internal testing
+
+**Quota refusals do not fail CI.** The Expo plan caps Android builds per month, and once that cap is reached EAS refuses to queue the build and `eas-cli` exits non-zero. That is a billing state, not a broken build, and failing on it would redden the trunk for every mobile commit until the quota resets — with nothing anyone could do about it. The step matches the refusal message and turns it into a GitHub warning annotation instead, so the build shows as skipped rather than failed. Every other `eas-cli` failure still fails the step (habitcraft-rwgl).
 
 ### Production Builds (Manual)
 

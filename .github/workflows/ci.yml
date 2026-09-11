@@ -990,10 +990,33 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Expo's free plan caps Android builds per month. Once that cap is hit EAS
+      # refuses to queue anything and eas-cli exits non-zero -- a billing state,
+      # not a broken build. Failing the trunk on it would redden every mobile
+      # commit until the quota resets, with nothing anyone can do about it, so
+      # this step treats a quota refusal as a skip (habitcraft-rwgl). Any other
+      # eas-cli failure still fails the step.
       - name: Build preview (Android only until iOS credentials configured)
-        run: npx eas-cli build --profile preview --platform android --non-interactive --no-wait
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          set +e
+          npx eas-cli build --profile preview --platform android --non-interactive --no-wait 2>&1 \
+            | tee "$RUNNER_TEMP/eas-build.log"
+          status=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$status" -eq 0 ]; then
+            exit 0
+          fi
+
+          if grep -qiE 'builds from the (Free|[A-Za-z]+) plan this month|maximum number of builds' \
+               "$RUNNER_TEMP/eas-build.log"; then
+            echo "::warning title=EAS preview build skipped::Expo refused the build because the account's monthly Android build quota is exhausted. This is not a build failure; see habitcraft-rwgl."
+            exit 0
+          fi
+
+          exit "$status"
 
   build-mobile-production:
     name: Build & Submit Mobile Production
