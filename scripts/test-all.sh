@@ -59,13 +59,14 @@ LBL_MOBILE_TYPECHECK="Mobile Typecheck"
 LBL_SCHEMA_DUMP="Generated Schema Check"
 LBL_API_CODEGEN="Generated API Artifacts Check"
 LBL_API_BREAKING="OpenAPI Breaking Changes"
+LBL_BEADS_DOCTOR="Beads Wiring Tests"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
 LBL_BACKEND_UNIT="Backend Unit Tests"
 LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 
-TOTAL_PHASES=13
+TOTAL_PHASES=14
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -290,6 +291,12 @@ run_phase "📜" "$LBL_API_CODEGEN" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
 # compares against for a pull request.
 run_phase "🚦" "$LBL_API_BREAKING" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
     "$PROJECT_ROOT/scripts/openapi-breaking.sh" || STATIC_FAILED=1
+
+# The beads-doctor harness builds throwaway repos from the real .husky/ hooks,
+# so a hook edit that breaks the doctor's assumptions fails here as it does in
+# CI's verify-beads-doctor job (habitcraft-308j). Needs no bd and no docker.
+run_phase "🪝" "$LBL_BEADS_DOCTOR" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
+    sh "$PROJECT_ROOT/scripts/beads-doctor.test.sh" || STATIC_FAILED=1
 
 if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "🛑 Static checks failed -- stopping before the docker and E2E phases."

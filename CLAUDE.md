@@ -93,8 +93,9 @@ scripts/beads-doctor.test.sh   # its tests: throwaway repos with the real .husky
 ```
 
 It is not a `pre-push` check, because a repo with broken hooks never runs
-`pre-push`. It is not in `scripts/test-all.sh`, which mirrors CI, and CI has
-no `bd`.
+`pre-push`. The doctor itself is not in `scripts/test-all.sh`, which mirrors
+CI, and CI has no `bd`. Its *tests* need no `bd`, so they do run in both: the
+`verify-beads-doctor` CI job and a test-all phase (habitcraft-308j).
 
 ### Claude Code hooks (beads-only sessions)
 

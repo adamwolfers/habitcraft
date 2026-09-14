@@ -14,7 +14,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
 | Dependency Advisories | plain node + `npm audit` | `scripts/audit-advisories.js` | Weekly report of advisories new since `scripts/audit-baseline.json`; never gates a push |
-| Beads Wiring | plain POSIX sh | `scripts/beads-doctor.test.sh` | `scripts/beads-doctor.sh` catches each way the beads hooks have broken; run by hand |
+| Beads Wiring | plain POSIX sh | `scripts/beads-doctor.test.sh` | `scripts/beads-doctor.sh` catches each way the beads hooks have broken |
 
 ### CI Path Filter Verification
 
@@ -148,7 +148,12 @@ called.
 set after the function returns. The harness sets and clears its knobs on their
 own lines for that reason.
 
-**Not part of `scripts/test-all.sh` or CI** — it is run by hand.
+Runs in CI as the `verify-beads-doctor` job, gated on the `tooling` and
+`workflow` filters. `tooling` covers both `scripts/**` and `.husky/**`, so a
+hook edit that breaks the doctor's assumptions is caught on the commit that
+makes it. It is also phase 9 of `scripts/test-all.sh`. It needs only `sh`, `git`
+and the root `npm ci`, never `bd`, and it must stay that way, because CI has no
+`bd` (habitcraft-308j).
 
 ## Test Infrastructure
 
@@ -202,7 +207,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **11 phases, one per CI step**, so a green local run predicts a
+The script runs **14 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -215,15 +220,16 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 6 | Generated Schema Check | `scripts/schema-dump.sh --check` | daemon only |
 | 7 | Generated API Artifacts Check | `npm run api:codegen -- --check` | no |
 | 8 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
-| 9 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 10 | Backend Unit Tests | `backend: npm test` | yes |
-| 11 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 12 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 13 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 9 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
+| 10 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 11 | Backend Unit Tests | `backend: npm test` | yes |
+| 12 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 13 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 14 | E2E Tests | `frontend: playwright, 3 shards` | yes |
 
 Notes on that table:
 
-- **Phases 1–8 fail fast.** All eight always run (so you see every static error
+- **Phases 1–9 fail fast.** All nine always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
