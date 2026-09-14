@@ -451,7 +451,7 @@ E2E=1
 for shard in $(seq 1 "$E2E_SHARDS"); do
     eval "PID=\$PID$shard"
 
-    wait $PID
+    wait "$PID"
     EXIT_CODE=$?
 
     # Cancel this shard's watchdog now that it has finished. Kill the whole
