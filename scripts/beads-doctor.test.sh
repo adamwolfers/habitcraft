@@ -1,7 +1,11 @@
 #!/usr/bin/env sh
-# Tests for scripts/beads-doctor.sh (habitcraft-gl9). Run by hand:
+# Tests for scripts/beads-doctor.sh (habitcraft-gl9):
 #
 #   scripts/beads-doctor.test.sh
+#
+# Runs in CI as the verify-beads-doctor job and as a phase of
+# scripts/test-all.sh (habitcraft-308j), so it must keep needing nothing
+# beyond sh, git and the root npm install -- CI has no bd.
 #
 # Each case builds a throwaway git repo in a temp dir, copies in the REAL
 # .husky/ beads hooks and husky's real 'h' dispatcher, breaks one thing, and
