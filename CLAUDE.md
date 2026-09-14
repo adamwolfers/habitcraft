@@ -113,6 +113,14 @@ hooks in `.claude/settings.json` close that, both running
 Use `SessionEnd`, **not `Stop`** — `Stop` fires once per *assistant turn*, which
 would run a ~3s push after every response.
 
+The same `SessionStart` group runs `bd prime --hook-json`, which injects the
+beads workflow and every `bd remember` memory (about 37k characters). It lives
+in this file rather than `~/.claude/settings.json` so it goes wherever the repo
+goes: a fresh clone, another machine, a cloud session. **Keep exactly one
+copy.** Neither bd nor `bd setup claude --check` flags a global `bd prime` hook
+alongside this one; the context would just be injected twice. There is no
+`PreCompact` hook, because `SessionStart` fires again after compaction.
+
 `SessionEnd` cannot block: its output and exit code are discarded, so a failure
 there is invisible. That is why the script logs to `.beads/push.log`
 (gitignored via `*.log`) — one `ok` line when healthy, appended `FAILED` blocks
