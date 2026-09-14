@@ -4,6 +4,10 @@
       {
         "hooks": [
           {
+            "command": "bd prime --hook-json",
+            "type": "command"
+          },
+          {
             "command": "${CLAUDE_PROJECT_DIR}/scripts/beads-push.sh SessionStart; ${CLAUDE_PROJECT_DIR}/scripts/beads-doctor.sh --hook",
             "type": "command",
             "statusMessage": "Pushing beads issue data and checking beads wiring...",
