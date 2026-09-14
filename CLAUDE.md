@@ -326,8 +326,13 @@ bd close <id>         # Complete work
 - Use `bd` for ALL task tracking — do NOT use TodoWrite, TaskCreate, or markdown TODO lists
 - Run `bd prime` for detailed command reference and session close protocol
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
+<!-- END BEADS INTEGRATION -->
 
 ## Session Completion
+
+This section sits **outside** the managed Beads block above so a `bd init` or
+`bd setup claude` regeneration cannot delete it — bd replaces everything between
+the markers without reading it (habitcraft-coje).
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
@@ -343,6 +348,12 @@ bd close <id>         # Complete work
                # and blocks the git push if that fails (habitcraft-8t8)
    git status  # MUST show "up to date with origin"
    ```
+   A session with **no commits** never reaches `pre-push`. Those are covered by
+   the `SessionEnd`/`SessionStart` hooks in `.claude/settings.json`
+   (habitcraft-clj) — see "Claude Code hooks" above. If `.beads/push.log`
+   shows a `FAILED` block, the beads data did NOT reach the remote; fix it
+   rather than assuming the hook handled it. `.beads/push-history.log` is the
+   append-only trace showing which hook fired and when.
 5. **Clean up** - Clear stashes, prune remote branches
 6. **Verify** - All changes committed AND pushed
 7. **Hand off** - Provide context for next session
@@ -352,7 +363,6 @@ bd close <id>         # Complete work
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
-<!-- END BEADS INTEGRATION -->
 
 ## Knowledge & Task Tracking (authoritative)
 
