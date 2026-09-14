@@ -19,10 +19,10 @@
             "type": "command"
           },
           {
-            "command": "${CLAUDE_PROJECT_DIR}/scripts/beads-push.sh SessionStart",
+            "command": "${CLAUDE_PROJECT_DIR}/scripts/beads-push.sh SessionStart; ${CLAUDE_PROJECT_DIR}/scripts/beads-doctor.sh --hook",
             "type": "command",
-            "statusMessage": "Pushing beads issue data...",
-            "timeout": 130
+            "statusMessage": "Pushing beads issue data and checking beads wiring...",
+            "timeout": 140
           }
         ],
         "matcher": ""
