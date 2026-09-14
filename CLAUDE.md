@@ -63,6 +63,39 @@ when there is nothing new to send.
 
 Debug a hook with `HUSKY=2 git <command>`, which traces the dispatcher.
 
+### Checking the wiring: `scripts/beads-doctor.sh`
+
+`bd doctor` does not run under the embedded Dolt backend, and bd 1.3.0 keeps it
+gated there (habitcraft-gl9). `bd hooks list` reports a false green.
+`scripts/beads-doctor.sh` is the replacement. It fails when:
+
+- `bd` is not on PATH, or `HUSKY=0` is set
+- `core.hooksPath` does not resolve to `.husky/_`
+- a `.husky/_/` stub is missing — a fresh clone before `npm install`
+- a beads hook never reaches its `bd` call, or calls the wrong subcommand
+- `.beads/push.log` records a failed beads push
+
+The reach check runs each hook through `git hook run`. That follows
+`core.hooksPath` and the husky stub exactly as a real commit or push does. A
+fake `bd` goes first on PATH, records its arguments, and exits 97. Every beads
+hook stops on that status, so nothing is pushed or linted. Checking that hook
+files exist proves nothing — that was the false green in habitcraft-8t8.
+
+It runs at every session start, chained after `scripts/beads-push.sh` in
+`.claude/settings.json`. It prints one `ok` line when healthy and the full
+report when not. It is chained, not a separate hook entry, because Claude Code
+runs a hook group in parallel and the doctor reads the `push.log` that
+`beads-push.sh` writes.
+
+```bash
+scripts/beads-doctor.sh        # full report; exits 1 on any failure
+scripts/beads-doctor.test.sh   # its tests: throwaway repos with the real .husky/ hooks
+```
+
+It is not a `pre-push` check, because a repo with broken hooks never runs
+`pre-push`. It is not in `scripts/test-all.sh`, which mirrors CI, and CI has
+no `bd`.
+
 ### Claude Code hooks (beads-only sessions)
 
 `pre-push` only fires when there **is** a git push. A session that only touches

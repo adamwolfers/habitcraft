@@ -14,6 +14,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
 | Dependency Advisories | plain node + `npm audit` | `scripts/audit-advisories.js` | Weekly report of advisories new since `scripts/audit-baseline.json`; never gates a push |
+| Beads Wiring | plain POSIX sh | `scripts/beads-doctor.test.sh` | `scripts/beads-doctor.sh` catches each way the beads hooks have broken; run by hand |
 
 ### CI Path Filter Verification
 
@@ -126,6 +127,28 @@ not hand-edit it. `npm audit` reads the lockfile and queries the registry, so no
 and this check deliberately never gates one. Advisory findings depend on the
 registry rather than on the working tree, so a phase there would make a local
 run fail for reasons the diff did not cause.
+
+### Beads Wiring Check
+
+`scripts/beads-doctor.sh` checks that the beads git hooks are really wired up,
+because `bd doctor` does not run in embedded mode (habitcraft-gl9). What it
+checks and where it runs are in CLAUDE.md, "Checking the wiring".
+
+```bash
+scripts/beads-doctor.test.sh
+```
+
+Each case builds a throwaway git repo, copies in the real `.husky/` hooks and
+husky's `h` dispatcher, breaks one thing, and runs the doctor. It needs
+`npm install` at the repo root, for `node_modules/husky/husky`. The real `bd` is
+kept off PATH, and the last case asserts the recording stand-in was never
+called.
+
+**Shell trap it hit:** in POSIX `sh`, `VAR=value some_function` leaves `VAR`
+set after the function returns. The harness sets and clears its knobs on their
+own lines for that reason.
+
+**Not part of `scripts/test-all.sh` or CI** — it is run by hand.
 
 ## Test Infrastructure
 
