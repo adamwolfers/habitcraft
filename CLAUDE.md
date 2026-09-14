@@ -334,6 +334,13 @@ This section sits **outside** the managed Beads block above so a `bd init` or
 `bd setup claude` regeneration cannot delete it — bd replaces everything between
 the markers without reading it (habitcraft-coje).
 
+This repository opts into the Beads **team-maintainer** profile: agents close
+beads, run quality gates, commit, and push as part of session close, as the
+steps below require. `bd prime` and a regenerated Beads block describe a
+*conservative* default that forbids committing or pushing without explicit
+authority — this section is that explicit authority. A current instruction
+from the user not to commit or push still wins (habitcraft-od9u).
+
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
 
 **MANDATORY WORKFLOW:**
