@@ -635,6 +635,10 @@ jobs:
       AVD_API_LEVEL: 34
       AVD_TARGET: google_apis
       AVD_ARCH: x86_64
+      # A real phone's screen. With no profile the AVD is 320x640, and the
+      # create-habit form's submit button sits below the fold, so every
+      # habit case failed its tap (habitcraft-bqhe.3).
+      AVD_PROFILE: pixel_6
       # .detoxrc.js reads this; detox reuses the running emulator whose AVD
       # has this name instead of booting its own.
       DETOX_AVD_NAME: Detox_CI
@@ -727,7 +731,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ env.AVD_API_LEVEL }}-${{ env.AVD_TARGET }}-${{ env.AVD_ARCH }}-${{ hashFiles('mobile/scripts/settle-android-emulator.sh') }}
+          key: avd-${{ env.AVD_API_LEVEL }}-${{ env.AVD_TARGET }}-${{ env.AVD_ARCH }}-${{ env.AVD_PROFILE }}-${{ hashFiles('mobile/scripts/settle-android-emulator.sh') }}
 
       - name: Create the AVD and its settled snapshot
         if: steps.avd-cache.outputs.cache-hit != 'true'
@@ -737,6 +741,7 @@ jobs:
           target: ${{ env.AVD_TARGET }}
           arch: ${{ env.AVD_ARCH }}
           avd-name: ${{ env.DETOX_AVD_NAME }}
+          profile: ${{ env.AVD_PROFILE }}
           cores: 4
           ram-size: 4096M
           force-avd-creation: false
@@ -754,6 +759,7 @@ jobs:
           target: ${{ env.AVD_TARGET }}
           arch: ${{ env.AVD_ARCH }}
           avd-name: ${{ env.DETOX_AVD_NAME }}
+          profile: ${{ env.AVD_PROFILE }}
           cores: 4
           ram-size: 4096M
           force-avd-creation: false
