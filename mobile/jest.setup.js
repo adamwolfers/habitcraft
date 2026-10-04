@@ -41,12 +41,10 @@ jest.mock(
   { virtual: true }
 );
 
-// Mock react-native-reanimated
-jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.default.call = () => {};
-  return Reanimated;
-});
+// react-native-reanimated: use the library's own jest support. The real module
+// loads under jest now that the worklets babel plugin runs in tests (see
+// babel.config.js); do not hand-roll a mock of it (habitcraft-ma03).
+require('react-native-reanimated').setUpTests();
 
 // Mock react-native-gesture-handler
 jest.mock('react-native-gesture-handler', () => ({

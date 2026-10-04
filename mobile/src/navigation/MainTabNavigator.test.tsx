@@ -4,10 +4,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { MainTabNavigator } from './MainTabNavigator';
 
-// The screens are stubbed rather than rendered. DashboardScreen reaches the
-// '@/components' barrel, which pulls react-native-reanimated and dies at import
-// under jest (habitcraft-ma03); nothing in this file is about what the tabs
-// contain.
+// The screens are stubbed rather than rendered; nothing in this file is about
+// what the tabs contain.
 jest.mock('@/screens', () => {
   const { View } = require('react-native');
   return {

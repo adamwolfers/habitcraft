@@ -12,12 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-// Imported directly, not through '@/components': that barrel pulls in
-// SkeletonLoader -> react-native-reanimated, whose jest mock throws
-// WorkletsError at module load and takes the whole suite down with an error
-// pointing nowhere near the cause (habitcraft-ma03). Restore the barrel import
-// once that is fixed.
-import { FormField } from '@/components/FormField';
+import { FormField } from '@/components';
 import { AuthStackParamList } from '@/types';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';

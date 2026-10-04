@@ -1,8 +1,6 @@
 module.exports = function (api) {
   api.cache(true);
 
-  const isTest = process.env.NODE_ENV === 'test';
-
   const plugins = [
     [
       'module-resolver',
@@ -23,18 +21,17 @@ module.exports = function (api) {
     ],
   ];
 
-  // Only include reanimated plugin in non-test environments
-  if (!isTest) {
-    plugins.push('react-native-reanimated/plugin');
-  }
+  // Kept on under jest too: without it 'worklet' functions are never marked, and
+  // react-native-worklets throws WorkletsError at import (habitcraft-ma03).
+  plugins.push('react-native-reanimated/plugin');
 
   return {
     presets: [
       [
         'babel-preset-expo',
         {
-          // Disable reanimated plugin in test environment (babel-preset-expo loads it internally)
-          reanimated: !isTest,
+          // The plugin is added explicitly above; don't let the preset add it twice.
+          reanimated: false,
         },
       ],
     ],
