@@ -603,6 +603,180 @@ jobs:
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  # Detox on an Android emulator, not iOS on a macOS runner: macOS runners have
+  # no Docker, and this job needs the docker-compose.test.yml backend that the
+  # other jobs here share (habitcraft-bqhe). It runs the @smoke subset in
+  # e2e/jest.smoke.config.js (habitcraft-bqhe.12).
+  #
+  # Gated like e2e-tests minus `frontend`, plus `mobile`: the suite drives the
+  # real backend, so a backend, db or shared change can break it as surely as a
+  # mobile one. A frontend change cannot.
+  mobile-e2e-tests:
+    name: Mobile E2E Tests (Android)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, backend-integration-tests, mobile-unit-tests]
+    if: |
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (
+        needs.detect-changes.outputs.mobile == 'true' ||
+        needs.detect-changes.outputs.backend == 'true' ||
+        needs.detect-changes.outputs.db == 'true' ||
+        needs.detect-changes.outputs.shared == 'true' ||
+        needs.detect-changes.outputs.e2e-infra == 'true' ||
+        needs.detect-changes.outputs.workflow == 'true'
+      )
+    timeout-minutes: 75
+    env:
+      # One AVD definition, shared by the cache key and both emulator steps.
+      # google_apis, not google_apis_playstore: the Play image was CPU-starved
+      # by Play services on first boot even at 4 cores (habitcraft-bqhe.19).
+      AVD_API_LEVEL: 34
+      AVD_TARGET: google_apis
+      AVD_ARCH: x86_64
+      # .detoxrc.js reads this; detox reuses the running emulator whose AVD
+      # has this name instead of booting its own.
+      DETOX_AVD_NAME: Detox_CI
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The emulator needs hardware acceleration, and the runner user cannot
+      # open /dev/kvm by default.
+      - name: Enable KVM
+        working-directory: .
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies
+        run: npm ci
+
+      # android/ is gitignored; prebuild generates it, including the detox
+      # wiring from @config-plugins/detox (habitcraft-bqhe.1).
+      - name: Generate the Android project
+        run: npx expo prebuild -p android --no-install
+
+      # A release build, not debug: a debug build under instrumentation ANRs on
+      # emulator startup (habitcraft-bqhe.19), and it would also need Metro.
+      # The npm script inlines EXPO_PUBLIC_E2E and the API base URL into the
+      # bundle, which happens here at build time and not at test time.
+      # x86_64 only: the emulator runs nothing else, and each extra ABI is
+      # another full native compile.
+      - name: Build the release APK and its test APK
+        env:
+          ORG_GRADLE_PROJECT_reactNativeArchitectures: x86_64
+        run: npm run e2e:build:android:release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Only the backend image: this suite never touches the web frontend.
+      - name: Build the backend test container with cache
+        uses: docker/bake-action@v5
+        with:
+          files: |
+            docker-compose.test.yml
+            docker-bake.test.hcl
+          targets: backend-test
+          set: |
+            ${{ !inputs.force_rebuild && '*.cache-from=type=gha' || '' }}
+            *.cache-to=type=gha,mode=max
+          load: true
+
+      # backend-test pulls in postgres-test and db-migrate-test through
+      # depends_on. The emulator reaches it at localhost:3010 because
+      # .detoxrc.js reverses that port into the device.
+      - name: Start the backend
+        working-directory: .
+        run: |
+          docker compose -f docker-compose.test.yml up -d --wait backend-test
+          timeout 60 bash -c 'until curl -s http://localhost:3010/health > /dev/null; do sleep 2; done'
+          echo "Backend is ready!"
+
+      # A cold-booted emulator is not usable for ~15 minutes (see
+      # scripts/settle-android-emulator.sh). So on a cache miss, boot once, let
+      # it settle, and cache the snapshot the emulator saves on shutdown. Later
+      # runs restore that settled state instead of booting cold.
+      - name: Restore the AVD snapshot
+        id: avd-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ env.AVD_API_LEVEL }}-${{ env.AVD_TARGET }}-${{ env.AVD_ARCH }}-${{ hashFiles('mobile/scripts/settle-android-emulator.sh') }}
+
+      - name: Create the AVD and its settled snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.AVD_API_LEVEL }}
+          target: ${{ env.AVD_TARGET }}
+          arch: ${{ env.AVD_ARCH }}
+          avd-name: ${{ env.DETOX_AVD_NAME }}
+          cores: 4
+          ram-size: 4096M
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          working-directory: mobile
+          script: bash scripts/settle-android-emulator.sh
+
+      # The emulator-runner action runs each line of `script` as its own shell,
+      # so multi-line logic belongs in a script file, not here.
+      - name: Run the detox smoke suite
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ env.AVD_API_LEVEL }}
+          target: ${{ env.AVD_TARGET }}
+          arch: ${{ env.AVD_ARCH }}
+          avd-name: ${{ env.DETOX_AVD_NAME }}
+          cores: 4
+          ram-size: 4096M
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: mobile
+          script: |
+            bash scripts/settle-android-emulator.sh
+            npm run e2e:test:android:release:smoke -- --record-logs failing --take-screenshots failing --artifacts-location artifacts/
+
+      - name: Upload detox artifacts
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: detox-artifacts
+          path: mobile/artifacts/
+          retention-days: 7
+
+      - name: Stop the backend
+        if: always()
+        working-directory: .
+        run: docker compose -f docker-compose.test.yml down -v
+
   e2e-tests:
     name: E2E Tests (Shard ${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
@@ -766,7 +940,7 @@ jobs:
   run-migrations-gcp:
     name: Run Database Migrations
     runs-on: ubuntu-latest
-    needs: [detect-changes, backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests]
+    needs: [detect-changes, backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests, mobile-e2e-tests]
     # Only run migrations when db/ changed
     if: |
       github.ref == 'refs/heads/master' &&
@@ -990,7 +1164,7 @@ jobs:
   build-mobile-preview:
     name: Build Mobile Preview
     runs-on: ubuntu-latest
-    needs: [detect-changes, mobile-unit-tests]
+    needs: [detect-changes, mobile-unit-tests, mobile-e2e-tests]
     # Uses mobile-deploy, NOT mobile: the latter gates mobile-unit-tests, where
     # a test-only change must count. An EAS preview build for a test edit cannot
     # differ from the previous one. Deliberately NOT gated on `shared` either --
