@@ -405,8 +405,10 @@ emulator because macOS runners have no Docker, and the job needs the
   skips it.
 - **What waits on it:** `run-migrations-gcp`, and through it both GCP deploys,
   and `build-mobile-preview`.
-- **The emulator:** `google_apis`, API 34, x86_64. The Play Store image was
-  starved by Play services on first boot (habitcraft-bqhe.19). On a cache
+- **The emulator:** `google_apis`, API 34, x86_64, `pixel_6` screen. The Play
+  Store image was starved by Play services on first boot (habitcraft-bqhe.19).
+  Without a screen profile the AVD is 320x640, and the habit form's submit
+  button falls below the fold (habitcraft-bqhe.21). On a cache
   miss the job boots it, runs `mobile/scripts/settle-android-emulator.sh`, and
   caches the snapshot. Later runs restore that settled snapshot.
 - **On failure:** Detox logs and screenshots of the failing cases are uploaded
