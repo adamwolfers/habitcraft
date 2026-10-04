@@ -3,6 +3,7 @@ import {
   generateTestUser,
   launchAuthenticated,
   waitForElement,
+  waitForDashboard,
   createHabit,
   habitCard,
   habitCardMatcher,
@@ -61,7 +62,7 @@ describe('Habit CRUD Operations', () => {
       await element(by.id('create-habit-button')).tap();
 
       // Verify back on dashboard
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Verify habit appears in list
       await expect(habitCard(habitName)).toBeVisible();
@@ -93,7 +94,7 @@ describe('Habit CRUD Operations', () => {
       await element(by.id('create-habit-button')).tap();
 
       // Verify back on dashboard with habit visible
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
       await expect(habitCard(habitName)).toBeVisible();
     });
   });
@@ -129,7 +130,7 @@ describe('Habit CRUD Operations', () => {
       const updatedName = 'Updated Habit Name';
 
       await createHabit(originalName);
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Tap on the habit to view details, then edit from there. The card
       // opens HabitDetailScreen, not the edit form; only the detail screen's
@@ -165,7 +166,7 @@ describe('Habit CRUD Operations', () => {
       const habitName = 'Habit to Delete';
 
       await createHabit(habitName);
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Verify habit exists
       await expect(habitCard(habitName)).toBeVisible();
@@ -181,7 +182,7 @@ describe('Habit CRUD Operations', () => {
       await element(by.text('Delete')).tap();
 
       // Verify back on dashboard and habit is gone
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
       await expect(habitCard(habitName)).not.toBeVisible();
     });
 
@@ -190,7 +191,7 @@ describe('Habit CRUD Operations', () => {
       const habitName = 'Habit Not Deleted';
 
       await createHabit(habitName);
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Open edit screen
       await habitCard(habitName).tap();
@@ -204,7 +205,7 @@ describe('Habit CRUD Operations', () => {
 
       // Go back to dashboard
       await device.pressBack();
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Verify habit still exists
       await expect(habitCard(habitName)).toBeVisible();

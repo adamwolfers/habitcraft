@@ -179,7 +179,7 @@ export async function launchAuthenticated(
     launchArgs: seedLaunchArgs(tokens),
   });
 
-  await waitForElement('dashboard-screen', 30000);
+  await waitForDashboard(30000);
   return { user, session: tokens };
 }
 
@@ -204,7 +204,7 @@ export async function relaunchAuthenticated(session: E2ESession): Promise<void> 
     launchArgs: seedLaunchArgs(session),
   });
 
-  await waitForElement('dashboard-screen', 30000);
+  await waitForDashboard(30000);
 }
 
 /**
@@ -236,7 +236,7 @@ export async function relaunchWithoutSeeding(): Promise<void> {
  */
 export async function returnToDashboard(): Promise<void> {
   await device.reloadReactNative();
-  await waitForElement('dashboard-screen', 30000);
+  await waitForDashboard(30000);
 }
 
 /**
@@ -246,6 +246,22 @@ export async function waitForElement(testID: string, timeout = 10000) {
   await waitFor(element(by.id(testID)))
     .toBeVisible()
     .withTimeout(timeout);
+}
+
+/**
+ * Wait until the dashboard is the screen in front.
+ *
+ * Waits on the header, never on dashboard-screen. Detox's iOS visibility test
+ * counts the habit cards as covering the container that holds them, so
+ * dashboard-screen's visible share falls with every habit the run creates. Three
+ * habits -- one of them a two-line card -- took it to 74% against the 75%
+ * threshold. From then on every wait timed out on a correctly rendered
+ * dashboard, and Detox reported the app as busy, because the busy thing was its
+ * own polling (habitcraft-bqhe.17). The header is the same size however many
+ * habits exist, and the create and edit modals still cover it.
+ */
+export async function waitForDashboard(timeout = 10000) {
+  await waitForElement('dashboard-header', timeout);
 }
 
 /**
@@ -286,7 +302,7 @@ export async function loginTestUser(email: string, password: string) {
   await element(by.id('login-email-input')).replaceText(email);
   await element(by.id('login-password-input')).replaceText(password);
   await element(by.id('login-button')).tap();
-  await waitForElement('dashboard-screen');
+  await waitForDashboard();
 }
 
 /**
@@ -302,7 +318,7 @@ export async function registerTestUser(user: ReturnType<typeof generateTestUser>
   await element(by.id('register-email-input')).replaceText(user.email);
   await element(by.id('register-password-input')).replaceText(user.password);
   await element(by.id('register-button')).tap();
-  await waitForElement('dashboard-screen');
+  await waitForDashboard();
 }
 
 /**
@@ -351,5 +367,5 @@ export async function createHabit(name: string, description?: string) {
     await element(by.id('habit-description-input')).replaceText(description);
   }
   await element(by.id('create-habit-button')).tap();
-  await waitForElement('dashboard-screen');
+  await waitForDashboard();
 }

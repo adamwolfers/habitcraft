@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, act } from '@testing-library/react-native';
+import { render, fireEvent, act, within } from '@testing-library/react-native';
 import { DashboardScreen } from './DashboardScreen';
 import { useHabits, useCompleteHabit, useUncompleteHabit } from '@/hooks';
 import { HabitWithStats } from '@/types';
@@ -148,6 +148,36 @@ describe('DashboardScreen', () => {
     expect(getByTestId('empty-state')).toBeTruthy();
     expect(getByText('No habits yet')).toBeTruthy();
     expect(getByText('Create your first habit to start tracking your progress')).toBeTruthy();
+  });
+
+  // The detox suite's "the dashboard is on screen" signal (habitcraft-bqhe.17).
+  it('marks the loaded header for E2E', () => {
+    mockUseHabits.mockReturnValue({
+      data: [mockHabit],
+      isLoading: false,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: false,
+    });
+
+    const { getByTestId } = render(<DashboardScreen />);
+
+    expect(within(getByTestId('dashboard-header')).getByText('Today')).toBeTruthy();
+  });
+
+  it('does not mark the header while habits are loading', () => {
+    mockUseHabits.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+      refetch: mockRefetch,
+      isRefetching: false,
+    });
+
+    const { queryByTestId, getByText } = render(<DashboardScreen />);
+
+    expect(getByText('Today')).toBeTruthy();
+    expect(queryByTestId('dashboard-header')).toBeNull();
   });
 
   it('renders habits list', () => {

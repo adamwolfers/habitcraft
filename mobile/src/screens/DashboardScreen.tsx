@@ -87,7 +87,11 @@ export function DashboardScreen() {
   return (
     <View testID="dashboard-screen" style={styles.container}>
       <OfflineBanner />
-      <View style={styles.header}>
+      {/* The detox suite's "on the dashboard" signal, deliberately not
+          dashboard-screen: Detox counts the habit cards as covering their own
+          container, so that view drops below its visibility threshold once
+          enough habits exist (habitcraft-bqhe.17). The header does not grow. */}
+      <View testID="dashboard-header" style={styles.header}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Today</Text>
           <SyncIndicator />

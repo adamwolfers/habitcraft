@@ -2,6 +2,7 @@ import { element, by, expect, waitFor } from 'detox';
 import {
   generateTestUser,
   waitForElement,
+  waitForDashboard,
   gotoLogin,
   gotoRegister,
   launchLoggedOut,
@@ -42,9 +43,7 @@ describe('Authentication', () => {
 
       await element(by.id('register-button')).tap();
 
-      await waitFor(element(by.id('dashboard-screen')))
-        .toBeVisible()
-        .withTimeout(10000);
+      await waitForDashboard();
     });
 
     it('should reveal the password on request', async () => {
@@ -118,7 +117,7 @@ describe('Authentication', () => {
       await element(by.id('register-email-input')).replaceText(testUser.email);
       await element(by.id('register-password-input')).replaceText(testUser.password);
       await element(by.id('register-button')).tap();
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Same address, second time around. Getting back to the register form
       // means dropping the session the successful registration just created.
@@ -156,7 +155,7 @@ describe('Authentication', () => {
       await element(by.id('register-email-input')).replaceText(testUser.email);
       await element(by.id('register-password-input')).replaceText(testUser.password);
       await element(by.id('register-button')).tap();
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       await element(by.id('tab-profile')).tap();
       await waitForElement('profile-screen');
@@ -168,9 +167,7 @@ describe('Authentication', () => {
       await element(by.id('login-password-input')).replaceText(testUser.password);
       await element(by.id('login-button')).tap();
 
-      await waitFor(element(by.id('dashboard-screen')))
-        .toBeVisible()
-        .withTimeout(10000);
+      await waitForDashboard();
     });
 
     it('should show error for invalid credentials', async () => {

@@ -7,6 +7,7 @@ import {
   relaunchAuthenticated,
   relaunchWithoutSeeding,
   waitForElement,
+  waitForDashboard,
   type E2ESession,
 } from '../config/testSetup';
 
@@ -76,7 +77,7 @@ describe('Logout', () => {
       await expect(element(by.id('welcome-screen'))).toBeVisible();
 
       // ...and the dashboard is gone with it.
-      await expect(element(by.id('dashboard-screen'))).not.toBeVisible();
+      await expect(element(by.id('dashboard-header'))).not.toBeVisible();
     });
 
     it('should allow login again after logout', async () => {
@@ -84,7 +85,7 @@ describe('Logout', () => {
 
       await loginTestUser(testUser.email, testUser.password);
 
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
     });
   });
 
@@ -113,7 +114,7 @@ describe('Logout', () => {
     it('should persist the session across a restart when logged in @smoke', async () => {
       await relaunchWithoutSeeding();
 
-      await waitForElement('dashboard-screen', 30000);
+      await waitForDashboard(30000);
     });
   });
 });

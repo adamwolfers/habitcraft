@@ -1,5 +1,10 @@
 import { device, element, by, expect, waitFor } from 'detox';
-import { generateTestUser, launchAuthenticated, waitForElement } from '../config/testSetup';
+import {
+  generateTestUser,
+  launchAuthenticated,
+  waitForDashboard,
+  waitForElement,
+} from '../config/testSetup';
 
 describe('Offline Functionality', () => {
   const testUser = generateTestUser();
@@ -12,7 +17,7 @@ describe('Offline Functionality', () => {
 
   beforeEach(async () => {
     // Ensure we're on the dashboard
-    await waitForElement('dashboard-screen');
+    await waitForDashboard();
   });
 
   describe('Offline Banner', () => {
@@ -75,7 +80,7 @@ describe('Offline Functionality', () => {
       await element(by.id('create-habit-button')).tap();
 
       // Verify back on dashboard
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Habit should appear with pending badge
       await expect(element(by.text(habitName))).toBeVisible();
@@ -140,13 +145,13 @@ describe('Offline Functionality', () => {
       await waitForElement('habit-name-input');
       await element(by.id('habit-name-input')).replaceText('Queued Habit 1');
       await element(by.id('create-habit-button')).tap();
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       await element(by.id('create-habit-fab')).tap();
       await waitForElement('habit-name-input');
       await element(by.id('habit-name-input')).replaceText('Queued Habit 2');
       await element(by.id('create-habit-button')).tap();
-      await waitForElement('dashboard-screen');
+      await waitForDashboard();
 
       // Sync indicator should show count
       await expect(element(by.id('sync-indicator'))).toBeVisible();
