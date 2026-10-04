@@ -68,14 +68,25 @@ async function readSeededId(): Promise<string | null> {
   }
 }
 
+/**
+ * Detox's launch arguments on Android, which arrive as intent extras.
+ *
+ * Required here rather than imported at the top: the package reads
+ * NativeModules.LaunchArguments as soon as it loads, and the native module's
+ * constants block while it waits for an activity. A top-level import would pay
+ * that on every launch of every build. Only an E2E build ever reaches this.
+ */
+function androidLaunchArgs(): Record<string, unknown> {
+  const { LaunchArguments } = require('react-native-launch-arguments');
+  return LaunchArguments.value();
+}
+
 function readLaunchArg(key: string): string | null {
-  // Detox passes launchArgs as `-key value` process arguments, which land in
-  // NSUserDefaults' argument domain. React Native's Settings module reads that
-  // domain, which is why this needs no extra dependency -- and why it is iOS
-  // only. Android passes launch args as intent extras instead and will need
-  // react-native-launch-arguments when that platform is wired up
-  // (habitcraft-bqhe.1).
-  const value = Settings.get(key);
+  // On iOS, Detox passes launchArgs as `-key value` process arguments, which
+  // land in NSUserDefaults' argument domain. React Native's Settings module
+  // reads that domain, so iOS needs no extra dependency. Android has no such
+  // domain (habitcraft-bqhe.19).
+  const value = Platform.OS === 'ios' ? Settings.get(key) : androidLaunchArgs()[key];
   return typeof value === 'string' && value.length > 0 ? value : null;
 }
 
@@ -85,7 +96,7 @@ function readLaunchArg(key: string): string | null {
  * @returns whether a session was seeded, so callers can log or branch in tests.
  */
 export async function seedE2ESession(): Promise<boolean> {
-  if (!E2E_ENABLED || Platform.OS !== 'ios') {
+  if (!E2E_ENABLED || (Platform.OS !== 'ios' && Platform.OS !== 'android')) {
     return false;
   }
 

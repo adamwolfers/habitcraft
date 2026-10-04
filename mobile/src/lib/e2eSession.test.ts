@@ -25,6 +25,13 @@ jest.mock('expo-file-system/legacy', () => ({
   writeAsStringAsync: mockWriteAsStringAsync,
 }));
 
+// Android's source of launch arguments. Out here for the same reason as the
+// mocks above.
+const mockLaunchArgumentsValue = jest.fn();
+jest.mock('react-native-launch-arguments', () => ({
+  LaunchArguments: { value: mockLaunchArgumentsValue },
+}));
+
 const SEEDED_ID_PATH = '/mock/documents/e2e-seeded-id';
 
 /** Stand in for the record a previous seeding on this install would have left. */
@@ -38,13 +45,15 @@ function seededIdOnDisk(id: string | null) {
  * time. So each case has to set the environment and then load the module fresh,
  * rather than importing it once at the top.
  */
-function loadWithFlag(flag: string | undefined) {
+function loadWithFlag(flag: string | undefined, os: 'ios' | 'android' = 'ios') {
   jest.resetModules();
   if (flag === undefined) {
     delete process.env.EXPO_PUBLIC_E2E;
   } else {
     process.env.EXPO_PUBLIC_E2E = flag;
   }
+  // Set on the fresh registry's Platform, which is the one the module will see.
+  require('react-native').Platform.OS = os;
   return require('./e2eSession') as typeof import('./e2eSession');
 }
 
@@ -179,6 +188,30 @@ describe('seedE2ESession', () => {
 
       await expect(seedE2ESession()).resolves.toBe(false);
       expect(mockSaveTokens).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('on Android', () => {
+    // Detox delivers Android launch arguments as intent extras, which Settings
+    // cannot see (habitcraft-bqhe.19).
+    it('saves both tokens from the intent extras', async () => {
+      mockLaunchArgumentsValue.mockReturnValue(TOKEN_ARGS);
+      const { seedE2ESession } = loadWithFlag('1', 'android');
+
+      await expect(seedE2ESession()).resolves.toBe(true);
+      expect(mockSaveTokens).toHaveBeenCalledWith({
+        accessToken: 'access-token',
+        refreshToken: 'refresh-token',
+      });
+      expect(mockWriteAsStringAsync).toHaveBeenCalledWith(SEEDED_ID_PATH, 'launch-1');
+      expect(mockGet).not.toHaveBeenCalled();
+    });
+
+    it('does not read the intent extras in a build without the E2E flag', async () => {
+      const { seedE2ESession } = loadWithFlag(undefined, 'android');
+
+      await expect(seedE2ESession()).resolves.toBe(false);
+      expect(mockLaunchArgumentsValue).not.toHaveBeenCalled();
     });
   });
 });
