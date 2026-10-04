@@ -11,6 +11,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
 | Mobile Unit | Jest + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
+| Mobile E2E | Detox | `mobile/e2e/` | The real app on a simulator or emulator against the test backend. CI runs the `@smoke` subset on Android. See [Mobile E2E (Detox)](#mobile-e2e-detox) |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
 | Dependency Advisories | plain node + `npm audit` | `scripts/audit-advisories.js` | Weekly report of advisories new since `scripts/audit-baseline.json`; never gates a push |
@@ -312,6 +313,148 @@ npm run test:coverage         # Unit tests + the 80% threshold CI enforces
 npm run typecheck             # Type check
 npm run lint                  # ESLint
 ```
+
+For the device suite, see [Mobile E2E (Detox)](#mobile-e2e-detox).
+
+## Mobile E2E (Detox)
+
+`mobile/e2e/tests/` holds 38 cases: `auth.test.ts` 14, `habits.test.ts` 10,
+`logout.test.ts` 8, `offline.test.ts` 6. They drive the built app on an iOS
+simulator or Android emulator. Every request goes to the real backend from
+`docker-compose.test.yml`.
+
+### Before the first run
+
+1. **Start the backend.** The app talks to `localhost:3010`.
+   ```bash
+   docker compose -f docker-compose.test.yml up -d --wait backend-test
+   ```
+   On Android, Detox reverses port 3010 into the emulator (`reversePorts` in
+   `mobile/.detoxrc.js`), so `localhost` works there too.
+2. **Generate the native project.** `mobile/android/` and `mobile/ios/` are
+   gitignored. Run `npx expo prebuild -p android` or `-p ios` in `mobile/`.
+   Prebuild also applies `@config-plugins/detox`, which the Android test APK
+   needs (habitcraft-bqhe.1).
+3. **Platform tools.**
+   - iOS: `applesimutils` (`brew tap wix/brew && brew install applesimutils`).
+     Pick the simulator with `DETOX_IOS_DEVICE` (default `iPhone 17`).
+   - Android: `ANDROID_HOME` or `ANDROID_SDK_ROOT` must be set. Gradle needs it,
+     and so does `clearDeviceSession()` in `mobile/e2e/config/testSetup.ts`,
+     which shells out to `adb`. Use JDK 17–24. Gradle 8.14.3 rejects JDK 25;
+     Android Studio's bundled JBR 21 works. Pick the AVD with `DETOX_AVD_NAME`
+     (default `Pixel_7_API_34`). Give it 4 cores and 4 GB. A 1-core, 2 GB AVD
+     ANRs on app startup.
+
+### Building and running
+
+**Build before you test.** Expo inlines `EXPO_PUBLIC_*` variables into the JS
+bundle at build time. The `e2e:build:*` scripts set `EXPO_PUBLIC_E2E=1` and
+`EXPO_PUBLIC_API_BASE_URL`. To point the suite at another backend, set
+`E2E_API_URL` and **rebuild**. Re-running the tests does not change the URL.
+
+```bash
+cd mobile
+
+# Android: use release. A debug build ANRs on startup under instrumentation
+# (habitcraft-bqhe.19).
+npm run e2e:build:android:release
+npm run e2e:test:android:release:smoke   # the CI gate
+npm run e2e:test:android:release         # all 38
+
+# iOS: release needs nothing else running.
+npm run e2e:build:ios:release
+npm run e2e:test:ios:release
+
+# iOS debug loads its bundle from Metro, so start Metro first.
+npm run e2e:metro                        # in another terminal
+npm run e2e:build:ios
+npm run e2e:test:ios:smoke
+```
+
+`e2e:test:ios*` runs `e2e:prepare:ios` first
+(`mobile/scripts/prepare-ios-simulator.sh`). It turns off the AutoFill
+password prompt and clears the keychain. Both would otherwise fail the suite.
+
+### The smoke gate and the full suite
+
+CI runs 12 of the 38 cases: `auth` 2, `habits` 5, `logout` 5. Selection is by
+test name:
+
+- A case is in the gate when its name contains `@smoke`.
+- `mobile/e2e/jest.smoke.config.js` sets `testNamePattern: '@smoke'`.
+  `mobile/e2e/jest.config.js` runs everything.
+- `DETOX_JEST_CONFIG` picks the config. `mobile/.detoxrc.js` reads it. The
+  `:smoke` scripts set it.
+
+**A new test is not in the CI gate unless you tag it `@smoke`.** What the gate
+leaves out, and why, is recorded on habitcraft-bqhe.12.
+
+Do not filter with `detox test -t '<pattern>'`. Detox re-invokes jest through a
+shell. An unescaped `|` in the pattern kills the run with EPIPE, exit 127
+(habitcraft-bqhe.17). Put the pattern in a jest config instead.
+
+### In CI
+
+The `mobile-e2e-tests` job in `.github/workflows/ci.yml` runs
+`e2e:test:android:release:smoke` on `ubuntu-latest`. It uses an Android
+emulator because macOS runners have no Docker, and the job needs the
+`docker-compose.test.yml` backend (habitcraft-bqhe).
+
+- **When it runs:** any change under `mobile/`, `backend/`, `db/` or `shared/`,
+  to the docker test infrastructure, or to `ci.yml`. A frontend-only change
+  skips it.
+- **What waits on it:** `run-migrations-gcp`, and through it both GCP deploys,
+  and `build-mobile-preview`.
+- **The emulator:** `google_apis`, API 34, x86_64. The Play Store image was
+  starved by Play services on first boot (habitcraft-bqhe.19). On a cache
+  miss the job boots it, runs `mobile/scripts/settle-android-emulator.sh`, and
+  caches the snapshot. Later runs restore that settled snapshot.
+- **On failure:** Detox logs and screenshots of the failing cases are uploaded
+  as the `detox-artifacts` artifact.
+
+### Writing a spec
+
+- **Sign in with `launchAuthenticated()`, not the login form.** It passes
+  tokens as launch arguments (`mobile/src/lib/e2eSession.ts`). Typing a
+  password on iOS raises the AutoFill prompt, which stalls Detox
+  (habitcraft-bqhe.11). Type credentials only when the form is the subject:
+  `auth.test.ts`, and the log-in-again case in `logout.test.ts`.
+- **"On the dashboard" means `waitForDashboard()`.** It waits on
+  `dashboard-header`. Do not assert `toBeVisible()` on `dashboard-screen` or
+  `habit-list`. Detox counts the habit cards as covering their container, so
+  those checks fail once enough habits exist. Assert visibility on a small,
+  fixed-size element, not on a container whose content grows.
+- **Form testIDs are composed.** `mobile/src/components/FormField.tsx` builds
+  four ids from one `testID`: the input itself, `<id>-error`, `<id>-hint` and
+  `<id>-reveal`. Grepping `mobile/src/` for `register-password-input-error`
+  finds nothing, because the string is built from a template. It is not a
+  broken reference. `-error` and `-hint` never appear together, so asserting
+  one of them is an assertion about the form's state.
+- **Every file starts logged out.** `mobile/e2e/config/perFileSetup.ts` calls
+  `clearDeviceSession()` once per file. On iOS that is `simctl keychain reset`.
+  On Android it is `adb shell pm clear`. Restoring the screen between tests is
+  covered under [UI State Isolation](#ui-state-isolation).
+
+The mobile auth screens themselves are described in
+[AUTHENTICATION.md](../AUTHENTICATION.md#mobile-implementation-react-native--expo).
+
+### When a run fails for no visible reason
+
+- **A cold-booted Android emulator is not ready at `sys.boot_completed=1`.**
+  For about 15 minutes its load average stays high. The symptoms are a
+  `beforeAll` timeout, or `Waited for the root of the view hierarchy to have
+  window focus`. Neither points at the emulator. Run
+  `mobile/scripts/settle-android-emulator.sh` first. It waits for the load to
+  stay low and closes stray ANR dialogs.
+- **`Can't find service: package` on Android.** The emulator's
+  `system_server` has died. Run `adb emu kill` and let Detox cold-boot it.
+- **iOS build fails in the Hermes script phase with `No such file or
+  directory`.** `mobile/ios/.xcode.env.local` pins `NODE_BINARY` to an absolute
+  path. Point it at your current `node`.
+- **Duplicate `libhermestooling.so` on an Android build.** The Gradle tasks in
+  `mobile/.detoxrc.js` are scoped to `:app:` on purpose. A bare
+  `assembleAndroidTest` builds every library module's test APK, and
+  `react-native-worklets-core` fails that build.
 
 ## E2E Sharding (and why the shard count is not arbitrary)
 
