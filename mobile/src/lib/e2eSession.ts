@@ -37,7 +37,10 @@ import { storage } from './storage';
  * The record goes in the app's document directory rather than the keychain
  * because the suite's logged-out helpers clear the keychain with `simctl
  * keychain reset` (habitcraft-bqhe.7). A record kept there would go with it,
- * and the very next reload would seed the session straight back.
+ * and the very next reload would seed the session straight back. On Android the
+ * helpers clear with `pm clear`, which does take the record too -- harmlessly,
+ * because that kills the process, and the launch that follows carries either a
+ * fresh id or no seeding arguments at all (habitcraft-bqhe.20).
  *
  * SAFETY. This reads nothing unless EXPO_PUBLIC_E2E is "1" at bundle time, which
  * only the e2e npm scripts set. Production builds do not define it, so the

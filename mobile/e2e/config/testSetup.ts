@@ -1,4 +1,5 @@
 import { execFileSync } from 'child_process';
+import path from 'path';
 import { device, element, by, waitFor } from 'detox';
 
 // Value entry here is replaceText(), never typeText(). typeText() delivers one
@@ -66,10 +67,19 @@ export async function createUserViaApi(
   return { accessToken: body.accessToken, refreshToken: body.refreshToken };
 }
 
+/** The Android applicationId, from android/app/build.gradle. */
+const ANDROID_APP_ID = 'org.habitcraft.app';
+
+/** adb from the SDK Detox itself uses, falling back to whatever is on PATH. */
+function adbPath(): string {
+  const sdk = process.env.ANDROID_SDK_ROOT || process.env.ANDROID_HOME;
+  return sdk ? path.join(sdk, 'platform-tools', 'adb') : 'adb';
+}
+
 /**
  * Clear the session that survives everything the app itself can do.
  *
- * expo-secure-store keeps its items in the iOS keychain, which is not part of
+ * iOS: expo-secure-store keeps its items in the keychain, which is not part of
  * the app container. So the session outlives reloadReactNative(), a
  * launchApp({ newInstance: true }), and even launchApp({ delete: true }) --
  * that last one uninstalls and reinstalls the app and still comes up
@@ -77,10 +87,17 @@ export async function createUserViaApi(
  * reset` is the cheapest thing that does clear it; `simctl erase` also works
  * but wipes the whole device.
  *
- * ANDROID IS A DELIBERATE NO-OP. There the tokens live in app data, which a
- * reinstall clears, so launchApp({ delete: true }) already yields a logged-out
- * app and there is nothing to reset. The CI target for this epic is Android,
- * so this guard is the common path there, not an edge case.
+ * ANDROID: the tokens live in app data, which survives a reload. This used to
+ * be a no-op on the grounds that launchApp({ delete: true }) reinstalls and so
+ * clears app data -- true, but returnToLoggedOut() only reloads, so every test
+ * after a sign-in started signed in (habitcraft-bqhe.20). `pm clear` wipes the
+ * app data instead. That takes the e2e-seeded-id record in the document
+ * directory with it (src/lib/e2eSession.ts), which is what we want: the record
+ * only has to outlive reloads, and the next launch brings a fresh id anyway.
+ *
+ * ON ANDROID THE APP IS NOT RUNNING AFTERWARDS. `pm clear` kills the process,
+ * so this terminates it first through Detox rather than letting it vanish
+ * under a live connection. Callers must launch, not reload, after this.
  *
  * FAILS LOUDLY. An unreported reset failure is the worst shape this can take:
  * the whole suite then runs against a surviving session and every logged-out
@@ -88,18 +105,41 @@ export async function createUserViaApi(
  * 36 of 38 tests in scripts/prepare-ios-simulator.sh before the error was
  * unsuppressed.
  */
-export function clearDeviceSession(): void {
-  if (device.getPlatform() !== 'ios') {
+export async function clearDeviceSession(): Promise<void> {
+  if (device.getPlatform() === 'ios') {
+    runOrExplain('xcrun', ['simctl', 'keychain', device.id, 'reset'], {
+      what: `clear the keychain on simulator ${device.id}`,
+    });
     return;
   }
 
+  await device.terminateApp();
+  // `pm clear` has exited 0 while printing "Failed" on some Android versions,
+  // so the exit status alone is not proof.
+  runOrExplain(adbPath(), ['-s', device.id, 'shell', 'pm', 'clear', ANDROID_APP_ID], {
+    what: `clear the app data of ${ANDROID_APP_ID} on ${device.id}`,
+    expectOutput: 'Success',
+  });
+}
+
+function runOrExplain(
+  command: string,
+  args: string[],
+  { what, expectOutput }: { what: string; expectOutput?: string }
+): void {
+  let output: string;
   try {
-    execFileSync('xcrun', ['simctl', 'keychain', device.id, 'reset'], { stdio: 'pipe' });
+    output = execFileSync(command, args, { stdio: 'pipe', encoding: 'utf8' });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
     throw new Error(
-      `Could not clear the keychain on simulator ${device.id}, so the app would ` +
-        `start from the previous spec's session: ${detail}`
+      `Could not ${what}, so the app would start from the previous spec's session: ${detail}`
+    );
+  }
+  if (expectOutput && !output.includes(expectOutput)) {
+    throw new Error(
+      `Could not ${what}, so the app would start from the previous spec's session: ` +
+        `expected "${expectOutput}", got "${output.trim()}"`
     );
   }
 }
@@ -135,7 +175,7 @@ function seedLaunchArgs(session: E2ESession) {
  * like -- not the login form, which is a screen further in.
  */
 export async function launchLoggedOut(): Promise<void> {
-  clearDeviceSession();
+  await clearDeviceSession();
   await device.launchApp({ delete: true, newInstance: true });
   await waitForElement('welcome-screen', 30000);
 }
@@ -143,14 +183,23 @@ export async function launchLoggedOut(): Promise<void> {
 /**
  * Return an already-running app to the logged-out state, between tests.
  *
- * Cheaper than launchLoggedOut(): reloading the JS bundle remounts
- * AuthProvider, whose mount effect re-reads storage.hasTokens(), so clearing
- * the keychain first is enough to make it come up signed out. Use this in a
- * beforeEach; use launchLoggedOut() for the first launch in a file.
+ * Cheaper than launchLoggedOut(): no reinstall. On iOS, reloading the JS
+ * bundle remounts AuthProvider, whose mount effect re-reads
+ * storage.hasTokens(), so clearing the keychain first is enough to make it come
+ * up signed out. On Android the clear has already killed the process, so there
+ * is nothing to reload and it relaunches instead -- with no launch arguments,
+ * so nothing can seed a session back (habitcraft-bqhe.20).
+ *
+ * Use this in a beforeEach; use launchLoggedOut() for the first launch in a
+ * file.
  */
 export async function returnToLoggedOut(): Promise<void> {
-  clearDeviceSession();
-  await device.reloadReactNative();
+  await clearDeviceSession();
+  if (device.getPlatform() === 'ios') {
+    await device.reloadReactNative();
+  } else {
+    await device.launchApp({ newInstance: true });
+  }
   await waitForElement('welcome-screen', 30000);
 }
 
@@ -171,7 +220,7 @@ export async function launchAuthenticated(
   // there, clear first: a spec that reaches this with a stale session and a
   // seeding failure would silently test the previous user's account instead of
   // failing (habitcraft-bqhe.7).
-  clearDeviceSession();
+  await clearDeviceSession();
 
   await device.launchApp({
     delete: true,
@@ -197,7 +246,7 @@ export async function launchAuthenticated(
  * cleared.
  */
 export async function relaunchAuthenticated(session: E2ESession): Promise<void> {
-  clearDeviceSession();
+  await clearDeviceSession();
 
   await device.launchApp({
     newInstance: true,

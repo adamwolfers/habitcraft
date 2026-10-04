@@ -450,7 +450,9 @@ removed. Reloading the app is state-independent: an open modal, a pushed screen
 and a switched tab all go away together. Reach for a full relaunch only when a
 reload cannot restore the precondition — in `mobile/e2e/tests/logout.test.ts`
 the tests log out, and the session is seeded at process start, so only a
-relaunch brings it back.
+relaunch brings it back. On Android `returnToLoggedOut()` relaunches too:
+clearing the stored session there means `adb shell pm clear`, which kills the
+process, so there is nothing left to reload (habitcraft-bqhe.20).
 
 **A test whose subject is the session must not be handed one.** The Detox
 suite signs in by passing tokens as launch arguments, which the app writes to

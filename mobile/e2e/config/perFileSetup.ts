@@ -19,10 +19,11 @@ import { clearDeviceSession } from './testSetup';
  * leakage is deterministic and ordered -- the suite would pass or fail
  * depending on file order, which is what made this bug hard to see.
  *
- * This only clears the keychain. Launching is left to the file, because the
- * files disagree about what they want: three seed a session through launch
- * arguments, and auth.test.ts wants the Welcome screen.
+ * This only clears the stored session (and on Android stops the app, which the
+ * clear requires). Launching is left to the file, because the files disagree
+ * about what they want: three seed a session through launch arguments, and
+ * auth.test.ts wants the Welcome screen.
  */
 beforeAll(async () => {
-  clearDeviceSession();
+  await clearDeviceSession();
 });

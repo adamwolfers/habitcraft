@@ -16,9 +16,10 @@ describe('Authentication', () => {
   });
 
   // Not a bare reloadReactNative(). Several tests below sign in, and the
-  // session they leave behind lives in the keychain, which a reload does not
-  // touch -- so every later test in this file would start on the dashboard and
-  // never find the Welcome screen it is looking for (habitcraft-bqhe.7).
+  // session they leave behind -- in the iOS keychain or Android app data -- is
+  // something a reload does not touch, so every later test in this file would
+  // start on the dashboard and never find the Welcome screen it is looking for
+  // (habitcraft-bqhe.7, habitcraft-bqhe.20).
   beforeEach(async () => {
     await returnToLoggedOut();
   });
