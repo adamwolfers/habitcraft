@@ -16,7 +16,7 @@ const baseConfig = require('./jest.config');
  * habitcraft-bqhe.12.
  *
  * WHY testNamePattern AND NOT A SEPARATE SPEC FILE. A dedicated smoke file
- * would duplicate nine test bodies, and the duplicate is what rots when a
+ * would duplicate the gated test bodies, and the duplicate is what rots when a
  * screen changes -- exactly the failure mode this epic exists to clean up
  * (a suite no gate ran, quietly broken by earlier green commits).
  *
