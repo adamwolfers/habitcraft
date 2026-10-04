@@ -50,6 +50,7 @@ module.exports = {
       binaryPath: 'android/app/build/outputs/apk/release/app-release.apk',
       build:
         'cd android && ./gradlew :app:assembleRelease :app:assembleAndroidTest -DtestBuildType=release',
+      reversePorts: [3010],
     },
   },
   // Device names are overridable because a hard-coded model is guaranteed to
