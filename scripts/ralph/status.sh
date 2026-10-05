@@ -12,6 +12,9 @@
 
 set -uo pipefail
 
+# shellcheck source=scripts/ralph/lib.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
 CLONE="${RALPH_CLONE:-$HOME/github/habitcraft-ralph}"
 WATCH=""
 
@@ -50,7 +53,7 @@ render() {
     local pid branch ahead summary warns
     echo "Ralph loop  $CLONE  $(date '+%H:%M:%S')"
 
-    pid="$(pgrep -f 'scripts/ralph/ralph\.sh' | head -1)"
+    pid="$(ralph_pids | head -1)"
     if [[ -n "$pid" ]]; then echo "Loop:    running (pid $pid)"; else echo "Loop:    not running"; fi
 
     branch="$(git branch --show-current)"

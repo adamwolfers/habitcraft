@@ -13,6 +13,7 @@ as the work queue and `scripts/test-all.sh` as the backpressure
 | `land.sh` | Merges a reviewed run, waits for CI, closes its beads, syncs the clone |
 | `bd-failures.jq` | Finds failed `bd` calls in a pass transcript; `ralph.sh` logs them |
 | `status.sh` | The queue, review and stuck beads, and recent passes, at a glance |
+| `lib.sh` | Shared helpers: `ralph_pids`, the one test for "is a loop running?" |
 
 ## Why a fresh process per pass
 

@@ -97,7 +97,7 @@ make_world() {
   git init -q --bare "$W/origin.git"
   git clone -q "$W/origin.git" "$W/main" 2>/dev/null
   mkdir -p "$W/main/scripts/ralph"
-  cp "$land" "$W/main/scripts/ralph/land.sh"
+  cp "$land" "$here/lib.sh" "$W/main/scripts/ralph/"
   commit "$W/main" "Seed"
   git -C "$W/main" add scripts
   git -C "$W/main" commit -q -m "Add land.sh"

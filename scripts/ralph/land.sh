@@ -25,6 +25,9 @@ RUN_LIST_TRIES=24     # how long a CI run may take to appear, in polls
 GH_ERROR_TRIES=10     # consecutive gh failures tolerated while waiting
 CI_TIMEOUT=5400       # seconds before giving up on a run that never completes
 
+# shellcheck source=scripts/ralph/lib.sh
+. "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$PROJECT_ROOT"
 
@@ -43,7 +46,7 @@ done
 [[ "$(git branch --show-current)" == "master" ]] || die "the main checkout is not on master"
 [[ -z "$(git status --porcelain)" ]] || die "the main checkout has uncommitted changes"
 [[ -z "$(git -C "$CLONE" status --porcelain)" ]] || die "the clone has uncommitted changes"
-! pgrep -f 'scripts/ralph/ralph\.sh' >/dev/null || die "ralph.sh is running; land after it stops"
+! ralph_pids >/dev/null || die "ralph.sh is running; land after it stops"
 git -C "$CLONE" rev-parse --verify -q "refs/heads/$BRANCH" >/dev/null \
     || die "the clone has no branch '$BRANCH'"
 
