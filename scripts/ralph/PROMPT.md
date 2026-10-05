@@ -32,6 +32,24 @@ Mark it **stuck** (section 6) instead of working on it if it needs any of:
 - changes to `scripts/ralph/`, `.claude/`, `.husky/`, or the rules in
   `CLAUDE.md`/`AGENTS.md`
 
+**Check first whether the bead is already done.** Beads go stale: earlier
+work often fixes what one describes, or meets the target it sets. Before
+changing anything, check the bead's own "done" condition against the code as
+it is now (run the measurement, grep for the problem it names). If it is
+already met, **do not look for adjacent work to do instead**. Commit nothing,
+and hand off for review with the evidence:
+
+```bash
+bd comments add <id> "RALPH ALREADY DONE: <the done condition>, met by <commit or bead that did it>. Evidence: <command and its output>. Related work I did NOT do: <...>"
+bd label remove <id> agent-ok
+bd label add <id> agent-review
+```
+
+Leave the bead `in_progress` and stop. A human decides whether to close it
+or to re-scope it into new work. If related work looks worth doing, name it
+in the comment; do not file it. (In the second run, psq1 and g0p were both
+already satisfied, and each pass did nearby work the bead never asked for.)
+
 ## 3. Work
 
 Follow `CLAUDE.md` exactly: TDD (failing test first), no literal validation

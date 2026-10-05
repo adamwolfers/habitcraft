@@ -168,7 +168,10 @@ scripts/ralph/land.sh ralph/<date>
    deleted. That keeps `mg` running in the clone, and the next run, current.
 
 It reports, rather than closes, an `agent-review` bead that no merged commit
-names, and a bead a commit names that is not under review. If every file the
+names, and a bead a commit names that is not under review. The first is what a
+pass leaves when it finds its bead already done: no commit, and a
+`RALPH ALREADY DONE` comment with the evidence. Close or re-scope those by
+hand. If every file the
 branch touches is paths-ignored, CI never starts; `land.sh` says so and leaves
 the beads for you to close.
 
