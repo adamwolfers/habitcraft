@@ -545,7 +545,7 @@ Tests that modify fixture data (habits, user profile, completions) without resto
 
 ### Implementation by Test File
 
-#### `e2e/habits.spec.ts` — Habit Update Tests
+#### `e2e/habits.test.ts` — Habit Update Tests
 
 ```typescript
 // Helper creates unique habits with timestamp
@@ -564,7 +564,7 @@ test('should update habit title', async ({ page }) => {
 
 All 5 update tests create their own habits before testing.
 
-#### `e2e/auth.spec.ts` — Profile Management Tests
+#### `e2e/auth.test.ts` — Profile Management Tests
 
 - Profile update tests register unique users before testing
 - "Email already taken" tests create unique users, then check against User 1's email
@@ -582,7 +582,7 @@ test('should show error when email already taken', async ({ page }) => {
 });
 ```
 
-#### `e2e/completions.spec.ts` — Completion Tracking Tests
+#### `e2e/completions.test.ts` — Completion Tracking Tests
 
 - Toggle tests create unique habits using `createTestHabit` helper
 - "Track completions independently" test creates two unique habits
@@ -935,7 +935,7 @@ it('shows loading state while fetching', async () => {
 ## Current Test Coverage
 
 - **E2E Tests:** 84 tests across authentication (30), completions (33), habits (11), and landing (10).
-  `frontend/e2e/gcp-smoke.spec.ts` is excluded from this run — it targets deployed GCP
+  `frontend/e2e/gcp-smoke.test.ts` is excluded from this run — it targets deployed GCP
   and has its own config (`playwright.gcp.config.ts`).
 - **Target Coverage:** >90% for both backend and frontend
 

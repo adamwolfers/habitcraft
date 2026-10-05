@@ -26,10 +26,10 @@ This document outlines strategies to reduce E2E test execution time, both locall
 
 | File | Description | Tests |
 |------|-------------|-------|
-| `auth.spec.ts` | Login, registration, profile, password | ~35 |
-| `completions.spec.ts` | Toggle, navigation, calendar views | ~22 |
-| `habits.spec.ts` | CRUD operations | ~14 |
-| `landing.spec.ts` | Public/authenticated access | ~6 |
+| `auth.test.ts` | Login, registration, profile, password | ~35 |
+| `completions.test.ts` | Toggle, navigation, calendar views | ~22 |
+| `habits.test.ts` | CRUD operations | ~14 |
+| `landing.test.ts` | Public/authenticated access | ~6 |
 
 ### Current Test Isolation
 

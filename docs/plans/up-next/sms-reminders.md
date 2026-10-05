@@ -492,7 +492,7 @@ interface HabitSmsReminderSettings {
 
 ### Step 8: E2E Tests
 
-**File:** `frontend/e2e/smsReminders.spec.ts`
+**File:** `frontend/e2e/smsReminders.test.ts`
 
 - [ ] Test: user can add and verify phone number
 - [ ] Test: user can enable SMS reminders globally
@@ -596,7 +596,7 @@ function generateVerificationSms({ code }) {
 | `frontend/components/ProfileModal.test.tsx` | Add new tests |
 | `frontend/components/EditHabitModal.tsx` | Add SMS reminder settings |
 | `frontend/components/EditHabitModal.test.tsx` | Add new tests |
-| `frontend/e2e/smsReminders.spec.ts` | New - E2E tests |
+| `frontend/e2e/smsReminders.test.ts` | New - E2E tests |
 
 ### Documentation
 | File | Changes |

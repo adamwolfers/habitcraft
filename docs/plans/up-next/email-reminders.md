@@ -420,7 +420,7 @@ interface HabitReminderSettings {
 
 ### Step 7: E2E Tests
 
-**File:** `frontend/e2e/emailReminders.spec.ts`
+**File:** `frontend/e2e/emailReminders.test.ts`
 
 - [ ] Test: user can enable email reminders globally
 - [ ] Test: user can set default reminder time
@@ -522,7 +522,7 @@ interface HabitReminderSettings {
 | `frontend/components/ProfileModal.test.tsx` | Add new tests |
 | `frontend/components/EditHabitModal.tsx` | Add reminder settings |
 | `frontend/components/EditHabitModal.test.tsx` | Add new tests |
-| `frontend/e2e/emailReminders.spec.ts` | New - E2E tests |
+| `frontend/e2e/emailReminders.test.ts` | New - E2E tests |
 
 ### Documentation
 | File | Changes |

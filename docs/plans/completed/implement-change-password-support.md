@@ -155,7 +155,7 @@ Implement full change password functionality:
 ---
 
 #### Step 6: E2E Tests ✅
-**File:** `frontend/e2e/auth.spec.ts`
+**File:** `frontend/e2e/auth.test.ts`
 
 ##### 6a. Write E2E tests
 - [x] Test: user can change password successfully
@@ -202,7 +202,7 @@ Implement full change password functionality:
 | `frontend/lib/api.test.ts` | Add API tests |
 | `frontend/components/ProfileModal.tsx` | Add password change section |
 | `frontend/components/ProfileModal.test.tsx` | Add component tests |
-| `frontend/e2e/auth.spec.ts` | Add E2E tests for password change |
+| `frontend/e2e/auth.test.ts` | Add E2E tests for password change |
 | `PROJECT_PLAN.md` | Check off completed items |
 
 ---

@@ -119,10 +119,10 @@ frontend/
 │   ├── AuthContext.tsx           # Authentication context
 │   └── AuthContext.test.tsx      # Context tests
 ├── e2e/                           # Playwright E2E tests
-│   ├── auth.spec.ts              # Authentication flow tests
-│   ├── completions.spec.ts       # Completion tracking tests
-│   ├── habits.spec.ts            # Habit management tests
-│   ├── landing.spec.ts           # Landing page tests
+│   ├── auth.test.ts              # Authentication flow tests
+│   ├── completions.test.ts       # Completion tracking tests
+│   ├── habits.test.ts            # Habit management tests
+│   ├── landing.test.ts           # Landing page tests
 │   ├── global-setup.ts           # Test database setup
 │   └── global-teardown.ts        # Test cleanup
 ├── hooks/                         # Custom React hooks

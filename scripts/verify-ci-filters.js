@@ -67,7 +67,7 @@ const CASES = [
   // --- Frontend: same split -------------------------------------------------
   ['frontend/app/page.tsx', true, ['frontend', 'frontend-deploy']],
   ['frontend/app/page.test.tsx', true, ['frontend']],
-  ['frontend/e2e/auth.spec.ts', true, ['frontend']],
+  ['frontend/e2e/auth.test.ts', true, ['frontend']],
   ['frontend/playwright.config.ts', true, ['frontend']],
   ['frontend/.env.test', true, ['frontend']],
 

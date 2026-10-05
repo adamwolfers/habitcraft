@@ -1534,7 +1534,7 @@ Refactored tests to use Playwright's recommended setup project pattern, which:
 1. [x] Create `gcp-auth.setup.ts` - Creates test user and saves auth state
 2. [x] Create `gcp-auth.teardown.ts` - Deletes test user with JWT auth
 3. [x] Update `playwright.gcp.config.ts` - Setup/teardown project pattern
-4. [x] Refactor `gcp-smoke.spec.ts`:
+4. [x] Refactor `gcp-smoke.test.ts`:
    - Unauthenticated tests use `storageState: { cookies: [], origins: [] }`
    - Authenticated tests use stored auth state from setup
    - Fixed habit card selectors (use heading + xpath instead of article)
@@ -1548,7 +1548,7 @@ Refactored tests to use Playwright's recommended setup project pattern, which:
 **Files Modified:**
 - `frontend/playwright.gcp.config.ts`
 - `frontend/playwright.config.ts` (exclude new files)
-- `frontend/e2e/gcp-smoke.spec.ts`
+- `frontend/e2e/gcp-smoke.test.ts`
 - `.gitignore`
 
 **Rate Limiting Note:**

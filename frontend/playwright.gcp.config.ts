@@ -42,7 +42,7 @@ export default defineConfig({
   testDir: './e2e',
 
   // Only run the GCP smoke test file
-  testMatch: 'gcp-smoke.spec.ts',
+  testMatch: 'gcp-smoke.test.ts',
 
   // Run tests serially
   fullyParallel: false,
@@ -89,7 +89,7 @@ export default defineConfig({
         // Use stored auth state for all tests
         storageState: AUTH_STATE_PATH,
       },
-      testMatch: /gcp-smoke\.spec\.ts/,
+      testMatch: /gcp-smoke\.test\.ts/,
       dependencies: ['setup'],
     },
     // Teardown: Delete test user after all tests complete
