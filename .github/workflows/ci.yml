@@ -59,6 +59,9 @@ on:
       - '.dbmaterc'
       - 'lychee.toml'
       - '**/*.example'
+      # The unattended agent loop (scripts/ralph/README.md). Nothing in CI
+      # runs it, and the tooling filter cannot see it anyway -- see there.
+      - 'scripts/ralph/**'
       # Each has its own workflow with its own triggers; nothing here tests them.
       - '.github/workflows/link-check.yml'
       - '.github/workflows/dependency-audit.yml'
@@ -82,6 +85,9 @@ on:
       - '.dbmaterc'
       - 'lychee.toml'
       - '**/*.example'
+      # The unattended agent loop (scripts/ralph/README.md). Nothing in CI
+      # runs it, and the tooling filter cannot see it anyway -- see there.
+      - 'scripts/ralph/**'
       # Each has its own workflow with its own triggers; nothing here tests them.
       - '.github/workflows/link-check.yml'
       - '.github/workflows/dependency-audit.yml'
@@ -196,6 +202,10 @@ jobs:
             # belongs to no single package. Without this, editing
             # scripts/test-all.sh triggered the workflow and then skipped every
             # job -- a green check that ran nothing.
+            # Inside an extglob, picomatch's '**' matches ONE path segment, so
+            # this covers scripts/<file> but not scripts/<dir>/<file>. A new
+            # nested directory needs paths-ignore or its own filter; the
+            # verify-ci-filters sweep flags it either way (habitcraft-bz4g).
             tooling:
               - '@(scripts/**|.husky/**|package.json|package-lock.json)'
               - '!**/*.md'
