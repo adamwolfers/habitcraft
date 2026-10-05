@@ -57,8 +57,13 @@ to section 6.
 ## 5. Commit and hand off for review
 
 - Commit on the **current branch**, in small commits whose subjects match
-  `git log` style: an imperative sentence ending in `(<bead-id>)`. End each
-  message with the line
+  `git log` style: an imperative sentence ending in `(<bead-id>)`.
+- Every commit needs a **body** after a blank line: why the change was made,
+  and any decision it took (an option chosen, a measurement, a tradeoff), so
+  the reasoning lives in git and not only in the bead comment. A subject
+  alone is not enough, however small the change. Write it with
+  `git commit -F - <<'EOF'` so the body survives the shell.
+- End each message with the line
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - **Never** `git push`, switch or create branches, rebase, reset, amend an
   earlier pass's commit, or use `--no-verify`.
