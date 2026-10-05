@@ -160,7 +160,7 @@ backend/
 │   ├── completions.test.js       # Completion tracking tests
 │   └── habits.test.js            # Habit CRUD integration tests
 ├── openapi/                       # OpenAPI enforcement (test-only)
-│   ├── spec.js                   # Spec loader and operation matcher
+│   ├── apiDescription.js         # API Description loader and operation matcher
 │   ├── responseValidator.js      # ajv validation + operation coverage
 │   ├── httpInterceptor.js        # Captures what went on the wire
 │   ├── globalSetup.js            # Clears the coverage file

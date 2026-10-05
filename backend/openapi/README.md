@@ -27,7 +27,7 @@ this gets the drift under control now and does not block that.
 
 | File | Role |
 |---|---|
-| `spec.js` | Loads the YAML, inlines `$ref`s, translates OpenAPI `nullable` into JSON Schema, and matches a live request's method + path to a documented operation |
+| `apiDescription.js` | Loads the YAML, inlines `$ref`s, translates OpenAPI `nullable` into JSON Schema, and matches a live request's method + path to a documented operation |
 | `responseValidator.js` | Compiles response schemas with ajv, records violations and operation coverage |
 | `httpInterceptor.js` | Patches `writeHead`/`write`/`end` on the raw `ServerResponse` to capture what actually went on the wire |
 | `globalSetup.js` | Clears the accumulated coverage file before the run |
@@ -69,7 +69,7 @@ the test half fails as an undocumented path.
 
 **Keep response schemas closed.** Every response schema sets
 `additionalProperties: false` and lists all of its fields in `required`.
-`spec.test.js` asserts this for every documented response, so relaxing one to
+`apiDescription.test.js` asserts this for every documented response, so relaxing one to
 make a test pass fails a different test instead.
 
 **`allOf` does not work here.** `additionalProperties: false` inside an `allOf`

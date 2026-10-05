@@ -1,5 +1,5 @@
 /**
- * OpenAPI spec loader and operation matcher.
+ * API Description loader and operation matcher.
  *
  * shared/api-spec/openapi.yaml is the API contract. This module makes it
  * MACHINE-READABLE so the integration suite can hold responses to it
@@ -17,21 +17,21 @@ const fs = require('fs');
 const path = require('path');
 const yaml = require('js-yaml');
 
-const SPEC_PATH = path.join(__dirname, '..', '..', 'shared', 'api-spec', 'openapi.yaml');
+const DESCRIPTION_PATH = path.join(__dirname, '..', '..', 'shared', 'api-spec', 'openapi.yaml');
 
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'patch', 'head', 'options', 'trace'];
 
-let cachedSpec = null;
+let cachedDescription = null;
 
 /**
  * Load and parse the OpenAPI document (cached per process).
- * @returns {object} The parsed spec
+ * @returns {object} The parsed API Description
  */
-function loadSpec() {
-  if (!cachedSpec) {
-    cachedSpec = yaml.load(fs.readFileSync(SPEC_PATH, 'utf8'));
+function loadDescription() {
+  if (!cachedDescription) {
+    cachedDescription = yaml.load(fs.readFileSync(DESCRIPTION_PATH, 'utf8'));
   }
-  return cachedSpec;
+  return cachedDescription;
 }
 
 /**
@@ -141,7 +141,7 @@ function getOperations() {
     return cachedOperations;
   }
 
-  const doc = loadSpec();
+  const doc = loadDescription();
   const operations = [];
 
   for (const [template, pathItem] of Object.entries(doc.paths)) {
@@ -197,7 +197,7 @@ function isDocumentedPath(urlPath) {
  *   documented as having no body (204).
  */
 function getResponseSchema(operation, statusCode) {
-  const doc = loadSpec();
+  const doc = loadDescription();
   const entry = operation.responses[String(statusCode)] || operation.responses.default;
 
   if (!entry) {
@@ -215,8 +215,8 @@ function getResponseSchema(operation, statusCode) {
 }
 
 module.exports = {
-  SPEC_PATH,
-  loadSpec,
+  DESCRIPTION_PATH,
+  loadDescription,
   getOperations,
   findOperation,
   isDocumentedPath,

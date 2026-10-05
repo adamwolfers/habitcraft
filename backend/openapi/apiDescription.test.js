@@ -1,5 +1,5 @@
 /**
- * Unit tests for the OpenAPI spec loader and operation matcher.
+ * Unit tests for the API Description loader and operation matcher.
  *
  * These run against the REAL shared/api-spec/openapi.yaml rather than a
  * fixture: the point of habitcraft-34d.2 is that the shipped spec is
@@ -7,25 +7,25 @@
  */
 
 const {
-  loadSpec,
+  loadDescription,
   getOperations,
   findOperation,
   isDocumentedPath,
   getResponseSchema,
   toJsonSchema,
   templateToRegExp,
-} = require('./spec');
+} = require('./apiDescription');
 
-describe('loadSpec', () => {
+describe('loadDescription', () => {
   it('parses the shipped OpenAPI document', () => {
-    const spec = loadSpec();
+    const description = loadDescription();
 
-    expect(spec.openapi).toBe('3.0.3');
-    expect(spec.paths).toBeDefined();
+    expect(description.openapi).toBe('3.0.3');
+    expect(description.paths).toBeDefined();
   });
 
   it('returns the same cached object on repeat calls', () => {
-    expect(loadSpec()).toBe(loadSpec());
+    expect(loadDescription()).toBe(loadDescription());
   });
 });
 

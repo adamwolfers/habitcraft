@@ -58,9 +58,9 @@ const CASES = [
   ['backend/integration/habits.integration.test.js', true, ['backend']],
   // The OpenAPI enforcement harness (habitcraft-34d.2). Nothing in the running
   // app requires it, so a change there must test but not deploy -- and only
-  // spec.js and friends prove that, since the *.test.js beside them would be
-  // excluded by '!**/*.test.*' whatever this pattern said.
-  ['backend/openapi/spec.js', true, ['backend']],
+  // apiDescription.js and friends prove that, since the *.test.js beside them
+  // would be excluded by '!**/*.test.*' whatever this pattern said.
+  ['backend/openapi/apiDescription.js', true, ['backend']],
   ['backend/jest.config.js', true, ['backend']],
   ['backend/.env.test', true, ['backend']],
 

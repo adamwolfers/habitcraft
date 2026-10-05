@@ -17,7 +17,12 @@ const path = require('path');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
 
-const { findOperation, isDocumentedPath, getResponseSchema, getOperations } = require('./spec');
+const {
+  findOperation,
+  isDocumentedPath,
+  getResponseSchema,
+  getOperations,
+} = require('./apiDescription');
 
 // allErrors so one response reports every field it got wrong, not just the
 // first. strict:false because OpenAPI schemas legitimately carry annotation
