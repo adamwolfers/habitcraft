@@ -16,6 +16,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
 | Dependency Advisories | plain node + `npm audit` | `scripts/audit-advisories.js` | Weekly report of advisories new since `scripts/audit-baseline.json`; never gates a push |
 | Beads Wiring | plain POSIX sh | `scripts/beads-doctor.test.sh` | `scripts/beads-doctor.sh` catches each way the beads hooks have broken |
+| Test Collection | plain node + each runner's listing | `scripts/verify-test-collection.js` | Every `*.test.*` / `*.spec.*` file is collected by some runner |
 
 ### CI Path Filter Verification
 
@@ -156,6 +157,37 @@ makes it. It is also phase 9 of `scripts/test-all.sh`. It needs only `sh`, `git`
 and the root `npm ci`, never `bd`, and it must stay that way, because CI has no
 `bd` (habitcraft-308j).
 
+### Test Collection Check
+
+Test files are named `*.test.*` in every package. Three of the repo's configs
+match only that suffix (`backend/jest.config.js`, `mobile/jest.config.js`,
+`mobile/e2e/jest.config.js`), so a file named `*.spec.*` there, or a test
+dropped in a directory its package ignores, is never collected and the run goes
+green without it (habitcraft-hxw3).
+
+```bash
+npm run verify:test-collection                    # from the repo root
+node scripts/verify-test-collection.js [package...]  # backend frontend mobile root
+```
+
+It finds every tracked or not-yet-added file matching `*.{test,spec}.{js,ts,...}`
+and asks each runner of the owning package what it really collects —
+`jest --listTests` for every jest config, `playwright test --list` for both
+Playwright configs — so the live configs are tested rather than a copy of their
+globs. It fails on a test-shaped file that no runner collects, and on a runner
+that collects nothing. `root` is everything outside the three packages, where
+no runner exists, so any test-shaped file there fails. Playwright lists only
+files that contain tests, so an empty `frontend/e2e/*.test.ts` is reported too.
+
+**Adding a test config?** Add it to `PACKAGES` in the script, or the files only
+it collects are reported as orphans. `mobile/e2e/jest.smoke.config.js` is not
+listed because it narrows by test name, not by file.
+
+Phase 10 of `scripts/test-all.sh`. In CI, each package's unit-test job runs it
+for that package and `root` after `npm ci`, and the `verify-ci-filters` job
+runs it for `root` alone, so no job installs a package it does not already
+need.
+
 ## Test Infrastructure
 
 ### Test Database
@@ -208,7 +240,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **14 phases, one per CI step**, so a green local run predicts a
+The script runs **15 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -222,15 +254,16 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 7 | Generated API Artifacts Check | `npm run api:codegen -- --check` | no |
 | 8 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
 | 9 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
-| 10 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 11 | Backend Unit Tests | `backend: npm test` | yes |
-| 12 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 13 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 14 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 10 | Test Collection Check | `scripts/verify-test-collection.js` | no |
+| 11 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 12 | Backend Unit Tests | `backend: npm test` | yes |
+| 13 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 14 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 15 | E2E Tests | `frontend: playwright, 3 shards` | yes |
 
 Notes on that table:
 
-- **Phases 1–9 fail fast.** All nine always run (so you see every static error
+- **Phases 1–10 fail fast.** All ten always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the

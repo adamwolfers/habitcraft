@@ -8,6 +8,7 @@
   "scripts": {
     "prepare": "husky",
     "verify:ci-filters": "node scripts/verify-ci-filters.js",
+    "verify:test-collection": "node scripts/verify-test-collection.js",
     "api:codegen": "node scripts/api-codegen.js",
     "api:breaking": "./scripts/openapi-breaking.sh"
   }

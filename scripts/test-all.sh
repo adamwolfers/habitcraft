@@ -60,13 +60,14 @@ LBL_SCHEMA_DUMP="Generated Schema Check"
 LBL_API_CODEGEN="Generated API Artifacts Check"
 LBL_API_BREAKING="OpenAPI Breaking Changes"
 LBL_BEADS_DOCTOR="Beads Wiring Tests"
+LBL_TEST_COLLECTION="Test Collection Check"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
 LBL_BACKEND_UNIT="Backend Unit Tests"
 LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 
-TOTAL_PHASES=14
+TOTAL_PHASES=15
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -297,6 +298,13 @@ run_phase "🚦" "$LBL_API_BREAKING" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
 # CI's verify-beads-doctor job (habitcraft-308j). Needs no bd and no docker.
 run_phase "🪝" "$LBL_BEADS_DOCTOR" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
     sh "$PROJECT_ROOT/scripts/beads-doctor.test.sh" || STATIC_FAILED=1
+
+# Asks every jest and Playwright config what it collects and fails if a
+# test-shaped file is collected by none -- a misnamed *.spec.* file, or a test
+# in a directory its package ignores, would otherwise pass green unrun
+# (habitcraft-hxw3). Listing needs no services.
+run_phase "🧾" "$LBL_TEST_COLLECTION" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
+    node "$PROJECT_ROOT/scripts/verify-test-collection.js" || STATIC_FAILED=1
 
 if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "🛑 Static checks failed -- stopping before the docker and E2E phases."

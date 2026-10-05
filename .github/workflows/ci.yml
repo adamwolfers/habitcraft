@@ -243,6 +243,12 @@ jobs:
       - name: Verify detect-changes filters
         run: node scripts/verify-ci-filters.js
 
+      # Test-shaped files outside backend/, frontend/ and mobile/, which no
+      # runner collects; the package halves run in each unit-test job, which
+      # already has that package installed (habitcraft-hxw3).
+      - name: Verify no test file sits outside a package
+        run: node scripts/verify-test-collection.js root
+
   # `tooling` covers both scripts/beads-doctor*.sh and the .husky/ hooks the
   # test copies into its fixtures, so a hook edit that breaks the doctor's
   # assumptions fails here rather than waiting for someone to run it by hand
@@ -404,6 +410,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # A test file no runner collects passes green unrun -- a misnamed
+      # *.spec.* file, say (habitcraft-hxw3). `root` adds files outside every
+      # package; it needs no install.
+      - name: Verify every test file is collected
+        run: node ../scripts/verify-test-collection.js backend root
+
       - name: Run linter
         run: npm run lint
 
@@ -549,6 +561,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # A test file no runner collects passes green unrun -- a misnamed
+      # *.spec.* file, say (habitcraft-hxw3). `root` adds files outside every
+      # package; it needs no install.
+      - name: Verify every test file is collected
+        run: node ../scripts/verify-test-collection.js frontend root
+
       - name: Run linter
         run: npm run lint
 
@@ -594,6 +612,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # A test file no runner collects passes green unrun -- a misnamed
+      # *.spec.* file, say (habitcraft-hxw3). `root` adds files outside every
+      # package; it needs no install.
+      - name: Verify every test file is collected
+        run: node ../scripts/verify-test-collection.js mobile root
 
       - name: Run linter
         run: npm run lint
