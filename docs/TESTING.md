@@ -9,7 +9,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Backend Unit | Jest + Supertest | `backend/**/*.test.js` (colocated) | API endpoint and middleware testing |
 | Backend Integration | Jest + Supertest | `backend/integration/` | Full database workflows; every response validated against `shared/api-spec/openapi.yaml` |
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
-| Mobile Unit | Jest + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
+| Mobile Unit | Jest (`jest-expo` preset) + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Mobile E2E | Detox | `mobile/e2e/` | The real app on a simulator or emulator against the test backend. CI runs the `@smoke` subset on Android. See [Mobile E2E (Detox)](#mobile-e2e-detox) |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |

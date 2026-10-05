@@ -1,45 +1,8 @@
-// Mock expo-secure-store
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn(),
-  setItemAsync: jest.fn(),
-  deleteItemAsync: jest.fn(),
-}));
-
-// Mock expo-file-system
-jest.mock(
-  'expo-file-system',
-  () => ({
-    documentDirectory: '/mock/documents/',
-    getInfoAsync: jest.fn(),
-    readAsStringAsync: jest.fn(),
-    writeAsStringAsync: jest.fn(),
-    deleteAsync: jest.fn(),
-  }),
-  { virtual: true }
-);
-
-// Mock expo-file-system/legacy
-jest.mock(
-  'expo-file-system/legacy',
-  () => ({
-    documentDirectory: '/mock/documents/',
-    getInfoAsync: jest.fn(),
-    readAsStringAsync: jest.fn(),
-    writeAsStringAsync: jest.fn(),
-    deleteAsync: jest.fn(),
-  }),
-  { virtual: true }
-);
-
-// Mock @react-native-community/netinfo
-jest.mock(
-  '@react-native-community/netinfo',
-  () => ({
-    addEventListener: jest.fn(() => jest.fn()),
-    fetch: jest.fn(),
-  }),
-  { virtual: true }
-);
+// The jest-expo preset (jest.config.js) already mocks the native half of every
+// Expo module and of common third-party ones such as netinfo, so expo-secure-store,
+// expo-file-system and @react-native-community/netinfo need no global mock here.
+// Tests that assert on those modules mock them locally (habitcraft-yh5f).
+// Only add a mock below when the preset's stub is not enough, and say why.
 
 // react-native-reanimated: use the library's own jest support. The real module
 // loads under jest now that the worklets babel plugin runs in tests (see
@@ -79,15 +42,9 @@ jest.mock('react-native-gesture-handler', () => ({
   Directions: {},
 }));
 
-// Mock expo-splash-screen
-// The real module reaches for its native half at import, which jest does not
-// have. Node's own randomUUID stands in, so ids stay unique and well-formed in
-// any test that does not pin them itself (habitcraft-bqhe.23).
+// expo-crypto: the preset's stub of the native half does not produce real ids.
+// Node's own randomUUID stands in, so ids stay unique and well-formed in any
+// test that does not pin them itself (habitcraft-bqhe.23).
 jest.mock('expo-crypto', () => ({
   randomUUID: jest.fn(() => require('crypto').randomUUID()),
-}));
-
-jest.mock('expo-splash-screen', () => ({
-  preventAutoHideAsync: jest.fn(),
-  hideAsync: jest.fn(),
 }));
