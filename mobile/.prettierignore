@@ -1,3 +1,12 @@
+# Mirrors the build-dir ignores in eslint.config.js, so `npm run format`
+# ("**/*.{ts,tsx}") covers exactly the files ESLint enforces prettier on:
+# src/, the root App.tsx and index.ts, and e2e/ (habitcraft-174). Prettier
+# also reads .gitignore, but coverage/ is not in it.
+node_modules/
+.expo/
+dist/
+coverage/
+
 # Generated from shared/api-spec/openapi.yaml by scripts/api-codegen.js.
 # Formatting them would fight the generator: `npm run api:codegen -- --check`
 # compares the committed bytes against what the generator emits, so a prettier
