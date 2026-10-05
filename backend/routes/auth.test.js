@@ -4,6 +4,7 @@ const pool = require('../db/pool');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
+const tokenService = require('../services/tokenService');
 
 // Mock the database pool
 jest.mock('../db/pool');
@@ -194,6 +195,18 @@ describe('Auth API', () => {
       expect(hashedPassword).not.toBe(validUser.password);
       expect(hashedPassword.startsWith('$2')).toBe(true); // bcrypt hash prefix
     });
+
+    it('should return 500 when the database fails', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      pool.query.mockRejectedValueOnce(new Error('connection lost'));
+
+      const response = await request(app).post('/api/v1/auth/register').send(validUser);
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal server error');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error registering user:', expect.any(Error));
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('POST /api/v1/auth/login', () => {
@@ -280,6 +293,18 @@ describe('Auth API', () => {
 
       expect(response.status).toBe(400);
     });
+
+    it('should return 500 when the database fails', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      pool.query.mockRejectedValueOnce(new Error('connection lost'));
+
+      const response = await request(app).post('/api/v1/auth/login').send(validCredentials);
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal server error');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error logging in:', expect.any(Error));
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('POST /api/v1/auth/refresh', () => {
@@ -348,6 +373,21 @@ describe('Auth API', () => {
       expect(cookies.some((c) => c.startsWith('accessToken=') && c.includes('HttpOnly'))).toBe(
         true
       );
+    });
+
+    it('should return 500 when token validation fails unexpectedly', async () => {
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      tokenService.validateRefreshToken.mockRejectedValueOnce(new Error('connection lost'));
+      const refreshToken = jwt.sign({ userId: mockUserId, type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
+
+      const response = await request(app).post('/api/v1/auth/refresh').send({ refreshToken });
+
+      expect(response.status).toBe(500);
+      expect(response.body.error).toBe('Internal server error');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error refreshing token:', expect.any(Error));
+      consoleErrorSpy.mockRestore();
     });
   });
 
