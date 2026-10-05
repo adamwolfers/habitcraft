@@ -1,6 +1,9 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ProfileModal from './ProfileModal';
+import { requestLimits } from '@/types/apiLimits.generated';
+
+const NEW_PASSWORD_LIMITS = requestLimits.changePassword.newPassword;
 
 describe('ProfileModal', () => {
   const mockUser = {
@@ -662,7 +665,7 @@ describe('ProfileModal', () => {
         });
       });
 
-      it('should show error for new password less than 8 chars', async () => {
+      it('should show error for new password below the minimum length', async () => {
         const user = userEvent.setup();
         render(
           <ProfileModal
@@ -675,14 +678,19 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'short');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'short');
+        const tooShort = 'a'.repeat(NEW_PASSWORD_LIMITS.minLength - 1);
+        await user.type(screen.getByLabelText(/^new password$/i), tooShort);
+        await user.type(screen.getByLabelText(/confirm.*password/i), tooShort);
 
         const changeButton = screen.getByRole('button', { name: /^change password$/i });
         await user.click(changeButton);
 
         await waitFor(() => {
-          expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
+          expect(
+            screen.getByText(
+              `New password must be at least ${NEW_PASSWORD_LIMITS.minLength} characters`
+            )
+          ).toBeInTheDocument();
         });
       });
 

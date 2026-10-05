@@ -3,6 +3,12 @@ import userEvent from '@testing-library/user-event';
 import RegisterPage from './page';
 import * as authContextModule from '@/context/AuthContext';
 import { createMockAuth } from '@/test-utils/mockAuthContext';
+import { requestLimits } from '@/types/apiLimits.generated';
+
+const REGISTER_LIMITS = requestLimits.register;
+const MIN_PASSWORD = REGISTER_LIMITS.password.minLength;
+const tooShortPassword = 'a'.repeat(MIN_PASSWORD - 1);
+const minLengthError = `Password must be at least ${MIN_PASSWORD} characters`;
 
 // Mock Next.js navigation
 const mockPush = jest.fn();
@@ -250,7 +256,7 @@ describe('Registration Page - Form Validation', () => {
   });
 
   describe('Email Length Validation', () => {
-    it('should show error when email exceeds 255 characters', async () => {
+    it('should show error when email exceeds the maximum length', async () => {
       const user = userEvent.setup();
       render(<RegisterPage />);
 
@@ -259,7 +265,8 @@ describe('Registration Page - Form Validation', () => {
       const passwordInput = screen.getByLabelText(/^password$/i);
       const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
 
-      const longEmail = 'a'.repeat(244) + '@example.com';
+      const domain = '@example.com';
+      const longEmail = 'a'.repeat(REGISTER_LIMITS.email.maxLength + 1 - domain.length) + domain;
       await user.type(nameInput, 'Test User');
       await user.type(emailInput, longEmail);
       await user.type(passwordInput, 'password123');
@@ -268,13 +275,17 @@ describe('Registration Page - Form Validation', () => {
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(await screen.findByText(/email must be 255 characters or less/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          `Email must be ${REGISTER_LIMITS.email.maxLength} characters or less`
+        )
+      ).toBeInTheDocument();
       expect(mockRegister).not.toHaveBeenCalled();
     });
   });
 
   describe('Name Length Validation', () => {
-    it('should show error when name exceeds 100 characters', async () => {
+    it('should show error when name exceeds the maximum length', async () => {
       const user = userEvent.setup();
       render(<RegisterPage />);
 
@@ -283,7 +294,7 @@ describe('Registration Page - Form Validation', () => {
       const passwordInput = screen.getByLabelText(/^password$/i);
       const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
 
-      const longName = 'a'.repeat(101);
+      const longName = 'a'.repeat(REGISTER_LIMITS.name.maxLength + 1);
       await user.type(nameInput, longName);
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
@@ -292,13 +303,15 @@ describe('Registration Page - Form Validation', () => {
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(await screen.findByText(/name must be 100 characters or less/i)).toBeInTheDocument();
+      expect(
+        await screen.findByText(`Name must be ${REGISTER_LIMITS.name.maxLength} characters or less`)
+      ).toBeInTheDocument();
       expect(mockRegister).not.toHaveBeenCalled();
     });
   });
 
   describe('Minimum Password Length Validation', () => {
-    it('should show error when password is less than 8 characters', async () => {
+    it('should show error when password is below the minimum length', async () => {
       const user = userEvent.setup();
       render(<RegisterPage />);
 
@@ -309,19 +322,17 @@ describe('Registration Page - Form Validation', () => {
 
       await user.type(nameInput, 'Test User');
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'pass');
-      await user.type(confirmPasswordInput, 'pass');
+      await user.type(passwordInput, tooShortPassword);
+      await user.type(confirmPasswordInput, tooShortPassword);
 
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(
-        await screen.findByText(/password must be at least 8 characters/i)
-      ).toBeInTheDocument();
+      expect(await screen.findByText(minLengthError)).toBeInTheDocument();
       expect(mockRegister).not.toHaveBeenCalled();
     });
 
-    it('should not show error when password is 8 characters or more', async () => {
+    it('should not show error when password is at the minimum length', async () => {
       const user = userEvent.setup();
       mockRegister.mockResolvedValue(undefined);
       render(<RegisterPage />);
@@ -333,13 +344,13 @@ describe('Registration Page - Form Validation', () => {
 
       await user.type(nameInput, 'Test User');
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'password');
-      await user.type(confirmPasswordInput, 'password');
+      await user.type(passwordInput, 'a'.repeat(MIN_PASSWORD));
+      await user.type(confirmPasswordInput, 'a'.repeat(MIN_PASSWORD));
 
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(screen.queryByText(/password must be at least 8 characters/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(minLengthError)).not.toBeInTheDocument();
     });
 
     it('should clear validation error when user types again', async () => {
@@ -353,20 +364,18 @@ describe('Registration Page - Form Validation', () => {
 
       await user.type(nameInput, 'Test User');
       await user.type(emailInput, 'test@example.com');
-      await user.type(passwordInput, 'pass');
-      await user.type(confirmPasswordInput, 'pass');
+      await user.type(passwordInput, tooShortPassword);
+      await user.type(confirmPasswordInput, tooShortPassword);
 
       const submitButton = screen.getByRole('button', { name: /sign up/i });
       await user.click(submitButton);
 
-      expect(
-        await screen.findByText(/password must be at least 8 characters/i)
-      ).toBeInTheDocument();
+      expect(await screen.findByText(minLengthError)).toBeInTheDocument();
 
       // Type more characters
-      await user.type(passwordInput, 'word');
+      await user.type(passwordInput, 'a');
 
-      expect(screen.queryByText(/password must be at least 8 characters/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(minLengthError)).not.toBeInTheDocument();
     });
   });
 });

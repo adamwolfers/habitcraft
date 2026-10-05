@@ -1,42 +1,47 @@
 import { validateRegistrationForm, validatePasswordChange } from './authUtils';
+import { requestLimits } from '@/types/apiLimits.generated';
+
+// Every boundary comes from the spec, never a literal (habitcraft-psq1): a
+// test that restates the number keeps passing after the spec moves on.
+const { email: EMAIL, name: NAME, password: PASSWORD } = requestLimits.register;
+const NEW_PASSWORD = requestLimits.changePassword.newPassword;
+
+const EMAIL_DOMAIN = '@example.com';
+const emailOfLength = (length: number) => 'a'.repeat(length - EMAIL_DOMAIN.length) + EMAIL_DOMAIN;
+
+const tooShortPassword = 'a'.repeat(PASSWORD.minLength - 1);
+const tooShortNewPassword = 'a'.repeat(NEW_PASSWORD.minLength - 1);
 
 describe('validateRegistrationForm', () => {
   describe('password length validation', () => {
-    it('returns error when password is less than 8 characters', () => {
+    it('returns error when password is one character below the minimum', () => {
       const result = validateRegistrationForm({
-        password: 'short',
-        confirmPassword: 'short',
+        password: tooShortPassword,
+        confirmPassword: tooShortPassword,
       });
-      expect(result).toBe('Password must be at least 8 characters');
+      expect(result).toBe(`Password must be at least ${PASSWORD.minLength} characters`);
     });
 
-    it('returns error when password is exactly 7 characters', () => {
+    it('accepts password at exactly the minimum length', () => {
+      const minPassword = 'a'.repeat(PASSWORD.minLength);
       const result = validateRegistrationForm({
-        password: '1234567',
-        confirmPassword: '1234567',
-      });
-      expect(result).toBe('Password must be at least 8 characters');
-    });
-
-    it('accepts password with exactly 8 characters', () => {
-      const result = validateRegistrationForm({
-        password: '12345678',
-        confirmPassword: '12345678',
+        password: minPassword,
+        confirmPassword: minPassword,
       });
       expect(result).toBeNull();
     });
 
-    it('returns error when password exceeds 72 characters', () => {
-      const longPassword = 'a'.repeat(73);
+    it('returns error when password exceeds the maximum length', () => {
+      const longPassword = 'a'.repeat(PASSWORD.maxLength + 1);
       const result = validateRegistrationForm({
         password: longPassword,
         confirmPassword: longPassword,
       });
-      expect(result).toBe('Password must be 72 characters or less');
+      expect(result).toBe(`Password must be ${PASSWORD.maxLength} characters or less`);
     });
 
-    it('accepts password with exactly 72 characters', () => {
-      const maxPassword = 'a'.repeat(72);
+    it('accepts password at exactly the maximum length', () => {
+      const maxPassword = 'a'.repeat(PASSWORD.maxLength);
       const result = validateRegistrationForm({
         password: maxPassword,
         confirmPassword: maxPassword,
@@ -64,18 +69,18 @@ describe('validateRegistrationForm', () => {
   });
 
   describe('email length validation', () => {
-    it('returns error when email exceeds 255 characters', () => {
-      const longEmail = 'a'.repeat(244) + '@example.com';
+    it('returns error when email exceeds the maximum length', () => {
+      const longEmail = emailOfLength(EMAIL.maxLength + 1);
       const result = validateRegistrationForm({
         email: longEmail,
         password: 'validpass123',
         confirmPassword: 'validpass123',
       });
-      expect(result).toBe('Email must be 255 characters or less');
+      expect(result).toBe(`Email must be ${EMAIL.maxLength} characters or less`);
     });
 
-    it('accepts email with exactly 255 characters', () => {
-      const email = 'a'.repeat(243) + '@example.com'; // 255 chars
+    it('accepts email at exactly the maximum length', () => {
+      const email = emailOfLength(EMAIL.maxLength);
       const result = validateRegistrationForm({
         email,
         password: 'validpass123',
@@ -86,18 +91,18 @@ describe('validateRegistrationForm', () => {
   });
 
   describe('name length validation', () => {
-    it('returns error when name exceeds 100 characters', () => {
-      const longName = 'a'.repeat(101);
+    it('returns error when name exceeds the maximum length', () => {
+      const longName = 'a'.repeat(NAME.maxLength + 1);
       const result = validateRegistrationForm({
         name: longName,
         password: 'validpass123',
         confirmPassword: 'validpass123',
       });
-      expect(result).toBe('Name must be 100 characters or less');
+      expect(result).toBe(`Name must be ${NAME.maxLength} characters or less`);
     });
 
-    it('accepts name with exactly 100 characters', () => {
-      const name = 'a'.repeat(100);
+    it('accepts name at exactly the maximum length', () => {
+      const name = 'a'.repeat(NAME.maxLength);
       const result = validateRegistrationForm({
         name,
         password: 'validpass123',
@@ -110,30 +115,30 @@ describe('validateRegistrationForm', () => {
   describe('validation order', () => {
     it('checks email length before name length', () => {
       const result = validateRegistrationForm({
-        email: 'a'.repeat(256) + '@test.com',
-        name: 'a'.repeat(101),
+        email: emailOfLength(EMAIL.maxLength + 1),
+        name: 'a'.repeat(NAME.maxLength + 1),
         password: 'validpass123',
         confirmPassword: 'validpass123',
       });
-      expect(result).toBe('Email must be 255 characters or less');
+      expect(result).toBe(`Email must be ${EMAIL.maxLength} characters or less`);
     });
 
     it('checks name length before password length', () => {
       const result = validateRegistrationForm({
-        name: 'a'.repeat(101),
-        password: 'short',
-        confirmPassword: 'short',
+        name: 'a'.repeat(NAME.maxLength + 1),
+        password: tooShortPassword,
+        confirmPassword: tooShortPassword,
       });
-      expect(result).toBe('Name must be 100 characters or less');
+      expect(result).toBe(`Name must be ${NAME.maxLength} characters or less`);
     });
 
     it('checks password length before password match', () => {
       // Both validations fail, but length should be checked first
       const result = validateRegistrationForm({
-        password: 'short',
+        password: tooShortPassword,
         confirmPassword: 'different',
       });
-      expect(result).toBe('Password must be at least 8 characters');
+      expect(result).toBe(`Password must be at least ${PASSWORD.minLength} characters`);
     });
   });
 });
@@ -151,45 +156,37 @@ describe('validatePasswordChange', () => {
   });
 
   describe('new password length validation', () => {
-    it('returns error when new password is less than 8 characters', () => {
+    it('returns error when new password is one character below the minimum', () => {
       const result = validatePasswordChange({
         currentPassword: 'currentpass',
-        newPassword: 'short',
-        confirmPassword: 'short',
+        newPassword: tooShortNewPassword,
+        confirmPassword: tooShortNewPassword,
       });
-      expect(result).toBe('New password must be at least 8 characters');
+      expect(result).toBe(`New password must be at least ${NEW_PASSWORD.minLength} characters`);
     });
 
-    it('returns error when new password is exactly 7 characters', () => {
+    it('accepts new password at exactly the minimum length', () => {
+      const minPassword = 'a'.repeat(NEW_PASSWORD.minLength);
       const result = validatePasswordChange({
         currentPassword: 'currentpass',
-        newPassword: '1234567',
-        confirmPassword: '1234567',
-      });
-      expect(result).toBe('New password must be at least 8 characters');
-    });
-
-    it('accepts new password with exactly 8 characters', () => {
-      const result = validatePasswordChange({
-        currentPassword: 'currentpass',
-        newPassword: '12345678',
-        confirmPassword: '12345678',
+        newPassword: minPassword,
+        confirmPassword: minPassword,
       });
       expect(result).toBeNull();
     });
 
-    it('returns error when new password exceeds 72 characters', () => {
-      const longPassword = 'a'.repeat(73);
+    it('returns error when new password exceeds the maximum length', () => {
+      const longPassword = 'a'.repeat(NEW_PASSWORD.maxLength + 1);
       const result = validatePasswordChange({
         currentPassword: 'currentpass',
         newPassword: longPassword,
         confirmPassword: longPassword,
       });
-      expect(result).toBe('New password must be 72 characters or less');
+      expect(result).toBe(`New password must be ${NEW_PASSWORD.maxLength} characters or less`);
     });
 
-    it('accepts new password with exactly 72 characters', () => {
-      const maxPassword = 'a'.repeat(72);
+    it('accepts new password at exactly the maximum length', () => {
+      const maxPassword = 'a'.repeat(NEW_PASSWORD.maxLength);
       const result = validatePasswordChange({
         currentPassword: 'currentpass',
         newPassword: maxPassword,
@@ -223,8 +220,8 @@ describe('validatePasswordChange', () => {
     it('checks current password before new password length', () => {
       const result = validatePasswordChange({
         currentPassword: '',
-        newPassword: 'short',
-        confirmPassword: 'short',
+        newPassword: tooShortNewPassword,
+        confirmPassword: tooShortNewPassword,
       });
       expect(result).toBe('Current password is required');
     });
@@ -232,10 +229,10 @@ describe('validatePasswordChange', () => {
     it('checks new password length before password match', () => {
       const result = validatePasswordChange({
         currentPassword: 'currentpass',
-        newPassword: 'short',
+        newPassword: tooShortNewPassword,
         confirmPassword: 'different',
       });
-      expect(result).toBe('New password must be at least 8 characters');
+      expect(result).toBe(`New password must be at least ${NEW_PASSWORD.minLength} characters`);
     });
   });
 
