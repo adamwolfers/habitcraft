@@ -315,9 +315,18 @@ first showed up as false "all clear" results.
 
 ## Beads sync between the two copies
 
-Both copies push issue data to the same Dolt remote, and neither the
-`pre-push` hook nor `scripts/beads-push.sh` pulls first. So after the loop has
-pushed, **your main checkout's next beads push is rejected as
-non-fast-forward, and `pre-push` then blocks your `git push`**. Run
-`bd dolt pull` in the main checkout first. `ralph.sh` does that for itself
-around every pass. The hook-side fix is habitcraft-lw6u.
+Both copies push issue data to the same Dolt remote. So once the loop has
+pushed, the main checkout's next beads push is rejected as non-fast-forward.
+Both push paths — the `pre-push` hook and `scripts/beads-push.sh` — go through
+`scripts/beads-dolt-push.sh`, which handles that by running `bd dolt pull` and
+pushing again (habitcraft-lw6u). The pull runs only after a rejection, so a
+copy that is already current pays for one push and nothing more. `ralph.sh`
+also pulls before every pass, so the loop sees label changes made here.
+
+The pull fails only when **both copies changed the same issue** since they
+last synced. Any two edits to one issue conflict, even identical ones, because
+each also writes `updated_at`. bd then prints `merge conflicts in issues
+require operator resolution; merge aborted and working set restored` and
+changes nothing locally. `pre-push` blocks the `git push`, and a session
+hook's push lands as `FAILED` in `.beads/push.log`. To avoid it, don't edit a
+bead in the main checkout while the loop has it claimed.

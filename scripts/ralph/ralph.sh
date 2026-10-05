@@ -72,10 +72,11 @@ log() {
     echo "$(date '+%Y-%m-%dT%H:%M:%S%z') $*" | tee -a "$SUMMARY"
 }
 
-# Two working copies push to one Dolt remote, and neither the pre-push hook
-# nor beads-push.sh pulls first, so whichever copy pushed last makes the other's
-# next push fail non-fast-forward. Pull before each pass (so it sees label
-# changes made in the main checkout) and pull-then-push after it.
+# Two working copies push to one Dolt remote. Pull before each pass, so it sees
+# label changes made in the main checkout, and pull-then-push after it. The
+# pre-push hook and beads-push.sh recover from a non-fast-forward rejection on
+# their own (scripts/beads-dolt-push.sh, habitcraft-lw6u). This keeps the
+# loop's pushes from relying on that retry.
 sync_beads() {
     bd dolt pull >/dev/null 2>&1 || { log "WARN: bd dolt pull failed"; return 0; }
     [[ "${1:-}" == "push" ]] || return 0

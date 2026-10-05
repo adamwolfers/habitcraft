@@ -79,25 +79,11 @@ if [ -f "$log" ] && grep -q 'FAILED' "$log" 2>/dev/null; then
   echo "beads: retrying now..."
 fi
 
-# Same timeout handling as .husky/pre-push: stock macOS ships neither 'timeout'
-# nor 'gtimeout' (Homebrew coreutils), in which case there is no bound.
-timeout_secs=${BEADS_PUSH_TIMEOUT:-120}
-if command -v timeout >/dev/null 2>&1; then
-  timeout_cmd=timeout
-elif command -v gtimeout >/dev/null 2>&1; then
-  timeout_cmd=gtimeout
-else
-  timeout_cmd=
-fi
-
+# The push itself, including the timeout and the pull-and-retry when another
+# copy has pushed first (habitcraft-lw6u), is shared with .husky/pre-push.
 out=$(mktemp) || exit 0
-if [ -n "$timeout_cmd" ]; then
-  "$timeout_cmd" "$timeout_secs" bd dolt push >"$out" 2>&1
-  rc=$?
-else
-  bd dolt push >"$out" 2>&1
-  rc=$?
-fi
+sh "$repo_root/scripts/beads-dolt-push.sh" >"$out" 2>&1
+rc=$?
 
 stamp=$(date -Iseconds 2>/dev/null || date)
 
@@ -119,7 +105,6 @@ else
   grep -q 'FAILED' "$log" 2>/dev/null || : >"$log"
   {
     echo "$stamp FAILED rc=$rc [$trigger]"
-    [ "$rc" -eq 124 ] && echo "  timed out after ${timeout_secs}s (override with BEADS_PUSH_TIMEOUT)"
     sed 's/^/  /' "$out"
   } >>"$log"
   # Visible when run from SessionStart; discarded when run from SessionEnd.

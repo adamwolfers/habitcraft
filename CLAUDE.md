@@ -61,7 +61,7 @@ source `_/h` inside them; the stub already does that.
 | Hook | What it does |
 |---|---|
 | `pre-commit` | `bd hooks run pre-commit`, then each package's lint-staged |
-| `pre-push` | `bd dolt push` — **blocks the push if it fails** (see below) |
+| `pre-push` | `bd dolt push`, pulling and retrying once if rejected — **blocks the push if it fails** (see below) |
 | `post-merge`, `post-checkout`, `prepare-commit-msg` | beads sync via `bd hooks run <name>` |
 
 Beads issue data lives in the gitignored `.beads/embeddeddolt/`, so it reaches
@@ -70,6 +70,13 @@ automatically and **fails the `git push` if the beads push fails** — a partial
 push would leave issue state on one machine. Escape hatch: `git push
 --no-verify`. Cost is roughly 3s per push (12s cold); bd does no work-avoidance
 when there is nothing new to send.
+
+Both beads push paths (this hook and `scripts/beads-push.sh` below) go through
+`scripts/beads-dolt-push.sh`. When another copy has pushed first, such as the
+Ralph clone or another machine, it runs `bd dolt pull` and pushes again. That
+pull fails only when both copies changed the same issue. bd then aborts the
+merge and changes nothing here (habitcraft-lw6u; see
+[scripts/ralph/README.md](scripts/ralph/README.md#beads-sync-between-the-two-copies)).
 
 Debug a hook with `HUSKY=2 git <command>`, which traces the dispatcher.
 

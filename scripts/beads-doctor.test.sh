@@ -57,6 +57,8 @@ make_fixture() {
   done
   echo "2026-09-13T00:00:00-07:00 ok [manual]" >"$f/.beads/push.log"
   cp "$doctor" "$f/scripts/beads-doctor.sh" 2>/dev/null
+  # .husky/pre-push hands the push to this, so the hook cannot reach bd without it.
+  cp "$here/beads-dolt-push.sh" "$f/scripts/beads-dolt-push.sh"
 }
 
 # run_doctor <fixture> [doctor args]: sets $rc; output lands in $tmp/out.
@@ -203,6 +205,101 @@ check "--hook on a healthy repo prints one line" [ "$(wc -l <"$tmp/out")" -eq 1 
 run_doctor earlyexit --hook
 check "--hook on a broken repo still exits 0" [ "$rc" -eq 0 ]
 check "--hook on a broken repo prints the failure" out_has '^FAIL.*post-merge'
+
+# --- pushing when another copy pushed first (habitcraft-lw6u) --------------------
+# Not the doctor: these drive the real .husky/pre-push and scripts/beads-push.sh,
+# which share scripts/beads-dolt-push.sh, against a fake bd that plays a Dolt
+# remote. Its state lives in the fixture's .fake-bd/: 'behind' makes a push
+# fail non-fast-forward until a pull clears it, 'conflict' makes that pull fail
+# the way bd 1.2.2 does when two copies changed one issue, and 'broken' makes a
+# push fail for some other reason. Every call is recorded, one per line.
+mkdir -p "$tmp/remotebin"
+cat >"$tmp/remotebin/bd" <<'EOF'
+#!/bin/sh
+s=.fake-bd
+echo "$*" >>"$s/calls"
+case "$*" in
+  'dolt push')
+    if [ -e "$s/broken" ]; then echo 'Error: authentication failed'; exit 1; fi
+    if [ -e "$s/behind" ]; then
+      echo ' ! [rejected]            main -> main (non-fast-forward)'
+      exit 1
+    fi
+    echo 'Push complete.' ;;
+  'dolt pull')
+    if [ -e "$s/conflict" ]; then
+      echo 'Error: merge origin/main: merge conflicts in issues require operator resolution; merge aborted and working set restored'
+      exit 1
+    fi
+    rm -f "$s/behind"
+    echo 'Pull complete.' ;;
+  *) exit 97 ;;
+esac
+EOF
+chmod +x "$tmp/remotebin/bd"
+
+# make_remote_fixture <name> [state...]: a healthy fixture with both push paths.
+make_remote_fixture() {
+  make_fixture "$1"
+  cp "$here/beads-push.sh" "$tmp/$1/scripts/"
+  mkdir -p "$tmp/$1/.fake-bd"
+  name=$1
+  shift
+  for state in "$@"; do : >"$tmp/$name/.fake-bd/$state"; done
+}
+
+# push_via <fixture> pre-push|session: runs one push path; sets $rc, $tmp/out.
+push_via() {
+  f="$tmp/$1"
+  (
+    cd "$f" || exit
+    export PATH="$tmp/remotebin:$base_path" GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
+    unset HUSKY
+    if [ "$2" = pre-push ]; then
+      git hook run pre-push -- origin https://example.invalid/r
+    else
+      sh scripts/beads-push.sh SessionEnd
+    fi
+  ) </dev/null >"$tmp/out" 2>&1
+  rc=$?
+}
+calls_are() { [ "$(paste -sd, "$f/.fake-bd/calls")" = "$1" ]; }
+log_has() { grep -q -- "$1" "$f/.beads/push.log"; }
+
+make_remote_fixture current
+push_via current pre-push
+check "pre-push, remote current: succeeds" [ "$rc" -eq 0 ]
+check "pre-push, remote current: pushes without pulling" calls_are "dolt push"
+
+make_remote_fixture behind behind
+push_via behind pre-push
+check "pre-push, remote ahead: succeeds" [ "$rc" -eq 0 ]
+check "pre-push, remote ahead: pulls, then pushes again" \
+  calls_are "dolt push,dolt pull,dolt push"
+
+make_remote_fixture conflict behind conflict
+push_via conflict pre-push
+check "pre-push, conflicting pull: blocks the git push" [ "$rc" -ne 0 ]
+check "pre-push, conflicting pull: does not push again" \
+  calls_are "dolt push,dolt pull"
+check "pre-push, conflicting pull: shows bd's conflict error" out_has 'merge conflicts'
+check "pre-push, conflicting pull: says nothing changed here" out_has 'changed nothing'
+
+make_remote_fixture broken broken
+push_via broken pre-push
+check "pre-push, other push failure: blocks the git push" [ "$rc" -ne 0 ]
+check "pre-push, other push failure: does not pull" calls_are "dolt push"
+
+make_remote_fixture sessbehind behind
+push_via sessbehind session
+check "beads-push.sh, remote ahead: pulls, then pushes again" \
+  calls_are "dolt push,dolt pull,dolt push"
+check "beads-push.sh, remote ahead: logs ok" log_has ' ok \[SessionEnd'
+
+make_remote_fixture sessconflict behind conflict
+push_via sessconflict session
+check "beads-push.sh, conflicting pull: logs FAILED" log_has 'FAILED rc=1'
+check "beads-push.sh, conflicting pull: logs bd's conflict error" log_has 'merge conflicts'
 
 # --- no side effects -------------------------------------------------------------
 check "the installed bd was never called" [ ! -e "$tmp/installed-bd-calls" ]
