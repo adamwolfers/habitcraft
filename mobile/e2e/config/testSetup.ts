@@ -67,6 +67,33 @@ export async function createUserViaApi(
   return { accessToken: body.accessToken, refreshToken: body.refreshToken };
 }
 
+/** A habit as GET /habits returns it, narrowed to what the specs read. */
+export interface ServerHabit {
+  id: string;
+  name: string;
+  completions: { date: string }[];
+}
+
+/**
+ * Read the user's habits straight from the backend, bypassing the app.
+ *
+ * For the specs whose claim is that something reached the server -- an offline
+ * change that synced -- where the app's own rendering of it would prove only
+ * that its cache agrees with itself.
+ */
+export async function fetchHabitsViaApi(session: E2ESession): Promise<ServerHabit[]> {
+  const response = await fetch(`${API_URL}/api/v1/habits`, {
+    headers: { Authorization: `Bearer ${session.accessToken}` },
+  });
+  if (response.status !== 200) {
+    const body = await response.text();
+    throw new Error(
+      `Could not list habits via ${API_URL}: HTTP ${response.status} ${body.slice(0, 200)}`
+    );
+  }
+  return (await response.json()) as ServerHabit[];
+}
+
 /** The Android applicationId, from android/app/build.gradle. */
 const ANDROID_APP_ID = 'org.habitcraft.app';
 
@@ -109,6 +136,7 @@ export async function clearDeviceSession(): Promise<void> {
   if (device.getPlatform() === 'ios') {
     runOrExplain('xcrun', ['simctl', 'keychain', device.id, 'reset'], {
       what: `clear the keychain on simulator ${device.id}`,
+      consequence: STALE_SESSION,
     });
     return;
   }
@@ -118,29 +146,75 @@ export async function clearDeviceSession(): Promise<void> {
   // so the exit status alone is not proof.
   runOrExplain(adbPath(), ['-s', device.id, 'shell', 'pm', 'clear', ANDROID_APP_ID], {
     what: `clear the app data of ${ANDROID_APP_ID} on ${device.id}`,
+    consequence: STALE_SESSION,
     expectOutput: 'Success',
   });
 }
 
+const STALE_SESSION = "the app would start from the previous spec's session";
+
 function runOrExplain(
   command: string,
   args: string[],
-  { what, expectOutput }: { what: string; expectOutput?: string }
+  { what, consequence, expectOutput }: { what: string; consequence: string; expectOutput?: string }
 ): void {
   let output: string;
   try {
     output = execFileSync(command, args, { stdio: 'pipe', encoding: 'utf8' });
   } catch (err) {
     const detail = err instanceof Error ? err.message : String(err);
-    throw new Error(
-      `Could not ${what}, so the app would start from the previous spec's session: ${detail}`
-    );
+    throw new Error(`Could not ${what}, so ${consequence}: ${detail}`);
   }
   if (expectOutput && !output.includes(expectOutput)) {
     throw new Error(
-      `Could not ${what}, so the app would start from the previous spec's session: ` +
-        `expected "${expectOutput}", got "${output.trim()}"`
+      `Could not ${what}, so ${consequence}: expected "${expectOutput}", got "${output.trim()}"`
     );
+  }
+}
+
+/** Whether this platform can take the device offline; see setDeviceOnline(). */
+export function canToggleConnectivity(): boolean {
+  return device.getPlatform() === 'android';
+}
+
+/**
+ * Take the device's network away, or give it back, the way a user would.
+ *
+ * WHY THE DEVICE AND NOT DETOX. The app decides it is offline from NetInfo
+ * (src/lib/offline/networkStatus.ts), which reports the DEVICE's connectivity.
+ * device.setURLBlacklist() only stops requests inside Detox's own
+ * synchronization layer, so NetInfo kept reporting connected and the offline
+ * banner never appeared (habitcraft-bqhe.10).
+ *
+ * ANDROID ONLY. Turning Wi-Fi and mobile data off with `svc` changes what
+ * ConnectivityManager -- and so NetInfo -- reports. It leaves Detox working:
+ * the test runner and the backend are both reached through `adb reverse`,
+ * which runs over the adb transport, not the guest's network. The iOS
+ * simulator shares the host Mac's network stack and has no such switch, so
+ * the specs that need this skip on iOS rather than pass without it.
+ *
+ * NOT AIRPLANE MODE, though it is the more obvious switch. Measured on the
+ * Detox_API_36 AVD: airplane mode let a network come back for about half a
+ * second while it was still on, in 2 of 3 rounds, and took up to 9s to
+ * reconnect -- in one test run over 40s. NetInfo reported that blip, so the
+ * app briefly went online in the middle of an offline spec. `svc` never
+ * flapped in 9 rounds and reconnected in 1-4s.
+ *
+ * Returns once the radios are switched. NetInfo notices a moment later, so
+ * callers wait on what the app renders, not on this.
+ */
+export function setDeviceOnline(online: boolean): void {
+  if (!canToggleConnectivity()) {
+    throw new Error(
+      `setDeviceOnline() needs an Android emulator; ${device.getPlatform()} cannot toggle connectivity`
+    );
+  }
+  const state = online ? 'enable' : 'disable';
+  for (const radio of ['wifi', 'data']) {
+    runOrExplain(adbPath(), ['-s', device.id, 'shell', 'svc', radio, state], {
+      what: `${state} ${radio} on ${device.id}`,
+      consequence: `the device stayed ${online ? 'offline' : 'online'}`,
+    });
   }
 }
 

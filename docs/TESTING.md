@@ -318,8 +318,8 @@ For the device suite, see [Mobile E2E (Detox)](#mobile-e2e-detox).
 
 ## Mobile E2E (Detox)
 
-`mobile/e2e/tests/` holds 38 cases: `auth.test.ts` 14, `habits.test.ts` 10,
-`logout.test.ts` 8, `offline.test.ts` 6. They drive the built app on an iOS
+`mobile/e2e/tests/` holds 37 cases: `auth.test.ts` 14, `habits.test.ts` 10,
+`logout.test.ts` 8, `offline.test.ts` 5. They drive the built app on an iOS
 simulator or Android emulator. Every request goes to the real backend from
 `docker-compose.test.yml`.
 
@@ -359,7 +359,7 @@ cd mobile
 # (habitcraft-bqhe.19).
 npm run e2e:build:android:release
 npm run e2e:test:android:release:smoke   # the CI gate
-npm run e2e:test:android:release         # all 38
+npm run e2e:test:android:release         # all 37
 
 # iOS: release needs nothing else running.
 npm run e2e:build:ios:release
@@ -377,7 +377,7 @@ password prompt and clears the keychain. Both would otherwise fail the suite.
 
 ### The smoke gate and the full suite
 
-CI runs 12 of the 38 cases: `auth` 2, `habits` 5, `logout` 5. Selection is by
+CI runs 12 of the 37 cases: `auth` 2, `habits` 5, `logout` 5. Selection is by
 test name:
 
 - A case is in the gate when its name contains `@smoke`.
@@ -436,6 +436,17 @@ emulator because macOS runners have no Docker, and the job needs the
   `clearDeviceSession()` once per file. On iOS that is `simctl keychain reset`.
   On Android it is `adb shell pm clear`. Restoring the screen between tests is
   covered under [UI State Isolation](#ui-state-isolation).
+- **Offline means the device is offline.** The app reads connectivity from
+  NetInfo, so `device.setURLBlacklist()` cannot make it go offline. Use
+  `setDeviceOnline()` from `mobile/e2e/config/testSetup.ts`, which runs
+  `adb shell svc wifi|data disable|enable` (habitcraft-bqhe.10). Do not use
+  airplane mode: on the emulator it briefly brings a network back while it is
+  still on, and that blip puts the app online partway through a spec.
+  `offline.test.ts` runs on Android only. On iOS it shows as skipped, because
+  the simulator shares the Mac's network and has no switch to turn off.
+- **Check the backend for anything that has to sync.** `fetchHabitsViaApi()`
+  reads what the server actually holds. Seeing the change on screen proves only
+  that the app's cache agrees with itself.
 
 The mobile auth screens themselves are described in
 [AUTHENTICATION.md](../AUTHENTICATION.md#mobile-implementation-react-native--expo).

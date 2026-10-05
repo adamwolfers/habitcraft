@@ -1,168 +1,159 @@
-import { device, element, by, expect, waitFor } from 'detox';
+import { expect as jestExpect } from '@jest/globals';
+import { element, by, expect, waitFor } from 'detox';
 import {
+  E2ESession,
+  canToggleConnectivity,
+  createHabit,
+  fetchHabitsViaApi,
   generateTestUser,
+  habitCard,
+  habitCardMatcher,
   launchAuthenticated,
-  waitForDashboard,
+  returnToDashboard,
+  setDeviceOnline,
   waitForElement,
+  waitForElementToDisappear,
 } from '../config/testSetup';
 
-describe('Offline Functionality', () => {
-  const testUser = generateTestUser();
+// Offline means the DEVICE has no network, because that is what the app reads
+// (NetInfo). This file used to fake it with device.setURLBlacklist(), which
+// NetInfo never sees, so no case in it could pass (habitcraft-bqhe.10).
+// setDeviceOnline() switches the emulator's Wi-Fi and mobile data off, which
+// only Android can do; on iOS the file is skipped, and reported as skipped,
+// rather than run against a network it cannot take away.
+const describeWithConnectivity = canToggleConnectivity() ? describe : describe.skip;
+
+// How long NetInfo may take to notice. Losing the network is quick; getting it
+// back waits on Android revalidating the connection before NetInfo calls the
+// internet reachable again.
+const GOES_OFFLINE_MS = 15000;
+const COMES_BACK_MS = 30000;
+
+async function goOffline(): Promise<void> {
+  setDeviceOnline(false);
+  await waitForElement('offline-banner', GOES_OFFLINE_MS);
+}
+
+async function goOnline(): Promise<void> {
+  setDeviceOnline(true);
+  await waitForElementToDisappear('offline-banner', COMES_BACK_MS);
+}
+
+function pendingBadgeOn(habitName: string) {
+  return element(by.id('pending-badge').withAncestor(habitCardMatcher(habitName)));
+}
+
+// Matched on the indicator's accessibility label, which states the count. A
+// by.text('1 pending') scoped to the indicator found nothing on Android while
+// the badge was plainly on screen: the indicator is an accessible element with
+// its own label, so its text is not reachable as a separate descendant.
+async function waitForPendingCount(count: number): Promise<void> {
+  const label = `${count} ${count === 1 ? 'change' : 'changes'} pending sync`;
+  await waitFor(element(by.id('sync-indicator').and(by.label(label))))
+    .toBeVisible()
+    .withTimeout(5000);
+}
+
+// Detox's expect asserts on the screen; jestExpect asserts on what the backend
+// holds, which is the only proof a queued change actually synced.
+async function serverHabitNamed(session: E2ESession, name: string) {
+  return (await fetchHabitsViaApi(session)).find((habit) => habit.name === name);
+}
+
+describeWithConnectivity('Offline Functionality', () => {
+  let session: E2ESession;
 
   beforeAll(async () => {
-    // See habitcraft-bqhe.11: no password is typed anywhere in this suite
-    // except the specs that exist to test the credential forms.
-    await launchAuthenticated(testUser);
+    // A run that died mid-test can leave the emulator offline, and
+    // launchAuthenticated() needs the network to create its user.
+    setDeviceOnline(true);
+    ({ session } = await launchAuthenticated(generateTestUser()));
   });
 
   beforeEach(async () => {
-    // Ensure we're on the dashboard
-    await waitForDashboard();
+    await returnToDashboard();
+  });
+
+  // Every case takes the network away, and a failure partway through must not
+  // strand the next one -- or the next file -- offline.
+  afterEach(() => {
+    setDeviceOnline(true);
   });
 
   describe('Offline Banner', () => {
-    it('should show offline banner when network is disabled', async () => {
-      // Disable network connectivity
-      await device.setURLBlacklist(['.*']);
+    it('should show the offline banner when the device loses its network', async () => {
+      await goOffline();
 
-      // Trigger a network check by pulling to refresh
-      await element(by.id('habit-list')).scroll(200, 'down');
-
-      // Wait for offline banner to appear
-      await waitFor(element(by.id('offline-banner')))
-        .toBeVisible()
-        .withTimeout(10000);
-
-      // Verify banner content
       await expect(element(by.text("You're offline"))).toBeVisible();
-
-      // Re-enable network
-      await device.setURLBlacklist([]);
     });
 
-    it('should hide offline banner when network is restored', async () => {
-      // First disable network
-      await device.setURLBlacklist(['.*']);
+    it('should hide the offline banner when the network comes back', async () => {
+      await goOffline();
 
-      // Trigger network check
-      await element(by.id('habit-list')).scroll(200, 'down');
+      await goOnline();
 
-      // Wait for offline banner
-      await waitFor(element(by.id('offline-banner')))
-        .toBeVisible()
-        .withTimeout(10000);
-
-      // Re-enable network
-      await device.setURLBlacklist([]);
-
-      // Pull to refresh to trigger reconnect
-      await element(by.id('habit-list')).scroll(200, 'down');
-
-      // Banner should disappear
-      await waitFor(element(by.id('offline-banner')))
-        .not.toBeVisible()
-        .withTimeout(15000);
+      await expect(element(by.id('offline-banner'))).not.toExist();
     });
   });
 
+  // Each case queues its change AND syncs it. The version this replaces split
+  // queueing and syncing into separate tests that relied on running in order,
+  // so one failure took its neighbour down with it (habitcraft-bqhe.14).
   describe('Offline Mutations', () => {
-    it('should queue habit creation while offline', async () => {
+    it('should queue a habit created offline and sync it on reconnect', async () => {
       const habitName = 'Offline Created Habit';
 
-      // Disable network
-      await device.setURLBlacklist(['.*']);
+      await goOffline();
+      await createHabit(habitName);
 
-      // Create a habit while offline
-      await element(by.id('create-habit-fab')).tap();
-      await waitForElement('habit-name-input');
+      await expect(habitCard(habitName)).toBeVisible();
+      await expect(pendingBadgeOn(habitName)).toBeVisible();
+      await waitForPendingCount(1);
+      jestExpect(await serverHabitNamed(session, habitName)).toBeUndefined();
 
-      await element(by.id('habit-name-input')).replaceText(habitName);
-      await element(by.id('create-habit-button')).tap();
+      await goOnline();
 
-      // Verify back on dashboard
-      await waitForDashboard();
-
-      // Habit should appear with pending badge
-      await expect(element(by.text(habitName))).toBeVisible();
-      await expect(element(by.id('pending-badge'))).toBeVisible();
-
-      // Sync indicator should show pending count
-      await expect(element(by.id('sync-indicator'))).toBeVisible();
-
-      // Re-enable network
-      await device.setURLBlacklist([]);
+      await waitFor(pendingBadgeOn(habitName)).not.toExist().withTimeout(COMES_BACK_MS);
+      await waitFor(element(by.id('sync-indicator')))
+        .not.toExist()
+        .withTimeout(COMES_BACK_MS);
+      await expect(habitCard(habitName)).toBeVisible();
+      jestExpect(await serverHabitNamed(session, habitName)).toBeDefined();
     });
 
-    it('should sync queued mutations when network is restored', async () => {
-      // Assuming we have pending mutations from previous test
-      // Re-enable network if not already
-      await device.setURLBlacklist([]);
+    it('should queue a completion made offline and sync it on reconnect', async () => {
+      const habitName = 'Offline Completed Habit';
+      await createHabit(habitName);
+      const created = await serverHabitNamed(session, habitName);
+      jestExpect(created?.completions).toEqual([]);
 
-      // Pull to refresh to trigger sync
-      await element(by.id('habit-list')).scroll(200, 'down');
+      await goOffline();
+      await element(by.id('complete-button').withAncestor(habitCardMatcher(habitName))).tap();
 
-      // Wait for sync to complete - pending badge should disappear
-      await waitFor(element(by.id('pending-badge')))
-        .not.toBeVisible()
-        .withTimeout(15000);
+      await waitForPendingCount(1);
 
-      // Sync indicator should also clear
+      await goOnline();
+
       await waitFor(element(by.id('sync-indicator')))
-        .not.toBeVisible()
-        .withTimeout(15000);
-    });
-
-    it('should queue habit completion while offline', async () => {
-      // Disable network
-      await device.setURLBlacklist(['.*']);
-
-      // Mark a habit as complete
-      await element(by.id('complete-button')).atIndex(0).tap();
-
-      // Sync indicator should show pending count
-      await waitFor(element(by.id('sync-indicator')))
-        .toBeVisible()
-        .withTimeout(5000);
-
-      // Re-enable network and sync
-      await device.setURLBlacklist([]);
-      await element(by.id('habit-list')).scroll(200, 'down');
-
-      // Wait for sync to complete
-      await waitFor(element(by.id('sync-indicator')))
-        .not.toBeVisible()
-        .withTimeout(15000);
+        .not.toExist()
+        .withTimeout(COMES_BACK_MS);
+      jestExpect((await serverHabitNamed(session, habitName))?.completions).toHaveLength(1);
     });
   });
 
   describe('Sync Indicator', () => {
-    it('should show pending count when mutations are queued', async () => {
-      // Disable network
-      await device.setURLBlacklist(['.*']);
+    it('should count every change queued while offline', async () => {
+      await goOffline();
+      await createHabit('Queued Habit 1');
+      await createHabit('Queued Habit 2');
 
-      // Create multiple habits to queue
-      await element(by.id('create-habit-fab')).tap();
-      await waitForElement('habit-name-input');
-      await element(by.id('habit-name-input')).replaceText('Queued Habit 1');
-      await element(by.id('create-habit-button')).tap();
-      await waitForDashboard();
+      await waitForPendingCount(2);
 
-      await element(by.id('create-habit-fab')).tap();
-      await waitForElement('habit-name-input');
-      await element(by.id('habit-name-input')).replaceText('Queued Habit 2');
-      await element(by.id('create-habit-button')).tap();
-      await waitForDashboard();
+      await goOnline();
 
-      // Sync indicator should show count
-      await expect(element(by.id('sync-indicator'))).toBeVisible();
-
-      // Re-enable network
-      await device.setURLBlacklist([]);
+      await waitFor(element(by.id('sync-indicator')))
+        .not.toExist()
+        .withTimeout(COMES_BACK_MS);
     });
-  });
-
-  afterAll(async () => {
-    // Ensure network is re-enabled
-    await device.setURLBlacklist([]);
   });
 });
