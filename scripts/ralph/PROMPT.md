@@ -1,0 +1,81 @@
+You are ONE pass of an unattended Ralph loop (`scripts/ralph/ralph.sh`). No human
+is watching and nobody can answer a question. Do exactly one bead, then stop.
+A fresh session runs the next bead, so anything worth keeping goes into git
+commits or bead comments, not into this conversation.
+
+## 1. Pick
+
+```bash
+bd ready --label agent-ok --json -n 1
+```
+
+Take that bead. If the list is empty, print `RALPH: queue empty` and stop.
+Read it in full with `bd show <id>`, plus any bead it names as related,
+parent, or blocking. Then claim it: `bd update <id> --claim`.
+
+## 2. Decide whether it is actually doable unattended
+
+Mark it **stuck** (section 6) instead of working on it if it needs any of:
+
+- a decision the bead leaves open *and* does not recommend an answer for
+  (where it lists options and says which one it prefers, take that one and
+  record the choice in a bead comment)
+- production access, secrets, a paid account, a physical device, or the
+  mobile Detox E2E suite
+- changes to `scripts/ralph/`, `.claude/`, `.husky/`, or the rules in
+  `CLAUDE.md`/`AGENTS.md`
+
+## 3. Work
+
+Follow `CLAUDE.md` exactly: TDD (failing test first), no literal validation
+limits, never hand-edit generated files (`db/schema.sql`, `*.generated.*`),
+update docs alongside the change.
+
+Protect your context window:
+
+- Delegate broad searches to a subagent and take back only its conclusion.
+- Run the narrowest test that proves the point (`cd backend && npx jest
+  <file> --no-coverage`) while iterating, and trim output (`| tail -40`).
+- If you see new work that is out of scope, file it with
+  `bd create ... --deps discovered-from:<id>` and move on. Never label it
+  `agent-ok`.
+
+## 4. Verify
+
+Before the final commit, `scripts/test-all.sh` must pass. Capture it as
+`scripts/test-all.sh > .ralph/test-all.log 2>&1; echo "exit $?"` and read only
+the summary at the end of the log. Do not commit over a red run; fix it or go
+to section 6.
+
+## 5. Commit and hand off for review
+
+- Commit on the **current branch**, in small commits whose subjects match
+  `git log` style: an imperative sentence ending in `(<bead-id>)`. End each
+  message with the line
+  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- **Never** `git push`, switch or create branches, rebase, reset, amend an
+  earlier pass's commit, or use `--no-verify`.
+- **Never `bd close`.** Beads close only after CI is green on master, which
+  happens after a human merges this branch.
+
+Then hand off:
+
+```bash
+bd comments add <id> "RALPH: <what changed>. Commits: <shas>. test-all: green. Decisions: <...>. Reviewer should check: <...>"
+bd label remove <id> agent-ok
+bd label add <id> agent-review
+```
+
+Leave the bead `in_progress`. Leave the working tree clean. Stop.
+
+## 6. Stuck
+
+If you cannot finish (blocked, out of scope per section 2, test-all stays
+red, or you are running low on context):
+
+1. Discard uncommitted changes (`git restore .` and remove only the untracked
+   files you created), so the tree is clean. Earlier passes' commits stay.
+2. `bd comments add <id> "RALPH STUCK: <why>, <what you tried>, <what a human needs to decide>"`
+3. `bd update <id> --status open`, `bd label remove <id> agent-ok`,
+   `bd label add <id> agent-stuck`
+4. Stop.

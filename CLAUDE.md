@@ -19,6 +19,11 @@ This project uses **trunk-based development**. The trunk is `master` (not `main`
 - **Do NOT create feature branches or git worktrees** for routine work. Committing on `master` is expected here — the general "branch before committing on the default branch" default does **not** apply to this repo.
 - Pull before you push (`git pull --rebase`) and push frequently to keep the trunk current.
 - Use a short-lived branch **only** when a change genuinely needs an isolated PR/CI run, and merge it back to `master` quickly.
+- The one standing exception is the unattended Ralph loop
+  ([scripts/ralph/README.md](scripts/ralph/README.md)): it runs in a separate
+  clone and commits to a `ralph/<date>` review branch, never to `master`, and
+  never pushes or closes beads. If you are a pass of that loop, follow
+  `scripts/ralph/PROMPT.md` over the session-completion steps below.
 
 ```bash
 # Normal flow: commit and push on master

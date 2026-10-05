@@ -84,3 +84,6 @@ mobile-app/
 *.db
 .beads-credential-key
 .beads-backup/
+
+# Ralph loop logs and transcripts (scripts/ralph/)
+.ralph/
