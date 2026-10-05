@@ -6,7 +6,6 @@ import {
   fetchHabits,
   createHabit as apiCreateHabit,
   updateHabit as apiUpdateHabit,
-  fetchCompletions as apiFetchCompletions,
   createCompletion as apiCreateCompletion,
   deleteCompletion as apiDeleteCompletion,
   updateCompletionNote as apiUpdateCompletionNote,
@@ -35,22 +34,18 @@ export const useHabits = (userId: string) => {
 
     const loadHabitsAndCompletions = async () => {
       try {
+        // GET /habits embeds every habit's completions, so this one request is
+        // the whole dashboard load -- no per-habit fetch (habitcraft-1bw).
         const fetchedHabits = await fetchHabits(userId);
-        setHabits(fetchedHabits);
 
-        // Fetch completions for each habit
+        // Split the embedded arrays out: the completions map is the one copy
+        // that toggles and note edits keep current.
         const completionsMap = new Map<string, Completion[]>();
-        await Promise.all(
-          fetchedHabits.map(async (habit) => {
-            try {
-              const habitCompletions = await apiFetchCompletions(userId, habit.id);
-              completionsMap.set(habit.id, habitCompletions);
-            } catch (error) {
-              console.error(`Error fetching completions for habit ${habit.id}:`, error);
-              completionsMap.set(habit.id, []);
-            }
-          })
-        );
+        const habitsOnly = fetchedHabits.map(({ completions: habitCompletions, ...habit }) => {
+          completionsMap.set(habit.id, habitCompletions);
+          return habit;
+        });
+        setHabits(habitsOnly);
         setCompletions(completionsMap);
       } catch (error) {
         console.error('Error fetching habits:', error);

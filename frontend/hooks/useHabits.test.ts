@@ -1,6 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useHabits } from './useHabits';
-import { HabitFormData, Habit, Completion } from '@/types/habit';
+import { HabitFormData, Habit, HabitWithCompletions, Completion } from '@/types/habit';
 import * as api from '@/lib/api';
 import * as authContextModule from '@/context/AuthContext';
 import * as confettiUtils from '@/utils/confettiUtils';
@@ -46,7 +46,7 @@ const mockUpdateCompletionNote = api.updateCompletionNote as jest.MockedFunction
 
 describe('useHabits', () => {
   const mockUserId = '123e4567-e89b-12d3-a456-426614174000';
-  const mockHabitsFromApi: Habit[] = [
+  const mockHabits: Habit[] = [
     {
       id: 'habit-1',
       userId: mockUserId,
@@ -70,6 +70,18 @@ describe('useHabits', () => {
       updatedAt: '2025-01-02T00:00:00.000Z',
     },
   ];
+
+  // GET /habits embeds each habit's completions, and the dashboard reads them
+  // from there rather than fetching per habit (habitcraft-1bw). Builds that
+  // response from bare habits plus the completions to embed under each.
+  const habitsResponse = (
+    habits: Habit[],
+    completions: Completion[] = []
+  ): HabitWithCompletions[] =>
+    habits.map((habit) => ({
+      ...habit,
+      completions: completions.filter((completion) => completion.habitId === habit.id),
+    }));
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -99,12 +111,12 @@ describe('useHabits', () => {
   });
 
   it('should fetch habits from API on mount', async () => {
-    mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+    mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
 
     const { result } = renderHook(() => useHabits(mockUserId));
 
     await waitFor(() => {
-      expect(result.current.habits).toEqual(mockHabitsFromApi);
+      expect(result.current.habits).toEqual(mockHabits);
     });
 
     expect(mockFetchHabits).toHaveBeenCalledTimes(1);
@@ -138,7 +150,7 @@ describe('useHabits', () => {
   });
 
   it('should filter active habits', async () => {
-    mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+    mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
 
     const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -193,7 +205,7 @@ describe('useHabits', () => {
       // Start with loading state
       mockUseAuth.mockReturnValue(createMockAuth({ isLoading: true }));
 
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
 
       const { result, rerender } = renderHook(() => useHabits(mockUserId));
 
@@ -220,7 +232,7 @@ describe('useHabits', () => {
       });
 
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
     });
 
@@ -254,14 +266,14 @@ describe('useHabits', () => {
         updatedAt: '2025-01-03T00:00:00.000Z',
       };
 
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockCreateHabit.mockResolvedValue(createdHabit);
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
 
       // Create a new habit
@@ -283,14 +295,14 @@ describe('useHabits', () => {
         name: 'Failed Habit',
       };
 
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockCreateHabit.mockRejectedValue(new Error('API Error'));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
 
       // Try to create a habit (should throw)
@@ -306,7 +318,7 @@ describe('useHabits', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error creating habit:', expect.any(Error));
 
       // Verify habits array wasn't modified
-      expect(result.current.habits).toEqual(mockHabitsFromApi);
+      expect(result.current.habits).toEqual(mockHabits);
 
       consoleErrorSpy.mockRestore();
     });
@@ -368,63 +380,38 @@ describe('useHabits', () => {
       },
     ];
 
-    beforeEach(() => {
-      // Default mock for completions
-      mockFetchCompletions.mockResolvedValue([]);
-    });
-
-    it('should fetch completions for each habit on mount', async () => {
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+    it('should load completions from the GET /habits response in a single request', async () => {
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits, mockCompletions));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.getCompletionsForHabit('habit-1')).toEqual(mockCompletions);
       });
 
-      // Should fetch completions for each habit
-      expect(mockFetchCompletions).toHaveBeenCalledTimes(mockHabitsFromApi.length);
-      expect(mockFetchCompletions).toHaveBeenCalledWith(mockUserId, 'habit-1');
-      expect(mockFetchCompletions).toHaveBeenCalledWith(mockUserId, 'habit-2');
+      expect(mockFetchHabits).toHaveBeenCalledTimes(1);
+      expect(mockFetchCompletions).not.toHaveBeenCalled();
+      expect(result.current.getCompletionsForHabit('habit-2')).toEqual([]);
     });
 
-    it('should handle errors when fetching completions for a specific habit', async () => {
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
-
-      // Mock fetchCompletions to fail for habit-1 but succeed for habit-2
-      mockFetchCompletions.mockImplementation((userId, habitId) => {
-        if (habitId === 'habit-1') {
-          return Promise.reject(new Error('Failed to fetch completions'));
-        }
-        return Promise.resolve(mockCompletions);
-      });
+    it('should not keep the embedded completions on the habits it exposes', async () => {
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits, mockCompletions));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toHaveLength(mockHabits.length);
       });
 
-      // Should have logged error for habit-1
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching completions for habit habit-1:',
-        expect.any(Error)
-      );
-
-      // Should still work for habit-2 (completion data should be empty for habit-1)
-      expect(mockFetchCompletions).toHaveBeenCalledTimes(mockHabitsFromApi.length);
-
-      // habit-1 should return false for any date since completions failed to load
-      expect(result.current.isHabitCompletedOnDate('habit-1', new Date('2025-01-15'))).toBe(false);
-
-      consoleErrorSpy.mockRestore();
+      // The completions map is the one copy the hook keeps in step with
+      // toggles and note edits; a second copy on each habit would go stale.
+      result.current.habits.forEach((habit) => {
+        expect(habit).not.toHaveProperty('completions');
+      });
     });
 
     it('should check if habit is completed on a specific date', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -445,8 +432,7 @@ describe('useHabits', () => {
     });
 
     it('should toggle completion - create when not completed', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue([]);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], []));
 
       const newCompletion: Completion = {
         id: 'completion-new',
@@ -477,8 +463,7 @@ describe('useHabits', () => {
     });
 
     it('should toggle completion - delete when already completed', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
       mockDeleteCompletion.mockResolvedValue();
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -505,8 +490,7 @@ describe('useHabits', () => {
 
     it('should handle toggle completion errors gracefully', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue([]);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], []));
       mockCreateCompletion.mockRejectedValue(new Error('API Error'));
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -530,8 +514,7 @@ describe('useHabits', () => {
     });
 
     it('should return false for non-existent habit', async () => {
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
-      mockFetchCompletions.mockResolvedValue([]);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits, []));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -547,8 +530,7 @@ describe('useHabits', () => {
     });
 
     it('should trigger confetti when creating a completion', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue([]);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], []));
 
       const newCompletion: Completion = {
         id: 'completion-new',
@@ -578,8 +560,7 @@ describe('useHabits', () => {
     });
 
     it('should NOT trigger confetti when deleting a completion', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
       mockDeleteCompletion.mockResolvedValue();
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -602,8 +583,7 @@ describe('useHabits', () => {
 
     it('should NOT trigger confetti when completion creation fails', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue([]);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], []));
       mockCreateCompletion.mockRejectedValue(new Error('API Error'));
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -628,19 +608,19 @@ describe('useHabits', () => {
   describe('updateHabit', () => {
     it('should update a habit via API and update local state', async () => {
       const updatedHabit: Habit = {
-        ...mockHabitsFromApi[0],
+        ...mockHabits[0],
         name: 'Updated Exercise',
         description: 'New description',
       };
 
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockUpdateHabit.mockResolvedValue(updatedHabit);
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
 
       // Update the habit
@@ -665,19 +645,19 @@ describe('useHabits', () => {
       expect(result.current.habits[0].name).toBe('Updated Exercise');
       expect(result.current.habits[0].description).toBe('New description');
       // Other habit should be unchanged
-      expect(result.current.habits[1]).toEqual(mockHabitsFromApi[1]);
+      expect(result.current.habits[1]).toEqual(mockHabits[1]);
     });
 
     it('should handle update errors gracefully', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockUpdateHabit.mockRejectedValue(new Error('API Error'));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
 
       // Try to update a habit (should throw)
@@ -693,18 +673,18 @@ describe('useHabits', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error updating habit:', expect.any(Error));
 
       // Verify habits array wasn't modified
-      expect(result.current.habits).toEqual(mockHabitsFromApi);
+      expect(result.current.habits).toEqual(mockHabits);
 
       consoleErrorSpy.mockRestore();
     });
 
     it('should return the updated habit from updateHabit', async () => {
       const updatedHabit: Habit = {
-        ...mockHabitsFromApi[0],
+        ...mockHabits[0],
         color: '#FF0000',
       };
 
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockUpdateHabit.mockResolvedValue(updatedHabit);
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -725,14 +705,14 @@ describe('useHabits', () => {
 
   describe('deleteHabit', () => {
     it('should delete a habit via API and update local state', async () => {
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockDeleteHabit.mockResolvedValue();
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
 
       // Verify we have 2 habits initially
@@ -754,14 +734,14 @@ describe('useHabits', () => {
 
     it('should handle deletion errors gracefully', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockDeleteHabit.mockRejectedValue(new Error('API Error'));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
       // Wait for initial fetch to complete
       await waitFor(() => {
-        expect(result.current.habits).toEqual(mockHabitsFromApi);
+        expect(result.current.habits).toEqual(mockHabits);
       });
 
       // Try to delete a habit (should throw)
@@ -777,7 +757,7 @@ describe('useHabits', () => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting habit:', expect.any(Error));
 
       // Verify habits array wasn't modified
-      expect(result.current.habits).toEqual(mockHabitsFromApi);
+      expect(result.current.habits).toEqual(mockHabits);
       expect(result.current.habits).toHaveLength(2);
 
       consoleErrorSpy.mockRestore();
@@ -794,13 +774,7 @@ describe('useHabits', () => {
         },
       ];
 
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
-      mockFetchCompletions.mockImplementation((userId, habitId) => {
-        if (habitId === 'habit-1') {
-          return Promise.resolve(mockCompletions);
-        }
-        return Promise.resolve([]);
-      });
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits, mockCompletions));
       mockDeleteHabit.mockResolvedValue();
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -824,7 +798,7 @@ describe('useHabits', () => {
     });
 
     it('should handle deletion of non-existent habit ID', async () => {
-      mockFetchHabits.mockResolvedValue(mockHabitsFromApi);
+      mockFetchHabits.mockResolvedValue(habitsResponse(mockHabits));
       mockDeleteHabit.mockResolvedValue();
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -843,7 +817,7 @@ describe('useHabits', () => {
       expect(mockDeleteHabit).toHaveBeenCalledWith(mockUserId, 'non-existent-id');
 
       // Verify habits array is unchanged (habit wasn't in local state)
-      expect(result.current.habits).toEqual(mockHabitsFromApi);
+      expect(result.current.habits).toEqual(mockHabits);
     });
   });
 
@@ -858,18 +832,13 @@ describe('useHabits', () => {
       },
     ];
 
-    beforeEach(() => {
-      mockFetchCompletions.mockResolvedValue([]);
-    });
-
     it('should update note via API and update local state', async () => {
       const updatedCompletion: Completion = {
         ...mockCompletions[0],
         notes: 'Ran 5 miles',
       };
 
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
       mockUpdateCompletionNote.mockResolvedValue(updatedCompletion);
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -908,8 +877,7 @@ describe('useHabits', () => {
         notes: null,
       };
 
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue([completionWithNote]);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], [completionWithNote]));
       mockUpdateCompletionNote.mockResolvedValue(updatedCompletion);
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -939,8 +907,7 @@ describe('useHabits', () => {
 
     it('should handle update errors gracefully', async () => {
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
       mockUpdateCompletionNote.mockRejectedValue(new Error('API Error'));
 
       const { result } = renderHook(() => useHabits(mockUserId));
@@ -989,8 +956,7 @@ describe('useHabits', () => {
     ];
 
     it('should return completions array for a habit', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -1003,8 +969,7 @@ describe('useHabits', () => {
     });
 
     it('should return empty array for habit with no completions', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue([]);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], []));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
@@ -1017,8 +982,7 @@ describe('useHabits', () => {
     });
 
     it('should return empty array for non-existent habit', async () => {
-      mockFetchHabits.mockResolvedValue([mockHabitsFromApi[0]]);
-      mockFetchCompletions.mockResolvedValue(mockCompletions);
+      mockFetchHabits.mockResolvedValue(habitsResponse([mockHabits[0]], mockCompletions));
 
       const { result } = renderHook(() => useHabits(mockUserId));
 
