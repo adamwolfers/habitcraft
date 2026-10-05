@@ -1417,7 +1417,7 @@ Verify migrated data via direct database queries (tunnels still open):
   - See `docs/plans/up-next/smoke-test-cleanup.md` for test user cleanup plan
 - [x] Monitor for errors in Cloud Logging
   - Found: `trust proxy` not enabled, causing rate limiter warnings
-  - Fixed: Added `app.set('trust proxy', true)` in commit 82f7345
+  - Fixed: Added `app.set('trust proxy', true)` in commit c4e4998
 - [x] End maintenance window
 - [x] Notify users maintenance is complete (disabled PostHog banner)
 

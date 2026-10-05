@@ -160,7 +160,7 @@ check "hook exiting before bd fails" [ "$rc" -eq 1 ]
 check "hook exiting before bd is named" out_has '^FAIL.*post-merge'
 check "healthy sibling hooks are not blamed" out_lacks '^FAIL.*pre-push'
 
-# The shape of 8d8776f: the hook reaches bd, but with a subcommand bd removed.
+# The shape of e5a1702: the hook reaches bd, but with a subcommand bd removed.
 make_fixture oldsubcommand
 printf 'bd hook pre-commit\n' >"$tmp/oldsubcommand/.husky/pre-commit"
 run_doctor oldsubcommand
