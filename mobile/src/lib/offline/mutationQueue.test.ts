@@ -3,8 +3,11 @@ import { offlineStorage } from './offlineStorage';
 import { QueuedMutation } from './types';
 
 jest.mock('./offlineStorage');
-jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'mock-uuid'),
+// expo-crypto, not uuid: uuid's v4() needs crypto.getRandomValues, which Hermes
+// lacks, so every offline mutation threw on a device. Mocking uuid here is what
+// hid that -- Node has the API (habitcraft-bqhe.23).
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'mock-uuid'),
 }));
 
 const mockOfflineStorage = offlineStorage as jest.Mocked<typeof offlineStorage>;

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 import Toast from 'react-native-toast-message';
 import { habitsApi } from '@/lib/habits';
 import { mutationQueue, networkStatus } from '@/lib/offline';
@@ -57,7 +57,7 @@ export function useCreateHabit() {
 
       if (!isOnline) {
         // Generate temp ID and queue mutation
-        const tempId = `temp-${uuidv4()}`;
+        const tempId = `temp-${randomUUID()}`;
         await mutationQueue.add('createHabit', data, tempId);
 
         // Return optimistic habit
@@ -252,7 +252,7 @@ export function useCompleteHabit() {
         await mutationQueue.add('completeHabit', { id, data });
         // Return optimistic completion
         return {
-          id: `temp-completion-${uuidv4()}`,
+          id: `temp-completion-${randomUUID()}`,
           habitId: id,
           date: data.date,
           notes: data.notes ?? null,

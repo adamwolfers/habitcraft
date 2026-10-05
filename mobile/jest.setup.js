@@ -80,6 +80,13 @@ jest.mock('react-native-gesture-handler', () => ({
 }));
 
 // Mock expo-splash-screen
+// The real module reaches for its native half at import, which jest does not
+// have. Node's own randomUUID stands in, so ids stay unique and well-formed in
+// any test that does not pin them itself (habitcraft-bqhe.23).
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => require('crypto').randomUUID()),
+}));
+
 jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(),
   hideAsync: jest.fn(),

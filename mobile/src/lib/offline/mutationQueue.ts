@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'expo-crypto';
 import { offlineStorage } from './offlineStorage';
 import { QueuedMutation, MutationType } from './types';
 
@@ -21,7 +21,7 @@ async function add(type: MutationType, payload: unknown, tempId?: string): Promi
   const queue = await loadQueue();
 
   const mutation: QueuedMutation = {
-    id: uuidv4(),
+    id: randomUUID(),
     type,
     payload,
     timestamp: Date.now(),

@@ -86,6 +86,22 @@ module.exports = [
       'prettier/prettier': 'error',
       // Disable base rule in favor of TypeScript version
       'no-unused-vars': 'off',
+      // uuid's v4() calls crypto.getRandomValues, which Hermes does not have,
+      // so it throws on a device while passing every jest test -- Node has the
+      // API. That broke every offline mutation unnoticed until detox ran them
+      // (habitcraft-bqhe.23). A lint rule is the only gate that sees it.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'uuid',
+              message:
+                "Use randomUUID from 'expo-crypto' -- uuid needs crypto.getRandomValues, which Hermes lacks (habitcraft-bqhe.23).",
+            },
+          ],
+        },
+      ],
     },
     settings: {
       react: {
