@@ -9,6 +9,11 @@
   [docs/TESTING.md](docs/TESTING.md) for the phase table.
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
 - See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
+- **Orchestrating unattended work** (labelling a batch, running the Ralph loop,
+  reviewing and landing it): start from the Runbook in
+  [scripts/ralph/README.md](scripts/ralph/README.md#runbook). The loop's live
+  state is in beads labels (`agent-ok`, `agent-review`, `agent-stuck`) and the
+  clone's `.ralph/summary.log`; `scripts/ralph/status.sh` shows both.
 
 ## Git Workflow: Trunk-Based Development
 

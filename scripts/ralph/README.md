@@ -15,6 +15,35 @@ as the work queue and `scripts/test-all.sh` as the backpressure
 | `status.sh` | The queue, review and stuck beads, and recent passes, at a glance |
 | `lib.sh` | Shared helpers: `ralph_pids`, the one test for "is a loop running?" |
 
+## Runbook
+
+The whole cycle, start to finish. Each step links to its section below.
+Everything that changes between runs lives in beads (labels, comments) and
+`.ralph/summary.log`, not here (habitcraft-9r24).
+
+1. **Pick a batch** and label it `agent-ok` from the main checkout
+   ([choosing beads](#choosing-beads)). Five or six beads made a ~30-minute
+   run in practice.
+2. **Sync the clone:** `cd ~/github/habitcraft-ralph && git switch master &&
+   git pull --rebase && bd dolt pull`. `land.sh` leaves it this way, so after
+   a landing this is a no-op.
+3. **Check the docker test stack** is the clone's or down
+   ([docker](#the-docker-test-stack-is-machine-wide)). Ask before stopping
+   one this session did not start.
+4. **Start the run in tmux** so it outlives the terminal and the agent
+   session that started it ([tmux](#run-it-in-tmux)):
+   `git switch -c ralph/$(date +%F) && scripts/ralph/ralph.sh -n <batch size>`.
+5. **Watch** with `status.sh --watch` and mg ([watching](#watching-a-run)).
+   A WARN line or a stop in `summary.log` is what needs you.
+6. **Review the branch by reading the diffs**, not the commit subjects
+   ([checklist](#review-checklist)).
+7. **Land it** from the main checkout with `scripts/ralph/land.sh
+   ralph/<date>` ([landing](#landing-a-run)). It pushes, waits for CI, closes
+   the beads and syncs the clone.
+8. **Fold the lessons back in.** Each new way a pass went wrong becomes a line
+   in `PROMPT.md` or a check in `ralph.sh`, with its own bead. Beads the passes
+   filed are follow-ups for the next batch.
+
 ## Why a fresh process per pass
 
 Each pass starts with an empty context window, so a long run cannot fill it
@@ -40,10 +69,30 @@ after CI is green on master (`close-beads-last-ci-green`), which cannot happen
 until you merge the branch. Label changes and comments do reach the Dolt
 remote straight away, through the `SessionEnd` hook.
 
+### Choosing beads
+
 A good `agent-ok` bead is self-contained, says what "done" means, and needs
-no decision the bead doesn't already recommend. Anything touching production,
-secrets, store accounts, a physical device, or the mobile Detox suite is not
-a candidate.
+no decision the bead doesn't already recommend. `test-all.sh` has to be able
+to prove it. Its description should name files and lines, as the beads that
+went well did.
+
+Leave these out. Each was considered and rejected, or went wrong:
+
+- **Production, secrets, store accounts, physical devices, the Detox suite.**
+  A pass cannot reach them.
+- **A decision the bead leaves open.** For example "decide whether X should
+  gate" (uze), or "wire it or drop it" (sf50). A pass marks these stuck.
+- **Flaky-test fixes** (oft7). One pass cannot show a flake is gone.
+- **Production images, or a deploy-only check** (ara). `test-all.sh` does not
+  build or boot the production image.
+- **Changes to `scripts/ralph/`, `.claude/` or `.husky/`** (lw6u). The prompt
+  forbids them, so a pass would mark them stuck.
+- **Large epics.** Split them first. One pass is one bead.
+
+**Beads go stale.** In the second run, two of six (psq1 and g0p) had already
+been satisfied by earlier work. The prompt now stops a pass at "already done"
+and leaves the bead for you. A quick check of a bead's "done" condition before
+you label it saves a pass.
 
 ## One-time setup: a separate clone
 
@@ -67,10 +116,21 @@ setup CLAUDE.md warns about. The reset and unset undo both. The disabled push
 URL makes "never push" a fact rather than an instruction; `bd dolt push` uses
 the Dolt remote and is unaffected.
 
-**The docker test stack is machine-wide.** `docker-compose.test.yml` pins
-container names and host ports (5433, 3010, 3110), so the loop's
-`test-all.sh` and one in your main checkout cannot run at the same time. Run
-the loop while you are away from the repo.
+### The docker test stack is machine-wide
+
+`docker-compose.test.yml` pins container names and host ports (5433, 3010,
+3110), so the loop's `test-all.sh` and one in your main checkout cannot run at
+the same time. Before a run, see whose stack is up:
+
+```bash
+docker inspect -f '{{index .Config.Labels "com.docker.compose.project.working_dir"}}' habitcraft-db-test
+```
+
+The clone's stack is fine: the loop reuses it. If the stack belongs to the main
+checkout, it may be another session mid-run. Long uptime does not mean idle
+(`concurrent-test-stack-runs`). **Ask before stopping it.** Before the first
+run, the orchestrating agent stopped that stack without asking, which that
+memory says not to do.
 
 ## A run
 
@@ -87,6 +147,31 @@ off no bead, left the tree dirty, or switched branches. A pass that is killed
 after claiming its bead leaves it `in_progress` and still `agent-ok`; the loop
 stops on that rather than skipping past it, and you reset it with
 `bd update <id> --status open`.
+
+### Run it in tmux
+
+A loop started in a plain terminal dies with that window, and one started
+from an agent's background shell dies with the agent's session. Inside tmux it
+survives both. `Ctrl-b d` detaches, and `tmux attach -t ralph` comes back:
+
+```bash
+cd ~/github/habitcraft-ralph
+tmux new-session -s ralph \; \
+  send-keys 'scripts/ralph/status.sh --watch' C-m \; \
+  split-window -h \; send-keys 'mg' C-m \; \
+  split-window -v
+```
+
+Then type the run command into the third pane yourself. Text sent with
+`send-keys` before zsh finishes starting is silently dropped. That happened to
+the run command in the first tmux layout. An agent starting the run should
+`tmux capture-pane -p -t ralph:0.2` first to see the pane is at a prompt, then
+`tmux send-keys -t ralph:0.2 '<command>' C-m`.
+
+Do not press mg's `a` (agent dispatch) in the clone while a run is going. It
+starts a separate coding agent on the selected bead, outside the loop.
+
+### Pass settings
 
 Passes run in Claude Code's `auto` permission mode; override with
 `RALPH_PERMISSION_MODE`. Each pass is killed after `-t` seconds (default an
@@ -111,6 +196,29 @@ git log master..HEAD             # the commits
 
 Every pass's full transcript is `.ralph/pass-*.jsonl`. Read the failures:
 each new way the loop goes wrong is a fix to `PROMPT.md` or a missing test.
+
+### Review checklist
+
+A summary built from commit subjects and the run log is not a review. Read
+the diffs (`git show <sha>` in the clone). These caught or cleared real
+things in the first two runs:
+
+- **Did the pass do what the bead asked, and only that?** Watch for a stale
+  bead turned into new scope. A pass may also mark a bead `RALPH ALREADY DONE`
+  with no commit. Then you decide whether to close it or re-scope it.
+- **Anything CI runs differently from `test-all.sh`?** Database setup is one
+  case: CI resets the test DB with direct SQL, and a local run uses the docker
+  script. Timeouts and new CI steps are others. These are where a locally green
+  pass goes red after landing.
+- **`ci.yml` edits:** comments under an `if: |` become part of the expression
+  (`ci-yml-if-block-scalar`). Re-run that memory's check.
+- **New paths:** `npm run verify:ci-filters` must pass. A path that matches no
+  CI filter gets a green run that ran nothing.
+- **Generated files** (`*.generated.*`, `db/schema.sql`) are never edited by
+  hand.
+- **Every commit has a body** saying why. One commit in the first run did not.
+- **Each pass's hand-off comment.** It lists what the pass wants a human to
+  check, and the follow-up beads it filed.
 
 ### Watching a run
 
@@ -171,9 +279,8 @@ It reports, rather than closes, an `agent-review` bead that no merged commit
 names, and a bead a commit names that is not under review. The first is what a
 pass leaves when it finds its bead already done: no commit, and a
 `RALPH ALREADY DONE` comment with the evidence. Close or re-scope those by
-hand. If every file the
-branch touches is paths-ignored, CI never starts; `land.sh` says so and leaves
-the beads for you to close.
+hand. If every file the branch touches is paths-ignored, CI never starts;
+`land.sh` says so and leaves the beads for you to close.
 
 Its tests build throwaway repos with stub `gh`/`bd`, so they touch nothing
 real. They are not in CI, since `scripts/ralph/` is paths-ignored there:
@@ -181,6 +288,23 @@ real. They are not in CI, since `scripts/ralph/` is paths-ignored there:
 ```bash
 scripts/ralph/land.test.sh
 ```
+
+## Changing these scripts
+
+`scripts/ralph/` is paths-ignored in CI, so nothing there is tested unless you
+run the suites. Run all four after any change. They need only bash, git and
+jq, with stubs for `gh` and `bd`:
+
+```bash
+for t in scripts/ralph/*.test.sh; do "$t" </dev/null | tail -1; done
+```
+
+macOS ships bash 3.2 as `/bin/bash`, which has no associative arrays. Inside a
+`while read` loop, give every `bd` call `</dev/null`, or it can swallow the
+loop's input. A detector, such as `bd-failures.jq` or the `ralph_pids`
+pattern, needs a test proving it *finds* the thing. A clean result from a
+detector that cannot fire means nothing. Both of those detectors had bugs that
+first showed up as false "all clear" results.
 
 ## Beads sync between the two copies
 
