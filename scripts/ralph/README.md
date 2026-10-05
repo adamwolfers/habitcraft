@@ -10,6 +10,7 @@ as the work queue and `scripts/test-all.sh` as the backpressure
 |---|---|
 | `ralph.sh` | The loop: picks nothing itself, just runs passes and stops on no progress |
 | `PROMPT.md` | What every pass is told: pick, work, verify, commit, hand off |
+| `land.sh` | Merges a reviewed run, waits for CI, closes its beads, syncs the clone |
 
 ## Why a fresh process per pass
 
@@ -108,19 +109,39 @@ git log master..HEAD             # the commits
 Every pass's full transcript is `.ralph/pass-*.jsonl`. Read the failures:
 each new way the loop goes wrong is a fix to `PROMPT.md` or a missing test.
 
-To land the work, pull the branch into your main checkout (the clone cannot
-push), rebase it onto master there, and push:
+## Landing a run
+
+After reviewing the branch, land it from the **main checkout** in one command:
 
 ```bash
 cd ~/github/habitcraft
-git fetch ~/github/habitcraft-ralph ralph/<date>:ralph/<date>
-git rebase master ralph/<date>
-git switch master && git merge --ff-only ralph/<date> && git branch -d ralph/<date>
-bd dolt pull && git push
+scripts/ralph/land.sh ralph/<date>
 ```
 
-Once CI is green, close each `agent-review` bead with the run ID, exactly as
-for hand-written work, and drop the `agent-review` label.
+`land.sh` (habitcraft-tjwp):
+
+1. refuses unless the main checkout is a clean `master`, the clone is clean,
+   and `ralph.sh` is not running;
+2. fetches the branch from the clone, rebases it onto master, fast-forwards,
+   and pushes (the clone itself cannot push);
+3. waits for the CI run on the pushed commit, reading its conclusion with
+   `gh run view --json` and retrying through transient `gh` errors;
+4. on green, closes every `agent-review` bead a merged commit names, with the
+   commit and run id, and drops the label. On anything else it closes nothing;
+5. either way, syncs the clone: `bd dolt pull`, back to `master`, branch
+   deleted. That keeps `mg` running in the clone, and the next run, current.
+
+It reports, rather than closes, an `agent-review` bead that no merged commit
+names, and a bead a commit names that is not under review. If every file the
+branch touches is paths-ignored, CI never starts; `land.sh` says so and leaves
+the beads for you to close.
+
+Its tests build throwaway repos with stub `gh`/`bd`, so they touch nothing
+real. They are not in CI, since `scripts/ralph/` is paths-ignored there:
+
+```bash
+scripts/ralph/land.test.sh
+```
 
 ## Beads sync between the two copies
 
