@@ -88,6 +88,14 @@ Passes run in Claude Code's `auto` permission mode; override with
 `RALPH_PERMISSION_MODE`. Each pass is killed after `-t` seconds (default an
 hour).
 
+A `-p` session ends the moment the agent replies without a tool call, so a
+pass that backgrounds a long command and says it will "pick up later" just
+dies mid-bead (habitcraft-9e00). The prompt forbids that, and the scheduling
+tools (`ScheduleWakeup`, `Monitor`, `CronCreate`) are disallowed outright. If
+a pass dies anyway with work in the tree, finish it in place with
+`claude -p --resume <session_id> "..."`; the id is in the `init` event at
+the top of its `.ralph/pass-*.jsonl`.
+
 ## Reviewing
 
 ```bash

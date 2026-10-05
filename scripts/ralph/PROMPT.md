@@ -3,6 +3,13 @@ is watching and nobody can answer a question. Do exactly one bead, then stop.
 A fresh session runs the next bead, so anything worth keeping goes into git
 commits or bead comments, not into this conversation.
 
+**This session ends the moment you reply without a tool call.** Nothing can
+wake you later, so run every command in the foreground and wait for it: never
+use `run_in_background`, and never say you will "pick up when it finishes".
+`scripts/test-all.sh` takes several minutes; give that Bash call a timeout of
+600000 ms. Put scratch files and backups in `.ralph/`, not `/tmp`
+(habitcraft-9e00).
+
 ## 1. Pick
 
 ```bash

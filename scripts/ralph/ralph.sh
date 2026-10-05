@@ -101,6 +101,7 @@ for ((pass = 1; pass <= MAX_PASSES; pass++)); do
     perl -e 'alarm shift; exec @ARGV' "$PASS_TIMEOUT" \
         claude -p "$(cat "$PROMPT_FILE")" \
             --permission-mode "$PERMISSION_MODE" \
+            --disallowedTools ScheduleWakeup Monitor CronCreate \
             --output-format stream-json --verbose \
         > "$pass_log" 2>&1 || status=$?
 
