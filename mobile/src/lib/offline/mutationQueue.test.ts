@@ -223,4 +223,56 @@ describe('mutationQueue', () => {
       ]);
     });
   });
+
+  // The pending count on the dashboard has to follow the queue while the
+  // dashboard stays mounted, so every write announces the new length
+  // (habitcraft-bqhe.24).
+  describe('subscribe', () => {
+    beforeEach(() => {
+      mockOfflineStorage.getMutationQueue.mockResolvedValue([]);
+      mockOfflineStorage.saveMutationQueue.mockResolvedValue(undefined);
+      mockOfflineStorage.clearMutationQueue.mockResolvedValue(undefined);
+    });
+
+    it('tells subscribers the new count when a mutation is added', async () => {
+      const listener = jest.fn();
+      const unsubscribe = mutationQueue.subscribe(listener);
+
+      await mutationQueue.add('createHabit', { name: 'Test' });
+
+      expect(listener).toHaveBeenLastCalledWith(1);
+      unsubscribe();
+    });
+
+    it('tells subscribers the new count when a mutation is removed', async () => {
+      const added = await mutationQueue.add('createHabit', { name: 'Test' });
+      const listener = jest.fn();
+      const unsubscribe = mutationQueue.subscribe(listener);
+
+      await mutationQueue.remove(added.id);
+
+      expect(listener).toHaveBeenLastCalledWith(0);
+      unsubscribe();
+    });
+
+    it('tells subscribers the queue is empty when it is cleared', async () => {
+      await mutationQueue.add('createHabit', { name: 'Test' });
+      const listener = jest.fn();
+      const unsubscribe = mutationQueue.subscribe(listener);
+
+      await mutationQueue.clear();
+
+      expect(listener).toHaveBeenLastCalledWith(0);
+      unsubscribe();
+    });
+
+    it('stops telling a subscriber once it unsubscribes', async () => {
+      const listener = jest.fn();
+      mutationQueue.subscribe(listener)();
+
+      await mutationQueue.add('createHabit', { name: 'Test' });
+
+      expect(listener).not.toHaveBeenCalled();
+    });
+  });
 });

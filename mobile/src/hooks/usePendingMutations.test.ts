@@ -60,4 +60,36 @@ describe('usePendingMutations', () => {
     expect(result.current.count).toBe(0);
     consoleSpy.mockRestore();
   });
+
+  // The dashboard stays mounted while a habit is created or completed, so the
+  // count must follow the queue rather than be read once (habitcraft-bqhe.24).
+  it('follows the queue after mount', async () => {
+    mockMutationQueue.getCount.mockResolvedValue(0);
+    let announce: (count: number) => void = () => {};
+    mockMutationQueue.subscribe.mockImplementation((listener) => {
+      announce = listener;
+      return jest.fn();
+    });
+
+    const { result } = renderHook(() => usePendingMutations());
+    await waitFor(() => expect(mockMutationQueue.getCount).toHaveBeenCalled());
+
+    act(() => announce(2));
+    expect(result.current.count).toBe(2);
+    expect(result.current.hasPending).toBe(true);
+
+    act(() => announce(0));
+    expect(result.current.hasPending).toBe(false);
+  });
+
+  it('unsubscribes from the queue on unmount', () => {
+    mockMutationQueue.getCount.mockResolvedValue(0);
+    const unsubscribe = jest.fn();
+    mockMutationQueue.subscribe.mockReturnValue(unsubscribe);
+
+    const { unmount } = renderHook(() => usePendingMutations());
+    unmount();
+
+    expect(unsubscribe).toHaveBeenCalled();
+  });
 });

@@ -25,6 +25,10 @@ export function usePendingMutations(): UsePendingMutationsResult {
     refresh();
   }, [refresh]);
 
+  // Mount reads the count once; this keeps it current while the screen stays
+  // mounted under the create modal or a completion tap (habitcraft-bqhe.24).
+  useEffect(() => mutationQueue.subscribe(setCount), []);
+
   return {
     count,
     hasPending: count > 0,
