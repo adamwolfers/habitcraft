@@ -65,8 +65,8 @@ bounded dolt pull || rc=$?
 if [ "$rc" -ne 0 ]; then
   echo >&2 "beads: 'bd dolt pull' FAILED (exit $rc). If it reports merge conflicts, the"
   echo >&2 "beads: same issue changed in two copies since they last synced. bd aborted"
-  echo >&2 "beads: the merge and changed nothing here. See 'Beads sync between the two"
-  echo >&2 "beads: copies' in scripts/ralph/README.md."
+  echo >&2 "beads: the merge and changed nothing here. To resolve it, see 'Resolving a"
+  echo >&2 "beads: beads merge conflict' in scripts/ralph/README.md."
   exit "$rc"
 fi
 

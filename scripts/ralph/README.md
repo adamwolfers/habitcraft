@@ -330,3 +330,45 @@ require operator resolution; merge aborted and working set restored` and
 changes nothing locally. `pre-push` blocks the `git push`, and a session
 hook's push lands as `FAILED` in `.beads/push.log`. To avoid it, don't edit a
 bead in the main checkout while the loop has it claimed.
+
+### Resolving a beads merge conflict
+
+bd cannot resolve this itself under the embedded backend. `bd vc merge
+--strategy theirs` fails, because Dolt rolls the merge back before the
+strategy applies, and `bd sql` is not supported in embedded mode. Use the
+`dolt` CLI directly on the database files (habitcraft-41gw). Verified with
+bd 1.2.2 and dolt 2.3.3: only the conflicting rows take the side you choose,
+and every other edit from both copies survives.
+
+A Dolt merge needs a committer identity. Set it once per machine:
+
+```bash
+dolt config --global --add user.name "Your Name"
+dolt config --global --add user.email "you@example.com"
+```
+
+Then, in the copy whose pull failed, with no `bd` command running there:
+
+```bash
+bd dolt show                                # 'Database:' names the live one
+cd .beads/embeddeddolt/habitcraft           # that name; ignore *-backup dirs
+dolt fetch origin
+dolt merge origin/main                      # CONFLICT (content): ... in issues
+dolt conflicts cat .                        # base / ours / theirs, per row
+dolt conflicts resolve --theirs .           # or --ours; see below
+dolt add . && dolt commit -m "Resolve beads merge conflict"
+cd -
+bd show <id>                                # check the issue looks right
+scripts/beads-push.sh manual                # or just git push
+```
+
+`--theirs` keeps the remote's version of each conflicting issue, and
+`--ours` keeps this copy's. The choice covers the **whole row**, so the
+losing side's edits to that issue are dropped, including fields that did not
+themselves conflict. Read them off `dolt conflicts cat` first. In the main
+checkout, the remote's side is usually the loop's work. Take `--theirs` and
+then redo your own edit with `bd update`. That gives one clean change on top
+and keeps the loop's history.
+
+Changed your mind partway through? `dolt merge --abort` puts the database
+back exactly as it was before `dolt merge`.
