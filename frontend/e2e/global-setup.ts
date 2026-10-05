@@ -1,5 +1,11 @@
 import { execSync } from 'child_process';
-import { findProjectRoot } from './find-project-root';
+import { dirname } from 'path';
+
+// Anchored to the frontend package's own package.json rather than a walk up the
+// tree for a root marker (habitcraft-3cr). Packages sit directly under the repo
+// root, so the repo root -- home of scripts/ -- is the package root's parent.
+const FRONTEND_ROOT = dirname(require.resolve('../package.json'));
+const REPO_ROOT = dirname(FRONTEND_ROOT);
 
 /**
  * Global setup for Playwright E2E tests
@@ -14,8 +20,6 @@ import { findProjectRoot } from './find-project-root';
 async function globalSetup() {
   console.log('\n🚀 Setting up E2E tests...\n');
 
-  const projectRoot = findProjectRoot(__dirname);
-
   // Skip DB reset if SKIP_E2E_SETUP is set (used by test-all.sh for parallel shards)
   if (process.env.SKIP_E2E_SETUP) {
     console.log('⏭️  Skipping database reset (SKIP_E2E_SETUP=1)\n');
@@ -23,9 +27,9 @@ async function globalSetup() {
     try {
       // Reset test database to clean state with fixtures
       console.log('📦 Resetting test database...');
-      execSync(`${projectRoot}/scripts/test-db-reset.sh`, {
+      execSync(`${REPO_ROOT}/scripts/test-db-reset.sh`, {
         stdio: 'inherit',
-        cwd: projectRoot,
+        cwd: REPO_ROOT,
       });
       console.log('✅ Test database reset complete\n');
     } catch (error) {

@@ -16,9 +16,14 @@ const { Pool } = require('pg');
 const http = require('http');
 const { execSync } = require('child_process');
 const path = require('path');
-const { findProjectRoot } = require('../utils/findProjectRoot');
 const { interceptResponse } = require('../openapi/httpInterceptor');
 const app = require('../app');
+
+// Anchored to the backend package's own package.json rather than a walk up the
+// tree for a root marker (habitcraft-3cr). Packages sit directly under the repo
+// root, so the repo root -- home of scripts/ -- is the package root's parent.
+const BACKEND_ROOT = path.dirname(require.resolve('../package.json'));
+const REPO_ROOT = path.dirname(BACKEND_ROOT);
 
 // Test database configuration (from .env.test)
 const testDbConfig = {
@@ -162,13 +167,12 @@ async function resetTestDatabase() {
   }
 
   // Locally, use the docker-compose based script
-  const projectRoot = findProjectRoot(__dirname);
-  const scriptPath = path.join(projectRoot, 'scripts', 'test-db-reset.sh');
+  const scriptPath = path.join(REPO_ROOT, 'scripts', 'test-db-reset.sh');
 
   try {
     execSync(scriptPath, {
       stdio: 'pipe',
-      cwd: projectRoot,
+      cwd: REPO_ROOT,
     });
   } catch (error) {
     console.error('Failed to reset test database:', error.message);
