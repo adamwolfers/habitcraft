@@ -41,7 +41,8 @@ Everything that changes between runs lives in beads (labels, comments) and
    ralph/<date>` ([landing](#landing-a-run)). It pushes, waits for CI, closes
    the beads and syncs the clone.
 8. **Fold the lessons back in.** Each new way a pass went wrong becomes a line
-   in `PROMPT.md` or a check in `ralph.sh`, with its own bead. Beads the passes
+   in `PROMPT.md` or a check in `ralph.sh`. Give it a bead labelled
+   `loop-infra` and do it interactively, not in the loop. Beads the passes
    filed are follow-ups for the next batch.
 
 ## Why a fresh process per pass
@@ -86,7 +87,13 @@ Leave these out. Each was considered and rejected, or went wrong:
 - **Production images, or a deploy-only check** (ara). `test-all.sh` does not
   build or boot the production image.
 - **Changes to `scripts/ralph/`, `.claude/` or `.husky/`** (lw6u). The prompt
-  forbids them, so a pass would mark them stuck.
+  forbids them, so a pass would mark them stuck. These beads carry the label
+  **`loop-infra`**: never label one `agent-ok`. Work them in an interactive
+  session. A pass that edited `PROMPT.md` or `ralph.sh` would change the
+  passes after it, unreviewed and mid-run. A broken hook breaks every commit
+  and push, including the loop's own beads sync. And CI never tests
+  `scripts/ralph/`, so only the local suites stand guard
+  (`bd list --label loop-infra`).
 - **Large epics.** Split them first. One pass is one bead.
 
 **Beads go stale.** In the second run, two of six (psq1 and g0p) had already
