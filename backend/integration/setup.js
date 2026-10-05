@@ -26,12 +26,27 @@ const BACKEND_ROOT = path.dirname(require.resolve('../package.json'));
 const REPO_ROOT = path.dirname(BACKEND_ROOT);
 
 // Test database configuration (from .env.test)
+//
+// The timeouts exist for diagnosability, not speed (habitcraft-l3r). Every
+// test's beforeEach runs quickReset() on this pool; without them a lock holder
+// or a connect stalled in Docker's port forward blocks forever, and jest blames
+// whichever test is next with a bare 30000ms testTimeout -- the unexplained
+// signature on habitcraft-duf. With them the stall fails in seconds and says
+// what it was waiting on. All sit well above normal test query time (observed
+// max ~1s) and well below that 30000ms, so they never fire on a healthy run.
 const testDbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5433'),
   database: process.env.DB_NAME || 'habitcraft_test',
   user: process.env.DB_USER || 'habituser',
   password: process.env.DB_PASSWORD || 'habitpass',
+  // pg's default is 0: wait forever for a connection.
+  connectionTimeoutMillis: 5000,
+  // Server-side, per session. lock_timeout fires first on a blocked lock and
+  // names it ("canceling statement due to lock timeout"); statement_timeout is
+  // the backstop for any other kind of stall.
+  lock_timeout: 5000,
+  statement_timeout: 10000,
 };
 
 // Create a dedicated pool for integration tests
@@ -183,14 +198,27 @@ async function resetTestDatabase() {
 }
 
 /**
+ * Run a reset statement on the test pool, prefixing any error with the
+ * statement's first line. A pg timeout error does not say which query it
+ * cancelled, and these run in beforeEach, outside any test's own code.
+ * @param {string} sql - Statement to run
+ */
+async function runResetQuery(sql) {
+  try {
+    await getTestPool().query(sql);
+  } catch (error) {
+    error.message = `${sql.trim().split('\n')[0]}: ${error.message}`;
+    throw error;
+  }
+}
+
+/**
  * Clear specific tables (faster than full reset for between-test cleanup)
  */
 async function clearTables(tables = ['completions', 'habits', 'refresh_tokens', 'users']) {
-  const pool = getTestPool();
-
   // Delete in order to respect foreign keys
   for (const table of tables) {
-    await pool.query(`DELETE FROM ${table}`);
+    await runResetQuery(`DELETE FROM ${table}`);
   }
 }
 
@@ -199,10 +227,8 @@ async function clearTables(tables = ['completions', 'habits', 'refresh_tokens', 
  * Call after clearTables() to restore test data
  */
 async function insertFixtures() {
-  const pool = getTestPool();
-
   // Insert test users
-  await pool.query(`
+  await runResetQuery(`
     INSERT INTO users (id, email, password_hash, name)
     VALUES
       ('11111111-1111-1111-1111-111111111111', 'test@example.com', '$2b$10$w1PAvb7tS9BwyRI9SEKODOpOBIftLBpYg/k1gUFqHSmTs0ips.ws.', 'Test User'),
@@ -211,7 +237,7 @@ async function insertFixtures() {
   `);
 
   // Insert test habits
-  await pool.query(`
+  await runResetQuery(`
     INSERT INTO habits (id, user_id, name, description, color, icon, status)
     VALUES
       ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'Morning Exercise', 'Daily workout', '#3B82F6', '🏃', 'active'),

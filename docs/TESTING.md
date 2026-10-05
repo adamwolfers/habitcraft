@@ -693,7 +693,7 @@ Located in `backend/integration/`:
 ### The database reset runs once per test file
 
 `jest.integration.setup.js`'s `beforeAll` calls `resetTestDatabase()`, so every
-file drops and recreates `habitcraft_test` — four resets per suite run. Locally
+file drops and recreates `habitcraft_test` — one reset per test file. Locally
 that shells out to `scripts/test-db-reset.sh`; under `CI` it instead deletes and
 re-seeds the tables in-process.
 
@@ -740,6 +740,29 @@ measurement, check for a competing runner:
 else's suite. `ALTER SYSTEM SET log_statement='ddl'` plus a `pg_reload_conf()`
 makes every `CREATE`/`DROP DATABASE` show up in `docker logs habitcraft-db-test`
 with its client, which settles the question outright.
+
+### A stalled reset fails fast and names itself
+
+Every test's `beforeEach` runs `quickReset()` on the test pool in
+`integration/setup.js`. That pool sets `connectionTimeoutMillis`, `lock_timeout`
+and `statement_timeout` (habitcraft-l3r). Without them, anything blocking the
+reset — a lock held by another session, a connect stalled in Docker Desktop's
+port forward — waited forever, and jest blamed whichever test happened to be
+next with a bare 30000ms timeout. That was the unexplained signature on
+habitcraft-duf: one trivial test timing out while the rest of its file passed.
+
+The same stall now fails within seconds, prefixed with the statement it was
+running:
+
+```
+DELETE FROM completions: canceling statement due to lock timeout
+```
+
+`timeout exceeded when trying to connect` means the connect stalled, not a
+query. Either one is about the test database, not the test it is reported
+against. `integration/setup.test.js` provokes both. The values sit well above
+normal query time (observed max ~1s) and well below the 30000ms test timeout,
+so they never fire on a healthy run.
 
 ### Use the shared test server, not the app
 
