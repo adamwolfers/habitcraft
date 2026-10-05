@@ -105,6 +105,15 @@ for ((pass = 1; pass <= MAX_PASSES; pass++)); do
             --output-format stream-json --verbose \
         > "$pass_log" 2>&1 || status=$?
 
+    # mg may be reading this clone's embedded database while the pass writes
+    # it (habitcraft-82by). A failed bd call is how contention would show.
+    bd_failures="$(jq -cR 'fromjson? // empty' "$pass_log" |
+        jq -rs -f "$PROJECT_ROOT/scripts/ralph/bd-failures.jq" 2>/dev/null || true)"
+    if [[ -n "$bd_failures" ]]; then
+        log "WARN: pass $pass: $(grep -c . <<<"$bd_failures") bd call(s) failed -- contention with mg? see $(basename "$pass_log")"
+        head -3 <<<"$bd_failures" | while read -r line; do log "  $line"; done
+    fi
+
     sync_beads push
     after="$(labelled_count)"
     head_after="$(git rev-parse --short HEAD)"

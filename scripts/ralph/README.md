@@ -11,6 +11,7 @@ as the work queue and `scripts/test-all.sh` as the backpressure
 | `ralph.sh` | The loop: picks nothing itself, just runs passes and stops on no progress |
 | `PROMPT.md` | What every pass is told: pick, work, verify, commit, hand off |
 | `land.sh` | Merges a reviewed run, waits for CI, closes its beads, syncs the clone |
+| `bd-failures.jq` | Finds failed `bd` calls in a pass transcript; `ralph.sh` logs them |
 
 ## Why a fresh process per pass
 
@@ -108,6 +109,22 @@ git log master..HEAD             # the commits
 
 Every pass's full transcript is `.ralph/pass-*.jsonl`. Read the failures:
 each new way the loop goes wrong is a fix to `PROMPT.md` or a missing test.
+
+### Watching from mg
+
+`mg` started in the clone shows the loop's beads live, since it reads the
+same database the passes write. It also refreshes on its own, so it may
+contend with a pass for that embedded database (habitcraft-82by). After each
+pass `ralph.sh` runs `bd-failures.jq` over the transcript and logs any `bd`
+call that hit a lock or printed an `Error:` line:
+
+```
+WARN: pass 2: 1 bd call(s) failed -- contention with mg? see pass-....jsonl
+  bd update habitcraft-aaa --claim => Error: database is locked
+```
+
+No WARN means no `bd` call failed. If they appear only while mg is open,
+close mg during runs. Tests: `scripts/ralph/bd-failures.test.sh`.
 
 ## Landing a run
 
