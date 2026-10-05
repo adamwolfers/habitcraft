@@ -12,6 +12,7 @@ as the work queue and `scripts/test-all.sh` as the backpressure
 | `PROMPT.md` | What every pass is told: pick, work, verify, commit, hand off |
 | `land.sh` | Merges a reviewed run, waits for CI, closes its beads, syncs the clone |
 | `bd-failures.jq` | Finds failed `bd` calls in a pass transcript; `ralph.sh` logs them |
+| `status.sh` | The queue, review and stuck beads, and recent passes, at a glance |
 
 ## Why a fresh process per pass
 
@@ -109,6 +110,23 @@ git log master..HEAD             # the commits
 
 Every pass's full transcript is `.ralph/pass-*.jsonl`. Read the failures:
 each new way the loop goes wrong is a fix to `PROMPT.md` or a missing test.
+
+### Watching a run
+
+```bash
+scripts/ralph/status.sh            # one snapshot
+scripts/ralph/status.sh --watch    # redraw every 15s (--watch 5 for 5s); Ctrl-C stops
+```
+
+It reads the clone (or `RALPH_CLONE`) and shows whether `ralph.sh` is running,
+the review branch and how far it is ahead of master, then the loop's beads:
+**Working** (the `agent-ok` bead a pass has claimed), **Queued**, **Review**
+and **Stuck**, and the last lines of `summary.log`, counting any WARNs. It
+makes one `bd` call per refresh. Tests: `scripts/ralph/status.test.sh`.
+
+mg cannot show this: it has no label filter or label display (0.32.1 and
+0.33.0), so queued beads look like every other ready bead (habitcraft-3oxu).
+It does show a claimed bead moving to Rolling as a pass picks it up.
 
 ### Watching from mg
 
