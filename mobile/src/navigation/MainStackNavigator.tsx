@@ -43,6 +43,7 @@ export function MainStackNavigator() {
         component={HabitDetailScreen}
         options={{
           title: 'Habit Details',
+          headerBackTestID: 'habit-detail-back-button',
         }}
       />
     </Stack.Navigator>

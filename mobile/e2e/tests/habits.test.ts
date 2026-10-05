@@ -1,4 +1,4 @@
-import { device, element, by, expect, waitFor } from 'detox';
+import { element, by, expect, waitFor } from 'detox';
 import {
   generateTestUser,
   launchAuthenticated,
@@ -171,7 +171,7 @@ describe('Habit CRUD Operations', () => {
       // Verify habit exists
       await expect(habitCard(habitName)).toBeVisible();
 
-      // Tap on the habit to open edit screen
+      // Tap on the habit to open the detail screen
       await habitCard(habitName).tap();
       await waitForElement('delete-habit-button');
 
@@ -193,7 +193,7 @@ describe('Habit CRUD Operations', () => {
       await createHabit(habitName);
       await waitForDashboard();
 
-      // Open edit screen
+      // Open the detail screen
       await habitCard(habitName).tap();
       await waitForElement('delete-habit-button');
 
@@ -203,8 +203,9 @@ describe('Habit CRUD Operations', () => {
       // Cancel deletion
       await element(by.text('Cancel')).tap();
 
-      // Go back to dashboard
-      await device.pressBack();
+      // Go back to dashboard. The header button, not device.pressBack(),
+      // which Detox implements on Android only (habitcraft-bqhe.8).
+      await element(by.id('habit-detail-back-button')).tap();
       await waitForDashboard();
 
       // Verify habit still exists
