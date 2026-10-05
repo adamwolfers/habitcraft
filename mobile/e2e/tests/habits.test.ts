@@ -108,7 +108,7 @@ describe('Habit CRUD Operations', () => {
       await expect(element(by.id('habit-card')).atIndex(0)).toBeVisible();
     });
 
-    // NO PULL-TO-REFRESH SPEC HERE, deliberately. The one that used to sit at
+    // NO PULL-TO-REFRESH TEST HERE, deliberately. The one that used to sit at
     // this point called element(by.id('habit-list')).scroll(200, 'down'), which
     // is not the pull gesture and failed with 'Unable to scroll down in '. It
     // left the RefreshControl mid-gesture and the run loop permanently awake,
@@ -215,14 +215,14 @@ describe('Habit CRUD Operations', () => {
 
   describe('Complete Habit', () => {
     // habit-completed-check renders only for a habit completed today, so its
-    // presence IS the completion state. The two specs this replaces tapped
+    // presence IS the completion state. The two tests this replaces tapped
     // complete-button and then asserted complete-button was still visible,
     // which holds for a completely broken toggle (habitcraft-bqhe.9).
     //
     // Both matchers are scoped to one named card rather than atIndex(0), and
-    // each spec creates the habit it drives. So neither depends on how many
+    // each test creates the habit it drives. So neither depends on how many
     // habits the file made before it, on where the list puts a new one, or on
-    // what the other spec left behind -- and both run in isolation.
+    // what the other test left behind -- and both run in isolation.
     const completeButtonFor = (name: string) =>
       element(by.id('complete-button').withAncestor(habitCardMatcher(name)));
     const checkFor = (name: string) =>

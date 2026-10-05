@@ -67,7 +67,7 @@ export async function createUserViaApi(
   return { accessToken: body.accessToken, refreshToken: body.refreshToken };
 }
 
-/** A habit as GET /habits returns it, narrowed to what the specs read. */
+/** A habit as GET /habits returns it, narrowed to what the tests read. */
 export interface ServerHabit {
   id: string;
   name: string;
@@ -77,7 +77,7 @@ export interface ServerHabit {
 /**
  * Read the user's habits straight from the backend, bypassing the app.
  *
- * For the specs whose claim is that something reached the server -- an offline
+ * For the tests whose claim is that something reached the server -- an offline
  * change that synced -- where the app's own rendering of it would prove only
  * that its cache agrees with itself.
  */
@@ -151,7 +151,7 @@ export async function clearDeviceSession(): Promise<void> {
   });
 }
 
-const STALE_SESSION = "the app would start from the previous spec's session";
+const STALE_SESSION = "the app would start from the previous test file's session";
 
 function runOrExplain(
   command: string,
@@ -191,13 +191,13 @@ export function canToggleConnectivity(): boolean {
  * the test runner and the backend are both reached through `adb reverse`,
  * which runs over the adb transport, not the guest's network. The iOS
  * simulator shares the host Mac's network stack and has no such switch, so
- * the specs that need this skip on iOS rather than pass without it.
+ * the tests that need this skip on iOS rather than pass without it.
  *
  * NOT AIRPLANE MODE, though it is the more obvious switch. Measured on the
  * Detox_API_36 AVD: airplane mode let a network come back for about half a
  * second while it was still on, in 2 of 3 rounds, and took up to 9s to
  * reconnect -- in one test run over 40s. NetInfo reported that blip, so the
- * app briefly went online in the middle of an offline spec. `svc` never
+ * app briefly went online in the middle of an offline test. `svc` never
  * flapped in 9 rounds and reconnected in 1-4s.
  *
  * Returns once the radios are switched. NetInfo notices a moment later, so
@@ -280,7 +280,7 @@ export async function returnToLoggedOut(): Promise<void> {
 /**
  * Launch the app already signed in as a freshly created user.
  *
- * This is how every spec should authenticate. The tokens travel as Detox launch
+ * This is how every test should authenticate. The tokens travel as Detox launch
  * arguments and the app seeds its secure store from them at startup
  * (src/lib/e2eSession.ts), so no password is ever typed and the AutoFill prompt
  * is never offered.
@@ -291,7 +291,7 @@ export async function launchAuthenticated(
   const tokens = await createUserViaApi(user);
 
   // Even though the launch arguments overwrite whatever tokens are already
-  // there, clear first: a spec that reaches this with a stale session and a
+  // there, clear first: a test that reaches this with a stale session and a
   // seeding failure would silently test the previous user's account instead of
   // failing (habitcraft-bqhe.7).
   await clearDeviceSession();
@@ -333,7 +333,7 @@ export async function relaunchAuthenticated(session: E2ESession): Promise<void> 
 /**
  * Restart the app process with nothing that could seed a session.
  *
- * For the specs about what a restart does to a session: they have to see the
+ * For the tests about what a restart does to a session: they have to see the
  * app read its own stored session, so the launch must carry no seeding
  * arguments at all. Nothing is cleared first, which is the point -- whatever
  * the previous step left in storage is what the app comes back with.
@@ -400,7 +400,7 @@ export async function waitForElementToDisappear(testID: string, timeout = 10000)
  * Open the login form.
  *
  * Welcome is the auth stack's initial route, so neither form is on screen when
- * the app launches -- every auth spec starts by choosing one.
+ * the app launches -- every auth test starts by choosing one.
  */
 export async function gotoLogin() {
   await waitForElement('welcome-screen');

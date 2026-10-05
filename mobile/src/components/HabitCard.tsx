@@ -44,7 +44,7 @@ export function HabitCard({
         accessibilityHint={isCompletedToday ? 'Double tap to uncheck' : 'Double tap to check'}
       >
         {/* The only rendered difference between a completed habit and an
-            uncompleted one, so it is what the detox completion specs assert
+            uncompleted one, so it is what the detox completion tests assert
             against -- accessibilityState is not visible to them
             (habitcraft-bqhe.9). */}
         {isCompletedToday && (

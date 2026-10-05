@@ -5,7 +5,7 @@ module.exports = {
   testTimeout: 120000,
   maxWorkers: 1,
   // Runs once per test file, which is what makes the logged-out
-  // precondition a harness guarantee rather than a per-spec convention
+  // precondition a harness guarantee rather than a per-file convention
   // (habitcraft-bqhe.7).
   setupFilesAfterEnv: ['<rootDir>/e2e/config/perFileSetup.ts'],
   globalSetup: 'detox/runners/jest/globalSetup',

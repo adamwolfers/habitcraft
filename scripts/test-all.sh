@@ -94,7 +94,7 @@ TIMEOUT_INTEGRATION=300
 TIMEOUT_E2E_SHARD=900
 
 # Number of parallel Playwright shards. This is NOT free to change: Playwright
-# shards by FILE (fullyParallel: false), so more shards than the spec-file
+# shards by FILE (fullyParallel: false), so more shards than the test-file
 # layout can fill leaves one running nothing -- which reports as passed. Keep
 # in sync with the matrix in .github/workflows/ci.yml, and let
 # scripts/check-e2e-shards.sh (run below) confirm the split still works.

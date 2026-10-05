@@ -89,7 +89,7 @@ describe('Logout', () => {
     });
   });
 
-  // These three are the only specs in the suite whose subject is the stored
+  // These three are the only tests in the suite whose subject is the stored
   // session itself, so they are the only ones that must not be handed one.
   // Every launch here carries no seeding arguments, and the reload relies on
   // the app seeding once per launch (habitcraft-bqhe.16) -- without that, the

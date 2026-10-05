@@ -15,10 +15,10 @@
 #
 #   2. expo-secure-store keeps its items in the keychain, which survives app
 #      deletion. So `launchApp({ delete: true })` leaves the previous run's
-#      session in place and every spec that expects a logged-out app fails
+#      session in place and every test that expects a logged-out app fails
 #      (habitcraft-bqhe.7).
 #
-#      The reset below only covers the FIRST spec file -- it runs once, before
+#      The reset below only covers the FIRST test file -- it runs once, before
 #      the run. Clearing between files is the suite's own job, and
 #      e2e/config/perFileSetup.ts does it in a beforeAll that jest runs once
 #      per test file. Do not read this script as the whole answer to a

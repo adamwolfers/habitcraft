@@ -109,7 +109,7 @@ module.exports = [
       },
     },
   },
-  // Detox specs only. typeText() types one keystroke at a time and does not
+  // Detox tests only. typeText() types one keystroke at a time and does not
   // reliably land a full string in a secureTextEntry field -- a 16-character
   // password arrived as 7 or fewer, and the form rejected itself before any
   // request went out (habitcraft-bqhe.6). replaceText() sets the value

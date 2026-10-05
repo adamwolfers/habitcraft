@@ -22,13 +22,13 @@ import { storage } from './storage';
  *
  * So the suite obtains a session over HTTP and hands the tokens to the app
  * here. No password is typed, so the prompt is never offered. The registration
- * spec is the exception and still drives the real form -- typing the password
+ * test is the exception and still drives the real form -- typing the password
  * is what that test is for.
  *
  * ONCE PER LAUNCH. The launch arguments belong to the PROCESS, so they are
  * still readable after device.reloadReactNative(), which restarts the JS bundle
  * but not the process. Seeding on every mount therefore put the session back
- * after a reload, and the two specs about what a reload does to a session could
+ * after a reload, and the two tests about what a reload does to a session could
  * not observe their own subject -- one always failed and the other could not
  * fail (habitcraft-bqhe.16). An in-memory flag would not help, because a reload
  * evaluates this module afresh. So each launch carries its own e2eSeedId and
@@ -65,8 +65,8 @@ async function readSeededId(): Promise<string | null> {
     return info.exists ? await FileSystem.readAsStringAsync(SEEDED_ID_PATH) : null;
   } catch {
     // Unreadable reads as "nothing seeded yet", which re-seeds. That is the
-    // harmless direction: the specs about reloads then fail, rather than every
-    // spec starting logged out.
+    // harmless direction: the tests about reloads then fail, rather than every
+    // test starting logged out.
     return null;
   }
 }
@@ -114,7 +114,7 @@ export async function seedE2ESession(): Promise<boolean> {
   }
 
   // No id means no way to tell a fresh launch from a reload, so the safe answer
-  // is not to seed. The spec that needed a session then fails on its first wait
+  // is not to seed. The test that needed a session then fails on its first wait
   // rather than passing for the wrong reason.
   const seedId = readLaunchArg(SEED_ID_ARG);
   if (!seedId) {

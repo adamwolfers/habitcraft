@@ -195,7 +195,7 @@ Two UX options for capturing notes:
 |------|---------|
 | `frontend/components/CompletionNoteModal.tsx` | Modal component for adding/editing notes |
 | `frontend/components/CompletionNoteModal.test.tsx` | Unit tests for modal |
-| `frontend/e2e/completions.test.ts` | E2E tests for notes feature (planned as `completion-notes.spec.ts`; shipped merged into the existing completions spec) |
+| `frontend/e2e/completions.test.ts` | E2E tests for notes feature (planned as `completion-notes.spec.ts`; shipped merged into the existing completions test file) |
 
 ### Modified Files
 | File | Changes |

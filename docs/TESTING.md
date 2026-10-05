@@ -447,7 +447,7 @@ emulator because macOS runners have no Docker, and the job needs the
 - **On failure:** Detox logs and screenshots of the failing cases are uploaded
   as the `detox-artifacts` artifact.
 
-### Writing a spec
+### Writing a test
 
 - **Sign in with `launchAuthenticated()`, not the login form.** It passes
   tokens as launch arguments (`mobile/src/lib/e2eSession.ts`). Typing a
@@ -474,7 +474,7 @@ emulator because macOS runners have no Docker, and the job needs the
   `setDeviceOnline()` from `mobile/e2e/config/testSetup.ts`, which runs
   `adb shell svc wifi|data disable|enable` (habitcraft-bqhe.10). Do not use
   airplane mode: on the emulator it briefly brings a network back while it is
-  still on, and that blip puts the app online partway through a spec.
+  still on, and that blip puts the app online partway through a test file.
   `offline.test.ts` runs on Android only. On iOS it shows as skipped, because
   the simulator shares the Mac's network and has no switch to turn off.
 - **Check the backend for anything that has to sync.** `fetchHabitsViaApi()`
@@ -508,8 +508,8 @@ The mobile auth screens themselves are described in
 shards**. That number is a constraint, not a preference.
 
 `playwright.config.ts` sets `fullyParallel: false`, so **Playwright shards by
-file, not by test**, and it assigns each spec file to the shard its *first* test
-falls into. There are 4 eligible spec files of very uneven size — `auth` (30),
+file, not by test**, and it assigns each test file to the shard its *first* test
+falls into. There are 4 eligible test files of very uneven size — `auth` (30),
 `completions` (33), `habits` (11), `landing` (10) — so asking for more shards
 than the layout can fill leaves one with nothing to do. At 4 shards the split
 was `30 / 33 / 0 / 21`: shard 3 ran no tests for weeks (habitcraft-u1o).
@@ -538,7 +538,7 @@ slice still exits 0 (verified on Playwright 1.57.0).
 matrix job runs the single-shard form before downloading browsers or starting
 containers. Both fail the run if a shard is empty.
 
-**If you add, remove, split, or substantially resize a spec file, re-run the
+**If you add, remove, split, or substantially resize a test file, re-run the
 guard.** When it fails, adjust the shard count in `E2E_SHARDS`
 (`scripts/test-all.sh`) and the `shard:` matrix (`.github/workflows/ci.yml`)
 **together** — they must stay in sync.

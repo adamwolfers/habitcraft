@@ -836,7 +836,7 @@ jobs:
     strategy:
       fail-fast: false
       # Playwright shards by FILE (fullyParallel: false in playwright.config.ts),
-      # so the shard count must stay matched to the spec-file layout -- 4 shards
+      # so the shard count must stay matched to the test-file layout -- 4 shards
       # left one running zero tests, and an empty shard reports as passed
       # (habitcraft-u1o). Keep in sync with E2E_SHARDS in scripts/test-all.sh;
       # the "Verify shard is non-empty" step below fails the job if it drifts.

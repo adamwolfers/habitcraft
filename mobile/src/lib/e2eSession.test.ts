@@ -171,7 +171,7 @@ describe('seedE2ESession', () => {
     });
 
     it('seeds when the record cannot be read at all', async () => {
-      // Better to seed and let the reload specs fail than to start every spec
+      // Better to seed and let the reload tests fail than to start every test
       // logged out because one file read went wrong.
       launchArgs(TOKEN_ARGS);
       mockGetInfoAsync.mockRejectedValue(new Error('no such directory'));

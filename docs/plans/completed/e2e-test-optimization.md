@@ -17,7 +17,7 @@ This document outlines strategies to reduce E2E test execution time, both locall
 ## Current State
 
 - **Framework**: Playwright v1.57.0
-- **Test Count**: 77 tests across 4 spec files
+- **Test Count**: 77 tests across 4 test files
 - **Execution Mode**: Serial (`fullyParallel: false`, `workers: 1`)
 - **Browser**: Chromium only
 - **Timeouts**: 30s per test, 5s for assertions
