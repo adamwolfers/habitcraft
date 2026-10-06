@@ -114,6 +114,7 @@ git reset --hard origin/master    # bd init COMMITS its own agent files; drop th
 git config --unset core.hooksPath # ...and points hooks at .beads/hooks (see CLAUDE.md)
 for d in . backend frontend mobile; do (cd $d && npm ci); done   # restores .husky/_
 git config remote.origin.pushurl "DISABLED--ralph-clone-never-pushes"
+git config beads.role maintainer  # else bd warns on every call (GH#2950)
 scripts/beads-doctor.sh           # must be green before the first run
 ```
 
