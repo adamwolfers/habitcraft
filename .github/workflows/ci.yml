@@ -859,7 +859,7 @@ jobs:
 
           # Handle case where BASE_SHA is empty (first push, workflow_dispatch)
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" == "0000000000000000000000000000000000000000" ]; then
-            echo "changed=unknown" >> $GITHUB_OUTPUT
+            echo "changed=unknown" >> "$GITHUB_OUTPUT"
             echo "ℹ️ Cannot determine dependency changes (first push or manual trigger)"
             exit 0
           fi
@@ -868,10 +868,10 @@ jobs:
           FRONTEND_DEPS=$(git diff --name-only $BASE_SHA ${{ github.sha }} -- 'frontend/package-lock.json' | wc -l)
 
           if [ "$BACKEND_DEPS" -gt 0 ] || [ "$FRONTEND_DEPS" -gt 0 ]; then
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "changed=true" >> "$GITHUB_OUTPUT"
             echo "📦 Dependencies changed - BuildKit will rebuild affected layers"
           else
-            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "✅ No dependency changes - BuildKit will use cached layers"
           fi
 
@@ -1041,7 +1041,7 @@ jobs:
             --region=us-central1 \
             --limit=1 \
             --format="value(name)")
-          STATUS=$(gcloud run jobs executions describe $EXECUTION \
+          STATUS=$(gcloud run jobs executions describe "$EXECUTION" \
             --region=us-central1 \
             --format="value(status.completionTime)")
           if [ -z "$STATUS" ]; then
