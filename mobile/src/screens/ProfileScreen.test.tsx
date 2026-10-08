@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ProfileScreen } from './ProfileScreen';
 import { useAuthContext } from '@/context/AuthContext';
 import { PROFILE_NAME_MAX_LENGTH } from '@/utils/authUtils';
@@ -107,6 +107,16 @@ describe('ProfileScreen', () => {
       fireEvent.press(utils.getByTestId('edit-profile-button'));
     };
 
+    // Presses Save inside an async act, which flushes the mocked updateProfile
+    // promise and the state updates after it before returning. The assertions
+    // that follow are then synchronous. Polling with waitFor instead raced its
+    // 1s default timeout and lost under test-all's load (habitcraft-r62m).
+    const pressSave = async (utils: ReturnType<typeof render>) => {
+      await act(async () => {
+        fireEvent.press(utils.getByTestId('save-profile-button'));
+      });
+    };
+
     it('shows the user name alongside the email', () => {
       const { getByTestId } = renderScreen();
 
@@ -136,11 +146,9 @@ describe('ProfileScreen', () => {
       openEditor(utils);
 
       fireEvent.changeText(utils.getByTestId('profile-name-input'), '  New Name ');
-      fireEvent.press(utils.getByTestId('save-profile-button'));
+      await pressSave(utils);
 
-      await waitFor(() => {
-        expect(utils.queryByTestId('profile-name-input')).toBeNull();
-      });
+      expect(utils.queryByTestId('profile-name-input')).toBeNull();
       expect(mockUpdateProfile).toHaveBeenCalledWith({ name: 'New Name' });
       expect(utils.getByTestId('profile-success')).toBeTruthy();
     });
@@ -191,13 +199,11 @@ describe('ProfileScreen', () => {
       openEditor(utils);
 
       fireEvent.changeText(utils.getByTestId('profile-email-input'), 'taken@example.com');
-      fireEvent.press(utils.getByTestId('save-profile-button'));
+      await pressSave(utils);
 
-      await waitFor(() => {
-        expect(utils.getByTestId('profile-email-input-error').props.children).toBe(
-          'Email is already in use'
-        );
-      });
+      expect(utils.getByTestId('profile-email-input-error').props.children).toBe(
+        'Email is already in use'
+      );
       expect(mockUpdateProfile).toHaveBeenCalledWith({ email: 'taken@example.com' });
       expect(utils.queryByTestId('profile-form-error')).toBeNull();
       expect(utils.queryByTestId('profile-success')).toBeNull();
@@ -209,11 +215,9 @@ describe('ProfileScreen', () => {
       openEditor(utils);
 
       fireEvent.changeText(utils.getByTestId('profile-name-input'), 'New Name');
-      fireEvent.press(utils.getByTestId('save-profile-button'));
+      await pressSave(utils);
 
-      await waitFor(() => {
-        expect(utils.getByTestId('profile-form-error').props.children).toBe('Network Error');
-      });
+      expect(utils.getByTestId('profile-form-error').props.children).toBe('Network Error');
       expect(utils.getByTestId('profile-name-input')).toBeTruthy();
     });
 
@@ -228,18 +232,17 @@ describe('ProfileScreen', () => {
       openEditor(utils);
 
       fireEvent.changeText(utils.getByTestId('profile-name-input'), 'New Name');
-      fireEvent.press(utils.getByTestId('save-profile-button'));
+      // The promise stays pending, so the act returns with the request in flight.
+      await pressSave(utils);
 
-      await waitFor(() => {
-        expect(utils.getByTestId('save-profile-button').props.accessibilityState).toEqual({
-          disabled: true,
-        });
+      expect(utils.getByTestId('save-profile-button').props.accessibilityState).toEqual({
+        disabled: true,
       });
 
-      resolve();
-      await waitFor(() => {
-        expect(utils.queryByTestId('save-profile-button')).toBeNull();
+      await act(async () => {
+        resolve();
       });
+      expect(utils.queryByTestId('save-profile-button')).toBeNull();
     });
 
     it('cancel discards edits and errors', () => {
