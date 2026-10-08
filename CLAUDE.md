@@ -312,7 +312,10 @@ docker compose up -d
 1. `dbmate new migration_name` - creates timestamped file
 2. Add SQL to `-- migrate:up` section
 3. Leave `-- migrate:down` as comment (forward-only strategy)
-4. Test: `docker compose down -v && docker compose up -d`
+4. Test: `./scripts/db-recreate.sh` — recreates **both** the dev (5432) and
+   test (5433) databases and checks each reached the new migration. A bare
+   `docker compose down -v` leaves the test database on its old schema
+   (habitcraft-nld).
 5. Regenerate the committed schema dump: `./scripts/schema-dump.sh`
 
 `db/migrations/` is the **only** source of truth for the schema, and the only

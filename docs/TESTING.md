@@ -211,6 +211,7 @@ Located in `scripts/`:
 | `test-db-stop.sh` | Stop test database container |
 | `test-db-reset.sh` | Reset to clean state with fixtures |
 | `test-db-fresh.sh` | Remove all data and start fresh |
+| `db-recreate.sh` | Recreate the dev **and** test databases from `db/migrations/` and check both reached the newest migration — the step for testing a new migration |
 
 ### Test Fixtures
 

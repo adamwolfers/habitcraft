@@ -65,8 +65,13 @@ dbmate up
 
 3. Test locally:
    ```bash
-   docker compose down -v && docker compose up -d
+   ./scripts/db-recreate.sh
    ```
+   This recreates **both** databases -- dev (`docker-compose.yml`, port 5432)
+   and test (`docker-compose.test.yml`, port 5433) -- and fails unless each one
+   reached the newest migration. `docker compose down -v` on its own touches
+   only the dev stack, so the integration suite would keep running against the
+   old schema (habitcraft-nld).
 
 4. Regenerate the committed schema dump and commit it alongside the migration:
    ```bash
@@ -98,7 +103,7 @@ The first migration (`20260117000000_baseline.sql`) contains the full initial sc
 
 Before merging any migration to `master`:
 
-- [ ] **Migration tested locally**: `docker compose down -v && docker compose up -d`
+- [ ] **Migration tested locally**: `./scripts/db-recreate.sh` reports both databases at the new version
 - [ ] **Migration reviewed**: Another team member has reviewed the SQL
 - [ ] **Backup verified**: Confirm automated backups are enabled (CI creates one before each migration)
 - [ ] **Rollback plan documented**: Know how you'll fix forward if something goes wrong
@@ -162,6 +167,7 @@ db/
 
 .dbmaterc                 # dbmate configuration
 scripts/schema-dump.sh    # Regenerates and verifies schema.sql
+scripts/db-recreate.sh    # Recreates the dev and test databases from migrations/
 ```
 
 ## Production
@@ -297,7 +303,7 @@ SELECT COUNT(*) FROM habits;
    ```bash
    dbmate new fix_previous_migration
    ```
-3. Test locally: `docker compose down -v && docker compose up -d`
+3. Test locally: `./scripts/db-recreate.sh`
 4. Push and let CI/CD deploy
 
 **Step 3b: Restore from Backup**
@@ -370,9 +376,8 @@ INSERT INTO schema_migrations (version) VALUES ('YYYYMMDDHHMMSS');
 ### Migration fails locally
 
 ```bash
-# Reset everything and start fresh
-docker compose down -v
-docker compose up -d
+# Reset both the dev and test databases and start fresh
+./scripts/db-recreate.sh
 ```
 
 ### Check migration status
