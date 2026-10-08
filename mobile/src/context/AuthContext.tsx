@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, LoginCredentials, RegisterData } from '@/types';
+import { User, LoginCredentials, RegisterData, ProfileUpdate } from '@/types';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
 import { seedE2ESession } from '@/lib/e2eSession';
@@ -13,6 +13,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
+  updateProfile: (updates: ProfileUpdate) => Promise<void>;
   clearError: () => void;
 }
 
@@ -83,6 +84,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Leaves `error` alone: that state is the auth screens' banner. A failed save
+  // is rethrown for the Profile screen to show beside the field it concerns.
+  const updateProfile = useCallback(async (updates: ProfileUpdate) => {
+    const updatedUser = await authApi.updateProfile(updates);
+    setUser(updatedUser);
+  }, []);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -97,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         register,
         logout,
+        updateProfile,
         clearError,
       }}
     >

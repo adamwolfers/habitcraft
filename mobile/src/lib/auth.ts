@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { api } from './api';
 import { storage } from './storage';
-import { User, AuthTokens, LoginCredentials, RegisterData } from '@/types';
+import { User, AuthTokens, LoginCredentials, RegisterData, ProfileUpdate } from '@/types';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
@@ -166,6 +166,21 @@ export const authApi = {
 
     try {
       const response = await api.get('/users/me');
+      return response.data;
+    } catch (error) {
+      throw toAuthApiError(error);
+    }
+  },
+
+  /**
+   * Through the shared `api` instance, like getCurrentUser, so an expired
+   * access token is refreshed rather than failing the save. A 409 means the
+   * email belongs to another account; the status rides on the error so the
+   * Profile screen can put that message under the email field.
+   */
+  async updateProfile(updates: ProfileUpdate): Promise<User> {
+    try {
+      const response = await api.put('/users/me', updates);
       return response.data;
     } catch (error) {
       throw toAuthApiError(error);

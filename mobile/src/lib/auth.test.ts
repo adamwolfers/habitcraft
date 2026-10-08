@@ -11,6 +11,7 @@ const mockAxios = axios as jest.Mocked<typeof axios>;
 jest.mock('./api', () => ({
   api: {
     get: jest.fn(),
+    put: jest.fn(),
   },
 }));
 const mockApi = api as jest.Mocked<typeof api>;
@@ -312,6 +313,45 @@ describe('authApi', () => {
 
       expect(result).toBeNull();
       expect(mockApi.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateProfile', () => {
+    const updatedUser = {
+      id: '1',
+      email: 'new@example.com',
+      name: 'New Name',
+      createdAt: '2024-01-01',
+    };
+
+    it('makes PUT request to /users/me via the shared api instance', async () => {
+      mockApi.put.mockResolvedValueOnce({ data: updatedUser });
+
+      await authApi.updateProfile({ name: 'New Name', email: 'new@example.com' });
+
+      expect(mockApi.put).toHaveBeenCalledWith('/users/me', {
+        name: 'New Name',
+        email: 'new@example.com',
+      });
+    });
+
+    it('returns the updated user', async () => {
+      mockApi.put.mockResolvedValueOnce({ data: updatedUser });
+
+      const result = await authApi.updateProfile({ name: 'New Name' });
+
+      expect(result).toEqual(updatedUser);
+    });
+
+    it('rejects with the server message and status on a duplicate email', async () => {
+      mockApi.put.mockRejectedValueOnce({
+        response: { status: 409, data: { error: 'Email is already in use' } },
+      });
+
+      await expect(authApi.updateProfile({ email: 'taken@example.com' })).rejects.toMatchObject({
+        message: 'Email is already in use',
+        status: 409,
+      });
     });
   });
 });

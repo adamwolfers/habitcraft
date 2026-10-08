@@ -12,6 +12,7 @@ jest.mock('@/lib/auth', () => ({
     register: jest.fn(),
     logout: jest.fn(),
     getCurrentUser: jest.fn(),
+    updateProfile: jest.fn(),
   },
 }));
 
@@ -396,6 +397,70 @@ describe('AuthContext', () => {
         getByTestId('clear-button').props.onPress();
       });
 
+      expect(getByTestId('error').props.children).toBe('no-error');
+    });
+  });
+
+  describe('updateProfile', () => {
+    const UpdateProfileTestComponent: React.FC = () => {
+      const { updateProfile, user, error } = useAuthContext();
+      return (
+        <>
+          <Text testID="user">{user ? `${user.name} <${user.email}>` : 'no-user'}</Text>
+          <Text testID="error">{error || 'no-error'}</Text>
+          <Text testID="update-button" onPress={() => updateProfile({ name: 'New Name' })}>
+            Update
+          </Text>
+        </>
+      );
+    };
+
+    const renderSignedIn = async () => {
+      mockStorage.hasTokens.mockResolvedValue(true);
+      mockAuthApi.getCurrentUser.mockResolvedValue(mockUser);
+
+      const utils = render(
+        <AuthProvider>
+          <UpdateProfileTestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(utils.getByTestId('user').props.children).toBe('Test User <test@example.com>');
+      });
+
+      return utils;
+    };
+
+    it('replaces the user with the one the server returns', async () => {
+      mockAuthApi.updateProfile.mockResolvedValue({ ...mockUser, name: 'New Name' });
+      const { getByTestId } = await renderSignedIn();
+
+      await act(async () => {
+        await getByTestId('update-button').props.onPress();
+      });
+
+      expect(mockAuthApi.updateProfile).toHaveBeenCalledWith({ name: 'New Name' });
+      expect(getByTestId('user').props.children).toBe('New Name <test@example.com>');
+    });
+
+    it('rethrows a failure and leaves the user and the auth error alone', async () => {
+      // The auth-screen `error` is for login/register; a failed profile save
+      // belongs to the Profile screen, which shows it under its own form.
+      mockAuthApi.updateProfile.mockRejectedValue(new Error('Email is already in use'));
+      const { getByTestId } = await renderSignedIn();
+
+      let thrown: unknown;
+      await act(async () => {
+        try {
+          await getByTestId('update-button').props.onPress();
+        } catch (err) {
+          thrown = err;
+        }
+      });
+
+      expect((thrown as Error).message).toBe('Email is already in use');
+      expect(getByTestId('user').props.children).toBe('Test User <test@example.com>');
       expect(getByTestId('error').props.children).toBe('no-error');
     });
   });

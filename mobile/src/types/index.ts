@@ -30,6 +30,9 @@ export type LoginCredentials = operations['login']['requestBody']['content']['ap
 
 export type RegisterData = operations['register']['requestBody']['content']['application/json'];
 
+export type ProfileUpdate =
+  operations['updateCurrentUser']['requestBody']['content']['application/json'];
+
 // Habit types
 export type Habit = components['schemas']['Habit'];
 
