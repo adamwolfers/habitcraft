@@ -1113,6 +1113,7 @@ describe('changePassword', () => {
   });
 
   it('should throw error for validation failures (400)', async () => {
+    // Opaque server message the client only passes through, so the limit stays literal.
     (global.fetch as jest.Mock).mockResolvedValue({
       ok: false,
       status: 400,

@@ -4,6 +4,12 @@ import ProfileModal from './ProfileModal';
 import { requestLimits } from '@/types/apiLimits.generated';
 
 const NEW_PASSWORD_LIMITS = requestLimits.changePassword.newPassword;
+// Valid new passwords padded out to the spec minimum, so they stay valid if it rises.
+const validNewPassword = (tag: string) =>
+  `newpass-${tag}`.padEnd(NEW_PASSWORD_LIMITS.minLength, tag);
+const NEW_PASSWORD = validNewPassword('1');
+const OTHER_NEW_PASSWORD = validNewPassword('2');
+const MISMATCHED_PASSWORD = validNewPassword('x');
 
 describe('ProfileModal', () => {
   const mockUser = {
@@ -102,8 +108,8 @@ describe('ProfileModal', () => {
       );
 
       // Trigger a password validation error
-      await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
-      await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass123');
+      await user.type(screen.getByLabelText(/^new password$/i), NEW_PASSWORD);
+      await user.type(screen.getByLabelText(/confirm.*password/i), NEW_PASSWORD);
       await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
       await waitFor(() => {
@@ -153,8 +159,8 @@ describe('ProfileModal', () => {
 
       // Successfully change password
       await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-      await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-      await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+      await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+      await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
       await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
       await waitFor(() => {
@@ -654,8 +660,8 @@ describe('ProfileModal', () => {
         );
 
         // Fill in new password fields but leave current empty
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), NEW_PASSWORD);
 
         const changeButton = screen.getByRole('button', { name: /^change password$/i });
         await user.click(changeButton);
@@ -707,8 +713,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'different123');
+        await user.type(screen.getByLabelText(/^new password$/i), NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), MISMATCHED_PASSWORD);
 
         const changeButton = screen.getByRole('button', { name: /^change password$/i });
         await user.click(changeButton);
@@ -731,8 +737,8 @@ describe('ProfileModal', () => {
         );
 
         // Trigger an error first
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass123');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass123');
+        await user.type(screen.getByLabelText(/^new password$/i), NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), NEW_PASSWORD);
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
         await waitFor(() => {
@@ -761,16 +767,16 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
         await waitFor(() => {
           expect(mockOnChangePassword).toHaveBeenCalledWith(
             'oldpass123',
-            'newpass456',
-            'newpass456'
+            OTHER_NEW_PASSWORD,
+            OTHER_NEW_PASSWORD
           );
         });
       });
@@ -794,8 +800,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
@@ -827,8 +833,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         const changeButton = screen.getByRole('button', { name: /^change password$/i });
         await user.click(changeButton);
@@ -856,8 +862,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
@@ -882,8 +888,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
@@ -906,8 +912,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'wrongpass');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 
@@ -930,8 +936,8 @@ describe('ProfileModal', () => {
         );
 
         await user.type(screen.getByLabelText(/current password/i), 'oldpass123');
-        await user.type(screen.getByLabelText(/^new password$/i), 'newpass456');
-        await user.type(screen.getByLabelText(/confirm.*password/i), 'newpass456');
+        await user.type(screen.getByLabelText(/^new password$/i), OTHER_NEW_PASSWORD);
+        await user.type(screen.getByLabelText(/confirm.*password/i), OTHER_NEW_PASSWORD);
 
         await user.click(screen.getByRole('button', { name: /^change password$/i }));
 

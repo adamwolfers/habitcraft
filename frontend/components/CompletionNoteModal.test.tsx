@@ -1,6 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CompletionNoteModal from './CompletionNoteModal';
+import { requestLimits } from '@/types/apiLimits.generated';
+
+const MAX_NOTE_LENGTH = requestLimits.createCompletion.notes.maxLength;
+const WARN_NOTE_LENGTH = Math.floor(MAX_NOTE_LENGTH * 0.9);
 
 describe('CompletionNoteModal', () => {
   const mockOnSave = jest.fn();
@@ -293,7 +297,7 @@ describe('CompletionNoteModal', () => {
         />
       );
 
-      expect(screen.getByText('0/500')).toBeInTheDocument();
+      expect(screen.getByText(`0/${MAX_NOTE_LENGTH}`)).toBeInTheDocument();
     });
 
     it('should update character count as user types', async () => {
@@ -311,7 +315,7 @@ describe('CompletionNoteModal', () => {
       const textarea = screen.getByRole('textbox');
       await user.type(textarea, 'Hello');
 
-      expect(screen.getByText('5/500')).toBeInTheDocument();
+      expect(screen.getByText(`5/${MAX_NOTE_LENGTH}`)).toBeInTheDocument();
     });
 
     it('should show existing note character count', () => {
@@ -325,10 +329,10 @@ describe('CompletionNoteModal', () => {
         />
       );
 
-      expect(screen.getByText('11/500')).toBeInTheDocument();
+      expect(screen.getByText(`11/${MAX_NOTE_LENGTH}`)).toBeInTheDocument();
     });
 
-    it('should limit note to 500 characters', async () => {
+    it('should limit note to the spec maximum', async () => {
       render(
         <CompletionNoteModal
           habitName="Exercise"
@@ -340,11 +344,11 @@ describe('CompletionNoteModal', () => {
       );
 
       const textarea = screen.getByRole('textbox');
-      expect(textarea).toHaveAttribute('maxLength', '500');
+      expect(textarea).toHaveAttribute('maxLength', String(MAX_NOTE_LENGTH));
     });
 
     it('should show warning style when approaching limit', async () => {
-      const longNote = 'a'.repeat(480);
+      const longNote = 'a'.repeat(WARN_NOTE_LENGTH);
       render(
         <CompletionNoteModal
           habitName="Exercise"
@@ -355,12 +359,12 @@ describe('CompletionNoteModal', () => {
         />
       );
 
-      const charCount = screen.getByText('480/500');
+      const charCount = screen.getByText(`${WARN_NOTE_LENGTH}/${MAX_NOTE_LENGTH}`);
       expect(charCount).toHaveClass('text-yellow-500');
     });
 
     it('should show error style when at limit', () => {
-      const maxNote = 'a'.repeat(500);
+      const maxNote = 'a'.repeat(MAX_NOTE_LENGTH);
       render(
         <CompletionNoteModal
           habitName="Exercise"
@@ -371,7 +375,7 @@ describe('CompletionNoteModal', () => {
         />
       );
 
-      const charCount = screen.getByText('500/500');
+      const charCount = screen.getByText(`${MAX_NOTE_LENGTH}/${MAX_NOTE_LENGTH}`);
       expect(charCount).toHaveClass('text-red-500');
     });
   });
