@@ -989,6 +989,23 @@ it('shows loading state while fetching', async () => {
 });
 ```
 
+### Flush a Mocked Promise with `act`, Don't Poll for It
+
+When an event handler awaits a mocked call that is already settled, wrap
+the event in an async `act`. It flushes the promise and the state updates
+that follow it, so the assertions after it are synchronous. Polling with
+`waitFor` races its 1s default timeout and loses under `test-all.sh`'s load,
+even though the file passes alone (habitcraft-r62m):
+
+```typescript
+await act(async () => {
+  fireEvent.press(getByTestId('save-profile-button'));
+});
+expect(queryByTestId('profile-name-input')).toBeNull();
+```
+
+Keep `waitFor` for things that really are asynchronous outside your control.
+
 ## Current Test Coverage
 
 - **E2E Tests:** 84 tests across authentication (30), completions (33), habits (11), and landing (10).
