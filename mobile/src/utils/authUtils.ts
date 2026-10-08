@@ -9,6 +9,8 @@ export const NAME_MAX_LENGTH = requestLimits.register.name.maxLength;
 export const EMAIL_MAX_LENGTH = requestLimits.register.email.maxLength;
 export const PASSWORD_MIN_LENGTH = requestLimits.register.password.minLength;
 export const PASSWORD_MAX_LENGTH = requestLimits.register.password.maxLength;
+export const PROFILE_NAME_MAX_LENGTH = requestLimits.updateCurrentUser.name.maxLength;
+export const PROFILE_EMAIL_MAX_LENGTH = requestLimits.updateCurrentUser.email.maxLength;
 
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -17,9 +19,11 @@ export function isValidEmail(email: string): boolean {
 
 export type RegisterField = 'name' | 'email' | 'password';
 export type LoginField = 'email' | 'password';
+export type ProfileField = 'name' | 'email';
 
 export type RegisterFieldErrors = Partial<Record<RegisterField, string>>;
 export type LoginFieldErrors = Partial<Record<LoginField, string>>;
+export type ProfileFieldErrors = Partial<Record<ProfileField, string>>;
 
 export interface RegisterFormValues {
   name: string;
@@ -30,6 +34,11 @@ export interface RegisterFormValues {
 export interface LoginFormValues {
   email: string;
   password: string;
+}
+
+export interface ProfileFormValues {
+  name: string;
+  email: string;
 }
 
 function validateEmailFormat(email: string): string | undefined {
@@ -101,10 +110,61 @@ export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
 }
 
 /**
+ * Validates the Profile screen's edit form against the PUT /users/me limits,
+ * which the spec declares separately from the sign-up ones. Both fields are
+ * always on the form, so both are required even though the endpoint accepts
+ * either alone.
+ */
+export function validateProfileForm(values: ProfileFormValues): ProfileFieldErrors {
+  const errors: ProfileFieldErrors = {};
+
+  if (!values.name.trim()) {
+    errors.name = 'Name is required';
+  } else if (values.name.trim().length > PROFILE_NAME_MAX_LENGTH) {
+    errors.name = `Name must be ${PROFILE_NAME_MAX_LENGTH} characters or less`;
+  }
+
+  const emailError = validateEmailFormat(values.email);
+  if (emailError) {
+    errors.email = emailError;
+  } else if (values.email.trim().length > PROFILE_EMAIL_MAX_LENGTH) {
+    errors.email = `Email must be ${PROFILE_EMAIL_MAX_LENGTH} characters or less`;
+  }
+
+  return errors;
+}
+
+/**
+ * The fields the user actually changed, trimmed, ready for PUT /users/me.
+ * Sending only those keeps an unchanged email out of the uniqueness check.
+ * Email is compared lowercased because the server lowercases what it stores,
+ * so a case-only edit would save nothing.
+ */
+export function getProfileChanges(
+  current: ProfileFormValues,
+  values: ProfileFormValues
+): Partial<ProfileFormValues> {
+  const changes: Partial<ProfileFormValues> = {};
+  const name = values.name.trim();
+  const email = values.email.trim();
+
+  if (name !== current.name) {
+    changes.name = name;
+  }
+  if (email.toLowerCase() !== current.email.toLowerCase()) {
+    changes.email = email;
+  }
+
+  return changes;
+}
+
+/**
  * Counts values, not keys: clearing one field's error writes `undefined` over
  * it rather than deleting it, so a key-count would report a failure that is no
  * longer there.
  */
-export function hasErrors(errors: RegisterFieldErrors | LoginFieldErrors): boolean {
+export function hasErrors(
+  errors: RegisterFieldErrors | LoginFieldErrors | ProfileFieldErrors
+): boolean {
   return Object.values(errors).some((message) => message !== undefined);
 }

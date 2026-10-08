@@ -1,12 +1,16 @@
 import {
   validateRegisterForm,
   validateLoginForm,
+  validateProfileForm,
+  getProfileChanges,
   isValidEmail,
   hasErrors,
   NAME_MAX_LENGTH,
   EMAIL_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
+  PROFILE_NAME_MAX_LENGTH,
+  PROFILE_EMAIL_MAX_LENGTH,
 } from './authUtils';
 
 const validRegistration = {
@@ -195,6 +199,78 @@ describe('validateLoginForm', () => {
     expect(validateLoginForm({ email: '', password: '' })).toEqual({
       email: 'Email is required',
       password: 'Password is required',
+    });
+  });
+});
+
+describe('validateProfileForm', () => {
+  const validProfile = { name: 'Test User', email: 'test@example.com' };
+
+  it('returns no errors for a valid profile', () => {
+    expect(validateProfileForm(validProfile)).toEqual({});
+  });
+
+  it('requires a name', () => {
+    expect(validateProfileForm({ ...validProfile, name: '   ' })).toEqual({
+      name: 'Name is required',
+    });
+  });
+
+  it('accepts a name at the limit and rejects one past it', () => {
+    const atLimit = 'a'.repeat(PROFILE_NAME_MAX_LENGTH);
+    expect(validateProfileForm({ ...validProfile, name: atLimit })).toEqual({});
+    expect(validateProfileForm({ ...validProfile, name: `${atLimit}a` })).toEqual({
+      name: `Name must be ${PROFILE_NAME_MAX_LENGTH} characters or less`,
+    });
+  });
+
+  it('requires a well-formed email', () => {
+    expect(validateProfileForm({ ...validProfile, email: '' }).email).toBe('Email is required');
+    expect(validateProfileForm({ ...validProfile, email: 'nope' }).email).toBe(
+      'Please enter a valid email'
+    );
+  });
+
+  it('accepts an email at the limit and rejects one past it', () => {
+    expect(
+      validateProfileForm({ ...validProfile, email: emailOfLength(PROFILE_EMAIL_MAX_LENGTH) })
+    ).toEqual({});
+    expect(
+      validateProfileForm({ ...validProfile, email: emailOfLength(PROFILE_EMAIL_MAX_LENGTH + 1) })
+    ).toEqual({ email: `Email must be ${PROFILE_EMAIL_MAX_LENGTH} characters or less` });
+  });
+
+  it('reports every failure at once', () => {
+    expect(validateProfileForm({ name: '', email: '' })).toEqual({
+      name: 'Name is required',
+      email: 'Email is required',
+    });
+  });
+});
+
+describe('getProfileChanges', () => {
+  const user = { name: 'Test User', email: 'test@example.com' };
+
+  it('returns nothing when neither field changed', () => {
+    expect(getProfileChanges(user, { name: 'Test User', email: 'test@example.com' })).toEqual({});
+  });
+
+  it('ignores surrounding whitespace', () => {
+    expect(getProfileChanges(user, { name: ' Test User ', email: ' test@example.com ' })).toEqual(
+      {}
+    );
+  });
+
+  it('treats a case-only email edit as unchanged, since the server lowercases it', () => {
+    expect(getProfileChanges(user, { name: 'Test User', email: 'Test@Example.com' })).toEqual({});
+  });
+
+  it('returns only the trimmed fields that changed', () => {
+    expect(getProfileChanges(user, { name: ' New Name ', email: 'test@example.com' })).toEqual({
+      name: 'New Name',
+    });
+    expect(getProfileChanges(user, { name: 'Test User', email: ' new@example.com ' })).toEqual({
+      email: 'new@example.com',
     });
   });
 });
