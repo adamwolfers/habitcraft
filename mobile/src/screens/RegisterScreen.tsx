@@ -157,6 +157,10 @@ export function RegisterScreen() {
             // Stated up front. This used to live only in an accessibilityHint,
             // so a sighted user learned the minimum by being rejected.
             hint={`At least ${PASSWORD_MIN_LENGTH} characters`}
+            // Mirrored on LoginScreen's input -- a cap here alone would truncate
+            // a pasted passphrase that login then sends in full. The handler
+            // keeps its own check for values that arrive without typing.
+            maxLength={PASSWORD_MAX_LENGTH}
             secure
             autoCapitalize="none"
             autoCorrect={false}

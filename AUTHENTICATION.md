@@ -350,6 +350,18 @@ credential store so sign-up's saved credential comes back at login.
 server's limit does not tighten anything — it just moves the rejection from the
 form to a 400 the user cannot act on (habitcraft-h7q7, habitcraft-467).
 
+**The password maximum is capped on both screens' inputs, or on neither.**
+Register's and Login's password inputs both set `maxLength` to
+`requestLimits.register.password.maxLength`, so a pasted passphrase is cut at
+the same point in both places. Capping only Register would register the
+truncated value while Login sent the whole paste, and the user would be told
+their password is wrong. Login borrows the register number because the spec
+declares no limit on the login body. Adding one there trips the
+`request-property-max-length-set` breaking-change rule. bcrypt reads only the
+first 72 bytes, so the cap cannot lock out an older, longer password. Register's
+form validation still checks the maximum, for values that arrive without typing
+(habitcraft-eipw).
+
 ### Error shapes
 
 The auth routes return three different error bodies and only one has a

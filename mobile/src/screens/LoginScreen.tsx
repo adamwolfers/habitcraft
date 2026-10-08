@@ -17,7 +17,12 @@ import { FormField } from '@/components';
 import { AuthStackParamList } from '@/types';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
-import { validateLoginForm, hasErrors, LoginFieldErrors } from '@/utils/authUtils';
+import {
+  validateLoginForm,
+  hasErrors,
+  LoginFieldErrors,
+  PASSWORD_MAX_LENGTH,
+} from '@/utils/authUtils';
 
 type LoginNavigation = StackNavigationProp<AuthStackParamList, 'Login'>;
 type LoginRoute = RouteProp<AuthStackParamList, 'Login'>;
@@ -119,6 +124,13 @@ export function LoginScreen() {
             value={password}
             onChangeText={handleChange(setPassword, 'password')}
             error={fieldErrors.password}
+            // Borrowed from the register request: the spec puts no limit on
+            // the login body, and nothing makes the two move together. It must
+            // match the register input's cap, or a passphrase pasted into both
+            // is cut short at sign-up and sent whole here (habitcraft-eipw).
+            // bcrypt reads only the first 72 bytes, so no older, longer
+            // password loses anything it was hashed with.
+            maxLength={PASSWORD_MAX_LENGTH}
             secure
             autoCapitalize="none"
             autoCorrect={false}

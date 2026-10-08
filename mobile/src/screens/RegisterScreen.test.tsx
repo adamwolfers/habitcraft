@@ -109,6 +109,14 @@ describe('RegisterScreen', () => {
         expect(getByTestId('register-name-input').props.maxLength).toBe(NAME_MAX_LENGTH)
       );
     });
+
+    it('caps the password input at the length the spec declares', async () => {
+      const { getByTestId } = renderRegisterScreen();
+
+      await waitFor(() =>
+        expect(getByTestId('register-password-input').props.maxLength).toBe(PASSWORD_MAX_LENGTH)
+      );
+    });
   });
 
   describe('autofill and keyboard', () => {

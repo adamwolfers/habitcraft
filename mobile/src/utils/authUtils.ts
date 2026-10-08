@@ -79,9 +79,8 @@ export function validateRegisterForm(values: RegisterFormValues): RegisterFieldE
   } else if (values.password.length < PASSWORD_MIN_LENGTH) {
     errors.password = `Password must be at least ${PASSWORD_MIN_LENGTH} characters`;
   } else if (values.password.length > PASSWORD_MAX_LENGTH) {
-    // Capped here rather than truncated with maxLength on the input: silently
-    // trimming a pasted passphrase would leave the account with a password the
-    // user cannot type back into the login screen.
+    // The input's maxLength stops typing past this, but not a value that
+    // arrives another way, so the form still checks it.
     errors.password = `Password must be ${PASSWORD_MAX_LENGTH} characters or less`;
   }
 
@@ -94,9 +93,10 @@ export function validateRegisterForm(values: RegisterFormValues): RegisterFieldE
 export function validateLoginForm(values: LoginFormValues): LoginFieldErrors {
   const errors: LoginFieldErrors = {};
 
-  // Presence and format only -- no length cap. The limits belong to account
-  // creation, and enforcing them here would lock out anyone holding a
-  // credential from before a limit changed.
+  // Presence and format only -- no length check. The limits belong to account
+  // creation, and rejecting here would lock out anyone holding a credential
+  // from before a limit changed. (The password input does cap at the sign-up
+  // maximum, so a paste is cut where Register cuts it -- habitcraft-eipw.)
   const emailError = validateEmailFormat(values.email);
   if (emailError) {
     errors.email = emailError;

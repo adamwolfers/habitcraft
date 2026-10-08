@@ -4,6 +4,7 @@ import { LoginScreen } from './LoginScreen';
 import { AuthProvider } from '@/context/AuthContext';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
+import { PASSWORD_MAX_LENGTH } from '@/utils/authUtils';
 
 const mockNavigate = jest.fn();
 let mockRouteParams: { email?: string } | undefined;
@@ -72,6 +73,16 @@ describe('LoginScreen', () => {
 
       fireEvent.press(getByTestId('login-password-input-reveal'));
       expect(getByTestId('login-password-input').props.secureTextEntry).toBe(false);
+    });
+
+    // The register input truncates at this length, so a passphrase pasted
+    // there and here must be cut at the same point (habitcraft-eipw).
+    it('caps the password input at the sign-up maximum', async () => {
+      const { getByTestId } = renderLoginScreen();
+
+      await waitFor(() =>
+        expect(getByTestId('login-password-input').props.maxLength).toBe(PASSWORD_MAX_LENGTH)
+      );
     });
   });
 
