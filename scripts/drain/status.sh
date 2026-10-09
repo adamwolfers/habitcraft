@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# Show the Ralph loop at a glance: queue, review, stuck, and recent passes.
-# Usage: scripts/ralph/status.sh [--watch [seconds]]
+# Show the drain loop at a glance: queue, review, stuck, and recent passes.
+# Usage: scripts/drain/status.sh [--watch [seconds]]
 #
 #   --watch [seconds]  Redraw every N seconds (default 15) until Ctrl-C.
 #
-# Reads the Ralph clone (~/github/habitcraft-ralph, or RALPH_CLONE), whose
+# Reads the drain clone (~/github/habitcraft-drain, or DRAIN_CLONE), whose
 # beads database is the one the loop writes, so it is live. mg cannot show
 # labels, which is the whole queue (habitcraft-3oxu). Each refresh makes one
 # bd call, to keep contention with a running pass low (habitcraft-82by).
 
 set -uo pipefail
 
-# shellcheck source=scripts/ralph/lib.sh
+# shellcheck source=scripts/drain/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-CLONE="${RALPH_CLONE:-$HOME/github/habitcraft-ralph}"
+CLONE="${DRAIN_CLONE:-$HOME/github/habitcraft-drain}"
 WATCH=""
 
 usage() { sed -n '3,6p' "$0" | sed 's/^# \{0,1\}//'; }
@@ -36,7 +36,7 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-[[ -d "$CLONE/.git" ]] || { echo "status: no Ralph clone at $CLONE (set RALPH_CLONE)" >&2; exit 1; }
+[[ -d "$CLONE/.git" ]] || { echo "status: no drain clone at $CLONE (set DRAIN_CLONE)" >&2; exit 1; }
 cd "$CLONE" || exit 1
 
 # section <heading> <jq selector over the loop's beads>
@@ -51,9 +51,9 @@ section() {
 
 render() {
     local pid branch ahead summary warns
-    echo "Ralph loop  $CLONE  $(date '+%H:%M:%S')"
+    echo "Drain loop  $CLONE  $(date '+%H:%M:%S')"
 
-    pid="$(ralph_pids | head -1)"
+    pid="$(drain_pids | head -1)"
     if [[ -n "$pid" ]]; then echo "Loop:    running (pid $pid)"; else echo "Loop:    not running"; fi
 
     branch="$(git branch --show-current)"
@@ -82,9 +82,9 @@ render() {
     section "Review" '.labels | index("agent-review")'
     section "Stuck" '.labels | index("agent-stuck")'
 
-    summary="$CLONE/.ralph/summary.log"
+    summary="$CLONE/.drain/summary.log"
     if [[ -f "$summary" ]]; then
-        echo "Last passes (.ralph/summary.log):"
+        echo "Last passes (.drain/summary.log):"
         tail -4 "$summary" | cut -c1-19,25- | sed 's/^/  /'
         warns="$(grep -c 'WARN:' "$summary")"
         [[ "$warns" -gt 0 ]] && echo "  -- $warns WARN line(s) in summary.log; grep WARN to read them"

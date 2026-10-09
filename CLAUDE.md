@@ -9,11 +9,11 @@
   [docs/TESTING.md](docs/TESTING.md) for the phase table.
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
 - See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
-- **Orchestrating unattended work** (labelling a batch, running the Ralph loop,
+- **Orchestrating unattended work** (labelling a batch, running the drain loop,
   reviewing and landing it): start from the Runbook in
-  [scripts/ralph/README.md](scripts/ralph/README.md#runbook). The loop's live
+  [scripts/drain/README.md](scripts/drain/README.md#runbook). The loop's live
   state is in beads labels (`agent-ok`, `agent-review`, `agent-stuck`) and the
-  clone's `.ralph/summary.log`; `scripts/ralph/status.sh` shows both.
+  clone's `.drain/summary.log`; `scripts/drain/status.sh` shows both.
 
 ## Git Workflow: Trunk-Based Development
 
@@ -24,11 +24,11 @@ This project uses **trunk-based development**. The trunk is `master` (not `main`
 - **Do NOT create feature branches or git worktrees** for routine work. Committing on `master` is expected here — the general "branch before committing on the default branch" default does **not** apply to this repo.
 - Pull before you push (`git pull --rebase`) and push frequently to keep the trunk current.
 - Use a short-lived branch **only** when a change genuinely needs an isolated PR/CI run, and merge it back to `master` quickly.
-- The one standing exception is the unattended Ralph loop
-  ([scripts/ralph/README.md](scripts/ralph/README.md)): it runs in a separate
-  clone and commits to a `ralph/<date>` review branch, never to `master`, and
+- The one standing exception is the unattended drain loop
+  ([scripts/drain/README.md](scripts/drain/README.md)): it runs in a separate
+  clone and commits to a `drain/<date>` review branch, never to `master`, and
   never pushes or closes beads. If you are a pass of that loop, follow
-  `scripts/ralph/PROMPT.md` over the session-completion steps below.
+  `scripts/drain/PROMPT.md` over the session-completion steps below.
 
 ```bash
 # Normal flow: commit and push on master
@@ -73,10 +73,10 @@ when there is nothing new to send.
 
 Both beads push paths (this hook and `scripts/beads-push.sh` below) go through
 `scripts/beads-dolt-push.sh`. When another copy has pushed first, such as the
-Ralph clone or another machine, it runs `bd dolt pull` and pushes again. That
+drain clone or another machine, it runs `bd dolt pull` and pushes again. That
 pull fails only when both copies changed the same issue. bd then aborts the
 merge and changes nothing here (habitcraft-lw6u; see
-[scripts/ralph/README.md](scripts/ralph/README.md#beads-sync-between-the-two-copies)).
+[scripts/drain/README.md](scripts/drain/README.md#beads-sync-between-the-two-copies)).
 
 Debug a hook with `HUSKY=2 git <command>`, which traces the dispatcher.
 

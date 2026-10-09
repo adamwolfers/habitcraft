@@ -770,9 +770,9 @@ than 30000ms usually means the machine slept. Node's timers pause during
 sleep, but jest measures duration by the wall clock, and Docker's database
 sleeps along with the tests. In habitcraft-ed7s, `setup.test.js` reported
 660478 ms during a 661 s idle sleep. Run `pmset -g log | grep -E ' (Sleep|Wake) '`
-and compare the timestamps before you debug the test. The Ralph loop holds
+and compare the timestamps before you debug the test. The drain loop holds
 `caffeinate -i` for this reason
-([scripts/ralph/README.md](../scripts/ralph/README.md#the-mac-must-stay-awake)).
+([scripts/drain/README.md](../scripts/drain/README.md#the-mac-must-stay-awake)).
 
 ### Use the shared test server, not the app
 

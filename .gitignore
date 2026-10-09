@@ -85,5 +85,5 @@ mobile-app/
 .beads-credential-key
 .beads-backup/
 
-# Ralph loop logs and transcripts (scripts/ralph/)
-.ralph/
+# Drain loop logs and transcripts (scripts/drain/)
+.drain/

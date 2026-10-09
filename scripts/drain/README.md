@@ -1,30 +1,36 @@
-# Ralph loop
+# Drain loop
 
-Runs Claude Code unattended over a queue of beads, one bead per fresh
-`claude -p` session, committing to a branch for a human to review and merge.
-It is Geoffrey Huntley's [Ralph loop](https://ghuntley.com/loop/) with beads
-as the work queue and `scripts/test-all.sh` as the backpressure
-(habitcraft-w1hv).
+Runs Claude Code unattended to drain a queue of beads. Each bead gets a fresh
+`claude -p` session, and the work is committed to a branch for a human to
+review and merge. Beads are the work queue and `scripts/test-all.sh` is the
+backpressure (habitcraft-w1hv).
+
+**Formerly the "Ralph loop".** It began as Geoffrey Huntley's
+[Ralph loop](https://ghuntley.com/loop/), and older commits, closed beads and
+`ralph/*` branches use that name. It was renamed in habitcraft-l01c because it
+is now the kind of use Huntley says he would not use Ralph for. It works in an
+existing codebase, on beads a human picked one at a time, and a human reviews
+and lands every run.
 
 | File | Role |
 |---|---|
-| `ralph.sh` | The loop: picks nothing itself, just runs passes and stops on no progress |
+| `drain.sh` | The loop: picks nothing itself, just runs passes and stops on no progress |
 | `PROMPT.md` | What every pass is told: pick, work, verify, commit, hand off |
 | `land.sh` | Merges a reviewed run, waits for CI, closes its beads, syncs the clone |
-| `bd-failures.jq` | Finds failed `bd` calls in a pass transcript; `ralph.sh` logs them |
+| `bd-failures.jq` | Finds failed `bd` calls in a pass transcript; `drain.sh` logs them |
 | `status.sh` | The queue, review and stuck beads, and recent passes, at a glance |
-| `lib.sh` | Shared helpers: `ralph_pids`, the one test for "is a loop running?" |
+| `lib.sh` | Shared helpers: `drain_pids`, the one test for "is a loop running?" |
 
 ## Runbook
 
 The whole cycle, start to finish. Each step links to its section below.
 Everything that changes between runs lives in beads (labels, comments) and
-`.ralph/summary.log`, not here (habitcraft-9r24).
+`.drain/summary.log`, not here (habitcraft-9r24).
 
 1. **Pick a batch** and label it `agent-ok` from the main checkout
    ([choosing beads](#choosing-beads)). Five or six beads made a ~30-minute
    run in practice.
-2. **Sync the clone:** `cd ~/github/habitcraft-ralph && git switch master &&
+2. **Sync the clone:** `cd ~/github/habitcraft-drain && git switch master &&
    git pull --rebase && bd dolt pull`. `land.sh` leaves it this way, so after
    a landing this is a no-op.
 3. **Check the docker test stack** is the clone's or down
@@ -32,16 +38,16 @@ Everything that changes between runs lives in beads (labels, comments) and
    one this session did not start.
 4. **Start the run in tmux** so it outlives the terminal and the agent
    session that started it ([tmux](#run-it-in-tmux)):
-   `git switch -c ralph/$(date +%F) && scripts/ralph/ralph.sh -n <batch size>`.
+   `git switch -c drain/$(date +%F) && scripts/drain/drain.sh -n <batch size>`.
 5. **Watch** with `status.sh --watch` and mg ([watching](#watching-a-run)).
    A WARN line or a stop in `summary.log` is what needs you.
 6. **Review the branch by reading the diffs**, not the commit subjects
    ([checklist](#review-checklist)).
-7. **Land it** from the main checkout with `scripts/ralph/land.sh
-   ralph/<date>` ([landing](#landing-a-run)). It pushes, waits for CI, closes
+7. **Land it** from the main checkout with `scripts/drain/land.sh
+   drain/<date>` ([landing](#landing-a-run)). It pushes, waits for CI, closes
    the beads and syncs the clone.
 8. **Fold the lessons back in.** Each new way a pass went wrong becomes a line
-   in `PROMPT.md` or a check in `ralph.sh`. Give it a bead labelled
+   in `PROMPT.md` or a check in `drain.sh`. Give it a bead labelled
    `loop-infra` and do it interactively, not in the loop. Beads the passes
    filed are follow-ups for the next batch.
 
@@ -86,13 +92,13 @@ Leave these out. Each was considered and rejected, or went wrong:
 - **Flaky-test fixes** (oft7). One pass cannot show a flake is gone.
 - **Production images, or a deploy-only check** (ara). `test-all.sh` does not
   build or boot the production image.
-- **Changes to `scripts/ralph/`, `.claude/` or `.husky/`** (lw6u). The prompt
+- **Changes to `scripts/drain/`, `.claude/` or `.husky/`** (lw6u). The prompt
   forbids them, so a pass would mark them stuck. These beads carry the label
   **`loop-infra`**: never label one `agent-ok`. Work them in an interactive
-  session. A pass that edited `PROMPT.md` or `ralph.sh` would change the
+  session. A pass that edited `PROMPT.md` or `drain.sh` would change the
   passes after it, unreviewed and mid-run. A broken hook breaks every commit
   and push, including the loop's own beads sync. And CI never tests
-  `scripts/ralph/`, so only the local suites stand guard
+  `scripts/drain/`, so only the local suites stand guard
   (`bd list --label loop-infra`).
 - **Large epics.** Split them first. One pass is one bead.
 
@@ -104,16 +110,16 @@ you label it saves a pass.
 ## One-time setup: a separate clone
 
 The loop must not share a working copy with you, so give it its own clone.
-This is the sequence that was actually run for `~/github/habitcraft-ralph`:
+This is the sequence that was actually run for `~/github/habitcraft-drain`:
 
 ```bash
-git clone https://github.com/adamwolfers/habitcraft.git ~/github/habitcraft-ralph
-cd ~/github/habitcraft-ralph
+git clone https://github.com/adamwolfers/habitcraft.git ~/github/habitcraft-drain
+cd ~/github/habitcraft-drain
 bd init --remote "git+https://github.com/adamwolfers/habitcraft.git"
 git reset --hard origin/master    # bd init COMMITS its own agent files; drop them
 git config --unset core.hooksPath # ...and points hooks at .beads/hooks (see CLAUDE.md)
 for d in . backend frontend mobile; do (cd $d && npm ci); done   # restores .husky/_
-git config remote.origin.pushurl "DISABLED--ralph-clone-never-pushes"
+git config remote.origin.pushurl "DISABLED--drain-clone-never-pushes"
 git config beads.role maintainer  # else bd warns on every call (GH#2950)
 scripts/beads-doctor.sh           # must be green before the first run
 ```
@@ -143,13 +149,13 @@ memory says not to do.
 ## A run
 
 ```bash
-cd ~/github/habitcraft-ralph
+cd ~/github/habitcraft-drain
 git switch master && git pull --rebase
-git switch -c ralph/$(date +%F)
-scripts/ralph/ralph.sh -n 5
+git switch -c drain/$(date +%F)
+scripts/drain/drain.sh -n 5
 ```
 
-`ralph.sh` refuses to start on `master` or with a dirty tree. It stops when
+`drain.sh` refuses to start on `master` or with a dirty tree. It stops when
 no `agent-ok` bead is ready, after `-n` passes, or after any pass that handed
 off no bead, left the tree dirty, or switched branches. A pass that is killed
 after claiming its bead leaves it `in_progress` and still `agent-ok`; the loop
@@ -158,7 +164,7 @@ stops on that rather than skipping past it, and you reset it with
 
 ### The Mac must stay awake
 
-`ralph.sh` runs under `caffeinate -i` for the whole loop, which blocks idle
+`drain.sh` runs under `caffeinate -i` for the whole loop, which blocks idle
 sleep even on battery. It writes `awake=` on its `start` line in
 `summary.log`. Closing the lid still puts the machine to sleep, so leave it
 open, or keep it on power with an external display. A run that sleeps fails
@@ -172,12 +178,12 @@ sleep. To check a suspect failure, run
 
 A loop started in a plain terminal dies with that window, and one started
 from an agent's background shell dies with the agent's session. Inside tmux it
-survives both. `Ctrl-b d` detaches, and `tmux attach -t ralph` comes back:
+survives both. `Ctrl-b d` detaches, and `tmux attach -t drain` comes back:
 
 ```bash
-cd ~/github/habitcraft-ralph
-tmux new-session -s ralph \; \
-  send-keys 'scripts/ralph/status.sh --watch' C-m \; \
+cd ~/github/habitcraft-drain
+tmux new-session -s drain \; \
+  send-keys 'scripts/drain/status.sh --watch' C-m \; \
   split-window -h \; send-keys 'mg' C-m \; \
   split-window -v
 ```
@@ -185,8 +191,8 @@ tmux new-session -s ralph \; \
 Then type the run command into the third pane yourself. Text sent with
 `send-keys` before zsh finishes starting is silently dropped. That happened to
 the run command in the first tmux layout. An agent starting the run should
-`tmux capture-pane -p -t ralph:0.2` first to see the pane is at a prompt, then
-`tmux send-keys -t ralph:0.2 '<command>' C-m`.
+`tmux capture-pane -p -t drain:0.2` first to see the pane is at a prompt, then
+`tmux send-keys -t drain:0.2 '<command>' C-m`.
 
 Do not press mg's `a` (agent dispatch) in the clone while a run is going. It
 starts a separate coding agent on the selected bead, outside the loop.
@@ -194,7 +200,7 @@ starts a separate coding agent on the selected bead, outside the loop.
 ### Pass settings
 
 Passes run in Claude Code's `auto` permission mode; override with
-`RALPH_PERMISSION_MODE`. Each pass is killed after `-t` seconds (default an
+`DRAIN_PERMISSION_MODE`. Each pass is killed after `-t` seconds (default an
 hour).
 
 A `-p` session ends the moment the agent replies without a tool call, so a
@@ -203,18 +209,18 @@ dies mid-bead (habitcraft-9e00). The prompt forbids that, and the scheduling
 tools (`ScheduleWakeup`, `Monitor`, `CronCreate`) are disallowed outright. If
 a pass dies anyway with work in the tree, finish it in place with
 `claude -p --resume <session_id> "..."`; the id is in the `init` event at
-the top of its `.ralph/pass-*.jsonl`.
+the top of its `.drain/pass-*.jsonl`.
 
 ## Reviewing
 
 ```bash
 bd list --label agent-review     # what landed
 bd list --label agent-stuck      # what needs you
-cat .ralph/summary.log           # one line per pass
+cat .drain/summary.log           # one line per pass
 git log master..HEAD             # the commits
 ```
 
-Every pass's full transcript is `.ralph/pass-*.jsonl`. Read the failures:
+Every pass's full transcript is `.drain/pass-*.jsonl`. Read the failures:
 each new way the loop goes wrong is a fix to `PROMPT.md` or a missing test.
 
 ### Review checklist
@@ -224,7 +230,7 @@ the diffs (`git show <sha>` in the clone). These caught or cleared real
 things in the first two runs:
 
 - **Did the pass do what the bead asked, and only that?** Watch for a stale
-  bead turned into new scope. A pass may also mark a bead `RALPH ALREADY DONE`
+  bead turned into new scope. A pass may also mark a bead `DRAIN ALREADY DONE`
   with no commit. Then you decide whether to close it or re-scope it.
 - **Anything CI runs differently from `test-all.sh`?** Database setup is one
   case: CI resets the test DB with direct SQL, and a local run uses the docker
@@ -243,15 +249,15 @@ things in the first two runs:
 ### Watching a run
 
 ```bash
-scripts/ralph/status.sh            # one snapshot
-scripts/ralph/status.sh --watch    # redraw every 15s (--watch 5 for 5s); Ctrl-C stops
+scripts/drain/status.sh            # one snapshot
+scripts/drain/status.sh --watch    # redraw every 15s (--watch 5 for 5s); Ctrl-C stops
 ```
 
-It reads the clone (or `RALPH_CLONE`) and shows whether `ralph.sh` is running,
+It reads the clone (or `DRAIN_CLONE`) and shows whether `drain.sh` is running,
 the review branch and how far it is ahead of master, then the loop's beads:
 **Working** (the `agent-ok` bead a pass has claimed), **Queued**, **Review**
 and **Stuck**, and the last lines of `summary.log`, counting any WARNs. It
-makes one `bd` call per refresh. Tests: `scripts/ralph/status.test.sh`.
+makes one `bd` call per refresh. Tests: `scripts/drain/status.test.sh`.
 
 mg cannot show this: it has no label filter or label display (0.32.1 and
 0.33.0), so queued beads look like every other ready bead (habitcraft-3oxu).
@@ -262,7 +268,7 @@ It does show a claimed bead moving to Rolling as a pass picks it up.
 `mg` started in the clone shows the loop's beads live, since it reads the
 same database the passes write. It also refreshes on its own, so it may
 contend with a pass for that embedded database (habitcraft-82by). After each
-pass `ralph.sh` runs `bd-failures.jq` over the transcript and logs any `bd`
+pass `drain.sh` runs `bd-failures.jq` over the transcript and logs any `bd`
 call that hit a lock or printed an `Error:` line:
 
 ```
@@ -271,7 +277,7 @@ WARN: pass 2: 1 bd call(s) failed -- contention with mg? see pass-....jsonl
 ```
 
 No WARN means no `bd` call failed. If they appear only while mg is open,
-close mg during runs. Tests: `scripts/ralph/bd-failures.test.sh`.
+close mg during runs. Tests: `scripts/drain/bd-failures.test.sh`.
 
 ## Landing a run
 
@@ -279,13 +285,13 @@ After reviewing the branch, land it from the **main checkout** in one command:
 
 ```bash
 cd ~/github/habitcraft
-scripts/ralph/land.sh ralph/<date>
+scripts/drain/land.sh drain/<date>
 ```
 
 `land.sh` (habitcraft-tjwp):
 
 1. refuses unless the main checkout is a clean `master`, the clone is clean,
-   and `ralph.sh` is not running;
+   and `drain.sh` is not running;
 2. fetches the branch from the clone, rebases it onto master, fast-forwards,
    and pushes (the clone itself cannot push);
 3. waits for the CI run on the pushed commit, reading its conclusion with
@@ -298,30 +304,30 @@ scripts/ralph/land.sh ralph/<date>
 It reports, rather than closes, an `agent-review` bead that no merged commit
 names, and a bead a commit names that is not under review. The first is what a
 pass leaves when it finds its bead already done: no commit, and a
-`RALPH ALREADY DONE` comment with the evidence. Close or re-scope those by
+`DRAIN ALREADY DONE` comment with the evidence. Close or re-scope those by
 hand. If every file the branch touches is paths-ignored, CI never starts;
 `land.sh` says so and leaves the beads for you to close.
 
 Its tests build throwaway repos with stub `gh`/`bd`, so they touch nothing
-real. They are not in CI, since `scripts/ralph/` is paths-ignored there:
+real. They are not in CI, since `scripts/drain/` is paths-ignored there:
 
 ```bash
-scripts/ralph/land.test.sh
+scripts/drain/land.test.sh
 ```
 
 ## Changing these scripts
 
-`scripts/ralph/` is paths-ignored in CI, so nothing there is tested unless you
+`scripts/drain/` is paths-ignored in CI, so nothing there is tested unless you
 run the suites. Run all four after any change. They need only bash, git and
 jq, with stubs for `gh` and `bd`:
 
 ```bash
-for t in scripts/ralph/*.test.sh; do "$t" </dev/null | tail -1; done
+for t in scripts/drain/*.test.sh; do "$t" </dev/null | tail -1; done
 ```
 
 macOS ships bash 3.2 as `/bin/bash`, which has no associative arrays. Inside a
 `while read` loop, give every `bd` call `</dev/null`, or it can swallow the
-loop's input. A detector, such as `bd-failures.jq` or the `ralph_pids`
+loop's input. A detector, such as `bd-failures.jq` or the `drain_pids`
 pattern, needs a test proving it *finds* the thing. A clean result from a
 detector that cannot fire means nothing. Both of those detectors had bugs that
 first showed up as false "all clear" results.
@@ -333,7 +339,7 @@ pushed, the main checkout's next beads push is rejected as non-fast-forward.
 Both push paths — the `pre-push` hook and `scripts/beads-push.sh` — go through
 `scripts/beads-dolt-push.sh`, which handles that by running `bd dolt pull` and
 pushing again (habitcraft-lw6u). The pull runs only after a rejection, so a
-copy that is already current pays for one push and nothing more. `ralph.sh`
+copy that is already current pays for one push and nothing more. `drain.sh`
 also pulls before every pass, so the loop sees label changes made here.
 
 The pull fails only when **both copies changed the same issue** since they

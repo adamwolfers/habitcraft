@@ -5,7 +5,7 @@
 #   scripts/beads-push.sh  -- the Claude Code SessionStart/SessionEnd hooks
 #
 # WHY THE RETRY (habitcraft-lw6u)
-# Once a second working copy (the Ralph clone, another machine) has pushed, this
+# Once a second working copy (the drain clone, another machine) has pushed, this
 # copy's plain 'bd dolt push' is rejected non-fast-forward until it pulls. A
 # pull costs ~5s, so it runs only after that rejection rather than before every
 # push: when this copy is already current, the cost stays one push.
@@ -66,7 +66,7 @@ if [ "$rc" -ne 0 ]; then
   echo >&2 "beads: 'bd dolt pull' FAILED (exit $rc). If it reports merge conflicts, the"
   echo >&2 "beads: same issue changed in two copies since they last synced. bd aborted"
   echo >&2 "beads: the merge and changed nothing here. To resolve it, see 'Resolving a"
-  echo >&2 "beads: beads merge conflict' in scripts/ralph/README.md."
+  echo >&2 "beads: beads merge conflict' in scripts/drain/README.md."
   exit "$rc"
 fi
 

@@ -1,4 +1,4 @@
-# Failed bd calls in one pass transcript (.ralph/pass-*.jsonl), one line each.
+# Failed bd calls in one pass transcript (.drain/pass-*.jsonl), one line each.
 # Run as: jq -cR 'fromjson? // empty' <log> | jq -rs -f bd-failures.jq
 #
 # A Bash call counts as a bd call when bd starts one of its commands. It

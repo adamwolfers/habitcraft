@@ -16,9 +16,9 @@ bd close <id>         # Complete work
 This project uses **trunk-based development**. Work directly on `master` in
 `/Users/afw/github/habitcraft` and commit there in small increments. Do NOT create
 feature branches or git worktrees for routine work. See CLAUDE.md for details.
-The one standing exception is the unattended Ralph loop, which commits to a
+The one standing exception is the unattended drain loop, which commits to a
 review branch in its own clone; start any orchestration from the Runbook in
-[scripts/ralph/README.md](scripts/ralph/README.md#runbook).
+[scripts/drain/README.md](scripts/drain/README.md#runbook).
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker

@@ -1,4 +1,4 @@
-You are ONE pass of an unattended Ralph loop (`scripts/ralph/ralph.sh`). No human
+You are ONE pass of an unattended drain loop (`scripts/drain/drain.sh`). No human
 is watching and nobody can answer a question. Do exactly one bead, then stop.
 A fresh session runs the next bead, so anything worth keeping goes into git
 commits or bead comments, not into this conversation.
@@ -7,7 +7,7 @@ commits or bead comments, not into this conversation.
 wake you later, so run every command in the foreground and wait for it: never
 use `run_in_background`, and never say you will "pick up when it finishes".
 `scripts/test-all.sh` takes several minutes; give that Bash call a timeout of
-600000 ms. Put scratch files and backups in `.ralph/`, not `/tmp`
+600000 ms. Put scratch files and backups in `.drain/`, not `/tmp`
 (habitcraft-9e00).
 
 ## 1. Pick
@@ -16,7 +16,7 @@ use `run_in_background`, and never say you will "pick up when it finishes".
 bd ready --label agent-ok --json -n 1
 ```
 
-Take that bead. If the list is empty, print `RALPH: queue empty` and stop.
+Take that bead. If the list is empty, print `DRAIN: queue empty` and stop.
 Read it in full with `bd show <id>`, plus any bead it names as related,
 parent, or blocking. Then claim it: `bd update <id> --claim`.
 
@@ -29,7 +29,7 @@ Mark it **stuck** (section 6) instead of working on it if it needs any of:
   record the choice in a bead comment)
 - production access, secrets, a paid account, a physical device, or the
   mobile Detox E2E suite
-- changes to `scripts/ralph/`, `.claude/`, `.husky/`, or the rules in
+- changes to `scripts/drain/`, `.claude/`, `.husky/`, or the rules in
   `CLAUDE.md`/`AGENTS.md`
 
 **Check first whether the bead is already done.** Beads go stale: earlier
@@ -40,7 +40,7 @@ already met, **do not look for adjacent work to do instead**. Commit nothing,
 and hand off for review with the evidence:
 
 ```bash
-bd comments add <id> "RALPH ALREADY DONE: <the done condition>, met by <commit or bead that did it>. Evidence: <command and its output>. Related work I did NOT do: <...>"
+bd comments add <id> "DRAIN ALREADY DONE: <the done condition>, met by <commit or bead that did it>. Evidence: <command and its output>. Related work I did NOT do: <...>"
 bd label remove <id> agent-ok
 bd label add <id> agent-review
 ```
@@ -68,7 +68,7 @@ Protect your context window:
 ## 4. Verify
 
 Before the final commit, `scripts/test-all.sh` must pass. Capture it as
-`scripts/test-all.sh > .ralph/test-all.log 2>&1; echo "exit $?"` and read only
+`scripts/test-all.sh > .drain/test-all.log 2>&1; echo "exit $?"` and read only
 the summary at the end of the log. Do not commit over a red run; fix it or go
 to section 6.
 
@@ -91,7 +91,7 @@ to section 6.
 Then hand off:
 
 ```bash
-bd comments add <id> "RALPH: <what changed>. Commits: <shas>. test-all: green. Decisions: <...>. Reviewer should check: <...>"
+bd comments add <id> "DRAIN: <what changed>. Commits: <shas>. test-all: green. Decisions: <...>. Reviewer should check: <...>"
 bd label remove <id> agent-ok
 bd label add <id> agent-review
 ```
@@ -105,7 +105,7 @@ red, or you are running low on context):
 
 1. Discard uncommitted changes (`git restore .` and remove only the untracked
    files you created), so the tree is clean. Earlier passes' commits stay.
-2. `bd comments add <id> "RALPH STUCK: <why>, <what you tried>, <what a human needs to decide>"`
+2. `bd comments add <id> "DRAIN STUCK: <why>, <what you tried>, <what a human needs to decide>"`
 3. `bd update <id> --status open`, `bd label remove <id> agent-ok`,
    `bd label add <id> agent-stuck`
 4. Stop.

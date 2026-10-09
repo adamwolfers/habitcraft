@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Tests for scripts/ralph/status.sh (habitcraft-3oxu):
+# Tests for scripts/drain/status.sh (habitcraft-3oxu):
 #
-#   scripts/ralph/status.test.sh
+#   scripts/drain/status.test.sh
 #
 # Each case points status.sh at a throwaway "clone": a real git repo plus a
-# .ralph/summary.log. bd and pgrep are stubs, so nothing reads a real beads
-# database or sees a real loop. Not run in CI: scripts/ralph/ is paths-ignored.
+# .drain/summary.log. bd and pgrep are stubs, so nothing reads a real beads
+# database or sees a real loop. Not run in CI: scripts/drain/ is paths-ignored.
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -29,16 +29,16 @@ cat "$STATUS_TEST_W/beads.json"
 EOF
 cat >"$tmp/bin/pgrep" <<'EOF'
 #!/usr/bin/env bash
-[ -e "$STATUS_TEST_W/ralph_running" ] && echo 4321
+[ -e "$STATUS_TEST_W/drain_running" ] && echo 4321
 EOF
 chmod +x "$tmp/bin/"*
 
-make_clone() { # make_clone <name>: master + ralph/test two commits ahead
+make_clone() { # make_clone <name>: master + drain/test two commits ahead
   W="$tmp/$1"
-  mkdir -p "$W/clone/.ralph"
+  mkdir -p "$W/clone/.drain"
   git -C "$W/clone" init -q
   git -C "$W/clone" commit -q --allow-empty -m "Seed"
-  git -C "$W/clone" switch -q -c ralph/test
+  git -C "$W/clone" switch -q -c drain/test
   git -C "$W/clone" commit -q --allow-empty -m "Do A (habitcraft-aaa)"
   git -C "$W/clone" commit -q --allow-empty -m "Do B (habitcraft-bbb)"
   printf '%s\n' \
@@ -47,7 +47,7 @@ make_clone() { # make_clone <name>: master + ralph/test two commits ahead
     "2026-10-05T09:04:01-0700   bd update habitcraft-aaa --claim => Error: database is locked" \
     "2026-10-05T09:04:02-0700 pass 1: exit=0 labelled=3->2 head=1111111->2222222" \
     "2026-10-05T09:04:03-0700 pass 2: labelled=2 head=2222222 log=pass-2.jsonl" \
-    >"$W/clone/.ralph/summary.log"
+    >"$W/clone/.drain/summary.log"
   cat >"$W/beads.json" <<'EOF'
 [
   {"id":"habitcraft-ccc","status":"in_progress","priority":2,"labels":["agent-ok"],"title":"The bead a pass is on"},
@@ -62,7 +62,7 @@ EOF
 }
 
 run_status() { # run_status [args...]
-  PATH="$tmp/bin:$PATH" STATUS_TEST_W="$W" RALPH_CLONE="$W/clone" \
+  PATH="$tmp/bin:$PATH" STATUS_TEST_W="$W" DRAIN_CLONE="$W/clone" \
     bash "$status_sh" "$@" >"$tmp/out" 2>&1
   rc=$?
 }
@@ -88,7 +88,7 @@ make_clone render
 run_status
 check "render: exits 0" [ "$rc" -eq 0 ]
 check "render: says the loop is not running" out_has "not running"
-check "render: names the review branch and how far ahead it is" out_has "ralph/test, 2 commits ahead of master"
+check "render: names the review branch and how far ahead it is" out_has "drain/test, 2 commits ahead of master"
 check "render: in-progress agent-ok bead is under Working" section_has "Working (1)" "habitcraft-ccc"
 check "render: open agent-ok beads are Queued" section_has "Queued (2)" "habitcraft-ddd"
 check "render: both queued beads listed" section_has "Queued (2)" "habitcraft-eee"
@@ -102,13 +102,13 @@ check "render: surfaces WARN lines" out_has "1 WARN line(s)"
 check "render: one bd call per refresh" [ "$(grep -c . "$W/bd.log")" -eq 1 ]
 
 make_clone running
-touch "$W/ralph_running"
+touch "$W/drain_running"
 run_status
 check "running: reports the loop's pid" out_has "running (pid 4321)"
 
 make_clone onmaster
 git -C "$W/clone" switch -q master
-rm "$W/clone/.ralph/summary.log"
+rm "$W/clone/.drain/summary.log"
 run_status
 check "on master: says there is no review branch" out_has "master (no review branch)"
 check "on master: copes with no summary.log" [ "$rc" -eq 0 ]
@@ -137,7 +137,7 @@ check "missing clone: says where it looked" out_has "$W/clone"
 
 # --watch redraws until interrupted: run it briefly and count the frames.
 make_clone watch
-(PATH="$tmp/bin:$PATH" STATUS_TEST_W="$W" RALPH_CLONE="$W/clone" TERM=dumb \
+(PATH="$tmp/bin:$PATH" STATUS_TEST_W="$W" DRAIN_CLONE="$W/clone" TERM=dumb \
   bash "$status_sh" --watch 1 >"$tmp/out" 2>&1) &
 pid=$!
 sleep 2.5

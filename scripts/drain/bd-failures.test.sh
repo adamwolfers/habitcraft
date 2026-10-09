@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Tests for scripts/ralph/bd-failures.jq (habitcraft-82by):
+# Tests for scripts/drain/bd-failures.jq (habitcraft-82by):
 #
-#   scripts/ralph/bd-failures.test.sh
+#   scripts/drain/bd-failures.test.sh
 #
-# Feeds a hand-built pass transcript through the filter exactly as ralph.sh
-# does. Not run in CI: scripts/ralph/ is paths-ignored there.
+# Feeds a hand-built pass transcript through the filter exactly as drain.sh
+# does. Not run in CI: scripts/drain/ is paths-ignored there.
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -41,7 +41,7 @@ result() { # result <id> <is_error> <output>
   result grepmiss true '0'
   use bdtimeout 'bd dolt push'
   result bdtimeout true 'Error: dolt push timed out after 30s'
-  echo 'Alarm clock: 14  perl -e ...'   # stderr noise ralph.sh captures too
+  echo 'Alarm clock: 14  perl -e ...'   # stderr noise drain.sh captures too
 } >"$tmp/pass.jsonl"
 
 out=$(jq -cR 'fromjson? // empty' "$tmp/pass.jsonl" | jq -rs -f "$here/bd-failures.jq")

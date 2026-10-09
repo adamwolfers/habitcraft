@@ -126,7 +126,7 @@ const CASES = [
   ['.beads/config.yaml', false, []],
   ['infrastructure/main.tf', false, []],
   ['.claude/settings.json', false, []],
-  ['scripts/ralph/ralph.sh', false, []], // nested: tooling's extglob '**' is one segment
+  ['scripts/drain/drain.sh', false, []], // nested: tooling's extglob '**' is one segment
   ['.gitattributes', false, []],
   ['.git-blame-ignore-revs', false, []],
   ['.dbmaterc', false, []],

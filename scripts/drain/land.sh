@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Land a Ralph run: merge its review branch, wait for CI, close its beads.
-# Usage: scripts/ralph/land.sh <branch>
+# Land a drain run: merge its review branch, wait for CI, close its beads.
+# Usage: scripts/drain/land.sh <branch>
 #
 # Run from the main checkout, on a clean master, after reviewing the branch.
-# It refuses while ralph.sh is running. The Ralph clone is ~/github/habitcraft-ralph
-# unless RALPH_CLONE says otherwise.
+# It refuses while drain.sh is running. The drain clone is ~/github/habitcraft-drain
+# unless DRAIN_CLONE says otherwise.
 #
 #   1. Fetch <branch> from the clone, rebase it onto master, fast-forward, push.
 #   2. Wait for the CI run on the pushed commit.
@@ -19,13 +19,13 @@
 
 set -euo pipefail
 
-CLONE="${RALPH_CLONE:-$HOME/github/habitcraft-ralph}"
+CLONE="${DRAIN_CLONE:-$HOME/github/habitcraft-drain}"
 POLL_SECONDS="${LAND_POLL_SECONDS:-15}"
 RUN_LIST_TRIES=24     # how long a CI run may take to appear, in polls
 GH_ERROR_TRIES=10     # consecutive gh failures tolerated while waiting
 CI_TIMEOUT=5400       # seconds before giving up on a run that never completes
 
-# shellcheck source=scripts/ralph/lib.sh
+# shellcheck source=scripts/drain/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -41,12 +41,12 @@ BRANCH="$1"
 for cmd in git gh bd jq pgrep; do
     command -v "$cmd" >/dev/null || die "$cmd is not on PATH"
 done
-[[ -d "$CLONE/.git" ]] || die "no Ralph clone at $CLONE (set RALPH_CLONE)"
+[[ -d "$CLONE/.git" ]] || die "no drain clone at $CLONE (set DRAIN_CLONE)"
 [[ "$(cd "$CLONE" && pwd -P)" != "$(pwd -P)" ]] || die "run this from the main checkout, not the clone"
 [[ "$(git branch --show-current)" == "master" ]] || die "the main checkout is not on master"
 [[ -z "$(git status --porcelain)" ]] || die "the main checkout has uncommitted changes"
 [[ -z "$(git -C "$CLONE" status --porcelain)" ]] || die "the clone has uncommitted changes"
-! ralph_pids >/dev/null || die "ralph.sh is running; land after it stops"
+! drain_pids >/dev/null || die "drain.sh is running; land after it stops"
 git -C "$CLONE" rev-parse --verify -q "refs/heads/$BRANCH" >/dev/null \
     || die "the clone has no branch '$BRANCH'"
 
@@ -121,7 +121,7 @@ close_beads() {
     while read -r id; do
         shas="$(awk -v id="$id" '$1 == id { printf "%s%s", sep, $2; sep = ", " }' <<<"$named")"
         if grep -qxF "$id" <<<"$review"; then
-            bd close "$id" --reason "Done by the Ralph loop in $shas, merged to master. CI run $RUN_ID green." </dev/null >/dev/null
+            bd close "$id" --reason "Done by the drain loop in $shas, merged to master. CI run $RUN_ID green." </dev/null >/dev/null
             bd label remove "$id" agent-review </dev/null >/dev/null
             say "closed $id ($shas)"
         else

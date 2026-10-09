@@ -59,9 +59,9 @@ on:
       - '.dbmaterc'
       - 'lychee.toml'
       - '**/*.example'
-      # The unattended agent loop (scripts/ralph/README.md). Nothing in CI
+      # The unattended agent loop (scripts/drain/README.md). Nothing in CI
       # runs it, and the tooling filter cannot see it anyway -- see there.
-      - 'scripts/ralph/**'
+      - 'scripts/drain/**'
       # Each has its own workflow with its own triggers; nothing here tests them.
       - '.github/workflows/link-check.yml'
       - '.github/workflows/dependency-audit.yml'
@@ -85,9 +85,9 @@ on:
       - '.dbmaterc'
       - 'lychee.toml'
       - '**/*.example'
-      # The unattended agent loop (scripts/ralph/README.md). Nothing in CI
+      # The unattended agent loop (scripts/drain/README.md). Nothing in CI
       # runs it, and the tooling filter cannot see it anyway -- see there.
-      - 'scripts/ralph/**'
+      - 'scripts/drain/**'
       # Each has its own workflow with its own triggers; nothing here tests them.
       - '.github/workflows/link-check.yml'
       - '.github/workflows/dependency-audit.yml'

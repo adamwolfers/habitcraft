@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Tests for scripts/ralph/land.sh (habitcraft-tjwp):
+# Tests for scripts/drain/land.sh (habitcraft-tjwp):
 #
-#   scripts/ralph/land.test.sh
+#   scripts/drain/land.test.sh
 #
 # Each case builds a throwaway world in a temp dir: a bare "origin", a main
-# checkout cloned from it, and a Ralph clone holding a review branch. git is
+# checkout cloned from it, and a drain clone holding a review branch. git is
 # real; gh, bd and pgrep are recording stubs, so nothing reaches GitHub, the
 # Dolt remote, or a real loop. Git config is isolated from the user's, so no
 # global hooks or settings leak in.
 #
-# Not run in CI: scripts/ralph/ is paths-ignored there, like the loop itself.
+# Not run in CI: scripts/drain/ is paths-ignored there, like the loop itself.
 set -u
 
 here=$(cd "$(dirname "$0")" && pwd)
@@ -73,10 +73,10 @@ esac
 if [ -n "$q" ]; then jq -r "$q" <<<"$json"; else echo "$json"; fi
 EOF
 
-# pgrep: "finds" a running ralph.sh only when the case says so.
+# pgrep: "finds" a running drain.sh only when the case says so.
 cat >"$tmp/bin/pgrep" <<'EOF'
 #!/usr/bin/env bash
-[ -e "$LAND_TEST_W/ralph_running" ]
+[ -e "$LAND_TEST_W/drain_running" ]
 EOF
 chmod +x "$tmp/bin/"*
 
@@ -89,21 +89,21 @@ commit() { # commit <repo> <subject> -- one file per subject, so rebases never c
 }
 
 # make_world <name>: origin with one seed commit; main checkout on master with
-# land.sh in it; the clone on ralph/test with four commits -- two agent-review
+# land.sh in it; the clone on drain/test with four commits -- two agent-review
 # beads, one bead that is not under review, and one with no bead at all.
 make_world() {
   W="$tmp/$1"
   mkdir -p "$W"
   git init -q --bare "$W/origin.git"
   git clone -q "$W/origin.git" "$W/main" 2>/dev/null
-  mkdir -p "$W/main/scripts/ralph"
-  cp "$land" "$here/lib.sh" "$W/main/scripts/ralph/"
+  mkdir -p "$W/main/scripts/drain"
+  cp "$land" "$here/lib.sh" "$W/main/scripts/drain/"
   commit "$W/main" "Seed"
   git -C "$W/main" add scripts
   git -C "$W/main" commit -q -m "Add land.sh"
   git -C "$W/main" push -q origin master
   git clone -q "$W/origin.git" "$W/clone"
-  git -C "$W/clone" switch -q -c ralph/test
+  git -C "$W/clone" switch -q -c drain/test
   commit "$W/clone" "Do A (habitcraft-aaa)"
   commit "$W/clone" "Do B (habitcraft-bbb.1)"
   commit "$W/clone" "Tidy something (habitcraft-zzz)"
@@ -117,8 +117,8 @@ make_world() {
 
 run_land() { # run_land [args...] -- runs in $W/main against $W/clone
   (cd "$W/main" &&
-    PATH="$tmp/bin:$PATH" LAND_TEST_W="$W" RALPH_CLONE="$W/clone" LAND_POLL_SECONDS=0 \
-      bash scripts/ralph/land.sh "$@") >"$tmp/out" 2>&1
+    PATH="$tmp/bin:$PATH" LAND_TEST_W="$W" DRAIN_CLONE="$W/clone" LAND_POLL_SECONDS=0 \
+      bash scripts/drain/land.sh "$@") >"$tmp/out" 2>&1
   rc=$?
 }
 
@@ -145,7 +145,7 @@ short_sha_of() { git --git-dir="$W/origin.git" log --format=%h --grep="$1" -1 ma
 
 # --- happy path ------------------------------------------------------------------
 make_world happy
-run_land ralph/test
+run_land drain/test
 check "happy: exits 0" [ "$rc" -eq 0 ]
 check "happy: every commit reached origin" origin_has "A commit naming no bead"
 check "happy: main checkout is origin's master" \
@@ -164,16 +164,16 @@ check "happy: pulls beads into the clone" bd_has "^$W/clone|dolt pull"
 check "happy: clone is back on master" [ "$(git -C "$W/clone" branch --show-current)" = master ]
 check "happy: clone is at origin's master" [ "$(git -C "$W/clone" rev-parse HEAD)" = "$(origin_master)" ]
 check "happy: clone's review branch is gone" \
-  [ -z "$(git -C "$W/clone" branch --list ralph/test)" ]
+  [ -z "$(git -C "$W/clone" branch --list drain/test)" ]
 check "happy: main's copy of the branch is gone" \
-  [ -z "$(git -C "$W/main" branch --list ralph/test)" ]
+  [ -z "$(git -C "$W/main" branch --list drain/test)" ]
 
 # --- master moved on while the loop ran -------------------------------------------
 make_world moved
 git clone -q "$W/origin.git" "$W/other"
 commit "$W/other" "Someone else's commit"
 git -C "$W/other" push -q origin master
-run_land ralph/test
+run_land drain/test
 check "moved: exits 0" [ "$rc" -eq 0 ]
 check "moved: keeps the other commit" origin_has "Someone else's commit"
 check "moved: lands the branch on top" origin_has "Do B (habitcraft-bbb.1)"
@@ -183,7 +183,7 @@ check "moved: close reason uses the rebased sha" \
 # --- CI red -----------------------------------------------------------------------
 make_world red
 echo failure >"$W/ci"
-run_land ralph/test
+run_land drain/test
 check "red: exits non-zero" [ "$rc" -ne 0 ]
 check "red: the code was still pushed" origin_has "Do A (habitcraft-aaa)"
 check "red: closes nothing" bd_lacks "close "
@@ -193,14 +193,14 @@ check "red: still syncs the clone" [ "$(git -C "$W/clone" branch --show-current)
 # --- transient gh errors ------------------------------------------------------------
 make_world flaky
 echo 2 >"$W/gh_fail"
-run_land ralph/test
+run_land drain/test
 check "flaky: retries past gh errors and exits 0" [ "$rc" -eq 0 ]
 check "flaky: closes after the retries" bd_has "close habitcraft-aaa "
 
 # --- no CI run (all paths ignored) ---------------------------------------------------
 make_world norun
 echo none >"$W/ci"
-run_land ralph/test
+run_land drain/test
 check "norun: exits non-zero" [ "$rc" -ne 0 ]
 check "norun: closes nothing" bd_lacks "close "
 check "norun: says no CI run was found" out_has "no CI run"
@@ -208,25 +208,25 @@ check "norun: says no CI run was found" out_has "no CI run"
 # --- refusals: nothing may be pushed -------------------------------------------------
 make_world dirty
 echo stray >"$W/main/stray.txt"
-run_land ralph/test
+run_land drain/test
 check "dirty main: refuses" [ "$rc" -ne 0 ]
 check "dirty main: pushes nothing" origin_untouched
 
 make_world offmaster
 git -C "$W/main" switch -q -c elsewhere
-run_land ralph/test
+run_land drain/test
 check "off master: refuses" [ "$rc" -ne 0 ]
 check "off master: pushes nothing" origin_untouched
 
 make_world running
-touch "$W/ralph_running"
-run_land ralph/test
+touch "$W/drain_running"
+run_land drain/test
 check "loop running: refuses" [ "$rc" -ne 0 ]
-check "loop running: says why" out_has "ralph.sh is running"
+check "loop running: says why" out_has "drain.sh is running"
 check "loop running: pushes nothing" origin_untouched
 
 make_world nobranch
-run_land ralph/nope
+run_land drain/nope
 check "missing branch: refuses" [ "$rc" -ne 0 ]
 check "missing branch: pushes nothing" origin_untouched
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Ralph loop: run fresh `claude -p` sessions, one agent-ok bead per pass.
-# Usage: scripts/ralph/ralph.sh [options]
+# Drain loop: run fresh `claude -p` sessions, one agent-ok bead per pass.
+# Usage: scripts/drain/drain.sh [options]
 #
 # Options:
 #   -n, --max-passes N    Stop after N passes (default 10)
@@ -11,7 +11,7 @@
 # Each pass is a new process with an empty context window; state carries
 # between passes only through git commits and beads. Run it in a SEPARATE
 # clone on a branch, never in the main working copy -- see
-# scripts/ralph/README.md (habitcraft-w1hv).
+# scripts/drain/README.md (habitcraft-w1hv).
 #
 # The loop stops when no agent-ok bead is ready, after --max-passes, or as soon
 # as a pass makes no progress: no bead lost its agent-ok label, the tree was
@@ -28,7 +28,7 @@ set -euo pipefail
 MAX_PASSES=10
 PASS_TIMEOUT=3600
 LABEL="agent-ok"
-PERMISSION_MODE="${RALPH_PERMISSION_MODE:-auto}"
+PERMISSION_MODE="${DRAIN_PERMISSION_MODE:-auto}"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -41,11 +41,11 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROMPT_FILE="$PROJECT_ROOT/scripts/ralph/PROMPT.md"
-LOG_DIR="$PROJECT_ROOT/.ralph"
+PROMPT_FILE="$PROJECT_ROOT/scripts/drain/PROMPT.md"
+LOG_DIR="$PROJECT_ROOT/.drain"
 cd "$PROJECT_ROOT"
 
-die() { echo "ralph: $*" >&2; exit 1; }
+die() { echo "drain: $*" >&2; exit 1; }
 
 for cmd in claude bd jq git perl; do
     command -v "$cmd" >/dev/null || die "$cmd is not on PATH"
@@ -53,7 +53,7 @@ done
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 [[ "$BRANCH" != "master" && "$BRANCH" != "HEAD" ]] \
-    || die "on '$BRANCH'. Run the loop on a review branch: git switch -c ralph/$(date +%F)"
+    || die "on '$BRANCH'. Run the loop on a review branch: git switch -c drain/$(date +%F)"
 [[ -z "$(git status --porcelain)" ]] || die "working tree is dirty; commit or stash first"
 
 mkdir -p "$LOG_DIR"
@@ -64,7 +64,7 @@ SUMMARY="$LOG_DIR/summary.log"
 # integration suite fails a test it would have passed: one asleep for 661s was
 # reported as a 660478ms "Exceeded timeout of 30000 ms" (habitcraft-ed7s).
 # `caffeinate -i` blocks idle sleep, on battery too, until this shell exits;
-# `-w $$` ties it to this pid, so the process tree that ralph_pids matches is
+# `-w $$` ties it to this pid, so the process tree that drain_pids matches is
 # unchanged. Closing the lid still sleeps the machine.
 AWAKE="no (caffeinate not found)"
 if command -v caffeinate >/dev/null; then
@@ -122,7 +122,7 @@ for ((pass = 1; pass <= MAX_PASSES; pass++)); do
     # mg may be reading this clone's embedded database while the pass writes
     # it (habitcraft-82by). A failed bd call is how contention would show.
     bd_failures="$(jq -cR 'fromjson? // empty' "$pass_log" |
-        jq -rs -f "$PROJECT_ROOT/scripts/ralph/bd-failures.jq" 2>/dev/null || true)"
+        jq -rs -f "$PROJECT_ROOT/scripts/drain/bd-failures.jq" 2>/dev/null || true)"
     if [[ -n "$bd_failures" ]]; then
         log "WARN: pass $pass: $(grep -c . <<<"$bd_failures") bd call(s) failed -- contention with mg? see $(basename "$pass_log")"
         head -3 <<<"$bd_failures" | while read -r line; do log "  $line"; done
