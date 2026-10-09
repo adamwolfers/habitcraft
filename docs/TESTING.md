@@ -765,6 +765,15 @@ against. `integration/setup.test.js` provokes both. The values sit well above
 normal query time (observed max ~1s) and well below the 30000ms test timeout,
 so they never fire on a healthy run.
 
+A bare `Exceeded timeout of 30000 ms` whose reported duration is far *longer*
+than 30000ms usually means the machine slept. Node's timers pause during
+sleep, but jest measures duration by the wall clock, and Docker's database
+sleeps along with the tests. In habitcraft-ed7s, `setup.test.js` reported
+660478 ms during a 661 s idle sleep. Run `pmset -g log | grep -E ' (Sleep|Wake) '`
+and compare the timestamps before you debug the test. The Ralph loop holds
+`caffeinate -i` for this reason
+([scripts/ralph/README.md](../scripts/ralph/README.md#the-mac-must-stay-awake)).
+
 ### Use the shared test server, not the app
 
 Integration tests must issue requests against the shared server from

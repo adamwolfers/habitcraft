@@ -59,6 +59,19 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 mkdir -p "$LOG_DIR"
 SUMMARY="$LOG_DIR/summary.log"
 
+# An unattended run outlasts the idle-sleep timer. A Mac that sleeps mid-pass
+# freezes the test suite and its Docker database together, and on wake the
+# integration suite fails a test it would have passed: one asleep for 661s was
+# reported as a 660478ms "Exceeded timeout of 30000 ms" (habitcraft-ed7s).
+# `caffeinate -i` blocks idle sleep, on battery too, until this shell exits;
+# `-w $$` ties it to this pid, so the process tree that ralph_pids matches is
+# unchanged. Closing the lid still sleeps the machine.
+AWAKE="no (caffeinate not found)"
+if command -v caffeinate >/dev/null; then
+    caffeinate -i -w $$ &
+    AWAKE="caffeinate pid $!"
+fi
+
 ready_count() {
     bd ready --label "$LABEL" --json -n 0 2>/dev/null | jq 'length'
 }
@@ -83,7 +96,7 @@ sync_beads() {
     bd dolt push >/dev/null 2>&1 || log "WARN: bd dolt push failed; beads changes are only in this clone"
 }
 
-log "start branch=$BRANCH max_passes=$MAX_PASSES pass_timeout=${PASS_TIMEOUT}s mode=$PERMISSION_MODE"
+log "start branch=$BRANCH max_passes=$MAX_PASSES pass_timeout=${PASS_TIMEOUT}s mode=$PERMISSION_MODE awake=$AWAKE"
 
 for ((pass = 1; pass <= MAX_PASSES; pass++)); do
     sync_beads

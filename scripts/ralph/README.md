@@ -156,6 +156,18 @@ after claiming its bead leaves it `in_progress` and still `agent-ok`; the loop
 stops on that rather than skipping past it, and you reset it with
 `bd update <id> --status open`.
 
+### The Mac must stay awake
+
+`ralph.sh` runs under `caffeinate -i` for the whole loop, which blocks idle
+sleep even on battery. It writes `awake=` on its `start` line in
+`summary.log`. Closing the lid still puts the machine to sleep, so leave it
+open, or keep it on power with an external display. A run that sleeps fails
+in a misleading way: Docker's database freezes along with the tests, and on
+wake a healthy test reports `Exceeded timeout of 30000 ms` with a duration
+the length of the nap. In habitcraft-ed7s that was 660478 ms for a 661 s idle
+sleep. To check a suspect failure, run
+`pmset -g log | grep -E ' (Sleep|Wake) '` and compare the timestamps.
+
 ### Run it in tmux
 
 A loop started in a plain terminal dies with that window, and one started
