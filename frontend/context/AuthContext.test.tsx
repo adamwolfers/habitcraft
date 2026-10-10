@@ -2,6 +2,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import React from 'react';
 import * as apiModule from '@/lib/api';
+import { habitViewModeKey } from '@/utils/storageUtils';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -555,6 +556,93 @@ describe('AuthContext', () => {
 
       // User should remain unchanged
       expect(result.current.user?.name).toBe('Test User');
+    });
+  });
+  describe('deleteAccount', () => {
+    const renderAuthenticated = async () => {
+      // Mock session check (authenticated user)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockUser,
+      } as Response);
+
+      const { result } = renderHook(() => useAuth(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isAuthenticated).toBe(true);
+      });
+
+      return result;
+    };
+
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('deletes the account, clears cookies and local data, then clears the user', async () => {
+      const result = await renderAuthenticated();
+      localStorage.setItem(habitViewModeKey('habit-1'), JSON.stringify('monthly'));
+
+      // Mock DELETE /users/me
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 } as Response);
+      // Mock logout (clears auth cookies)
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ message: 'Logged out successfully' }),
+      } as Response);
+
+      await act(async () => {
+        await result.current.deleteAccount('password123');
+      });
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/users/me`,
+        expect.objectContaining({
+          method: 'DELETE',
+          credentials: 'include',
+          body: JSON.stringify({ password: 'password123' }),
+        })
+      );
+      expect(mockFetch).toHaveBeenLastCalledWith(
+        `${API_BASE_URL}/api/v1/auth/logout`,
+        expect.objectContaining({ method: 'POST', credentials: 'include' })
+      );
+      expect(localStorage.getItem(habitViewModeKey('habit-1'))).toBeNull();
+      expect(result.current.user).toBeNull();
+      expect(result.current.isAuthenticated).toBe(false);
+    });
+
+    it('still clears the user when the follow-up logout request fails', async () => {
+      const result = await renderAuthenticated();
+
+      mockFetch.mockResolvedValueOnce({ ok: true, status: 204 } as Response);
+      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+      await act(async () => {
+        await result.current.deleteAccount('password123');
+      });
+
+      expect(result.current.user).toBeNull();
+    });
+
+    it('rethrows and keeps the user when deletion fails', async () => {
+      const result = await renderAuthenticated();
+      localStorage.setItem(habitViewModeKey('habit-1'), JSON.stringify('monthly'));
+
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: 'Password confirmation required' }),
+      } as Response);
+
+      await expect(
+        act(async () => {
+          await result.current.deleteAccount('');
+        })
+      ).rejects.toThrow('Password confirmation required');
+
+      expect(result.current.user).toEqual(mockUser);
+      expect(localStorage.getItem(habitViewModeKey('habit-1'))).not.toBeNull();
     });
   });
 });

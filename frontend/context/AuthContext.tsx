@@ -1,7 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { setOnAuthFailure } from '@/lib/api';
+import { setOnAuthFailure, deleteAccount as deleteAccountRequest } from '@/lib/api';
+import { clearHabitViewModes } from '@/utils/storageUtils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -20,6 +21,7 @@ export interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (updates: { name?: string; email?: string }) => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,6 +129,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(data);
   }, []);
 
+  const deleteAccount = useCallback(async (password: string) => {
+    await deleteAccountRequest(password);
+
+    // The account is gone, but the auth cookies are still set. Logout clears
+    // them; it needs no valid session, and a failure here must not leave the
+    // UI signed in as a user that no longer exists.
+    try {
+      await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch {
+      // Cookies expire on their own; the refresh token was already deleted
+    }
+
+    clearHabitViewModes();
+    setUser(null);
+  }, []);
+
   // Configure auth failure callback to handle token refresh failures
   useEffect(() => {
     setOnAuthFailure(() => {
@@ -141,7 +162,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, isLoading, isAuthenticated, login, register, logout, updateUser }}
+      value={{
+        user,
+        isLoading,
+        isAuthenticated,
+        login,
+        register,
+        logout,
+        updateUser,
+        deleteAccount,
+      }}
     >
       {children}
     </AuthContext.Provider>

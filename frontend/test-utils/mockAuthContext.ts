@@ -21,6 +21,7 @@ export function createMockAuth(overrides: Partial<AuthContextType> = {}): AuthCo
     register: jest.fn(),
     logout: jest.fn(),
     updateUser: jest.fn(),
+    deleteAccount: jest.fn(),
     ...overrides,
   };
 }
