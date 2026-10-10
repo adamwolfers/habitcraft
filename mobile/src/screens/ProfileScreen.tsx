@@ -12,17 +12,21 @@ import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
 import { FormField } from '@/components/FormField';
 import {
+  NEW_PASSWORD_MAX_LENGTH,
   PROFILE_EMAIL_MAX_LENGTH,
   PROFILE_NAME_MAX_LENGTH,
+  PasswordChangeField,
+  PasswordChangeFieldErrors,
   ProfileField,
   ProfileFieldErrors,
   getProfileChanges,
   hasErrors,
+  validatePasswordChangeForm,
   validateProfileForm,
 } from '@/utils/authUtils';
 
 export function ProfileScreen() {
-  const { user, logout, updateProfile, deleteAccount } = useAuthContext();
+  const { user, logout, updateProfile, changePassword, deleteAccount } = useAuthContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -31,6 +35,15 @@ export function ProfileScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState<PasswordChangeFieldErrors>({});
+  const [passwordFormError, setPasswordFormError] = useState<string | null>(null);
+  const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+  const [passwordChanged, setPasswordChanged] = useState(false);
 
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
@@ -52,6 +65,7 @@ export function ProfileScreen() {
     setFieldErrors({});
     setFormError(null);
     setSaved(false);
+    setPasswordChanged(false);
     setIsEditing(true);
   };
 
@@ -102,6 +116,60 @@ export function ProfileScreen() {
       }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Starts empty on each open, so Cancel never leaves a password behind.
+  const startChangingPassword = () => {
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordErrors({});
+    setPasswordFormError(null);
+    setPasswordChanged(false);
+    setSaved(false);
+    setIsChangingPassword(true);
+  };
+
+  const cancelChangingPassword = () => {
+    setIsChangingPassword(false);
+  };
+
+  const handlePasswordChange = (field: PasswordChangeField, setValue: (value: string) => void) => {
+    return (value: string) => {
+      setValue(value);
+      setPasswordErrors((current) => ({ ...current, [field]: undefined }));
+      setPasswordFormError(null);
+    };
+  };
+
+  const handleSubmitPassword = async () => {
+    const values = { currentPassword, newPassword, confirmPassword };
+    const errors = validatePasswordChangeForm(values);
+    if (hasErrors(errors)) {
+      setPasswordErrors(errors);
+      return;
+    }
+
+    setIsSubmittingPassword(true);
+    setPasswordFormError(null);
+    try {
+      await changePassword(values);
+      setIsChangingPassword(false);
+      setPasswordChanged(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to change password';
+      // The form is only reachable signed in, so a 401 that survives the
+      // token refresh is the wrong current password: it belongs under that
+      // field. Anything else, the rate limiter's 429 included, goes above
+      // the buttons.
+      if (err && typeof err === 'object' && 'status' in err && err.status === 401) {
+        setPasswordErrors({ currentPassword: message });
+      } else {
+        setPasswordFormError(message);
+      }
+    } finally {
+      setIsSubmittingPassword(false);
     }
   };
 
@@ -161,7 +229,7 @@ export function ProfileScreen() {
     >
       <Text style={styles.title}>Profile</Text>
 
-      {user && !isEditing && (
+      {user && !isEditing && !isChangingPassword && (
         <>
           {!!user.name && (
             <Text testID="profile-name" style={styles.name}>
@@ -175,6 +243,12 @@ export function ProfileScreen() {
           {saved && (
             <Text testID="profile-success" style={styles.success} accessibilityLiveRegion="polite">
               Profile updated
+            </Text>
+          )}
+
+          {passwordChanged && (
+            <Text testID="password-success" style={styles.success} accessibilityLiveRegion="polite">
+              Password changed
             </Text>
           )}
 
@@ -259,7 +333,102 @@ export function ProfileScreen() {
         </View>
       )}
 
-      {user && !isEditing && !isConfirmingDelete && (
+      {user && !isEditing && !isConfirmingDelete && !isChangingPassword && (
+        <TouchableOpacity
+          testID="change-password-button"
+          style={styles.editButton}
+          onPress={startChangingPassword}
+          accessibilityRole="button"
+          accessibilityLabel="Change password"
+          accessibilityHint="Double tap to set a new password"
+        >
+          <Text style={styles.editButtonText}>Change Password</Text>
+        </TouchableOpacity>
+      )}
+
+      {user && isChangingPassword && (
+        <View style={styles.form}>
+          <FormField
+            label="Current Password"
+            testID="current-password-input"
+            value={currentPassword}
+            onChangeText={handlePasswordChange('currentPassword', setCurrentPassword)}
+            error={passwordErrors.currentPassword}
+            secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="current-password"
+            textContentType="password"
+          />
+          <FormField
+            label="New Password"
+            testID="new-password-input"
+            value={newPassword}
+            onChangeText={handlePasswordChange('newPassword', setNewPassword)}
+            error={passwordErrors.newPassword}
+            maxLength={NEW_PASSWORD_MAX_LENGTH}
+            secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="new-password"
+            textContentType="newPassword"
+          />
+          <FormField
+            label="Confirm New Password"
+            testID="confirm-new-password-input"
+            value={confirmPassword}
+            onChangeText={handlePasswordChange('confirmPassword', setConfirmPassword)}
+            error={passwordErrors.confirmPassword}
+            maxLength={NEW_PASSWORD_MAX_LENGTH}
+            secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="new-password"
+            textContentType="newPassword"
+          />
+
+          {passwordFormError && (
+            <Text
+              testID="password-form-error"
+              style={styles.formError}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              {passwordFormError}
+            </Text>
+          )}
+
+          <TouchableOpacity
+            testID="submit-password-button"
+            style={[styles.saveButton, isSubmittingPassword && styles.buttonDisabled]}
+            onPress={handleSubmitPassword}
+            disabled={isSubmittingPassword}
+            accessibilityRole="button"
+            accessibilityLabel={isSubmittingPassword ? 'Changing password' : 'Change password'}
+            accessibilityState={{ disabled: isSubmittingPassword }}
+          >
+            {isSubmittingPassword ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.saveButtonText}>Update Password</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="cancel-password-button"
+            style={styles.cancelButton}
+            onPress={cancelChangingPassword}
+            disabled={isSubmittingPassword}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel password change"
+            accessibilityState={{ disabled: isSubmittingPassword }}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {user && !isEditing && !isConfirmingDelete && !isChangingPassword && (
         <TouchableOpacity
           testID="delete-account-button"
           style={styles.deleteButton}

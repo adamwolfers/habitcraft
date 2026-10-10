@@ -402,7 +402,7 @@ RootNavigator
 - [ ] Test: displays user email
 - [ ] Test: displays overall stats (total habits, completions)
 - [ ] Test: logout button clears session and navigates to login
-- [ ] Test: change password option (navigates to web for now)
+- [x] Test: change password in-app, re-signing in with the new password (habitcraft-9nt.2; replaces the earlier "navigates to web" plan)
 
 #### Implementation
 - [ ] Display user information

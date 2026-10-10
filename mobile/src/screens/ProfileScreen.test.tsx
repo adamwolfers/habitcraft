@@ -3,7 +3,11 @@ import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ProfileScreen } from './ProfileScreen';
 import { useAuthContext } from '@/context/AuthContext';
-import { PROFILE_NAME_MAX_LENGTH } from '@/utils/authUtils';
+import {
+  NEW_PASSWORD_MAX_LENGTH,
+  NEW_PASSWORD_MIN_LENGTH,
+  PROFILE_NAME_MAX_LENGTH,
+} from '@/utils/authUtils';
 
 jest.mock('@/context/AuthContext', () => ({
   useAuthContext: jest.fn(),
@@ -258,6 +262,216 @@ describe('ProfileScreen', () => {
       openEditor(utils);
       expect(utils.getByTestId('profile-name-input').props.value).toBe('Test User');
       expect(utils.queryByTestId('profile-name-input-error')).toBeNull();
+    });
+  });
+
+  describe('changing the password', () => {
+    const user = {
+      id: 'user-1',
+      name: 'Test User',
+      email: 'test@example.com',
+      createdAt: '2024-01-01',
+    };
+    const mockChangePassword = jest.fn();
+    const newPassword = 'n'.repeat(NEW_PASSWORD_MIN_LENGTH);
+
+    const renderScreen = () => {
+      mockUseAuthContext.mockReturnValue({
+        user,
+        logout: mockLogout,
+        updateProfile: jest.fn(),
+        changePassword: mockChangePassword,
+        deleteAccount: jest.fn(),
+      });
+      return render(<ProfileScreen />);
+    };
+
+    const openForm = (utils: ReturnType<typeof render>) => {
+      fireEvent.press(utils.getByTestId('change-password-button'));
+    };
+
+    const fillForm = (
+      utils: ReturnType<typeof render>,
+      values: { current?: string; next?: string; confirm?: string } = {}
+    ) => {
+      fireEvent.changeText(
+        utils.getByTestId('current-password-input'),
+        values.current ?? 'old-password'
+      );
+      fireEvent.changeText(utils.getByTestId('new-password-input'), values.next ?? newPassword);
+      fireEvent.changeText(
+        utils.getByTestId('confirm-new-password-input'),
+        values.confirm ?? values.next ?? newPassword
+      );
+    };
+
+    // Same reasoning as pressSave above: an async act flushes the mocked
+    // promise and the state after it (habitcraft-r62m).
+    const pressSubmit = async (utils: ReturnType<typeof render>) => {
+      await act(async () => {
+        fireEvent.press(utils.getByTestId('submit-password-button'));
+      });
+    };
+
+    it('does not show the form until Change Password is pressed', () => {
+      const utils = renderScreen();
+
+      expect(utils.queryByTestId('current-password-input')).toBeNull();
+
+      openForm(utils);
+
+      expect(utils.getByTestId('current-password-input')).toBeTruthy();
+      expect(utils.getByTestId('new-password-input')).toBeTruthy();
+      expect(utils.getByTestId('confirm-new-password-input')).toBeTruthy();
+    });
+
+    it('caps the new password inputs at the spec limit', () => {
+      const utils = renderScreen();
+      openForm(utils);
+
+      expect(utils.getByTestId('new-password-input').props.maxLength).toBe(NEW_PASSWORD_MAX_LENGTH);
+      expect(utils.getByTestId('confirm-new-password-input').props.maxLength).toBe(
+        NEW_PASSWORD_MAX_LENGTH
+      );
+    });
+
+    it('changes the password, closes the form and confirms it', async () => {
+      mockChangePassword.mockResolvedValue(undefined);
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils);
+
+      await pressSubmit(utils);
+
+      expect(mockChangePassword).toHaveBeenCalledWith({
+        currentPassword: 'old-password',
+        newPassword,
+        confirmPassword: newPassword,
+      });
+      expect(utils.queryByTestId('current-password-input')).toBeNull();
+      expect(utils.getByTestId('password-success')).toBeTruthy();
+    });
+
+    it('shows validation errors under each field without calling the server', () => {
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils, { current: '', next: 'short', confirm: 'other' });
+
+      fireEvent.press(utils.getByTestId('submit-password-button'));
+
+      expect(utils.getByTestId('current-password-input-error')).toBeTruthy();
+      expect(utils.getByTestId('new-password-input-error')).toBeTruthy();
+      expect(utils.getByTestId('confirm-new-password-input-error')).toBeTruthy();
+      expect(mockChangePassword).not.toHaveBeenCalled();
+    });
+
+    it('clears a field error once that field is edited', () => {
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils, { current: '' });
+      fireEvent.press(utils.getByTestId('submit-password-button'));
+
+      fireEvent.changeText(utils.getByTestId('current-password-input'), 'old-password');
+
+      expect(utils.queryByTestId('current-password-input-error')).toBeNull();
+    });
+
+    it('puts a wrong-current-password 401 under the current password field', async () => {
+      mockChangePassword.mockRejectedValue(
+        Object.assign(new Error('Invalid current password'), { status: 401 })
+      );
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils, { current: 'wrong' });
+
+      await pressSubmit(utils);
+
+      expect(utils.getByTestId('current-password-input-error').props.children).toBe(
+        'Invalid current password'
+      );
+      expect(utils.queryByTestId('password-form-error')).toBeNull();
+      expect(utils.getByTestId('current-password-input')).toBeTruthy();
+    });
+
+    it('shows a rate-limit 429 above the buttons and keeps the form open', async () => {
+      mockChangePassword.mockRejectedValue(
+        Object.assign(new Error('Too many password change attempts, please try again later.'), {
+          status: 429,
+        })
+      );
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils);
+
+      await pressSubmit(utils);
+
+      expect(utils.getByTestId('password-form-error').props.children).toBe(
+        'Too many password change attempts, please try again later.'
+      );
+      expect(utils.getByTestId('submit-password-button')).toBeTruthy();
+    });
+
+    it('disables submit while the request is in flight', async () => {
+      let resolve: () => void = () => {};
+      mockChangePassword.mockReturnValue(
+        new Promise<void>((r) => {
+          resolve = r;
+        })
+      );
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils);
+
+      await pressSubmit(utils);
+
+      expect(utils.getByTestId('submit-password-button').props.accessibilityState).toEqual({
+        disabled: true,
+      });
+
+      await act(async () => {
+        resolve();
+      });
+      expect(utils.queryByTestId('submit-password-button')).toBeNull();
+    });
+
+    it('cancel closes the form and drops what was typed', () => {
+      const utils = renderScreen();
+      openForm(utils);
+      fillForm(utils, { current: '' });
+      fireEvent.press(utils.getByTestId('submit-password-button'));
+
+      fireEvent.press(utils.getByTestId('cancel-password-button'));
+
+      expect(utils.queryByTestId('current-password-input')).toBeNull();
+      openForm(utils);
+      expect(utils.getByTestId('new-password-input').props.value).toBe('');
+      expect(utils.queryByTestId('current-password-input-error')).toBeNull();
+      expect(mockChangePassword).not.toHaveBeenCalled();
+    });
+
+    it('hides the other profile actions while the form is open', () => {
+      const utils = renderScreen();
+
+      openForm(utils);
+
+      expect(utils.queryByTestId('edit-profile-button')).toBeNull();
+      expect(utils.queryByTestId('delete-account-button')).toBeNull();
+    });
+
+    it('hides Change Password while the profile is being edited', () => {
+      const utils = renderScreen();
+
+      fireEvent.press(utils.getByTestId('edit-profile-button'));
+
+      expect(utils.queryByTestId('change-password-button')).toBeNull();
+    });
+
+    it('hides Change Password while deleting the account', () => {
+      const utils = renderScreen();
+
+      fireEvent.press(utils.getByTestId('delete-account-button'));
+
+      expect(utils.queryByTestId('change-password-button')).toBeNull();
     });
   });
 
