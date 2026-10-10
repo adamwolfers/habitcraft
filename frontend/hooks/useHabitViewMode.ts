@@ -1,10 +1,10 @@
 'use client';
 
 import { useLocalStorage } from './useLocalStorage';
+import { habitViewModeKey } from '@/utils/storageUtils';
 
 export type ViewMode = 'weekly' | 'monthly';
 
 export function useHabitViewMode(habitId: string): [ViewMode, (value: ViewMode) => void] {
-  const storageKey = `habitcraft-view-${habitId}`;
-  return useLocalStorage<ViewMode>(storageKey, 'weekly');
+  return useLocalStorage<ViewMode>(habitViewModeKey(habitId), 'weekly');
 }
