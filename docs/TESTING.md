@@ -188,6 +188,38 @@ for that package and `root` after `npm ci`, and the `verify-ci-filters` job
 runs it for `root` alone, so no job installs a package it does not already
 need.
 
+## Acceptance Tests (four-layer ATDD)
+
+> **Status:** adopted 2026-10-10, not yet built. The suite is the first child of
+> the rebuild epic, because it is also the parity harness for the Node → Go
+> rewrite. Until it exists, the Playwright E2E and integration suites below
+> remain the gates.
+
+HabitCraft follows Dave Farley's acceptance-test-driven development. **Every
+user-facing bead starts with a failing acceptance test**, and the implementation
+follows outside-in, with unit TDD underneath. The tests are written in
+TypeScript and split into four layers:
+
+| Layer | Knows about | Example |
+|---|---|---|
+| **Test cases** | The problem domain only. No selectors, URLs, status codes or fixtures | `habits.create("Morning run"); habits.checkOff("Morning run", today); habits.shouldShowStreak("Morning run", 1)` |
+| **DSL** | Translating domain calls into driver calls; test isolation | Turns the alias `"Morning run"` into a unique name per test run, so tests never share data |
+| **Protocol drivers** | One channel each: **API** (HTTP), **web** (Playwright), later native apps (WebdriverIO + Appium) | The web driver clicks; the API driver POSTs |
+| **System under test** | — | The Node backend today, the Go server after the rebuild; the Next.js app today, the Vite SPA after |
+
+Rules:
+
+- A test case must run unchanged against every driver. If a scenario only makes
+  sense on one channel, that's a sign it's written at the wrong level.
+- Tests create everything they need through the DSL. **No shared fixtures**, so
+  any test can run in any order or in parallel. This replaces the
+  fixture-plus-`Date.now()` strategy described in
+  [E2E Test Isolation Strategy](#e2e-test-isolation-strategy).
+- The suite runs against **both** backends during the rebuild. Green on both
+  is the cutover criterion.
+- Call them **acceptance tests**, not "executable specifications": "spec" is
+  already overloaded here (habitcraft-a8lq).
+
 ## Test Infrastructure
 
 ### Test Database

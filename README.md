@@ -3,7 +3,9 @@
 [![CI](https://github.com/adamwolfers/habitcraft/actions/workflows/ci.yml/badge.svg)](https://github.com/adamwolfers/habitcraft/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/adamwolfers/habitcraft/graph/badge.svg)](https://codecov.io/gh/adamwolfers/habitcraft)
 
-A full-stack habit tracking application built with modern web technologies, following Test-Driven Development (TDD) and clean architecture principles.
+A free, open-source, self-hostable habit tracker, built test-first against an enforced API contract.
+
+> **Rebuild in progress.** HabitCraft is being rebuilt side by side on Go + a React/Vite SPA, with Farley-style acceptance tests proving parity before cutover. See [PROJECT_PLAN.md](./PROJECT_PLAN.md#direction-decided-2026-10-10).
 
 ## Project Overview
 
@@ -176,7 +178,7 @@ docker compose -f docker-compose.test.yml down
 ### Development Approach
 
 This project follows:
-- **Test-Driven Development (TDD)** - Write tests first, then implement
+- **Acceptance-Test-Driven Development (ATDD)** - Each user-facing change starts with a failing acceptance test in domain language, then unit TDD underneath ([docs/TESTING.md](./docs/TESTING.md#acceptance-tests-four-layer-atdd))
 - **Clean Architecture** - Separation of concerns and clear boundaries
 - **RESTful API Design** - Consistent, predictable endpoints
 - **OpenAPI Compliance** - API specification as the source of truth
@@ -193,4 +195,4 @@ See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for detailed development status and roa
 
 ## License
 
-MIT License
+[GNU AGPL-3.0](./LICENSE) (AGPL-3.0-only), from 2026-10-10 onwards. Earlier commits were published while this README said "MIT License". Contributions need a CLA; see [CONTRIBUTING.md](./CONTRIBUTING.md).

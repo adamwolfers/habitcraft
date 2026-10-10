@@ -2,9 +2,21 @@
 
 ## Project Vision
 
-HabitCraft is a full-stack habit tracking application demonstrating modern web development practices with Test-Driven Development (TDD) and comprehensive testing.
+HabitCraft is a free, open-source (AGPL-3.0), self-hostable habit tracker. Started as a demonstration of test-driven, contract-first development, it is now a product in its own right. Its core packages are also designed to be embedded by other applications.
 
-## Technology Stack
+### Direction (decided 2026-10-10)
+
+HabitCraft is being **rebuilt side by side** on a new stack. The current stack and production keep running until the new one reaches parity, then the old one is deleted:
+
+- **Backend:** a Go monolith whose server is generated from `shared/api-spec/openapi.yaml` (`oapi-codegen`), packaged as an embeddable Go module plus a standalone binary. `db/migrations/` carries over unchanged.
+- **Web:** a React + Vite SPA, a static bundle served by the Go binary (no Node in production).
+- **Hosting:** a single VPS deployed with Kamal, replacing Cloud Run + Cloud SQL.
+- **Testing:** acceptance-test-driven development using Dave Farley's four-layer model (test cases in domain language → DSL → protocol drivers → system), in TypeScript. The same acceptance suite proves the Node → Go parity. See [docs/TESTING.md](docs/TESTING.md#acceptance-tests-four-layer-atdd).
+- **Native mobile apps** move out of this repository; the Expo app here is retired at cutover.
+
+The work is tracked in beads under the rebuild epic (`bd list --type epic`).
+
+## Technology Stack (current; being replaced, see Direction above)
 
 - **Frontend:** Next.js with React, TypeScript, Tailwind CSS
 - **Backend:** Node.js with Express, JavaScript

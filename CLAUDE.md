@@ -179,7 +179,7 @@ the next commit.
 ## Development Principles
 
 1. **Security First** - Never compromise on authentication and authorization
-2. **Test-Driven Development** - Write unit tests before implementation.  Target >90% coverage.
+2. **Acceptance-Test-Driven Development** - Every user-facing bead starts with a failing four-layer acceptance test in domain language (see [docs/TESTING.md](docs/TESTING.md#acceptance-tests-four-layer-atdd)); then write unit tests before implementation.  Target >90% coverage.
 3. **Small, Focused Commits** - Commit after each passing test or feature
 4. **Documentation** - Update docs alongside features
 5. **User Experience** - Smooth, responsive UI with proper error handling
