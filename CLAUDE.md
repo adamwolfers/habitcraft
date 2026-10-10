@@ -172,6 +172,11 @@ load-bearing** — each was established by a bug:
   test passed and hid this — only a real session exposed it. **Test hook changes
   against a real invocation, not just a piped one.**
 
+**Running it by hand:** use `scripts/beads-push.sh manual < /dev/null`. An agent's
+shell can hand the script an open pipe that never closes, which passes both
+guards, so `cat` waits forever. This was observed on 2026-10-10: the run hung
+past 120s, and the same command with `< /dev/null` finished in 2s.
+
 Neither hook covers an unclean death (crash, closed window, `kill -9`) that is
 never followed by another session on that machine; `pre-push` catches those on
 the next commit.
