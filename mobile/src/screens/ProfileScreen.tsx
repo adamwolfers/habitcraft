@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { colors, spacing, typography } from '@/theme';
 import { useAuthContext } from '@/context/AuthContext';
@@ -21,7 +22,7 @@ import {
 } from '@/utils/authUtils';
 
 export function ProfileScreen() {
-  const { user, logout, updateProfile } = useAuthContext();
+  const { user, logout, updateProfile, deleteAccount } = useAuthContext();
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState('');
@@ -30,6 +31,11 @@ export function ProfileScreen() {
   const [formError, setFormError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -98,6 +104,53 @@ export function ProfileScreen() {
       setIsSaving(false);
     }
   };
+
+  const startDeleting = () => {
+    setDeletePassword('');
+    setDeleteError(null);
+    setIsConfirmingDelete(true);
+  };
+
+  // Drops the typed password, so backing out never leaves it on screen.
+  const cancelDeleting = () => {
+    setIsConfirmingDelete(false);
+    setDeletePassword('');
+    setDeleteError(null);
+  };
+
+  const handleDeletePasswordChange = (value: string) => {
+    setDeletePassword(value);
+    setDeleteError(null);
+  };
+
+  const performDelete = async () => {
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      // On success AuthContext signs the user out and RootNavigator swaps to
+      // the auth flow, unmounting this screen; there is no state left to set.
+      await deleteAccount(deletePassword);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete account');
+      setIsDeleting(false);
+    }
+  };
+
+  // The password step already asks for intent; this native alert is the
+  // last chance to back out, the same confirmation HabitDetailScreen uses
+  // before deleting a habit.
+  const confirmDelete = () => {
+    Alert.alert(
+      'Delete Account',
+      'This permanently deletes your account, habits, and history. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: performDelete },
+      ]
+    );
+  };
+
+  const canDelete = deletePassword.length > 0 && !isDeleting;
 
   return (
     <ScrollView
@@ -206,6 +259,78 @@ export function ProfileScreen() {
         </View>
       )}
 
+      {user && !isEditing && !isConfirmingDelete && (
+        <TouchableOpacity
+          testID="delete-account-button"
+          style={styles.deleteButton}
+          onPress={startDeleting}
+          accessibilityRole="button"
+          accessibilityLabel="Delete account"
+          accessibilityHint="Double tap to permanently delete your account"
+        >
+          <Text style={styles.deleteButtonText}>Delete Account</Text>
+        </TouchableOpacity>
+      )}
+
+      {user && !isEditing && isConfirmingDelete && (
+        <View style={styles.form}>
+          <Text style={styles.deleteWarning}>
+            Deleting your account removes all of your habits and their history. This cannot be
+            undone. Enter your password to confirm.
+          </Text>
+          <FormField
+            label="Password"
+            testID="delete-account-password-input"
+            value={deletePassword}
+            onChangeText={handleDeletePasswordChange}
+            secure
+            autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="current-password"
+            textContentType="password"
+          />
+
+          {deleteError && (
+            <Text
+              testID="delete-account-error"
+              style={styles.formError}
+              accessibilityRole="alert"
+              accessibilityLiveRegion="polite"
+            >
+              {deleteError}
+            </Text>
+          )}
+
+          <TouchableOpacity
+            testID="confirm-delete-account-button"
+            style={[styles.confirmDeleteButton, !canDelete && styles.buttonDisabled]}
+            onPress={confirmDelete}
+            disabled={!canDelete}
+            accessibilityRole="button"
+            accessibilityLabel={isDeleting ? 'Deleting account' : 'Permanently delete account'}
+            accessibilityState={{ disabled: !canDelete }}
+          >
+            {isDeleting ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={styles.saveButtonText}>Permanently Delete</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="cancel-delete-account-button"
+            style={styles.cancelButton}
+            onPress={cancelDeleting}
+            disabled={isDeleting}
+            accessibilityRole="button"
+            accessibilityLabel="Keep account"
+            accessibilityState={{ disabled: isDeleting }}
+          >
+            <Text style={styles.cancelButtonText}>Keep Account</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <TouchableOpacity
         testID="logout-button"
         style={styles.logoutButton}
@@ -294,6 +419,26 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     ...typography.button,
     color: colors.textSecondary,
+  },
+  deleteButton: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.md,
+  },
+  deleteButtonText: {
+    ...typography.button,
+    color: colors.error,
+  },
+  deleteWarning: {
+    ...typography.body,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  confirmDeleteButton: {
+    backgroundColor: colors.error,
+    borderRadius: 8,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
   },
   logoutButton: {
     backgroundColor: colors.error,

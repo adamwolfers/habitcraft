@@ -1,4 +1,5 @@
 import React from 'react';
+import { Alert } from 'react-native';
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { ProfileScreen } from './ProfileScreen';
 import { useAuthContext } from '@/context/AuthContext';
@@ -257,6 +258,164 @@ describe('ProfileScreen', () => {
       openEditor(utils);
       expect(utils.getByTestId('profile-name-input').props.value).toBe('Test User');
       expect(utils.queryByTestId('profile-name-input-error')).toBeNull();
+    });
+  });
+
+  describe('deleting the account', () => {
+    const user = {
+      id: 'user-1',
+      name: 'Test User',
+      email: 'test@example.com',
+      createdAt: '2024-01-01',
+    };
+    const mockDeleteAccount = jest.fn();
+    let alertSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    });
+
+    afterEach(() => {
+      alertSpy.mockRestore();
+    });
+
+    const renderScreen = () => {
+      mockUseAuthContext.mockReturnValue({
+        user,
+        logout: mockLogout,
+        updateProfile: jest.fn(),
+        deleteAccount: mockDeleteAccount,
+      });
+      return render(<ProfileScreen />);
+    };
+
+    const openConfirmation = (utils: ReturnType<typeof render>) => {
+      fireEvent.press(utils.getByTestId('delete-account-button'));
+    };
+
+    const pressPermanentlyDelete = (utils: ReturnType<typeof render>) => {
+      fireEvent.press(utils.getByTestId('confirm-delete-account-button'));
+    };
+
+    // Presses the destructive button of the native Alert the screen raised,
+    // inside an async act so the mocked deleteAccount promise and the state
+    // updates after it are flushed before the assertions run.
+    const confirmAlert = async () => {
+      const buttons = alertSpy.mock.calls[0][2] as Array<{
+        text: string;
+        style?: string;
+        onPress?: () => Promise<void>;
+      }>;
+      const destructive = buttons.find((button) => button.style === 'destructive');
+      await act(async () => {
+        await destructive?.onPress?.();
+      });
+    };
+
+    it('does not ask for the password until Delete Account is pressed', () => {
+      const utils = renderScreen();
+
+      expect(utils.getByTestId('delete-account-button')).toBeTruthy();
+      expect(utils.queryByTestId('delete-account-password-input')).toBeNull();
+
+      openConfirmation(utils);
+
+      expect(utils.getByTestId('delete-account-password-input')).toBeTruthy();
+      expect(utils.getByText(/cannot be undone/i)).toBeTruthy();
+    });
+
+    it('keeps Permanently Delete disabled until a password is typed', () => {
+      const utils = renderScreen();
+      openConfirmation(utils);
+
+      const button = () => utils.getByTestId('confirm-delete-account-button');
+      expect(button().props.accessibilityState.disabled).toBe(true);
+
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'password123');
+
+      expect(button().props.accessibilityState.disabled).toBe(false);
+    });
+
+    it('asks for a destructive confirmation before deleting anything', () => {
+      const utils = renderScreen();
+      openConfirmation(utils);
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'password123');
+
+      pressPermanentlyDelete(utils);
+
+      expect(alertSpy).toHaveBeenCalledWith(
+        'Delete Account',
+        expect.stringMatching(/cannot be undone/i),
+        expect.arrayContaining([
+          expect.objectContaining({ text: 'Cancel', style: 'cancel' }),
+          expect.objectContaining({ text: 'Delete', style: 'destructive' }),
+        ])
+      );
+      expect(mockDeleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('deletes the account with the typed password once confirmed', async () => {
+      mockDeleteAccount.mockResolvedValue(undefined);
+      const utils = renderScreen();
+      openConfirmation(utils);
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'password123');
+      pressPermanentlyDelete(utils);
+
+      await confirmAlert();
+
+      expect(mockDeleteAccount).toHaveBeenCalledWith('password123');
+    });
+
+    it('shows a failure inline and keeps the confirmation open to retry', async () => {
+      mockDeleteAccount.mockRejectedValue(
+        Object.assign(new Error('Invalid password'), { status: 401 })
+      );
+      const utils = renderScreen();
+      openConfirmation(utils);
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'wrong');
+      pressPermanentlyDelete(utils);
+
+      await confirmAlert();
+
+      expect(utils.getByTestId('delete-account-error').props.children).toBe('Invalid password');
+      expect(utils.getByTestId('delete-account-password-input')).toBeTruthy();
+      expect(
+        utils.getByTestId('confirm-delete-account-button').props.accessibilityState.disabled
+      ).toBe(false);
+    });
+
+    it('clears the error once the password is edited', async () => {
+      mockDeleteAccount.mockRejectedValue(new Error('Invalid password'));
+      const utils = renderScreen();
+      openConfirmation(utils);
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'wrong');
+      pressPermanentlyDelete(utils);
+      await confirmAlert();
+
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'wrong2');
+
+      expect(utils.queryByTestId('delete-account-error')).toBeNull();
+    });
+
+    it('Keep Account backs out and drops the typed password', () => {
+      const utils = renderScreen();
+      openConfirmation(utils);
+      fireEvent.changeText(utils.getByTestId('delete-account-password-input'), 'password123');
+
+      fireEvent.press(utils.getByTestId('cancel-delete-account-button'));
+
+      expect(utils.queryByTestId('delete-account-password-input')).toBeNull();
+      openConfirmation(utils);
+      expect(utils.getByTestId('delete-account-password-input').props.value).toBe('');
+      expect(mockDeleteAccount).not.toHaveBeenCalled();
+    });
+
+    it('hides Delete Account while the profile is being edited', () => {
+      const utils = renderScreen();
+
+      fireEvent.press(utils.getByTestId('edit-profile-button'));
+
+      expect(utils.queryByTestId('delete-account-button')).toBeNull();
     });
   });
 });
