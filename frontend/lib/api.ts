@@ -397,3 +397,31 @@ export async function changePassword(
     throw new Error('Failed to change password');
   }
 }
+
+/**
+ * Permanently delete the current user's account and all of its data
+ * @param password - The account password, required by the server as confirmation
+ */
+export async function deleteAccount(password: string): Promise<void> {
+  const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/users/me`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ password }),
+  });
+
+  if (response.ok) {
+    return;
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (response.status === 429) {
+    throw new Error(data.message || data.error || 'Too many deletion attempts');
+  }
+  if (response.status === 401 || response.status === 400) {
+    throw new Error(data.error || 'Failed to delete account');
+  }
+  throw new Error('Failed to delete account');
+}

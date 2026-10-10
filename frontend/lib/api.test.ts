@@ -10,6 +10,7 @@ import {
   setOnAuthFailure,
   updateUserName,
   changePassword,
+  deleteAccount,
 } from './api';
 import { Habit, Completion } from '@/types/habit';
 
@@ -1135,5 +1136,107 @@ describe('changePassword', () => {
     await expect(changePassword('oldpass', 'newpass123', 'newpass123')).rejects.toThrow(
       'Failed to change password'
     );
+  });
+});
+
+describe('deleteAccount', () => {
+  const API_BASE_URL = 'http://localhost:3000';
+
+  beforeAll(() => {
+    process.env.NEXT_PUBLIC_API_BASE_URL = API_BASE_URL;
+  });
+
+  beforeEach(() => {
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('should call DELETE /users/me with the password as confirmation', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, status: 204 });
+
+    await deleteAccount('mypassword');
+
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/api/v1/users/me`, {
+      method: 'DELETE',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ password: 'mypassword' }),
+    });
+  });
+
+  it('should resolve on 204 without reading a body', async () => {
+    const json = jest.fn();
+    (global.fetch as jest.Mock).mockResolvedValue({ ok: true, status: 204, json });
+
+    await expect(deleteAccount('mypassword')).resolves.toBeUndefined();
+    expect(json).not.toHaveBeenCalled();
+  });
+
+  it('should throw the server message for a wrong password (401)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Invalid password' }),
+    });
+
+    const onAuthFailure = jest.fn();
+    setOnAuthFailure(onAuthFailure);
+
+    await expect(deleteAccount('wrongpass')).rejects.toThrow('Invalid password');
+
+    setOnAuthFailure(null);
+  });
+
+  it('should throw the server message for a missing password (400)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 400,
+      json: async () => ({ error: 'Password confirmation required' }),
+    });
+
+    await expect(deleteAccount('')).rejects.toThrow('Password confirmation required');
+  });
+
+  it('should throw the detailed message when rate limited (429)', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 429,
+      json: async () => ({
+        error: 'Too many deletion attempts',
+        message: 'Too many account deletion attempts from this IP, please try again later',
+        statusCode: 429,
+      }),
+    });
+
+    await expect(deleteAccount('mypassword')).rejects.toThrow(
+      'Too many account deletion attempts from this IP, please try again later'
+    );
+  });
+
+  it('should throw a generic error for other failures', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'Internal server error' }),
+    });
+
+    await expect(deleteAccount('mypassword')).rejects.toThrow('Failed to delete account');
+  });
+
+  it('should throw a generic error when the error body is not JSON', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new SyntaxError('Unexpected token');
+      },
+    });
+
+    await expect(deleteAccount('mypassword')).rejects.toThrow('Failed to delete account');
   });
 });
