@@ -157,7 +157,7 @@ backend/
 │   ├── setup.test.js             # Test pool fails fast on a stall
 │   ├── auth.test.js              # Authentication flow tests
 │   ├── health.test.js            # Health/hello endpoint tests
-│   ├── users.test.js             # Account deletion tests
+│   ├── users.test.js             # Profile update + deletion tests
 │   ├── completions.test.js       # Completion tracking tests
 │   └── habits.test.js            # Habit CRUD integration tests
 ├── openapi/                       # OpenAPI enforcement (test-only)

@@ -893,7 +893,16 @@ ajv silently ignoring OpenAPI's `nullable`).
 Trivial, but both are part of the contract, and the OpenAPI coverage check
 fails the run for any documented operation no integration test exercises.
 
-### `users.test.js` — Account Deletion
+### `users.test.js` — Profile Update and Account Deletion
+- Update name, email (stored lowercased; login works with it), or both;
+  each persisted. Re-submitting your own email is allowed
+- Another user's email → 409, account unchanged
+- Empty body, over-limit name/email (limits from `apiLimits.generated.js`),
+  malformed email → 400; unauthenticated → 401
+
+The profile-update unit tests mock the database, so these are the only cases
+whose responses reach the OpenAPI response validation (habitcraft-0m77).
+
 - Delete account → Verify every FK-chained row is gone, other users untouched
 - Wrong password rejected, account left intact
 - Password confirmation and authentication required
@@ -980,6 +989,12 @@ a 300-character malformed email fails on *format*, never on *length*.
 When testing a length validator on an email, either use a valid-format address
 that exceeds the limit, or assert that the response matches **either** error
 message. Otherwise the test passes for the wrong reason.
+
+For the 255-character email limit, a valid-format address over the limit does
+not exist: `isEmail` itself rejects anything over 254 characters. The
+profile-update chain (`backend/routes/users.js`) does not bail, so its 400
+lists both the format and the length error; `integration/users.test.js`
+asserts the length error is among them (habitcraft-0m77).
 
 ### Mocking API Calls
 
