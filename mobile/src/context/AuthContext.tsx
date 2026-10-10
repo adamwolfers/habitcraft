@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { User, LoginCredentials, RegisterData, ProfileUpdate } from '@/types';
+import { User, LoginCredentials, RegisterData, ProfileUpdate, PasswordChange } from '@/types';
 import { authApi } from '@/lib/auth';
 import { storage } from '@/lib/storage';
 import { seedE2ESession } from '@/lib/e2eSession';
@@ -14,6 +14,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: ProfileUpdate) => Promise<void>;
+  changePassword: (change: PasswordChange) => Promise<void>;
   deleteAccount: (password: string) => Promise<void>;
   clearError: () => void;
 }
@@ -92,6 +93,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updatedUser);
   }, []);
 
+  // On success the server revokes every refresh token, this device's too, so
+  // the session would die at the next token refresh. Signing in again with
+  // the new password replaces it. Should that fail, the user is signed out
+  // cleanly instead -- the change itself succeeded, so nothing is thrown. A
+  // failed change is rethrown for the Profile screen to show.
+  const changePassword = useCallback(
+    async (change: PasswordChange) => {
+      await authApi.changePassword(change);
+      try {
+        const result = await authApi.login({
+          email: user?.email ?? '',
+          password: change.newPassword,
+        });
+        setUser(result.user);
+      } catch {
+        await logout();
+      }
+    },
+    [user, logout]
+  );
+
   // authApi.deleteAccount clears the tokens; this drops what logout drops, so
   // nothing queued or cached for the deleted account survives it. A failure
   // is rethrown with nothing cleared, so the Profile screen can show it and
@@ -118,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         updateProfile,
+        changePassword,
         deleteAccount,
         clearError,
       }}

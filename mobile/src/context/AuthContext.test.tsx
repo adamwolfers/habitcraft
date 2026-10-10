@@ -14,6 +14,7 @@ jest.mock('@/lib/auth', () => ({
     getCurrentUser: jest.fn(),
     updateProfile: jest.fn(),
     deleteAccount: jest.fn(),
+    changePassword: jest.fn(),
   },
 }));
 
@@ -463,6 +464,105 @@ describe('AuthContext', () => {
       expect((thrown as Error).message).toBe('Email is already in use');
       expect(getByTestId('user').props.children).toBe('Test User <test@example.com>');
       expect(getByTestId('error').props.children).toBe('no-error');
+    });
+  });
+
+  describe('changePassword', () => {
+    const change = {
+      currentPassword: 'old-password',
+      newPassword: 'new-password',
+      confirmPassword: 'new-password',
+    };
+
+    const ChangePasswordTestComponent: React.FC = () => {
+      const { changePassword, user, isAuthenticated } = useAuthContext();
+      return (
+        <>
+          <Text testID="authenticated">{isAuthenticated ? 'yes' : 'no'}</Text>
+          <Text testID="user">{user ? user.name : 'no-user'}</Text>
+          <Text testID="change-button" onPress={() => changePassword(change)}>
+            Change
+          </Text>
+        </>
+      );
+    };
+
+    const renderSignedIn = async () => {
+      mockStorage.hasTokens.mockResolvedValue(true);
+      mockAuthApi.getCurrentUser.mockResolvedValue(mockUser);
+
+      const utils = render(
+        <AuthProvider>
+          <ChangePasswordTestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(utils.getByTestId('authenticated').props.children).toBe('yes');
+      });
+
+      return utils;
+    };
+
+    const pressChange = async (utils: Awaited<ReturnType<typeof renderSignedIn>>) => {
+      let thrown: unknown;
+      await act(async () => {
+        try {
+          await utils.getByTestId('change-button').props.onPress();
+        } catch (err) {
+          thrown = err;
+        }
+      });
+      return thrown;
+    };
+
+    it('changes the password, then signs back in with the new one', async () => {
+      // The server revokes every refresh token on success, this device's
+      // included, so without fresh tokens the next refresh would fail.
+      mockAuthApi.changePassword.mockResolvedValue(undefined);
+      mockAuthApi.login.mockResolvedValue({
+        user: { ...mockUser, name: 'Fresh User' },
+        tokens: mockTokens,
+      });
+      const utils = await renderSignedIn();
+
+      expect(await pressChange(utils)).toBeUndefined();
+
+      expect(mockAuthApi.changePassword).toHaveBeenCalledWith(change);
+      expect(mockAuthApi.login).toHaveBeenCalledWith({
+        email: mockUser.email,
+        password: change.newPassword,
+      });
+      expect(utils.getByTestId('authenticated').props.children).toBe('yes');
+      expect(utils.getByTestId('user').props.children).toBe('Fresh User');
+      expect(mockAuthApi.logout).not.toHaveBeenCalled();
+    });
+
+    it('rethrows a failed change without signing in again or out', async () => {
+      mockAuthApi.changePassword.mockRejectedValue(new Error('Invalid current password'));
+      const utils = await renderSignedIn();
+
+      const thrown = await pressChange(utils);
+
+      expect((thrown as Error).message).toBe('Invalid current password');
+      expect(mockAuthApi.login).not.toHaveBeenCalled();
+      expect(mockAuthApi.logout).not.toHaveBeenCalled();
+      expect(utils.getByTestId('authenticated').props.children).toBe('yes');
+    });
+
+    it('signs out if signing back in fails, since the old tokens are revoked', async () => {
+      mockAuthApi.changePassword.mockResolvedValue(undefined);
+      mockAuthApi.login.mockRejectedValue(new Error('Network Error'));
+      mockAuthApi.logout.mockResolvedValue(undefined);
+      const utils = await renderSignedIn();
+
+      // The password did change, so this is not reported as a failure.
+      expect(await pressChange(utils)).toBeUndefined();
+
+      expect(mockAuthApi.logout).toHaveBeenCalled();
+      expect(mockMutationQueue.clear).toHaveBeenCalled();
+      expect(mockOfflineStorage.remove).toHaveBeenCalledWith('query-cache');
+      expect(utils.getByTestId('authenticated').props.children).toBe('no');
     });
   });
 
