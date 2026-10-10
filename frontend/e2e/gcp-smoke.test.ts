@@ -184,13 +184,12 @@ test.describe('GCP Smoke Tests', () => {
         'xpath=ancestor::div[contains(@class, "bg-gray-800")]'
       );
 
-      await habitCard.getByRole('button', { name: /delete habit/i }).click();
-
-      // Confirm deletion if there's a confirmation dialog
-      const confirmButton = page.getByRole('button', { name: /confirm|yes|delete/i });
-      if (await confirmButton.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await confirmButton.click();
-      }
+      // Delete lives in the edit modal, not on the card (habitcraft-08z)
+      await habitCard.getByRole('button', { name: /edit habit/i }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: /delete habit/i })
+        .click();
 
       // Habit should no longer be visible
       await expect(page.getByText(habitName)).not.toBeVisible();

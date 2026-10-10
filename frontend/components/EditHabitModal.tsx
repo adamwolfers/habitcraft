@@ -19,9 +19,16 @@ interface EditHabitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onUpdate: (habitId: string, updates: Partial<Habit>) => Promise<void>;
+  onDelete: (habitId: string) => Promise<void>;
 }
 
-export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: EditHabitModalProps) {
+export default function EditHabitModal({
+  habit,
+  isOpen,
+  onClose,
+  onUpdate,
+  onDelete,
+}: EditHabitModalProps) {
   const [name, setName] = useState(habit.name);
   const [description, setDescription] = useState(habit.description || '');
   const [color, setColor] = useState(habit.color);
@@ -60,6 +67,17 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
     } else {
       // Just close the modal if nothing changed
       handleClose();
+    }
+  };
+
+  // Delete lives here rather than on the card so it takes a deliberate
+  // step to reach (habitcraft-08z). The parent closes the modal on success.
+  const handleDelete = async () => {
+    try {
+      await onDelete(habit.id);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete habit';
+      setError(errorMessage);
     }
   };
 
@@ -184,7 +202,14 @@ export default function EditHabitModal({ habit, isOpen, onClose, onUpdate }: Edi
             </div>
           )}
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex items-center gap-3 mt-6">
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="mr-auto px-4 py-2 text-red-500 hover:text-red-400 transition-colors"
+            >
+              Delete Habit
+            </button>
             <button
               type="button"
               onClick={handleClose}

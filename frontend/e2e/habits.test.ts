@@ -276,9 +276,13 @@ test.describe('Habit Management', () => {
       // Verify it was created
       await expect(page.getByText(habitName)).toBeVisible();
 
-      // Find and click the delete button
+      // Delete lives in the edit modal, not on the card (habitcraft-08z)
       const habitCard = getHabitCard(page, habitName);
-      await habitCard.getByRole('button', { name: /delete habit/i }).click();
+      await expect(habitCard.getByRole('button', { name: /delete habit/i })).toHaveCount(0);
+      await habitCard.getByRole('button', { name: /edit habit/i }).click();
+      const dialog = page.getByRole('dialog');
+      await dialog.getByRole('button', { name: /delete habit/i }).click();
+      await expect(dialog).not.toBeVisible();
 
       // Verify habit is removed from list
       await expect(page.getByText(habitName)).not.toBeVisible();
@@ -292,9 +296,13 @@ test.describe('Habit Management', () => {
       await page.getByRole('button', { name: /^add habit$/i }).click();
       await expect(page.getByText(habitName)).toBeVisible();
 
-      // Delete the habit
+      // Delete the habit from its edit modal
       const habitCard = getHabitCard(page, habitName);
-      await habitCard.getByRole('button', { name: /delete habit/i }).click();
+      await habitCard.getByRole('button', { name: /edit habit/i }).click();
+      await page
+        .getByRole('dialog')
+        .getByRole('button', { name: /delete habit/i })
+        .click();
       await expect(page.getByText(habitName)).not.toBeVisible();
 
       // Reload the page

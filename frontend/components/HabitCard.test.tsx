@@ -17,12 +17,10 @@ describe('HabitCard', () => {
   };
 
   const mockOnToggleCompletion = jest.fn();
-  const mockOnDelete = jest.fn();
   const mockIsCompletedOnDate = jest.fn(() => false);
 
   beforeEach(() => {
     mockOnToggleCompletion.mockClear();
-    mockOnDelete.mockClear();
     mockIsCompletedOnDate.mockClear();
   });
 
@@ -31,7 +29,6 @@ describe('HabitCard', () => {
       <HabitCard
         habit={mockHabit}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
     );
@@ -46,7 +43,6 @@ describe('HabitCard', () => {
       <HabitCard
         habit={habitWithoutDesc}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
     );
@@ -60,7 +56,6 @@ describe('HabitCard', () => {
       <HabitCard
         habit={mockHabit}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
     );
@@ -85,7 +80,6 @@ describe('HabitCard', () => {
       <HabitCard
         habit={mockHabit}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
     );
@@ -105,22 +99,17 @@ describe('HabitCard', () => {
     expect(mockOnToggleCompletion).toHaveBeenCalledWith(mockHabit.id, expect.any(Date));
   });
 
-  it('should call onDelete when delete button is clicked', async () => {
-    const user = userEvent.setup();
+  it('should not render a delete button (delete lives in the edit modal)', () => {
     render(
       <HabitCard
         habit={mockHabit}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
+        onEdit={jest.fn()}
       />
     );
 
-    const deleteButton = screen.getByLabelText(/delete habit/i);
-    await user.click(deleteButton);
-
-    expect(mockOnDelete).toHaveBeenCalledTimes(1);
-    expect(mockOnDelete).toHaveBeenCalledWith(mockHabit.id);
+    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument();
   });
 
   it('should use habit color for visual elements', () => {
@@ -128,7 +117,6 @@ describe('HabitCard', () => {
       <HabitCard
         habit={mockHabit}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompletedOnDate}
       />
     );
@@ -159,7 +147,6 @@ describe('HabitCard', () => {
       <HabitCard
         habit={mockHabit}
         onToggleCompletion={mockOnToggleCompletion}
-        onDelete={mockOnDelete}
         isCompletedOnDate={mockIsCompleted}
       />
     );
@@ -185,7 +172,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -199,7 +185,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -214,7 +199,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -232,7 +216,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -249,7 +232,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -269,7 +251,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -290,7 +271,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -316,7 +296,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -344,7 +323,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -381,7 +359,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -421,7 +398,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -459,7 +435,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -509,7 +484,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           onEdit={mockOnEdit}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
@@ -525,7 +499,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           onEdit={mockOnEdit}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
@@ -545,7 +518,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -561,7 +533,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -576,7 +547,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -597,7 +567,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -621,7 +590,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -639,7 +607,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDate}
         />
       );
@@ -703,7 +670,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDateWithMonday}
           completions={mockCompletions}
           onOpenNoteModal={mockOnOpenNoteModal}
@@ -720,7 +686,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDateWithMonday}
           completions={mockCompletions}
           onOpenNoteModal={mockOnOpenNoteModal}
@@ -737,7 +702,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDateWithMonday}
           completions={mockCompletionsWithoutNotes}
           onOpenNoteModal={mockOnOpenNoteModal}
@@ -755,7 +719,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDateWithMonday}
           completions={mockCompletions}
           onOpenNoteModal={mockOnOpenNoteModal}
@@ -774,7 +737,6 @@ describe('HabitCard', () => {
         <HabitCard
           habit={mockHabit}
           onToggleCompletion={mockOnToggleCompletion}
-          onDelete={mockOnDelete}
           isCompletedOnDate={mockIsCompletedOnDateWithMonday}
           completions={mockCompletions}
         />

@@ -38,15 +38,6 @@ export default function Dashboard() {
     await createHabit(habitData);
   };
 
-  const handleDeleteHabit = async (habitId: string) => {
-    try {
-      await deleteHabit(habitId);
-    } catch (error) {
-      console.error('Failed to delete habit:', error);
-      // Error is already logged by the hook, just catch it here to prevent unhandled promise rejection
-    }
-  };
-
   const handleEditHabit = (habitId: string) => {
     const habit = findHabitById(habits, habitId);
     if (!habit) {
@@ -58,6 +49,12 @@ export default function Dashboard() {
 
   const handleUpdateHabit = async (habitId: string, updates: Partial<Habit>) => {
     await updateHabit(habitId, updates);
+    setEditingHabit(null);
+  };
+
+  // Errors propagate to EditHabitModal, which shows them and stays open
+  const handleDeleteHabit = async (habitId: string) => {
+    await deleteHabit(habitId);
     setEditingHabit(null);
   };
 
@@ -129,7 +126,6 @@ export default function Dashboard() {
                     key={habit.id}
                     habit={habit}
                     onToggleCompletion={toggleCompletion}
-                    onDelete={handleDeleteHabit}
                     onEdit={handleEditHabit}
                     isCompletedOnDate={isHabitCompletedOnDate}
                     completions={getCompletionsForHabit(habit.id)}
@@ -148,6 +144,7 @@ export default function Dashboard() {
           isOpen={!!editingHabit}
           onClose={handleCloseModal}
           onUpdate={handleUpdateHabit}
+          onDelete={handleDeleteHabit}
         />
       )}
       {noteModal && (

@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Dashboard from './page';
 import * as useHabitsModule from '@/hooks/useHabits';
@@ -258,28 +258,18 @@ describe('Dashboard Page - Delete Functionality', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('should call deleteHabit when delete button is clicked', async () => {
-    const user = userEvent.setup();
+  it('should not show a delete button on the habit cards', async () => {
     render(<Dashboard />);
 
-    // Wait for habits to render
     await waitFor(() => {
       expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
     });
 
-    // Find all delete buttons (there should be 2, one for each habit)
-    const deleteButtons = screen.getAllByLabelText('Delete habit');
-    expect(deleteButtons).toHaveLength(2);
-
-    // Click the first delete button
-    await user.click(deleteButtons[0]);
-
-    // Verify deleteHabit was called with the correct habit ID
-    expect(mockDeleteHabit).toHaveBeenCalledTimes(1);
-    expect(mockDeleteHabit).toHaveBeenCalledWith('habit-1');
+    expect(screen.queryByRole('button', { name: /delete habit/i })).not.toBeInTheDocument();
   });
 
-  it('should call deleteHabit when second habit delete button is clicked', async () => {
+  it('should call deleteHabit from the edit modal and close it', async () => {
+    mockDeleteHabit.mockResolvedValue(undefined);
     const user = userEvent.setup();
     render(<Dashboard />);
 
@@ -287,19 +277,21 @@ describe('Dashboard Page - Delete Functionality', () => {
       expect(screen.getByText('Read Books')).toBeInTheDocument();
     });
 
-    const deleteButtons = screen.getAllByLabelText('Delete habit');
-
-    // Click the second delete button
-    await user.click(deleteButtons[1]);
+    // Open the second habit's modal so the id is not just the first one
+    await user.click(screen.getAllByLabelText('Edit habit')[1]);
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /delete habit/i })
+    );
 
     expect(mockDeleteHabit).toHaveBeenCalledTimes(1);
     expect(mockDeleteHabit).toHaveBeenCalledWith('habit-2');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    });
   });
 
-  it('should handle deleteHabit errors gracefully', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+  it('should keep the edit modal open with an error when deleteHabit fails', async () => {
     mockDeleteHabit.mockRejectedValue(new Error('API Error'));
-
     const user = userEvent.setup();
     render(<Dashboard />);
 
@@ -307,16 +299,14 @@ describe('Dashboard Page - Delete Functionality', () => {
       expect(screen.getByText('Morning Exercise')).toBeInTheDocument();
     });
 
-    const deleteButtons = screen.getAllByLabelText('Delete habit');
+    await user.click(screen.getAllByLabelText('Edit habit')[0]);
+    await user.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: /delete habit/i })
+    );
 
-    // Click delete button
-    await user.click(deleteButtons[0]);
-
-    await waitFor(() => {
-      expect(mockDeleteHabit).toHaveBeenCalledWith('habit-1');
-    });
-
-    consoleErrorSpy.mockRestore();
+    expect(mockDeleteHabit).toHaveBeenCalledWith('habit-1');
+    expect(await screen.findByRole('alert')).toHaveTextContent('API Error');
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 
   it('should display empty state when no habits exist', () => {

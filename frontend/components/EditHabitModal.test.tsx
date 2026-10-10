@@ -20,10 +20,12 @@ describe('EditHabitModal', () => {
 
   const mockOnClose = jest.fn();
   const mockOnUpdate = jest.fn();
+  const mockOnDelete = jest.fn();
 
   beforeEach(() => {
     mockOnClose.mockClear();
     mockOnUpdate.mockClear();
+    mockOnDelete.mockReset();
   });
 
   describe('Field limits', () => {
@@ -34,6 +36,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -58,6 +61,7 @@ describe('EditHabitModal', () => {
           isOpen={false}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -71,6 +75,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -84,6 +89,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -98,6 +104,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -115,6 +122,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -132,6 +140,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -151,6 +160,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -165,6 +175,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -180,6 +191,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -197,6 +209,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -212,6 +225,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -231,6 +245,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -246,6 +261,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -273,6 +289,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -292,6 +309,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -314,6 +332,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -341,6 +360,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -355,6 +375,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -370,6 +391,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -387,6 +409,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -402,6 +425,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -419,6 +443,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -446,6 +471,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -476,6 +502,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -502,6 +529,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -528,6 +556,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -541,6 +570,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -555,6 +585,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -571,6 +602,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -597,6 +629,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -623,6 +656,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -646,6 +680,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -676,6 +711,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -689,6 +725,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -703,6 +740,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -719,6 +757,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -742,6 +781,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -759,6 +799,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -785,6 +826,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -808,6 +850,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -837,6 +880,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -870,6 +914,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -894,6 +939,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -918,6 +964,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -946,6 +993,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -975,6 +1023,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -1004,6 +1053,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -1033,6 +1083,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -1063,6 +1114,7 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
@@ -1084,10 +1136,75 @@ describe('EditHabitModal', () => {
           isOpen={true}
           onClose={mockOnClose}
           onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
         />
       );
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Delete Habit', () => {
+    const renderModal = () =>
+      render(
+        <EditHabitModal
+          habit={mockHabit}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onDelete={mockOnDelete}
+        />
+      );
+
+    it('should render a delete button inside the dialog', () => {
+      renderModal();
+
+      expect(screen.getByRole('dialog')).toContainElement(
+        screen.getByRole('button', { name: /delete habit/i })
+      );
+    });
+
+    it('should not submit the form when delete is clicked', async () => {
+      const user = userEvent.setup();
+      mockOnDelete.mockResolvedValue(undefined);
+      renderModal();
+
+      await user.click(screen.getByRole('button', { name: /delete habit/i }));
+
+      expect(mockOnUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should call onDelete with the habit id when delete is clicked', async () => {
+      const user = userEvent.setup();
+      mockOnDelete.mockResolvedValue(undefined);
+      renderModal();
+
+      await user.click(screen.getByRole('button', { name: /delete habit/i }));
+
+      expect(mockOnDelete).toHaveBeenCalledTimes(1);
+      expect(mockOnDelete).toHaveBeenCalledWith(mockHabit.id);
+    });
+
+    it('should show the error message and stay open when delete fails', async () => {
+      const user = userEvent.setup();
+      mockOnDelete.mockRejectedValue(new Error('Habit not found'));
+      renderModal();
+
+      await user.click(screen.getByRole('button', { name: /delete habit/i }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Habit not found');
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
+    it('should show a generic message when delete fails with a non-Error', async () => {
+      const user = userEvent.setup();
+      mockOnDelete.mockRejectedValue('boom');
+      renderModal();
+
+      await user.click(screen.getByRole('button', { name: /delete habit/i }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Failed to delete habit');
     });
   });
 });
