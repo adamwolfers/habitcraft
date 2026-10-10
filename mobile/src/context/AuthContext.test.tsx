@@ -13,6 +13,7 @@ jest.mock('@/lib/auth', () => ({
     logout: jest.fn(),
     getCurrentUser: jest.fn(),
     updateProfile: jest.fn(),
+    deleteAccount: jest.fn(),
   },
 }));
 
@@ -462,6 +463,84 @@ describe('AuthContext', () => {
       expect((thrown as Error).message).toBe('Email is already in use');
       expect(getByTestId('user').props.children).toBe('Test User <test@example.com>');
       expect(getByTestId('error').props.children).toBe('no-error');
+    });
+  });
+
+  describe('deleteAccount', () => {
+    const DeleteAccountTestComponent: React.FC = () => {
+      const { deleteAccount, user, isAuthenticated } = useAuthContext();
+      return (
+        <>
+          <Text testID="authenticated">{isAuthenticated ? 'yes' : 'no'}</Text>
+          <Text testID="user">{user ? user.email : 'no-user'}</Text>
+          <Text testID="delete-button" onPress={() => deleteAccount('password123')}>
+            Delete
+          </Text>
+        </>
+      );
+    };
+
+    const renderSignedIn = async () => {
+      mockStorage.hasTokens.mockResolvedValue(true);
+      mockAuthApi.getCurrentUser.mockResolvedValue(mockUser);
+
+      const utils = render(
+        <AuthProvider>
+          <DeleteAccountTestComponent />
+        </AuthProvider>
+      );
+
+      await waitFor(() => {
+        expect(utils.getByTestId('authenticated').props.children).toBe('yes');
+      });
+
+      return utils;
+    };
+
+    it('deletes the account with the password and signs the user out', async () => {
+      mockAuthApi.deleteAccount.mockResolvedValue(undefined);
+      const { getByTestId } = await renderSignedIn();
+
+      await act(async () => {
+        await getByTestId('delete-button').props.onPress();
+      });
+
+      expect(mockAuthApi.deleteAccount).toHaveBeenCalledWith('password123');
+      expect(getByTestId('authenticated').props.children).toBe('no');
+      expect(getByTestId('user').props.children).toBe('no-user');
+    });
+
+    it('clears the mutation queue and offline cache', async () => {
+      // A queued mutation would replay against an account that no longer
+      // exists, and the cached habits belong to it.
+      mockAuthApi.deleteAccount.mockResolvedValue(undefined);
+      const { getByTestId } = await renderSignedIn();
+
+      await act(async () => {
+        await getByTestId('delete-button').props.onPress();
+      });
+
+      expect(mockMutationQueue.clear).toHaveBeenCalled();
+      expect(mockOfflineStorage.remove).toHaveBeenCalledWith('query-cache');
+    });
+
+    it('rethrows a failure and keeps the user signed in with their data', async () => {
+      mockAuthApi.deleteAccount.mockRejectedValue(new Error('Invalid password'));
+      const { getByTestId } = await renderSignedIn();
+
+      let thrown: unknown;
+      await act(async () => {
+        try {
+          await getByTestId('delete-button').props.onPress();
+        } catch (err) {
+          thrown = err;
+        }
+      });
+
+      expect((thrown as Error).message).toBe('Invalid password');
+      expect(getByTestId('authenticated').props.children).toBe('yes');
+      expect(mockMutationQueue.clear).not.toHaveBeenCalled();
+      expect(mockOfflineStorage.remove).not.toHaveBeenCalled();
     });
   });
 

@@ -14,6 +14,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (updates: ProfileUpdate) => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
   clearError: () => void;
 }
 
@@ -91,6 +92,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updatedUser);
   }, []);
 
+  // authApi.deleteAccount clears the tokens; this drops what logout drops, so
+  // nothing queued or cached for the deleted account survives it. A failure
+  // is rethrown with nothing cleared, so the Profile screen can show it and
+  // the user can retry.
+  const deleteAccount = useCallback(async (password: string) => {
+    await authApi.deleteAccount(password);
+    await mutationQueue.clear();
+    await offlineStorage.remove('query-cache');
+    setUser(null);
+  }, []);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -106,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         updateProfile,
+        deleteAccount,
         clearError,
       }}
     >
