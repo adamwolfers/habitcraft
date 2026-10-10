@@ -803,6 +803,28 @@ The shared server is started once per suite and torn down in `afterAll` with
 is load-bearing: `close()` on its own waits for in-flight connections and would
 hang on exactly the request that caused the problem.
 
+### Test servers bind 127.0.0.1, never a bare `listen(0)`
+
+supertest sends every request to `127.0.0.1`, so every server a test starts
+listens there too: `server.listen(0, '127.0.0.1')`. A bare `listen(0)` binds
+every interface (`::`). On macOS another process can then bind `127.0.0.1` on
+that same port, and the more specific bind wins. The request goes to that
+process, and the test fails on a response nothing in this repo wrote.
+
+In habitcraft-oft7, `routes/auth.test.js` got a 401 whose `body.error` was an
+object. Every handler here writes `error` as a string. The kernel never hands
+out a port that is already bound this way, so the other process must have
+picked a port itself, as "find a free port" helpers do. With a loopback bind,
+that process gets `EADDRINUSE` instead. supertest 7.3.1 binds its own
+per-request servers to loopback. Two tests keep both halves in place:
+`backend/supertest.test.js` checks the supertest version, and
+`integration/setup.test.js` checks the shared integration server.
+
+A failure like this has a clear tell. `expect(x).toContain(...)` throwing
+`received is not iterable` means `x` was a non-null object, not a missing
+string. Check whether the response came from this app at all before you look
+for the code path that sent it.
+
 ### Every response is checked against the OpenAPI spec
 
 `integration/setup.js` wraps the shared test server so that every response the

@@ -84,7 +84,11 @@ function getTestServer() {
       testServer.once('listening', resolve);
       testServer.once('error', reject);
     });
-    testServer.listen(0);
+    // Loopback, because that is where supertest connects. A bare listen(0)
+    // binds every interface, and on macOS another process can then bind
+    // 127.0.0.1 on the same port and receive the suite's requests
+    // (habitcraft-oft7).
+    testServer.listen(0, '127.0.0.1');
   }
   return testServer;
 }

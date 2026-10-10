@@ -10,7 +10,7 @@
 
 const net = require('net');
 const { Client, Pool } = require('pg');
-const { quickReset, testDbConfig } = require('./setup');
+const { getTestServer, quickReset, testDbConfig } = require('./setup');
 
 // Well under the config-wide 30000ms testTimeout, which is the failure these
 // timeouts exist to pre-empt.
@@ -58,5 +58,14 @@ describe('Integration test pool timeouts', () => {
       sockets.forEach((socket) => socket.destroy());
       await new Promise((resolve) => blackHole.close(resolve));
     }
+  });
+});
+
+describe('Integration test server', () => {
+  // supertest connects to 127.0.0.1. A wildcard listen(0) lets another process
+  // on macOS bind 127.0.0.1 on the same port and take the suite's requests
+  // (habitcraft-oft7). supertest.test.js guards the per-request servers.
+  it('binds to loopback, not to every interface', () => {
+    expect(getTestServer().address().address).toBe('127.0.0.1');
   });
 });

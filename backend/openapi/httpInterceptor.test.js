@@ -43,7 +43,9 @@ describe('openapi/httpInterceptor', () => {
       interceptResponse(req, res);
       handler(req, res);
     });
-    await new Promise((resolve) => server.listen(0, resolve));
+    // Loopback, to match the request below: a wildcard bind can lose the
+    // request to another process on macOS (habitcraft-oft7).
+    await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 
     const delivered = await new Promise((resolve, reject) => {
       const request = http.request(
