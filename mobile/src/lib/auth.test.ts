@@ -356,6 +356,50 @@ describe('authApi', () => {
     });
   });
 
+  describe('changePassword', () => {
+    const change = {
+      currentPassword: 'old-password',
+      newPassword: 'new-password',
+      confirmPassword: 'new-password',
+    };
+
+    it('makes PUT request to /users/me/password with all three fields', async () => {
+      mockApi.put.mockResolvedValueOnce({ data: { message: 'Password changed successfully' } });
+
+      await authApi.changePassword(change);
+
+      expect(mockApi.put).toHaveBeenCalledWith('/users/me/password', change);
+    });
+
+    it('rejects with the server message and status on a wrong current password', async () => {
+      mockApi.put.mockRejectedValueOnce({
+        response: { status: 401, data: { error: 'Invalid current password' } },
+      });
+
+      await expect(authApi.changePassword(change)).rejects.toMatchObject({
+        message: 'Invalid current password',
+        status: 401,
+      });
+    });
+
+    it("rejects with the rate limiter's readable message on a 429", async () => {
+      mockApi.put.mockRejectedValueOnce({
+        response: {
+          status: 429,
+          data: {
+            error: 'Too many password change attempts',
+            message: 'Too many password change attempts, please try again later.',
+          },
+        },
+      });
+
+      await expect(authApi.changePassword(change)).rejects.toMatchObject({
+        message: 'Too many password change attempts, please try again later.',
+        status: 429,
+      });
+    });
+  });
+
   describe('deleteAccount', () => {
     it('makes DELETE request to /users/me with the password in the body', async () => {
       mockApi.delete.mockResolvedValueOnce({ status: 204 });

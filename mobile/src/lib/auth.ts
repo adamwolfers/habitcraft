@@ -1,7 +1,14 @@
 import axios from 'axios';
 import { api } from './api';
 import { storage } from './storage';
-import { User, AuthTokens, LoginCredentials, RegisterData, ProfileUpdate } from '@/types';
+import {
+  User,
+  AuthTokens,
+  LoginCredentials,
+  RegisterData,
+  ProfileUpdate,
+  PasswordChange,
+} from '@/types';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000/api/v1';
 
@@ -182,6 +189,22 @@ export const authApi = {
     try {
       const response = await api.put('/users/me', updates);
       return response.data;
+    } catch (error) {
+      throw toAuthApiError(error);
+    }
+  },
+
+  /**
+   * Through the shared `api` instance, so an expired access token is
+   * refreshed first. A wrong current password is a 401, which that instance
+   * also answers with a refresh and one retry; the retry fails the same way
+   * and its 401 is what rejects here. On success the server revokes every
+   * refresh token for the account, this device's included -- AuthContext
+   * signs back in with the new password to replace it.
+   */
+  async changePassword(change: PasswordChange): Promise<void> {
+    try {
+      await api.put('/users/me/password', change);
     } catch (error) {
       throw toAuthApiError(error);
     }

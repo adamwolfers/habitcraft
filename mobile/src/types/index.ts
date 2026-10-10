@@ -33,6 +33,9 @@ export type RegisterData = operations['register']['requestBody']['content']['app
 export type ProfileUpdate =
   operations['updateCurrentUser']['requestBody']['content']['application/json'];
 
+export type PasswordChange =
+  operations['changePassword']['requestBody']['content']['application/json'];
+
 // Habit types
 export type Habit = components['schemas']['Habit'];
 
