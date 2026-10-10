@@ -820,6 +820,15 @@ per-request servers to loopback. Two tests keep both halves in place:
 `backend/supertest.test.js` checks the supertest version, and
 `integration/setup.test.js` checks the shared integration server.
 
+`supertest.test.js` also **replays** oft7 on purpose instead of waiting for it.
+An impostor server tries to bind `127.0.0.1` on supertest's port and answers in
+oft7's shape. The test then checks that the real auth route still answers. It
+failed every time on supertest 7.1.4 (`Received: {"type": "impostor"}`) and
+passes on 7.3.1. That is the evidence the fix works: one green run of the
+original test would prove nothing. The replay can only fail on macOS. Linux
+refuses the impostor's bind even when the server binds every interface, so CI
+passes either way.
+
 A failure like this has a clear tell. `expect(x).toContain(...)` throwing
 `received is not iterable` means `x` was a non-null object, not a missing
 string. Check whether the response came from this app at all before you look

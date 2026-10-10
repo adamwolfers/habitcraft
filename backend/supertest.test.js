@@ -10,7 +10,14 @@
  * Binding to 127.0.0.1 makes the other process's bind fail with EADDRINUSE.
  */
 
+const http = require('http');
+const jwt = require('jsonwebtoken');
 const request = require('supertest');
+const app = require('./app');
+const { JWT_SECRET } = require('./config/jwt');
+
+jest.mock('./db/pool');
+jest.mock('./utils/securityLogger');
 
 describe('supertest', () => {
   it('binds its server to loopback, not to every interface', async () => {
@@ -20,5 +27,61 @@ describe('supertest', () => {
     }).get('/');
 
     expect(response.body.boundTo).toBe('127.0.0.1');
+  });
+
+  describe('when another server binds 127.0.0.1 on its port', () => {
+    // Replays oft7 on demand rather than waiting for it. The next listen() is
+    // supertest starting its server; as soon as that has a port, an impostor
+    // tries to bind 127.0.0.1 on it and answers the way oft7's response looked.
+    // supertest sends nothing until the test is awaited, so awaiting the
+    // impostor's bind first takes the race out.
+    //
+    // On supertest 7.1.4 under macOS the impostor binds and answers this test.
+    // Linux refuses that bind even for a wildcard server, so CI passes either way.
+    const realListen = http.Server.prototype.listen;
+    let impostor;
+    let impostorBind;
+
+    beforeEach(() => {
+      impostor = http.createServer((req, res) => {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { type: 'impostor' } }));
+      });
+
+      jest.spyOn(http.Server.prototype, 'listen').mockImplementationOnce(function (...args) {
+        const result = realListen.apply(this, args);
+        impostorBind = new Promise((resolve) => {
+          const bind = () => {
+            impostor.once('error', (error) => resolve(error.code));
+            impostor.once('listening', () => resolve('bound'));
+            realListen.call(impostor, this.address().port, '127.0.0.1');
+          };
+          // A wildcard listen(0) has its port already; a hosted one binds later.
+          if (this.address()) bind();
+          else this.prependOnceListener('listening', bind);
+        });
+        return result;
+      });
+    });
+
+    afterEach(async () => {
+      jest.restoreAllMocks();
+      if (impostor.listening) await new Promise((resolve) => impostor.close(resolve));
+    });
+
+    it('still delivers the request to the app', async () => {
+      const refreshToken = jwt.sign({ userId: 'user-1', type: 'refresh' }, JWT_SECRET, {
+        expiresIn: '-1s',
+      });
+
+      const pending = request(app).post('/api/v1/auth/refresh').send({ refreshToken });
+
+      const bindResult = await impostorBind;
+      const response = await pending;
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Refresh token expired');
+      expect(bindResult).toBe('EADDRINUSE');
+    });
   });
 });
