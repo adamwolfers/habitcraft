@@ -17,7 +17,7 @@ Next.js + React + TypeScript implementation of the HabitCraft UI.
 - Logout functionality with session management
 - Habit management UI (create, update, delete)
 - Edit habit modal with validation
-- User profile modal with name/email editing
+- User profile modal with name/email editing, password change, and account deletion (password-confirmed; clears the session and local view preferences, then redirects to login)
 - Calendar week/month view with completion tracking and notes
 - Week navigation (previous/next)
 - Optimistic UI updates
@@ -141,7 +141,9 @@ frontend/
 │   ├── dateUtils.ts              # Date manipulation
 │   ├── dateUtils.test.ts         # Date utils tests
 │   ├── habitUtils.ts             # Habit lookup utilities
-│   └── habitUtils.test.ts        # Habit utils tests
+│   ├── habitUtils.test.ts        # Habit utils tests
+│   ├── storageUtils.ts           # localStorage keys and cleanup
+│   └── storageUtils.test.ts      # Storage utils tests
 ├── playwright.config.ts           # Playwright configuration
 └── package.json                   # Dependencies and scripts
 ```

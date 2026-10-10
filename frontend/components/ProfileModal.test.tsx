@@ -947,4 +947,167 @@ describe('ProfileModal', () => {
       });
     });
   });
+  describe('Delete Account Section', () => {
+    const mockOnDeleteAccount = jest.fn();
+
+    beforeEach(() => {
+      mockOnDeleteAccount.mockReset();
+    });
+
+    const renderWithDelete = () =>
+      render(
+        <ProfileModal
+          user={mockUser}
+          isOpen={true}
+          onClose={mockOnClose}
+          onUpdate={mockOnUpdate}
+          onDeleteAccount={mockOnDeleteAccount}
+        />
+      );
+
+    const startDeletion = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(screen.getByRole('button', { name: 'Delete Account' }));
+    };
+
+    it('should not render the section when onDeleteAccount is not provided', () => {
+      render(
+        <ProfileModal user={mockUser} isOpen={true} onClose={mockOnClose} onUpdate={mockOnUpdate} />
+      );
+
+      expect(screen.queryByRole('button', { name: 'Delete Account' })).not.toBeInTheDocument();
+    });
+
+    it('should not ask for the password until deletion is started', () => {
+      renderWithDelete();
+
+      expect(screen.getByRole('button', { name: 'Delete Account' })).toBeInTheDocument();
+      expect(screen.queryByLabelText(/enter your password to confirm/i)).not.toBeInTheDocument();
+    });
+
+    it('should show a warning and a password confirmation when deletion is started', async () => {
+      const user = userEvent.setup();
+      renderWithDelete();
+
+      await startDeletion(user);
+
+      expect(screen.getByText(/cannot be undone/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/enter your password to confirm/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Permanently Delete' })).toBeInTheDocument();
+    });
+
+    it('should disable the confirm button until a password is entered', async () => {
+      const user = userEvent.setup();
+      renderWithDelete();
+
+      await startDeletion(user);
+
+      const confirmButton = screen.getByRole('button', { name: 'Permanently Delete' });
+      expect(confirmButton).toBeDisabled();
+
+      await user.type(screen.getByLabelText(/enter your password to confirm/i), 'mypassword');
+
+      expect(confirmButton).toBeEnabled();
+    });
+
+    it('should call onDeleteAccount with the password when confirmed', async () => {
+      const user = userEvent.setup();
+      mockOnDeleteAccount.mockResolvedValue(undefined);
+      renderWithDelete();
+
+      await startDeletion(user);
+      await user.type(screen.getByLabelText(/enter your password to confirm/i), 'mypassword');
+      await user.click(screen.getByRole('button', { name: 'Permanently Delete' }));
+
+      expect(mockOnDeleteAccount).toHaveBeenCalledWith('mypassword');
+    });
+
+    it('should back out of deletion without calling onDeleteAccount', async () => {
+      const user = userEvent.setup();
+      renderWithDelete();
+
+      await startDeletion(user);
+      await user.type(screen.getByLabelText(/enter your password to confirm/i), 'mypassword');
+      await user.click(screen.getByRole('button', { name: 'Keep Account' }));
+
+      expect(mockOnDeleteAccount).not.toHaveBeenCalled();
+      expect(screen.queryByLabelText(/enter your password to confirm/i)).not.toBeInTheDocument();
+
+      // Starting again does not keep the old password around
+      await startDeletion(user);
+      expect(screen.getByLabelText(/enter your password to confirm/i)).toHaveValue('');
+    });
+
+    it('should show a loading state while deleting', async () => {
+      const user = userEvent.setup();
+      mockOnDeleteAccount.mockImplementation(() => new Promise(() => {}));
+      renderWithDelete();
+
+      await startDeletion(user);
+      await user.type(screen.getByLabelText(/enter your password to confirm/i), 'mypassword');
+      await user.click(screen.getByRole('button', { name: 'Permanently Delete' }));
+
+      const deletingButton = screen.getByRole('button', { name: 'Deleting...' });
+      expect(deletingButton).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Keep Account' })).toBeDisabled();
+    });
+
+    it('should show the error and stay in confirmation when deletion fails', async () => {
+      const user = userEvent.setup();
+      mockOnDeleteAccount.mockRejectedValue(new Error('Invalid password'));
+      renderWithDelete();
+
+      await startDeletion(user);
+      await user.type(screen.getByLabelText(/enter your password to confirm/i), 'wrongpass');
+      await user.click(screen.getByRole('button', { name: 'Permanently Delete' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('Invalid password');
+      });
+      expect(screen.getByRole('button', { name: 'Permanently Delete' })).toBeEnabled();
+      expect(mockOnClose).not.toHaveBeenCalled();
+    });
+
+    it('should show a generic error when deletion fails with a non-Error', async () => {
+      const user = userEvent.setup();
+      mockOnDeleteAccount.mockRejectedValue('boom');
+      renderWithDelete();
+
+      await startDeletion(user);
+      await user.type(screen.getByLabelText(/enter your password to confirm/i), 'mypassword');
+      await user.click(screen.getByRole('button', { name: 'Permanently Delete' }));
+
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toHaveTextContent('Failed to delete account');
+      });
+    });
+
+    it('should clear the error when the password is edited', async () => {
+      const user = userEvent.setup();
+      mockOnDeleteAccount.mockRejectedValue(new Error('Invalid password'));
+      renderWithDelete();
+
+      await startDeletion(user);
+      const passwordInput = screen.getByLabelText(/enter your password to confirm/i);
+      await user.type(passwordInput, 'wrongpass');
+      await user.click(screen.getByRole('button', { name: 'Permanently Delete' }));
+      await waitFor(() => {
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+      });
+
+      await user.type(passwordInput, 'x');
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('should reset the confirmation when the modal is closed', async () => {
+      const user = userEvent.setup();
+      renderWithDelete();
+
+      await startDeletion(user);
+      await user.click(screen.getByRole('button', { name: 'Close' }));
+
+      expect(mockOnClose).toHaveBeenCalled();
+      expect(screen.queryByLabelText(/enter your password to confirm/i)).not.toBeInTheDocument();
+    });
+  });
 });

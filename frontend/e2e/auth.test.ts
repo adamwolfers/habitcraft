@@ -472,6 +472,49 @@ test.describe('Authentication', () => {
     });
   });
 
+  test.describe('Profile Modal Delete Account', () => {
+    test('should delete the account, sign out, and reject the old credentials', async ({
+      page,
+    }) => {
+      // Create a unique user for this test -- it is destroyed below
+      const uniqueEmail = `modal-delete-${Date.now()}@example.com`;
+      await page.goto('/register');
+      await page.getByLabel(/name/i).fill('Delete Me');
+      await page.getByLabel(/email/i).fill(uniqueEmail);
+      await page.getByLabel(/^password$/i).fill('Test1234!');
+      await page.getByLabel(/confirm password/i).fill('Test1234!');
+      await page.getByRole('button', { name: /sign up/i }).click();
+      await expect(page).toHaveURL('/dashboard');
+
+      await page.getByRole('button', { name: /profile/i }).click();
+      await page.getByRole('button', { name: /edit profile/i }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+
+      // A wrong password is refused and nothing is deleted
+      await dialog.getByRole('button', { name: 'Delete Account' }).click();
+      await dialog.getByLabel(/enter your password to confirm/i).fill('WrongPass1!');
+      await dialog.getByRole('button', { name: 'Permanently Delete' }).click();
+      await expect(dialog.getByRole('alert')).toHaveText('Invalid password');
+      await expect(page).toHaveURL('/dashboard');
+
+      // The right password deletes the account and lands on login
+      await dialog.getByLabel(/enter your password to confirm/i).fill('Test1234!');
+      await dialog.getByRole('button', { name: 'Permanently Delete' }).click();
+      await expect(page).toHaveURL('/login');
+
+      // The session is gone: protected routes bounce back to login
+      await page.goto('/dashboard');
+      await expect(page).toHaveURL('/login');
+
+      // And the account no longer exists
+      await page.getByLabel(/email/i).fill(uniqueEmail);
+      await page.locator('#password').fill('Test1234!');
+      await page.getByRole('button', { name: /log in/i }).click();
+      await expect(page.getByText(/invalid/i)).toBeVisible();
+    });
+  });
+
   test.describe('Token Refresh', () => {
     test('should refresh token automatically when access token expires', async ({
       page,

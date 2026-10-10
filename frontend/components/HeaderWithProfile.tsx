@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { changePassword } from '@/lib/api';
 import Header from './Header';
@@ -11,7 +12,8 @@ interface HeaderWithProfileProps {
 }
 
 export default function HeaderWithProfile({ variant }: HeaderWithProfileProps) {
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, deleteAccount } = useAuth();
+  const router = useRouter();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const handleOpenProfileModal = () => {
@@ -34,6 +36,12 @@ export default function HeaderWithProfile({ variant }: HeaderWithProfileProps) {
     await changePassword(currentPassword, newPassword, confirmPassword);
   };
 
+  const handleDeleteAccount = async (password: string) => {
+    await deleteAccount(password);
+    setIsProfileModalOpen(false);
+    router.push('/login');
+  };
+
   return (
     <>
       <Header variant={variant} onOpenProfileModal={handleOpenProfileModal} />
@@ -44,6 +52,7 @@ export default function HeaderWithProfile({ variant }: HeaderWithProfileProps) {
           onClose={handleCloseProfileModal}
           onUpdate={handleUpdateProfile}
           onChangePassword={handleChangePassword}
+          onDeleteAccount={handleDeleteAccount}
         />
       )}
     </>

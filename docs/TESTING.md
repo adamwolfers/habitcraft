@@ -603,6 +603,8 @@ All 5 update tests create their own habits before testing.
 - Profile update tests register unique users before testing
 - "Email already taken" tests create unique users, then check against User 1's email
 - Profile Modal describe block creates unique users for each test
+- The delete-account test registers its own user and destroys it; it never
+  deletes a fixture user
 
 ```typescript
 test('should show error when email already taken', async ({ page }) => {

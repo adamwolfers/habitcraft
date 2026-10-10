@@ -22,6 +22,7 @@ interface ProfileModalProps {
     newPassword: string,
     confirmPassword: string
   ) => Promise<void>;
+  onDeleteAccount?: (password: string) => Promise<void>;
 }
 
 export default function ProfileModal({
@@ -30,6 +31,7 @@ export default function ProfileModal({
   onClose,
   onUpdate,
   onChangePassword,
+  onDeleteAccount,
 }: ProfileModalProps) {
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
@@ -44,15 +46,47 @@ export default function ProfileModal({
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // Delete account state
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   if (!isOpen) {
     return null;
   }
+
+  const resetDeleteConfirmation = () => {
+    setIsConfirmingDelete(false);
+    setDeletePassword('');
+    setDeleteError(null);
+  };
 
   const handleClose = () => {
     setError(null);
     setPasswordError(null);
     setPasswordSuccess(false);
+    resetDeleteConfirmation();
     onClose();
+  };
+
+  const handleDeleteAccount = async () => {
+    if (!onDeleteAccount) {
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      // On success the caller signs the user out and navigates away, which
+      // unmounts this modal, so there is no success state to show here.
+      await onDeleteAccount(deletePassword);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete account';
+      setDeleteError(errorMessage);
+      setIsDeleting(false);
+    }
   };
 
   const trimmedName = name.trim();
@@ -129,11 +163,11 @@ export default function ProfileModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
       data-testid="modal-backdrop"
     >
       <div
-        className="bg-gray-800 rounded-lg p-6 w-full max-w-md"
+        className="bg-gray-800 rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto"
         role="dialog"
         aria-labelledby="profile-modal-title"
       >
@@ -305,6 +339,79 @@ export default function ProfileModal({
                 {isChangingPassword ? 'Changing...' : 'Change Password'}
               </button>
             </div>
+          </div>
+        )}
+
+        {onDeleteAccount && (
+          <div className="mt-6 pt-6 border-t border-gray-700">
+            <h3 className="text-lg font-medium mb-2 text-red-500">Delete Account</h3>
+            {!isConfirmingDelete ? (
+              <>
+                <p className="text-sm text-gray-400 mb-4">
+                  Permanently delete your account, along with all of your habits and their history.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="w-full px-4 py-2 border border-red-500 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                >
+                  Delete Account
+                </button>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-300">
+                  This deletes your account and every habit and completion in it. It cannot be
+                  undone.
+                </p>
+                <div>
+                  <label
+                    htmlFor="delete-account-password"
+                    className="block text-sm font-medium mb-2"
+                  >
+                    Enter your password to confirm
+                  </label>
+                  <PasswordInput
+                    id="delete-account-password"
+                    value={deletePassword}
+                    onChange={(e) => {
+                      setDeletePassword(e.target.value);
+                      setDeleteError(null);
+                    }}
+                    disabled={isDeleting}
+                    className="w-full px-3 py-2 pr-12 bg-gray-700 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                </div>
+
+                {deleteError && (
+                  <div
+                    role="alert"
+                    className="p-3 bg-red-500/10 border border-red-500 text-red-500 rounded-lg text-sm"
+                  >
+                    {deleteError}
+                  </div>
+                )}
+
+                <div className="flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={resetDeleteConfirmation}
+                    disabled={isDeleting}
+                    className="px-4 py-2 text-gray-400 hover:text-white disabled:cursor-not-allowed transition-colors"
+                  >
+                    Keep Account
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDeleteAccount}
+                    disabled={!deletePassword || isDeleting}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Permanently Delete'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
