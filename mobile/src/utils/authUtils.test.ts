@@ -2,6 +2,7 @@ import {
   validateRegisterForm,
   validateLoginForm,
   validateProfileForm,
+  validatePasswordChangeForm,
   getProfileChanges,
   isValidEmail,
   hasErrors,
@@ -11,7 +12,10 @@ import {
   PASSWORD_MAX_LENGTH,
   PROFILE_NAME_MAX_LENGTH,
   PROFILE_EMAIL_MAX_LENGTH,
+  NEW_PASSWORD_MIN_LENGTH,
+  NEW_PASSWORD_MAX_LENGTH,
 } from './authUtils';
+import { requestLimits } from '@/types/apiLimits.generated';
 
 const validRegistration = {
   name: 'Test User',
@@ -271,6 +275,63 @@ describe('getProfileChanges', () => {
     });
     expect(getProfileChanges(user, { name: 'Test User', email: ' new@example.com ' })).toEqual({
       email: 'new@example.com',
+    });
+  });
+});
+
+describe('validatePasswordChangeForm', () => {
+  const newPassword = 'n'.repeat(NEW_PASSWORD_MIN_LENGTH);
+  const valid = { currentPassword: 'old-password', newPassword, confirmPassword: newPassword };
+
+  it('takes its limits from the change-password request, not sign-up', () => {
+    expect(NEW_PASSWORD_MIN_LENGTH).toBe(requestLimits.changePassword.newPassword.minLength);
+    expect(NEW_PASSWORD_MAX_LENGTH).toBe(requestLimits.changePassword.newPassword.maxLength);
+  });
+
+  it('accepts a valid change', () => {
+    expect(validatePasswordChangeForm(valid)).toEqual({});
+  });
+
+  it('requires the current password', () => {
+    expect(validatePasswordChangeForm({ ...valid, currentPassword: '' })).toEqual({
+      currentPassword: 'Current password is required',
+    });
+  });
+
+  it('enforces the new password length limits', () => {
+    const short = 'n'.repeat(NEW_PASSWORD_MIN_LENGTH - 1);
+    expect(
+      validatePasswordChangeForm({ ...valid, newPassword: short, confirmPassword: short })
+    ).toEqual({
+      newPassword: `New password must be at least ${NEW_PASSWORD_MIN_LENGTH} characters`,
+    });
+
+    const atMax = 'n'.repeat(NEW_PASSWORD_MAX_LENGTH);
+    expect(
+      validatePasswordChangeForm({ ...valid, newPassword: atMax, confirmPassword: atMax })
+    ).toEqual({});
+
+    const long = `${atMax}n`;
+    expect(
+      validatePasswordChangeForm({ ...valid, newPassword: long, confirmPassword: long })
+    ).toEqual({
+      newPassword: `New password must be ${NEW_PASSWORD_MAX_LENGTH} characters or less`,
+    });
+  });
+
+  it('requires the confirmation to match the new password', () => {
+    expect(validatePasswordChangeForm({ ...valid, confirmPassword: `${newPassword}x` })).toEqual({
+      confirmPassword: 'Passwords do not match',
+    });
+  });
+
+  it('reports every failure at once', () => {
+    expect(
+      validatePasswordChangeForm({ currentPassword: '', newPassword: '', confirmPassword: 'x' })
+    ).toEqual({
+      currentPassword: 'Current password is required',
+      newPassword: `New password must be at least ${NEW_PASSWORD_MIN_LENGTH} characters`,
+      confirmPassword: 'Passwords do not match',
     });
   });
 });

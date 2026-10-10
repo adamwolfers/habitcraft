@@ -11,6 +11,8 @@ export const PASSWORD_MIN_LENGTH = requestLimits.register.password.minLength;
 export const PASSWORD_MAX_LENGTH = requestLimits.register.password.maxLength;
 export const PROFILE_NAME_MAX_LENGTH = requestLimits.updateCurrentUser.name.maxLength;
 export const PROFILE_EMAIL_MAX_LENGTH = requestLimits.updateCurrentUser.email.maxLength;
+export const NEW_PASSWORD_MIN_LENGTH = requestLimits.changePassword.newPassword.minLength;
+export const NEW_PASSWORD_MAX_LENGTH = requestLimits.changePassword.newPassword.maxLength;
 
 export function isValidEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -20,10 +22,12 @@ export function isValidEmail(email: string): boolean {
 export type RegisterField = 'name' | 'email' | 'password';
 export type LoginField = 'email' | 'password';
 export type ProfileField = 'name' | 'email';
+export type PasswordChangeField = 'currentPassword' | 'newPassword' | 'confirmPassword';
 
 export type RegisterFieldErrors = Partial<Record<RegisterField, string>>;
 export type LoginFieldErrors = Partial<Record<LoginField, string>>;
 export type ProfileFieldErrors = Partial<Record<ProfileField, string>>;
+export type PasswordChangeFieldErrors = Partial<Record<PasswordChangeField, string>>;
 
 export interface RegisterFormValues {
   name: string;
@@ -40,6 +44,8 @@ export interface ProfileFormValues {
   name: string;
   email: string;
 }
+
+export type PasswordChangeFormValues = Record<PasswordChangeField, string>;
 
 function validateEmailFormat(email: string): string | undefined {
   if (!email.trim()) {
@@ -135,6 +141,34 @@ export function validateProfileForm(values: ProfileFormValues): ProfileFieldErro
 }
 
 /**
+ * Validates the Profile screen's change-password form with the same rules and
+ * messages as PUT /users/me/password, so the server's 400 is only a backstop.
+ * The current password gets a presence check only: like log-in, a length
+ * rule here would lock out a password set before a limit changed.
+ */
+export function validatePasswordChangeForm(
+  values: PasswordChangeFormValues
+): PasswordChangeFieldErrors {
+  const errors: PasswordChangeFieldErrors = {};
+
+  if (!values.currentPassword) {
+    errors.currentPassword = 'Current password is required';
+  }
+
+  if (values.newPassword.length < NEW_PASSWORD_MIN_LENGTH) {
+    errors.newPassword = `New password must be at least ${NEW_PASSWORD_MIN_LENGTH} characters`;
+  } else if (values.newPassword.length > NEW_PASSWORD_MAX_LENGTH) {
+    errors.newPassword = `New password must be ${NEW_PASSWORD_MAX_LENGTH} characters or less`;
+  }
+
+  if (values.confirmPassword !== values.newPassword) {
+    errors.confirmPassword = 'Passwords do not match';
+  }
+
+  return errors;
+}
+
+/**
  * The fields the user actually changed, trimmed, ready for PUT /users/me.
  * Sending only those keeps an unchanged email out of the uniqueness check.
  * Email is compared lowercased because the server lowercases what it stores,
@@ -164,7 +198,7 @@ export function getProfileChanges(
  * longer there.
  */
 export function hasErrors(
-  errors: RegisterFieldErrors | LoginFieldErrors | ProfileFieldErrors
+  errors: RegisterFieldErrors | LoginFieldErrors | ProfileFieldErrors | PasswordChangeFieldErrors
 ): boolean {
   return Object.values(errors).some((message) => message !== undefined);
 }
