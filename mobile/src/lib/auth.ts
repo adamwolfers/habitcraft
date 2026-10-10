@@ -186,4 +186,19 @@ export const authApi = {
       throw toAuthApiError(error);
     }
   },
+
+  /**
+   * The server requires the account password as confirmation. The tokens are
+   * cleared only after the DELETE succeeds: the backend has already removed
+   * the refresh tokens, so they are useless, and a failure (wrong password,
+   * rate limit) must leave the user signed in to retry.
+   */
+  async deleteAccount(password: string): Promise<void> {
+    try {
+      await api.delete('/users/me', { data: { password } });
+    } catch (error) {
+      throw toAuthApiError(error);
+    }
+    await storage.clearTokens();
+  },
 };

@@ -12,6 +12,7 @@ jest.mock('./api', () => ({
   api: {
     get: jest.fn(),
     put: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 const mockApi = api as jest.Mocked<typeof api>;
@@ -351,6 +352,55 @@ describe('authApi', () => {
       await expect(authApi.updateProfile({ email: 'taken@example.com' })).rejects.toMatchObject({
         message: 'Email is already in use',
         status: 409,
+      });
+    });
+  });
+
+  describe('deleteAccount', () => {
+    it('makes DELETE request to /users/me with the password in the body', async () => {
+      mockApi.delete.mockResolvedValueOnce({ status: 204 });
+
+      await authApi.deleteAccount('password123');
+
+      expect(mockApi.delete).toHaveBeenCalledWith('/users/me', {
+        data: { password: 'password123' },
+      });
+    });
+
+    it('clears stored tokens once the account is gone', async () => {
+      mockApi.delete.mockResolvedValueOnce({ status: 204 });
+
+      await authApi.deleteAccount('password123');
+
+      expect(mockStorage.clearTokens).toHaveBeenCalled();
+    });
+
+    it('rejects with the server message and status on a wrong password, keeping tokens', async () => {
+      mockApi.delete.mockRejectedValueOnce({
+        response: { status: 401, data: { error: 'Invalid password' } },
+      });
+
+      await expect(authApi.deleteAccount('wrong')).rejects.toMatchObject({
+        message: 'Invalid password',
+        status: 401,
+      });
+      expect(mockStorage.clearTokens).not.toHaveBeenCalled();
+    });
+
+    it("rejects with the rate limiter's readable message on a 429", async () => {
+      mockApi.delete.mockRejectedValueOnce({
+        response: {
+          status: 429,
+          data: {
+            error: 'Too many account deletion attempts',
+            message: 'Too many account deletion attempts, please try again later.',
+          },
+        },
+      });
+
+      await expect(authApi.deleteAccount('password123')).rejects.toMatchObject({
+        message: 'Too many account deletion attempts, please try again later.',
+        status: 429,
       });
     });
   });
