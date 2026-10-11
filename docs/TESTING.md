@@ -202,7 +202,7 @@ TypeScript and split into four layers:
 
 | Layer | Knows about | Example |
 |---|---|---|
-| **Test cases** | The problem domain only. No selectors, URLs, status codes or fixtures | `habits.create("Morning run"); habits.checkOff("Morning run", today); habits.shouldShowStreak("Morning run", 1)` |
+| **Test cases** | The problem domain only. No selectors, URLs, status codes or fixtures | `habits.create("Morning run"); habits.checkOff("Morning run", today); today.shouldNotList("Morning run")` |
 | **DSL** | Translating domain calls into driver calls; test isolation | Turns the alias `"Morning run"` into a unique name per test run, so tests never share data |
 | **Protocol drivers** | One channel each: **API** (HTTP), **web** (Playwright), later native apps (WebdriverIO + Appium) | The web driver clicks; the API driver POSTs |
 | **System under test** | — | The Node backend today, the Go server after the rebuild; the Next.js app today, the Vite SPA after |
