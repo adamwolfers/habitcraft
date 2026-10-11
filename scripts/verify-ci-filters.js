@@ -103,6 +103,11 @@ const CASES = [
 
   // --- workflow -------------------------------------------------------------
   ['.github/workflows/ci.yml', true, ['workflow']],
+
+  // --- acceptance -----------------------------------------------------------
+  ['acceptance/tests/habits.test.ts', true, ['acceptance']],
+  ['acceptance/drivers/api/apiDriver.ts', true, ['acceptance']],
+  ['acceptance/README.md', false, []],
   // Regression: link-check.yml triggered ci.yml while matching no filter --
   // a green run that tested nothing. It must be in paths-ignore.
   ['.github/workflows/link-check.yml', false, []],

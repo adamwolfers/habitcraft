@@ -91,6 +91,12 @@ const CONSUMERS = [
     files: [TYPES_FILE, LIMITS_FILE],
   },
   {
+    // The acceptance suite's API driver types its requests and responses.
+    name: 'acceptance',
+    dir: path.join(PROJECT_ROOT, 'acceptance/drivers/api'),
+    files: [TYPES_FILE],
+  },
+  {
     name: 'backend',
     dir: path.join(PROJECT_ROOT, 'backend/validators'),
     files: [LIMITS_FILE_CJS],

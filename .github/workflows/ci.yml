@@ -113,6 +113,7 @@ jobs:
       e2e-infra: ${{ steps.filter.outputs.e2e-infra }}
       tooling: ${{ steps.filter.outputs.tooling }}
       workflow: ${{ steps.filter.outputs.workflow }}
+      acceptance: ${{ steps.filter.outputs.acceptance }}
     steps:
       - uses: actions/checkout@v4
 
@@ -211,6 +212,13 @@ jobs:
               - '!**/*.md'
             workflow:
               - '.github/workflows/ci.yml'
+            # The four-layer acceptance suite. No job reads this yet; its CI job
+            # arrives with habitcraft-a8dg. The filter exists now so the
+            # verify-ci-filters sweep does not flag acceptance/ as a path that
+            # triggers the workflow but matches nothing.
+            acceptance:
+              - 'acceptance/**'
+              - '!**/*.md'
 
   # ===========================================
   # CI Configuration Checks

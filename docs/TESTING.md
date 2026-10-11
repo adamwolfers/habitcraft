@@ -11,6 +11,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
 | Mobile Unit | Jest (`jest-expo` preset) + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
+| Acceptance | Playwright (TypeScript) | `acceptance/` | Four-layer ATDD: domain-language test cases run unchanged through each protocol driver. See [Acceptance Tests](#acceptance-tests-four-layer-atdd) |
 | Mobile E2E | Detox | `mobile/e2e/` | The real app on a simulator or emulator against the test backend. CI runs the `@smoke` subset on Android. See [Mobile E2E (Detox)](#mobile-e2e-detox) |
 | Doc Links | lychee | all tracked `*.md` | Relative links still resolve after files move |
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
@@ -190,9 +191,11 @@ need.
 
 ## Acceptance Tests (four-layer ATDD)
 
-> **Status:** adopted 2026-10-10, not yet built. The suite is the first child of
-> the rebuild epic, because it is also the parity harness for the Node → Go
-> rewrite. Until it exists, the Playwright E2E and integration suites below
+> **Status:** walking skeleton in [`acceptance/`](../acceptance/README.md): the
+> DSL and the API protocol driver, green against the Node backend. The web
+> driver, the ported scenarios and the CI job are still to come (children of
+> habitcraft-vxln.2). The suite is the parity harness for the Node → Go
+> rewrite. Until it runs in CI, the Playwright E2E and integration suites below
 > remain the gates.
 
 HabitCraft follows Dave Farley's acceptance-test-driven development. **Every
