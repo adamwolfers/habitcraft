@@ -9,7 +9,11 @@ HabitCraft is a free, open-source (AGPL-3.0), self-hostable habit tracker. Start
 HabitCraft is being **rebuilt side by side** on a new stack. The current stack and production keep running until the new one reaches parity, then the old one is deleted:
 
 - **Backend:** a Go monolith whose server is generated from `shared/api-spec/openapi.yaml` (`oapi-codegen`), packaged as an embeddable Go module plus a standalone binary. `db/migrations/` carries over unchanged.
-- **Web:** a React + Vite SPA, a static bundle served by the Go binary (no Node in production).
+- **Web:** a React + Vite SPA, a static bundle served by the Go binary (no Node in production). It ships new views rather than copying the Next.js UI (decided 2026-10-11):
+  - **Today** (the default): the active habits not yet done today. A completed habit leaves the list, and a collapsed "Completed today (N)" row at the bottom expands to list them, where a completion can be undone.
+  - **Dots**: one compact grid per habit, a dot per day running back up to a year. Filled means done, so consistency shows at a glance.
+  - **Habit detail**: a month calendar for backfilling past days and adding notes, plus completion rates over 30 and 365 days.
+  - The per-habit Week/Month toggles are not carried over. Deliberately, **habits are daily only** (no other schedules) and there is **no streak tracking**.
 - **Hosting:** a single VPS deployed with Kamal, replacing Cloud Run + Cloud SQL.
 - **Testing:** acceptance-test-driven development using Dave Farley's four-layer model (test cases in domain language → DSL → protocol drivers → system), in TypeScript. The same acceptance suite proves the Node → Go parity. See [docs/TESTING.md](docs/TESTING.md#acceptance-tests-four-layer-atdd).
 - **Native mobile apps** move out of this repository; the Expo app here is retired at cutover.
@@ -192,13 +196,13 @@ The work is tracked in beads under the rebuild epic (`bd list --type epic`).
   - Visual feedback for password strength (weak/medium/strong)
   - Real-time password strength calculation
 - **Statistics & Analytics**
-  - Streak tracking
-  - Completion rate calculations
+  - Completion rate calculations (planned for the rebuild's habit detail page)
   - Habit performance charts
   - Weekly/monthly reports
 - **API Enhancements**
   - GET /api/v1/habits/{habitId} - Get single habit by ID
-  - GET /api/v1/habits/{habitId}/statistics - Get habit statistics
+  - GET /api/v1/habits/{habitId}/stats - Get habit completion rates (planned for the rebuild)
+  - GET /api/v1/completions - Completions across all habits for a date range (planned for the rebuild)
 - **Habit Organization**
   - Categories and tags
   - Habit grouping
