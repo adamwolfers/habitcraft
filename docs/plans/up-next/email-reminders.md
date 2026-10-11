@@ -1,4 +1,4 @@
-# Plan: Email Reminders with Configurable Frequency
+# Plan: Email Reminders at a Chosen Time of Day
 
 **Status:** Pending
 **Branch:** `feature/email-reminders`
@@ -6,18 +6,12 @@
 
 ## Summary
 
-Implement email reminder functionality allowing users to receive periodic reminders about their habits. Users can configure reminder frequency at multiple levels:
+Implement email reminder functionality allowing users to receive daily reminders about their habits. Habits are daily, so each reminder is sent once a day. Users configure reminders at two levels:
 
 1. **Global preferences** - Master enable/disable, timezone, default reminder time
-2. **Per-habit settings** - Enable/disable, frequency, and **time of day** per individual habit
+2. **Per-habit settings** - Enable/disable and **time of day** per individual habit
 
-**Frequency options:**
-- Daily
-- Every X days (2-30)
-- Weekly (specific day)
-- Every X weeks (2-12)
-- Monthly (specific day of month)
-- Every X months (2-12)
+A reminder is skipped on days the habit is already completed.
 
 ---
 
@@ -80,12 +74,6 @@ CREATE TABLE habit_reminder_settings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     habit_id UUID NOT NULL UNIQUE REFERENCES habits(id) ON DELETE CASCADE,
     enabled BOOLEAN DEFAULT false,
-    frequency_type VARCHAR(20) NOT NULL CHECK (
-        frequency_type IN ('daily', 'every_x_days', 'weekly', 'every_x_weeks', 'monthly', 'every_x_months')
-    ),
-    frequency_value INTEGER DEFAULT 1,  -- X in "every X days/weeks/months"
-    day_of_week INTEGER CHECK (day_of_week >= 0 AND day_of_week <= 6),  -- 0=Sunday, for weekly
-    day_of_month INTEGER CHECK (day_of_month >= 1 AND day_of_month <= 31),  -- for monthly
     reminder_time TIME NOT NULL DEFAULT '09:00:00',  -- Time of day for this habit's reminder
     last_sent_at TIMESTAMP WITH TIME ZONE,
     next_send_at TIMESTAMP WITH TIME ZONE,
@@ -190,20 +178,16 @@ npm install --save-dev @types/node-cron
 - `backend/services/reminderService.test.js`
 
 #### 4a. Write tests first
-- [ ] Test: `calculateNextSendTime()` for daily frequency at specific time
-- [ ] Test: `calculateNextSendTime()` for every X days at specific time
-- [ ] Test: `calculateNextSendTime()` for weekly (specific day) at specific time
-- [ ] Test: `calculateNextSendTime()` for every X weeks at specific time
-- [ ] Test: `calculateNextSendTime()` for monthly (specific day) at specific time
-- [ ] Test: `calculateNextSendTime()` for every X months at specific time
+- [ ] Test: `calculateNextSendTime()` returns today's reminder_time if still ahead, otherwise tomorrow's
 - [ ] Test: `calculateNextSendTime()` handles timezone correctly with reminder_time
 - [ ] Test: `calculateNextSendTime()` sets correct hour/minute from reminder_time
 - [ ] Test: `getDueReminders()` returns reminders where next_send_at <= now
 - [ ] Test: `processReminder()` sends email and updates next_send_at
+- [ ] Test: `processReminder()` skips sending when the habit is already completed today, and still advances next_send_at
 - [ ] Test: `processReminder()` logs to email_send_log
 
 #### 4b. Implement reminder service
-- [ ] Implement `calculateNextSendTime()` for all frequency types
+- [ ] Implement `calculateNextSendTime()` (next occurrence of reminder_time)
 - [ ] Implement `getDueReminders()` database query
 - [ ] Implement `processReminder()` orchestration
 - [ ] Implement `updateNextSendTime()` after sending
@@ -249,10 +233,6 @@ npm install --save-dev @types/node-cron
 - [ ] Test: GET returns 404 for non-existent habit
 - [ ] Test: GET returns null/defaults for habit without reminder
 - [ ] Test: GET returns saved reminder settings
-- [ ] Test: PUT validates frequency_type enum
-- [ ] Test: PUT validates frequency_value range (1-30 for days, 1-12 for weeks/months)
-- [ ] Test: PUT validates day_of_week for weekly (0-6)
-- [ ] Test: PUT validates day_of_month for monthly (1-31)
 - [ ] Test: PUT validates reminder_time format (HH:MM, 00:00-23:59)
 - [ ] Test: PUT calculates and sets next_send_at based on reminder_time
 - [ ] Test: PUT requires user to have reminders_enabled globally
@@ -315,20 +295,8 @@ interface UserEmailPreferences {
   timezone: string;             // IANA timezone
 }
 
-type ReminderFrequencyType =
-  | 'daily'
-  | 'every_x_days'
-  | 'weekly'
-  | 'every_x_weeks'
-  | 'monthly'
-  | 'every_x_months';
-
 interface HabitReminderSettings {
   enabled: boolean;
-  frequencyType: ReminderFrequencyType;
-  frequencyValue: number;
-  dayOfWeek?: number;    // 0-6 for weekly
-  dayOfMonth?: number;   // 1-31 for monthly
   reminderTime: string;  // HH:MM format, time of day for this habit
   nextSendAt?: string;   // ISO timestamp
 }
@@ -389,12 +357,7 @@ interface HabitReminderSettings {
 
 #### 5a. Write tests first
 - [ ] Test: renders enable toggle
-- [ ] Test: shows frequency options when enabled
 - [ ] Test: shows time-of-day picker when enabled
-- [ ] Test: shows "every X days" input when that option selected
-- [ ] Test: shows day picker for weekly option
-- [ ] Test: shows day-of-month picker for monthly option
-- [ ] Test: validates frequency_value range
 - [ ] Test: validates time format (HH:MM)
 - [ ] Test: disables all options if global reminders off
 - [ ] Test: shows next reminder time when configured
@@ -404,8 +367,6 @@ interface HabitReminderSettings {
 #### 5b. Implement component
 - [ ] Enable/disable toggle
 - [ ] Time-of-day picker (per habit)
-- [ ] Frequency type dropdown
-- [ ] Conditional inputs based on frequency type
 - [ ] Display next_send_at in user's timezone
 
 ### Step 6: Add Reminder Settings to EditHabitModal
@@ -427,10 +388,6 @@ interface HabitReminderSettings {
 - [ ] Test: user can set timezone
 - [ ] Test: user can enable reminder for a habit
 - [ ] Test: user can set custom time for habit reminder
-- [ ] Test: user can configure daily reminder
-- [ ] Test: user can configure every X days reminder
-- [ ] Test: user can configure weekly reminder
-- [ ] Test: user can configure monthly reminder
 - [ ] Test: user can disable reminder for a habit
 - [ ] Test: new habit reminder defaults to user's default time
 - [ ] Test: disabled global reminders disables habit reminder controls
@@ -580,7 +537,7 @@ interface HabitReminderSettings {
 - [ ] Enable reminders globally, set default time
 - [ ] Create habit reminder using default time, verify it's applied
 - [ ] Create habit reminder with custom time, verify it overrides default
-- [ ] Test each frequency type with different times
+- [ ] Complete a habit before its reminder time, verify no reminder is sent that day
 - [ ] Test timezone handling (set timezone different from server, verify correct local time)
 - [ ] Test unsubscribe link works
 - [ ] Test email renders correctly in major email clients (Gmail, Outlook, Apple Mail)

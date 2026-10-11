@@ -381,7 +381,6 @@ RootNavigator
 - [ ] Test: form includes all habit fields
 - [ ] Test: emoji picker for icon selection
 - [ ] Test: color picker for habit color
-- [ ] Test: frequency selector (daily, weekly, custom)
 - [ ] Test: validates required fields
 - [ ] Test: save button creates/updates habit
 - [ ] Test: navigates back on success
