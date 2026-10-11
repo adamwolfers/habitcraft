@@ -19,7 +19,7 @@ Node.js + Express implementation of the HabitCraft API.
 - Security event logging (failed logins, auth failures, token refresh)
 - TDD approach with comprehensive test coverage
 
-See [PROJECT_PLAN.md](../PROJECT_PLAN.md) for the complete project roadmap.
+See [Direction](../README.md#direction) for the planned rebuild.
 
 ## Tech Stack
 
@@ -240,4 +240,4 @@ This project follows TDD:
 2. Implement minimum code to pass the test
 3. Refactor if needed
 
-For the complete development roadmap, see [PROJECT_PLAN.md](../PROJECT_PLAN.md).
+For where the project is going, see [Direction](../README.md#direction).

@@ -5,11 +5,29 @@
 
 A free, open-source, self-hostable habit tracker, built test-first against an enforced API contract.
 
-> **Rebuild in progress.** HabitCraft is being rebuilt side by side on Go + a React/Vite SPA, with Farley-style acceptance tests proving parity before cutover. See [PROJECT_PLAN.md](./PROJECT_PLAN.md#direction-decided-2026-10-10).
+> **Rebuild in progress.** HabitCraft is being rebuilt side by side on Go + a React/Vite SPA, with Farley-style acceptance tests proving parity before cutover. See [Direction](#direction).
 
 ## Project Overview
 
 HabitCraft helps users build and track daily habits with an intuitive calendar-based interface. The application demonstrates professional software development practices including comprehensive testing, API design, and production-ready architecture.
+
+## Direction
+
+HabitCraft is a free, open-source, self-hostable habit tracker. Its core packages are also designed to be embedded by other applications.
+
+It is being **rebuilt side by side** on a new stack (decided 2026-10-10). The current stack and production keep running until the new one reaches parity, then the old one is deleted:
+
+- **Backend:** a Go monolith whose server is generated from `shared/api-spec/openapi.yaml` (`oapi-codegen`), packaged as an embeddable Go module plus a standalone binary. `db/migrations/` carries over unchanged.
+- **Web:** a React + Vite SPA, a static bundle served by the Go binary (no Node in production). It ships new views rather than copying the Next.js UI (decided 2026-10-11):
+  - **Today** (the default): the active habits not yet done today. A completed habit leaves the list, and a collapsed "Completed today (N)" row at the bottom expands to list them, where a completion can be undone.
+  - **Dots**: one compact grid per habit, a dot per day running back up to a year. Filled means done, so consistency shows at a glance.
+  - **Habit detail**: a month calendar for backfilling past days and adding notes, plus completion rates over 30 and 365 days.
+  - The per-habit Week/Month toggles are not carried over. Deliberately, **habits are daily only** (no other schedules) and there is **no streak tracking**.
+- **Hosting:** a single VPS deployed with Kamal, replacing Cloud Run + Cloud SQL.
+- **Testing:** acceptance-test-driven development using Dave Farley's four-layer model (test cases in domain language → DSL → protocol drivers → system), in TypeScript. The same acceptance suite proves the Node → Go parity. See [docs/TESTING.md](docs/TESTING.md#acceptance-tests-four-layer-atdd).
+- **Native mobile apps** move out of this repository; the Expo app here is retired at cutover.
+
+All planned work, including what comes after the rebuild, is tracked in [beads](./AGENTS.md): the rebuild is the `habitcraft-vxln` epic, and `bd ready` shows what's unblocked. There is no separate roadmap document.
 
 ## Technology Stack
 
@@ -34,7 +52,6 @@ habittracker_fullstack/
 │   ├── database/         # Test fixtures / seed data
 │   └── types/            # Superseded by api-spec/ codegen (habitcraft-brj)
 ├── docker-compose.yml    # Docker orchestration
-├── PROJECT_PLAN.md       # Development roadmap
 ├── GETTING_STARTED.md    # Quick start guide
 └── AUTHENTICATION.md     # JWT authentication guide
 ```
@@ -110,10 +127,8 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 ## Documentation
 
 - **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Quick start and setup guide
-- **[PROJECT_PLAN.md](./PROJECT_PLAN.md)** - Complete development roadmap and task list
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](./docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
-- **[AWS Architecture](./docs/AWS_ARCHITECTURE.md)** - Legacy deployment guide (Lightsail + RDS) - archived
 - **[API Specification](./shared/api-spec/openapi.yaml)** - The API contract: enforced against every backend integration response, generates the clients' types and limits, and gated for breaking changes ([how](./shared/api-spec/README.md))
 - **[Database Migrations](./db/README.md)** - dbmate migrations, the source of truth for the schema
 - **[Generated Schema](./db/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
@@ -191,7 +206,7 @@ This project follows:
 - Acceptance test coverage
 - Production-ready deployment
 
-See [PROJECT_PLAN.md](./PROJECT_PLAN.md) for detailed development status and roadmap.
+See [Direction](#direction) for where it goes next.
 
 ## License
 

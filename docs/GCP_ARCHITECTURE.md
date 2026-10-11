@@ -253,6 +253,4 @@ scaling {
 
 ## Related Documentation
 
-- **[Migration Plan](./plans/completed/gcp-cloud-run-migration.md)** - Original migration from AWS
-- **[AWS Architecture](./AWS_ARCHITECTURE.md)** - Legacy deployment (archived)
 - **[Terraform Config](../infrastructure/terraform/gcp/prod/)** - Infrastructure as Code

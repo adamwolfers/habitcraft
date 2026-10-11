@@ -64,7 +64,7 @@ complements a real push rather than replacing one.
 ### Doc Link Checking
 
 Docs link between packages with depth-encoded relative paths (e.g.
-`../../PROJECT_PLAN.md`). Moving a directory up or down a level silently breaks
+`../../README.md`). Moving a directory up or down a level silently breaks
 them, and a grep for the old path does not catch it. `lychee` verifies every
 relative link still resolves.
 

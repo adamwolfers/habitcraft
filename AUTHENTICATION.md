@@ -421,10 +421,14 @@ PASSWORD_REQUIRE_NUMBER=true
 
 ### Production Checklist
 
-See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete security and deployment checklist:
+In place today:
 - **Security Hardening** - Rate limiting, input sanitization, CORS, security headers
 - **Production Configuration** - JWT secrets, HTTPS, environment variables
-- **Advanced Authentication** (Beyond v1.0) - Email verification, password reset, 2FA
+
+Planned for the Go server, tracked in beads: email verification
+(habitcraft-uuim), password reset (habitcraft-1h7e), and an auth hardening
+backlog (habitcraft-zr0t) covering expired refresh-token cleanup, refresh-token
+reuse detection, failed-login lockout and session management.
 
 ### Common Attacks & Mitigations
 

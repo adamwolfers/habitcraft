@@ -2,7 +2,7 @@
 # .github/workflows/link-check.yml
 #
 # Scope: local file links only (see `offline` below). Docs in this repo use
-# depth-encoded relative links (e.g. "../../PROJECT_PLAN.md"), which silently
+# depth-encoded relative links (e.g. "../../README.md"), which silently
 # break whenever a directory moves up or down a level -- the failure mode that
 # broke backend/integration/setup.js during the backends/node -> backend/ move.
 # A plain grep for the old path does not catch those; this checker does.

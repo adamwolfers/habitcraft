@@ -98,7 +98,6 @@ habittracker_fullstack/
 │   ├── database/         # Test fixtures / seed data
 │   └── types/            # Superseded by api-spec/ codegen (habitcraft-brj)
 ├── docker-compose.yml    # Docker orchestration
-├── PROJECT_PLAN.md       # Detailed development roadmap
 ├── GETTING_STARTED.md    # Quick start guide (this file)
 ├── AUTHENTICATION.md     # JWT authentication guide
 └── README.md             # Project overview
@@ -178,7 +177,7 @@ dbmate up
 
 ## What's Next
 
-See [PROJECT_PLAN.md](PROJECT_PLAN.md) for the complete development roadmap and current status.
+See [Direction](README.md#direction) in the README. Planned work is tracked in beads: run `bd ready` to see what's unblocked.
 
 ## Useful Commands
 
@@ -303,7 +302,6 @@ together.
 
 ## Documentation
 
-- **[PROJECT_PLAN.md](PROJECT_PLAN.md)** - Complete development roadmap and task list
 - **[AUTHENTICATION.md](AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[README.md](README.md)** - Project overview
@@ -382,4 +380,4 @@ The application uses JWT authentication with HttpOnly cookies for secure token m
 
 ---
 
-For detailed development plans and roadmap, see [PROJECT_PLAN.md](PROJECT_PLAN.md).
+For where the project is going, see [Direction](README.md#direction) in the README.
