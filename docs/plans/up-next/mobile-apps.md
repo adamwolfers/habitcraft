@@ -6,7 +6,7 @@
 
 ## Summary
 
-Build native mobile applications for iOS and Android that provide the full HabitCraft experience on mobile devices. Users will be able to track habits, view streaks, mark completions, and manage their habits from their phones with a native, responsive experience.
+Build native mobile applications for iOS and Android that provide the full HabitCraft experience on mobile devices. Users will be able to track habits, mark completions, and manage their habits from their phones with a native, responsive experience.
 
 ---
 
@@ -91,13 +91,13 @@ Build native mobile applications for iOS and Android that provide the full Habit
 
 ### Must Have
 - [ ] User authentication (login, register, logout)
-- [ ] View all habits with streaks and completion status
+- [ ] View all habits with completion status
 - [ ] Mark habits complete/incomplete for any date
 - [ ] Add completion notes
 - [ ] Create new habits
 - [ ] Edit existing habits
 - [ ] Archive/unarchive habits
-- [ ] View habit statistics (current streak, best streak)
+- [ ] View habit statistics (completion rates)
 - [ ] Pull-to-refresh data sync
 - [ ] Offline support with sync on reconnect
 
@@ -127,7 +127,6 @@ Build native mobile applications for iOS and Android that provide the full Habit
 │   │   ├── HabitCard.tsx
 │   │   ├── HabitCard.test.tsx
 │   │   ├── CompletionButton.tsx
-│   │   ├── StreakBadge.tsx
 │   │   ├── NoteModal.tsx
 │   │   └── ...
 │   │
@@ -341,7 +340,7 @@ RootNavigator
 
 #### Tests
 - [ ] Test: displays loading state while fetching
-- [ ] Test: displays list of habits with streaks
+- [ ] Test: displays list of habits
 - [ ] Test: shows last 7 days completion buttons
 - [ ] Test: tapping completion button toggles completion
 - [ ] Test: pull-to-refresh reloads habits
@@ -361,7 +360,6 @@ RootNavigator
 
 #### Tests
 - [ ] Test: displays habit icon and name
-- [ ] Test: displays current streak
 - [ ] Test: shows 7 day completion buttons
 - [ ] Test: completed days show filled circle
 - [ ] Test: incomplete days show empty circle

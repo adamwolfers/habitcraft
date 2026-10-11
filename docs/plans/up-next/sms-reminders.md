@@ -170,7 +170,7 @@ npm install twilio
 - [ ] Test: `sendSms()` returns message SID on success
 - [ ] Test: `sendSms()` formats phone numbers correctly
 - [ ] Test: `sendHabitReminder()` generates correct SMS content
-- [ ] Test: `sendHabitReminder()` includes habit name and streak info
+- [ ] Test: `sendHabitReminder()` includes habit name
 - [ ] Test: `sendVerificationCode()` generates and sends 6-digit code
 - [ ] Test: `verifyCode()` validates code and expiration
 - [ ] Test: SMS content stays within 160 characters when possible
@@ -523,12 +523,8 @@ interface HabitSmsReminderSettings {
  * Generate habit reminder SMS message
  * Keep under 160 characters when possible to avoid multi-segment charges
  */
-function generateHabitReminderSms({ habitName, currentStreak, dashboardUrl }) {
+function generateHabitReminderSms({ habitName, dashboardUrl }) {
   let message = `HabitCraft: Time for "${habitName}"!`;
-
-  if (currentStreak > 0) {
-    message += ` ${currentStreak}-day streak!`;
-  }
 
   // Short URL for SMS
   message += ` ${dashboardUrl}`;
@@ -536,7 +532,7 @@ function generateHabitReminderSms({ habitName, currentStreak, dashboardUrl }) {
   return message;
 }
 
-// Example output: "HabitCraft: Time for "Morning Run"! 5-day streak! https://hc.app/d"
+// Example output: "HabitCraft: Time for "Morning Run"! https://hc.app/d"
 ```
 
 #### `verification.js`
@@ -682,7 +678,6 @@ function generateVerificationSms({ code }) {
 - [ ] Create habit reminder with custom time, verify it overrides default
 - [ ] Test each frequency type with different times
 - [ ] Test timezone handling (set timezone different from server)
-- [ ] Test reminder for habit with streak info
 - [ ] Verify SMS length stays under 160 chars when possible
 - [ ] Verify Twilio logs show delivery status
 

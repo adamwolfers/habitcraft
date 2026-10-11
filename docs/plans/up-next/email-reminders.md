@@ -174,7 +174,7 @@ npm install --save-dev @types/node-cron
 - [ ] Test: `sendEmail()` handles SendGrid errors gracefully
 - [ ] Test: `sendEmail()` returns message ID on success
 - [ ] Test: `sendHabitReminder()` generates correct email content
-- [ ] Test: `sendHabitReminder()` includes habit name and streak info
+- [ ] Test: `sendHabitReminder()` includes habit name
 - [ ] Test: email templates render correctly with Handlebars
 
 #### 3b. Implement email service
@@ -458,10 +458,6 @@ interface HabitReminderSettings {
 
   <p>This is your reminder to work on <strong>{{habitName}}</strong>.</p>
 
-  {{#if currentStreak}}
-  <p>You're on a <strong>{{currentStreak}} day streak</strong>! Keep it going!</p>
-  {{/if}}
-
   <p>
     <a href="{{dashboardUrl}}" style="background: #3B82F6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
       Mark as Complete
@@ -586,7 +582,6 @@ interface HabitReminderSettings {
 - [ ] Create habit reminder with custom time, verify it overrides default
 - [ ] Test each frequency type with different times
 - [ ] Test timezone handling (set timezone different from server, verify correct local time)
-- [ ] Test reminder for habit with streak info
 - [ ] Test unsubscribe link works
 - [ ] Test email renders correctly in major email clients (Gmail, Outlook, Apple Mail)
 
