@@ -4,8 +4,8 @@
 # Usage: scripts/drain/land.sh <branch>
 #
 # Run from the main checkout, on a clean master, after reviewing the branch.
-# It refuses while drain.sh is running. The drain clone is ~/github/habitcraft-drain
-# unless DRAIN_CLONE says otherwise.
+# It refuses while drain.sh is running. The drain clone is habitcraft-drain, a
+# sibling of this checkout, unless DRAIN_CLONE says otherwise.
 #
 #   1. Fetch <branch> from the clone, rebase it onto master, fast-forward, push.
 #   2. Wait for the CI run on the pushed commit.
@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-CLONE="${DRAIN_CLONE:-$HOME/github/habitcraft-drain}"
+CLONE="${DRAIN_CLONE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/habitcraft-drain}"
 POLL_SECONDS="${LAND_POLL_SECONDS:-15}"
 RUN_LIST_TRIES=24     # how long a CI run may take to appear, in polls
 GH_ERROR_TRIES=10     # consecutive gh failures tolerated while waiting

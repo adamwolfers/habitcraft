@@ -30,7 +30,7 @@ Everything that changes between runs lives in beads (labels, comments) and
 1. **Pick a batch** and label it `agent-ok` from the main checkout
    ([choosing beads](#choosing-beads)). Five or six beads made a ~30-minute
    run in practice.
-2. **Sync the clone:** `cd ~/github/habitcraft-drain && git switch master &&
+2. **Sync the clone:** `cd ~/github/habitcraft-cairn/habitcraft-drain && git switch master &&
    git pull --rebase && bd dolt pull`. `land.sh` leaves it this way, so after
    a landing this is a no-op.
 3. **Check the docker test stack** is the clone's or down
@@ -110,11 +110,11 @@ you label it saves a pass.
 ## One-time setup: a separate clone
 
 The loop must not share a working copy with you, so give it its own clone.
-This is the sequence that was actually run for `~/github/habitcraft-drain`:
+This is the sequence that was actually run for `~/github/habitcraft-cairn/habitcraft-drain`:
 
 ```bash
-git clone https://github.com/adamwolfers/habitcraft.git ~/github/habitcraft-drain
-cd ~/github/habitcraft-drain
+git clone https://github.com/adamwolfers/habitcraft.git ~/github/habitcraft-cairn/habitcraft-drain
+cd ~/github/habitcraft-cairn/habitcraft-drain
 bd init --remote "git+https://github.com/adamwolfers/habitcraft.git"
 git reset --hard origin/master    # bd init COMMITS its own agent files; drop them
 git config --unset core.hooksPath # ...and points hooks at .beads/hooks (see CLAUDE.md)
@@ -149,7 +149,7 @@ memory says not to do.
 ## A run
 
 ```bash
-cd ~/github/habitcraft-drain
+cd ~/github/habitcraft-cairn/habitcraft-drain
 git switch master && git pull --rebase
 git switch -c drain/$(date +%F)
 scripts/drain/drain.sh -n 5
@@ -181,7 +181,7 @@ from an agent's background shell dies with the agent's session. Inside tmux it
 survives both. `Ctrl-b d` detaches, and `tmux attach -t drain` comes back:
 
 ```bash
-cd ~/github/habitcraft-drain
+cd ~/github/habitcraft-cairn/habitcraft-drain
 tmux new-session -s drain \; \
   send-keys 'scripts/drain/status.sh --watch' C-m \; \
   split-window -h \; send-keys 'mg' C-m \; \
@@ -284,7 +284,7 @@ close mg during runs. Tests: `scripts/drain/bd-failures.test.sh`.
 After reviewing the branch, land it from the **main checkout** in one command:
 
 ```bash
-cd ~/github/habitcraft
+cd ~/github/habitcraft-cairn/habitcraft
 scripts/drain/land.sh drain/<date>
 ```
 

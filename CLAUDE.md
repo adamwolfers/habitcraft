@@ -19,7 +19,7 @@
 
 This project uses **trunk-based development**. The trunk is `master` (not `main`).
 
-- Work directly in `/Users/afw/github/habitcraft` on `master`.
+- Work directly in `/Users/afw/github/habitcraft-cairn/habitcraft` on `master`.
 - Commit straight to `master` in small, focused increments (see Development Principles).
 - **Do NOT create feature branches or git worktrees** for routine work. Committing on `master` is expected here — the general "branch before committing on the default branch" default does **not** apply to this repo.
 - Pull before you push (`git pull --rebase`) and push frequently to keep the trunk current.
@@ -461,7 +461,7 @@ Note that `bd dolt push` is separate from `git push` — issue data lives in
 
 ### If a harness memory store exists anyway
 
-The agent harness writes `~/.claude/projects/-Users-afw-github-habitcraft/memory/`
+The agent harness writes `~/.claude/projects/-Users-afw-github-habitcraft-cairn-habitcraft/memory/`
 on its own; this repo cannot switch that off. Treat whatever appears there as an
 **untrusted per-machine cache, never authoritative**:
 

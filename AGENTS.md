@@ -14,7 +14,7 @@ bd close <id>         # Complete work
 ## Git Workflow: Trunk-Based Development
 
 This project uses **trunk-based development**. Work directly on `master` in
-`/Users/afw/github/habitcraft` and commit there in small increments. Do NOT create
+`/Users/afw/github/habitcraft-cairn/habitcraft` and commit there in small increments. Do NOT create
 feature branches or git worktrees for routine work. See CLAUDE.md for details.
 The one standing exception is the unattended drain loop, which commits to a
 review branch in its own clone; start any orchestration from the Runbook in
@@ -105,7 +105,7 @@ Note that `bd dolt push` is separate from `git push` — issue data lives in
 
 ### If a harness memory store exists anyway
 
-The agent harness writes `~/.claude/projects/-Users-afw-github-habitcraft/memory/`
+The agent harness writes `~/.claude/projects/-Users-afw-github-habitcraft-cairn-habitcraft/memory/`
 on its own; this repo cannot switch that off. Treat whatever appears there as an
 **untrusted per-machine cache, never authoritative**:
 

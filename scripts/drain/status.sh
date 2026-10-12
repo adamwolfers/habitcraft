@@ -5,7 +5,7 @@
 #
 #   --watch [seconds]  Redraw every N seconds (default 15) until Ctrl-C.
 #
-# Reads the drain clone (~/github/habitcraft-drain, or DRAIN_CLONE), whose
+# Reads the drain clone (habitcraft-drain beside this checkout, or DRAIN_CLONE), whose
 # beads database is the one the loop writes, so it is live. mg cannot show
 # labels, which is the whole queue (habitcraft-3oxu). Each refresh makes one
 # bd call, to keep contention with a running pass low (habitcraft-82by).
@@ -15,7 +15,7 @@ set -uo pipefail
 # shellcheck source=scripts/drain/lib.sh
 . "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
 
-CLONE="${DRAIN_CLONE:-$HOME/github/habitcraft-drain}"
+CLONE="${DRAIN_CLONE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)/habitcraft-drain}"
 WATCH=""
 
 usage() { sed -n '3,6p' "$0" | sed 's/^# \{0,1\}//'; }
