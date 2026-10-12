@@ -357,7 +357,8 @@ npm run api:breaking           # fails on a change that breaks a deployed client
 
 `<consumer>/types/api.generated.ts` and `apiLimits.generated.ts` are generated
 into `frontend/` and `mobile/`, `acceptance/drivers/api/api.generated.ts` types
-the acceptance suite's API driver, and `backend/validators/apiLimits.generated.js`
+the acceptance suite's API driver, `acceptance/dsl/apiLimits.generated.ts` gives
+its DSL the limits to test at, and `backend/validators/apiLimits.generated.js`
 is the same numbers as CommonJS for the backend. All of them **must never be
 hand-edited** — the same rule as `db/schema.sql`.
 

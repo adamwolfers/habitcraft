@@ -89,7 +89,9 @@ name that no longer resolves fails the build just as loudly, and a hand-written
 alias between the spec and the input would be one more place for a number to be
 restated. Every layer now reads the same one — the backend validators, both
 clients' forms, and the tests, which assert against the generated value rather
-than a literal of their own.
+than a literal of their own. That includes the acceptance suite's DSL
+(`acceptance/dsl/apiLimits.generated.ts`), which makes up text, emails and
+passwords exactly at each limit and one past it.
 
 ## Changing the spec
 

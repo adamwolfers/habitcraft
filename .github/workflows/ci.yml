@@ -212,10 +212,9 @@ jobs:
               - '!**/*.md'
             workflow:
               - '.github/workflows/ci.yml'
-            # The four-layer acceptance suite. No job reads this yet; its CI job
-            # arrives with habitcraft-a8dg. The filter exists now so the
-            # verify-ci-filters sweep does not flag acceptance/ as a path that
-            # triggers the workflow but matches nothing.
+            # The four-layer acceptance suite. Only verify-api-codegen reads it
+            # so far, for the generated files under acceptance/; the suite's
+            # own CI job arrives with habitcraft-a8dg.
             acceptance:
               - 'acceptance/**'
               - '!**/*.md'
@@ -316,8 +315,8 @@ jobs:
   # are YAML literal block scalars, so a '#' line inside one becomes part of the
   # expression string rather than a comment.
   #
-  # `shared` covers openapi.yaml itself; `frontend`/`mobile` cover the generated
-  # files, which live in those trees and could be hand-edited; `tooling` covers
+  # `shared` covers openapi.yaml itself; `frontend`/`mobile`/`acceptance` cover
+  # the generated files, which live in those trees and could be hand-edited; `tooling` covers
   # scripts/api-codegen.js and the root package.json that pins the generator.
   verify-api-codegen:
     name: Verify Generated API Artifacts
@@ -327,6 +326,7 @@ jobs:
       needs.detect-changes.outputs.shared == 'true' ||
       needs.detect-changes.outputs.frontend == 'true' ||
       needs.detect-changes.outputs.mobile == 'true' ||
+      needs.detect-changes.outputs.acceptance == 'true' ||
       needs.detect-changes.outputs.tooling == 'true' ||
       needs.detect-changes.outputs.workflow == 'true'
 

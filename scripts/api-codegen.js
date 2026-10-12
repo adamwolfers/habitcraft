@@ -97,6 +97,12 @@ const CONSUMERS = [
     files: [TYPES_FILE],
   },
   {
+    // The acceptance suite's DSL makes up values at and just past each limit.
+    name: 'acceptance-dsl',
+    dir: path.join(PROJECT_ROOT, 'acceptance/dsl'),
+    files: [LIMITS_FILE],
+  },
+  {
     name: 'backend',
     dir: path.join(PROJECT_ROOT, 'backend/validators'),
     files: [LIMITS_FILE_CJS],
