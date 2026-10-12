@@ -44,6 +44,9 @@ habittracker_fullstack/
 ├── backend/              # Node.js + Express backend
 ├── frontend/             # Next.js frontend
 ├── mobile/               # React Native (Expo) mobile app
+├── server/               # Go server, the rebuild (habitcraft-vxln): embeddable
+│                         #   package + standalone binary, generated from api-spec/
+├── acceptance/           # Four-layer acceptance suite (Node and Go backends)
 ├── db/                   # dbmate SQL migrations (schema source of truth)
 │                         #   + schema.sql, generated from them
 ├── shared/               # Shared resources

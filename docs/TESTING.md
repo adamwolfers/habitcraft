@@ -10,6 +10,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | Backend Integration | Jest + Supertest | `backend/integration/` | Full database workflows; every response validated against `shared/api-spec/openapi.yaml` |
 | Frontend Unit | Jest + RTL | `frontend/**/*.test.tsx` | Component and hook testing |
 | Mobile Unit | Jest (`jest-expo` preset) + RNTL | `mobile/**/*.test.tsx` | React Native screen, hook, and util testing (80% coverage threshold) |
+| Server Unit | `go test` | `server/**/*_test.go` | The Go server (the rebuild, habitcraft-vxln): request validation against the spec, handlers with the database faked |
 | E2E | Playwright | `frontend/e2e/` | Full user journey testing |
 | Acceptance | Playwright (TypeScript) | `acceptance/` | Four-layer ATDD: domain-language test cases run unchanged through each protocol driver. See [Acceptance Tests](#acceptance-tests-four-layer-atdd) |
 | Mobile E2E | Detox | `mobile/e2e/` | The real app on a simulator or emulator against the test backend. CI runs the `@smoke` subset on Android. See [Mobile E2E (Detox)](#mobile-e2e-detox) |
@@ -197,7 +198,7 @@ need.
 > profile, habits and completions, the spec's length limits, and the Node
 > backend's known bugs as expected failures. It is green against the Node
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
-> and phases 11 and 17 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
+> and phases 11 and 19 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
 > It is the parity harness for the Node → Go rewrite. The Playwright E2E and
 > integration suites below still run alongside it until they are retired.
 
@@ -279,7 +280,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **17 phases, one per CI step**, so a green local run predicts a
+The script runs **19 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -295,16 +296,18 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 9 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
 | 10 | Test Collection Check | `scripts/verify-test-collection.js` | no |
 | 11 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
-| 12 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 13 | Backend Unit Tests | `backend: npm test` | yes |
-| 14 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 15 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 16 | E2E Tests | `frontend: playwright, 3 shards` | yes |
-| 17 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
+| 12 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
+| 13 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 14 | Server Unit Tests | `server: go test -race ./...` | no |
+| 15 | Backend Unit Tests | `backend: npm test` | yes |
+| 16 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 17 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 18 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 19 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
 
 Notes on that table:
 
-- **Phases 1–11 fail fast.** All eleven always run (so you see every static error
+- **Phases 1–12 fail fast.** All twelve always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
@@ -319,8 +322,9 @@ Notes on that table:
   [db/README.md](../db/README.md#the-generated-schema-dump-dbschemasql) for why
   the dump is generated rather than hand-maintained.
 - **Phases 7 and 8 are the API contract's two halves.** Phase 7 regenerates
-  each consumer's `api.generated.ts` and `apiLimits.generated.ts`, plus the
-  backend's CommonJS `apiLimits.generated.js`, from
+  each consumer's `api.generated.ts` and `apiLimits.generated.ts`, the
+  backend's CommonJS `apiLimits.generated.js` and the Go server's
+  `server/api/api.gen.go`, from
   `shared/api-spec/openapi.yaml` and diffs them against the committed files, so
   a spec edit that skipped `npm run api:codegen` fails here — the same idea as
   phase 6, one layer up. The limits a migration states in SQL are held to the
@@ -338,7 +342,10 @@ Notes on that table:
   — plain `npm test` would silently skip a gate CI enforces. Backend and
   frontend have no thresholds, so they use plain `npm test` and skip the
   instrumentation cost.
-- **Phase 17 runs the acceptance suite against the stack phases 13–16 already
+- **The Go server needs Go installed**, for phases 7, 12 and 14 (oapi-codegen
+  runs as a `go tool` pinned in `server/go.mod`). The script checks for it up
+  front, alongside each package's `node_modules`.
+- **Phase 19 runs the acceptance suite against the stack phases 15–18 already
   use**, with no database reset: the DSL makes a fresh user for every test.
   It needs `acceptance/` installed (`npm ci`) and, once, `npx playwright install
   chromium` there for the `web` project. In CI it is the `acceptance-tests` job,

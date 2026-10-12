@@ -45,6 +45,10 @@
  *                           openapi-typescript does NOT emit -- they are
  *                           validation keywords, not type information, so the
  *                           numbers a UI needs for `maxLength` would be lost.
+ *   server/api/api.gen.go   the Go server's types, strict server interface and
+ *                           embedded spec, from oapi-codegen (habitcraft-vxln.3).
+ *                           It needs no limits file: the server validates every
+ *                           request against the embedded spec itself.
  *
  * VERSION PINNING
  *
@@ -52,11 +56,13 @@
  * eventually turn CI red for no spec change at all -- the same hazard the pinned
  * image digests in scripts/schema-dump.sh exist for. It is pinned EXACTLY in the
  * root package.json (as picomatch already is). Bump it and regenerate in one
- * commit.
+ * commit. oapi-codegen is pinned the Go way, as a `tool` in server/go.mod, and
+ * runs through `go tool`, so this script needs Go on PATH.
  */
 
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const yaml = require('js-yaml');
 // v7 ships ESM-first; the CJS build puts the generator on `.default`.
 const { default: openapiTS, astToString } = require('openapi-typescript');
@@ -108,6 +114,15 @@ const CONSUMERS = [
     files: [LIMITS_FILE_CJS],
   },
 ];
+
+// The Go server's generated interface. Its config (server/api/oapi-codegen.yaml)
+// is shared with the `go generate` directive in server/api/generate.go, so both
+// routes produce the same file.
+const GO_SERVER = {
+  dir: path.join(PROJECT_ROOT, 'server/api'),
+  config: 'oapi-codegen.yaml',
+  file: 'api.gen.go',
+};
 
 // Every JSON Schema keyword this extracts. Deliberately only the length
 // constraints: they are the ones a client restates (a TextInput maxLength, a
@@ -295,6 +310,26 @@ async function renderTypesFile(spec) {
 }
 
 /**
+ * Runs oapi-codegen and returns what it prints. The config names no output
+ * file, so nothing is written and --check never touches the committed one; a
+ * config `output:` key would silently override any -o given here.
+ */
+function renderGoServer() {
+  try {
+    return execFileSync(
+      'go',
+      ['tool', 'oapi-codegen', '-config', GO_SERVER.config, path.relative(GO_SERVER.dir, SPEC_PATH)],
+      { cwd: GO_SERVER.dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'inherit'] }
+    );
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw new Error('`go` is not on PATH; it is needed to generate server/api/api.gen.go');
+    }
+    throw err;
+  }
+}
+
+/**
  * Returns a unified diff of two strings, or '' when they are identical.
  */
 function diff(expectedLabel, expected, actualLabel, actual) {
@@ -337,27 +372,37 @@ async function main() {
     process.exit(1);
   }
 
-  const stale = [];
+  const goServer = renderGoServer();
+  if (!goServer.includes('type StrictServerInterface interface')) {
+    console.error(`❌ The generated ${GO_SERVER.file} has no StrictServerInterface -- refusing to use it.`);
+    process.exit(1);
+  }
+
+  const outputs = [];
   for (const consumer of CONSUMERS) {
     for (const file of consumer.files) {
-      const contents = generated[file];
-      const target = path.join(consumer.dir, file);
-      const relative = path.relative(PROJECT_ROOT, target);
-
-      if (!checkMode) {
-        fs.writeFileSync(target, contents);
-        console.log(`✅ Wrote ${relative}`);
-        continue;
-      }
-
-      if (!fs.existsSync(target)) {
-        stale.push({ relative, reason: 'missing', detail: '' });
-        continue;
-      }
-      const committed = fs.readFileSync(target, 'utf8');
-      const delta = diff(`committed ${relative}`, committed, 'generated from openapi.yaml', contents);
-      if (delta) stale.push({ relative, reason: 'out of date', detail: delta });
+      outputs.push({ target: path.join(consumer.dir, file), contents: generated[file] });
     }
+  }
+  outputs.push({ target: path.join(GO_SERVER.dir, GO_SERVER.file), contents: goServer });
+
+  const stale = [];
+  for (const { target, contents } of outputs) {
+    const relative = path.relative(PROJECT_ROOT, target);
+
+    if (!checkMode) {
+      fs.writeFileSync(target, contents);
+      console.log(`✅ Wrote ${relative}`);
+      continue;
+    }
+
+    if (!fs.existsSync(target)) {
+      stale.push({ relative, reason: 'missing', detail: '' });
+      continue;
+    }
+    const committed = fs.readFileSync(target, 'utf8');
+    const delta = diff(`committed ${relative}`, committed, 'generated from openapi.yaml', contents);
+    if (delta) stale.push({ relative, reason: 'out of date', detail: delta });
   }
 
   if (!checkMode) return;

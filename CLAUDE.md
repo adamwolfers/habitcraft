@@ -358,9 +358,11 @@ npm run api:breaking           # fails on a change that breaks a deployed client
 `<consumer>/types/api.generated.ts` and `apiLimits.generated.ts` are generated
 into `frontend/` and `mobile/`, `acceptance/drivers/api/api.generated.ts` types
 the acceptance suite's API driver, `acceptance/dsl/apiLimits.generated.ts` gives
-its DSL the limits to test at, and `backend/validators/apiLimits.generated.js`
-is the same numbers as CommonJS for the backend. All of them **must never be
-hand-edited** — the same rule as `db/schema.sql`.
+its DSL the limits to test at, `backend/validators/apiLimits.generated.js`
+is the same numbers as CommonJS for the backend, and `server/api/api.gen.go` is
+the Go server's types, strict server interface and embedded spec (oapi-codegen,
+pinned in `server/go.mod`, so codegen needs Go installed). All of them **must
+never be hand-edited** — the same rule as `db/schema.sql`.
 
 **Never write a validation limit as a literal** — not in a component, not in a
 backend validator, not in an error message, and not in a test. Import it from

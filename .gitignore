@@ -23,6 +23,7 @@ build/
 
 # Build outputs
 dist/
+server/bin/
 build/
 out/
 *.log

@@ -78,6 +78,13 @@ const CASES = [
   ['mobile/e2e/config/testSetup.ts', true, ['mobile']], // not a *.test.* file
   ['mobile/jest.setup.js', true, ['mobile']],
 
+  // --- Go server (habitcraft-vxln.3): no deploy job yet, so one filter ------
+  ['server/habitcraft/health.go', true, ['server']],
+  ['server/habitcraft/habitcraft_test.go', true, ['server']],
+  ['server/api/api.gen.go', true, ['server']], // generated, and verified by verify-api-codegen
+  ['server/go.mod', true, ['server']],
+  ['scripts/go-lint.sh', true, ['tooling']],
+
   // --- Other packages -------------------------------------------------------
   ['db/migrations/20250101000000_init.sql', true, ['db']],
   ['shared/database/test-fixtures.sql', true, ['shared']],
@@ -157,6 +164,7 @@ const CASES = [
 const TEST_FILE_PATTERNS = [
   '**/*.test.*',
   '**/*.spec.*',
+  '**/*_test.go',
   '**/__tests__/**',
   '**/__mocks__/**',
   'backend/integration/**',

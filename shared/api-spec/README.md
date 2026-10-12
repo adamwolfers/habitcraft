@@ -39,6 +39,9 @@ frontend/types/apiLimits.generated.ts    the spec's minLength/maxLength values
 mobile/src/types/api.generated.ts
 mobile/src/types/apiLimits.generated.ts
 backend/validators/apiLimits.generated.js   the same numbers, as CommonJS
+acceptance/drivers/api/api.generated.ts
+acceptance/dsl/apiLimits.generated.ts
+server/api/api.gen.go                     oapi-codegen: Go types, strict server, embedded spec
 ```
 
 Two files rather than one because `openapi-typescript` does not emit
@@ -54,6 +57,16 @@ response validation already holds it to the spec directly. What it lacked was
 the *numbers*: `validateHabitInput` and the auth routes each wrote out a
 `maxLength` the spec had already stated, error messages included
 (habitcraft-34d.3).
+
+**The Go server takes the whole spec, and needs no limits file.**
+`server/api/api.gen.go` holds the request and response types, a *strict* server
+interface, and the spec itself, embedded. Each handler can return only the
+response types the spec documents for its operation, so an undocumented status
+or shape does not compile. The server also validates every request against the
+embedded spec before a handler runs (`server/internal/validation`), so the
+spec's request schemas, limits included, are enforced rather than restated.
+oapi-codegen is pinned as a `tool` in `server/go.mod`, so the generator needs Go
+on PATH (habitcraft-vxln.3; see [server/README.md](../../server/README.md)).
 
 **Generated into each consumer, not into `shared/`.** A single shared artifact
 becomes a build-tree coupling point between components that otherwise share

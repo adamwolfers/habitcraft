@@ -1,0 +1,10 @@
+# oapi-codegen config for the Go server, used by both `go generate` (see
+# generate.go) and scripts/api-codegen.js. It deliberately names no `output:`
+# file: that key overrides -o, which would make the --check run overwrite the
+# committed api.gen.go.
+package: api
+generate:
+  std-http-server: true
+  strict-server: true
+  models: true
+  embedded-spec: true
