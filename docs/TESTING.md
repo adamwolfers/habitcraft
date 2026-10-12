@@ -191,11 +191,11 @@ need.
 
 ## Acceptance Tests (four-layer ATDD)
 
-> **Status:** the DSL and the API protocol driver are in
+> **Status:** the DSL and the API and web protocol drivers are in
 > [`acceptance/`](../acceptance/README.md), covering accounts, sessions,
-> profile, habits and completions, and green against the Node backend. The web
-> driver, the full port of the existing scenarios and the CI job are still to
-> come (children of habitcraft-vxln.2). The suite is the parity harness for the Node → Go
+> profile, habits and completions, and green against the Node backend and the
+> Next.js app. The full port of the existing scenarios and the CI job are still
+> to come (children of habitcraft-vxln.2). The suite is the parity harness for the Node → Go
 > rewrite. Until it runs in CI, the Playwright E2E and integration suites below
 > remain the gates.
 
