@@ -96,7 +96,7 @@ export interface ProtocolDriver {
   uncheck(habitName: string, date: IsoDate): Promise<void>;
 
   /** Set or, with null, clear the note on a checked-off day. */
-  setNote(habitName: string, date: IsoDate, note: string | null): Promise<void>;
+  setNote(habitName: string, date: IsoDate, note: string | null): Promise<Outcome>;
 
   isCheckedOff(habitName: string, date: IsoDate): Promise<boolean>;
 

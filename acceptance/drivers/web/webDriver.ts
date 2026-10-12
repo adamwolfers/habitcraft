@@ -41,6 +41,8 @@ const OK: Outcome = { ok: true };
 /** Client-side validation of the password fields, before anything is sent. */
 const PASSWORD_RULES: Messages = [[/must be|do not match|required/i, 'invalid-input']];
 
+const REFUSED_AS_INVALID: Outcome = { ok: false, refusal: 'invalid-input' };
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 export class WebDriver implements ProtocolDriver {
@@ -58,14 +60,18 @@ export class WebDriver implements ProtocolDriver {
     const page = await this.freshBrowser();
     await page.goto('/register');
     await page.getByLabel('Name').fill(name);
-    await page.getByLabel('Email').fill(email);
+    const emailField = page.getByLabel('Email');
+    await emailField.fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByLabel('Confirm Password').fill(password);
+    if (await isInvalid(emailField)) return REFUSED_AS_INVALID;
     await page.getByRole('button', { name: 'Sign Up' }).click();
 
     return this.outcome('register', () => this.addHabitButton(page).isVisible(), formError(page), [
       [/already exists/i, 'email-taken'],
       [/must be|do not match/i, 'invalid-input'],
+      // The server's own validation failures; see updateProfile.
+      [/^registration failed$/i, 'invalid-input'],
     ]);
   }
 
@@ -124,13 +130,21 @@ export class WebDriver implements ProtocolDriver {
       await dialog.getByLabel('Name', { exact: true }).fill(changes.name);
     if (changes.email !== undefined)
       await dialog.getByLabel('Email', { exact: true }).fill(changes.email);
-    await dialog.getByRole('button', { name: 'Save' }).click();
+    // The form holds Save back until the fields pass its own checks.
+    const save = dialog.getByRole('button', { name: 'Save' });
+    if (await save.isDisabled()) return REFUSED_AS_INVALID;
+    await save.click();
 
     return this.outcome(
       'update the profile',
       async () => !(await dialog.isVisible()),
       dialog.getByRole('alert'),
-      [[/already in use/i, 'email-taken']]
+      [
+        [/already in use/i, 'email-taken'],
+        // The Next.js app reads only `error` from a refusal, and the server
+        // puts validation failures in `errors`, so every one reads the same.
+        [/^update failed$/i, 'invalid-input'],
+      ]
     );
   }
 
@@ -171,10 +185,9 @@ export class WebDriver implements ProtocolDriver {
     await this.addHabitButton(page).click();
     const nameField = page.getByLabel(/habit name/i);
     await nameField.fill(name);
-    // Read before the click: on success the field is gone straight after it.
-    const invalid = await isInvalid(nameField);
+    // The browser would block the submit, or the field cut the name short.
+    if ((await isInvalid(nameField)) || !(await holds(nameField, name))) return REFUSED_AS_INVALID;
     await page.getByRole('button', { name: 'Add Habit', exact: true }).click();
-    if (invalid) return { ok: false, refusal: 'invalid-input' };
 
     // The form closes on success and stays open with a message otherwise.
     return this.outcome(
@@ -192,7 +205,7 @@ export class WebDriver implements ProtocolDriver {
     // Read before the click: on success the field is gone straight after it.
     const invalid = await isInvalid(nameField);
     await dialog.getByRole('button', { name: 'Save' }).click();
-    if (invalid) return { ok: false, refusal: 'invalid-input' };
+    if (invalid) return REFUSED_AS_INVALID;
 
     return this.outcome(
       'rename a habit',
@@ -244,8 +257,7 @@ export class WebDriver implements ProtocolDriver {
 
     await day.toggle.click();
     await expect(day.noteButton, `${habitName} checked off on ${date}`).toBeVisible();
-    if (note !== undefined) await this.writeNote(day, note);
-    return OK;
+    return note === undefined ? OK : this.writeNote(day, note);
   }
 
   async uncheck(habitName: string, date: IsoDate): Promise<void> {
@@ -256,11 +268,11 @@ export class WebDriver implements ProtocolDriver {
     await expect(day.noteButton, `${habitName} unchecked on ${date}`).toBeHidden();
   }
 
-  async setNote(habitName: string, date: IsoDate, note: string | null): Promise<void> {
+  async setNote(habitName: string, date: IsoDate, note: string | null): Promise<Outcome> {
     const day = await this.day(habitName, date);
     if (!(await day.isCheckedOff()))
       throw new Error(`"${habitName}" is not checked off on ${date}`);
-    await this.writeNote(day, note);
+    return this.writeNote(day, note);
   }
 
   async isCheckedOff(habitName: string, date: IsoDate): Promise<boolean> {
@@ -402,21 +414,34 @@ export class WebDriver implements ProtocolDriver {
     return { toggle, noteButton, isCheckedOff: async () => (await noteButton.count()) > 0 };
   }
 
-  private async writeNote(day: Day, note: string | null): Promise<void> {
+  /**
+   * The note box stops taking characters at the limit, so a note it would not
+   * hold in full is refused: the driver cancels rather than save a cut-off one.
+   */
+  private async writeNote(day: Day, note: string | null): Promise<Outcome> {
     await day.noteButton.click();
     const dialog = this.page.getByRole('dialog');
+    const hadNote = (await day.noteButton.getAttribute('aria-label')) === 'View note';
     if (note === null) {
       const remove = dialog.getByRole('button', { name: 'Delete Note' });
       await (
         (await remove.isVisible()) ? remove : dialog.getByRole('button', { name: 'Cancel' })
       ).click();
     } else {
-      await dialog.getByRole('textbox').fill(note);
+      const box = dialog.getByRole('textbox');
+      await box.fill(note);
+      if (!(await holds(box, note))) {
+        await dialog.getByRole('button', { name: 'Cancel' }).click();
+        await expect(dialog).toBeHidden();
+        await expect(day.noteButton).toHaveAccessibleName(hadNote ? 'View note' : 'Add note');
+        return REFUSED_AS_INVALID;
+      }
       await dialog.getByRole('button', { name: 'Save' }).click();
     }
     // The modal closes only once the server has the note.
     await expect(dialog).toBeHidden();
     await expect(day.noteButton).toHaveAccessibleName(note ? 'View note' : 'Add note');
+    return OK;
   }
 
   /**
@@ -464,6 +489,14 @@ function loginHeading(page: Page): Locator {
 /** The browser will block the submit: the field fails its own validation. */
 function isInvalid(field: Locator): Promise<boolean> {
   return field.evaluate((element: HTMLInputElement) => !element.validity.valid);
+}
+
+/**
+ * Whether the field kept everything typed into it. One with a maxLength stops
+ * taking characters at the limit, which is how the screen refuses the rest.
+ */
+async function holds(field: Locator, value: string): Promise<boolean> {
+  return (await field.inputValue()) === value;
 }
 
 /** Midnight UTC on the Sunday that starts the week holding `date`. */

@@ -192,12 +192,13 @@ need.
 ## Acceptance Tests (four-layer ATDD)
 
 > **Status:** the DSL and the API and web protocol drivers are in
-> [`acceptance/`](../acceptance/README.md), covering accounts, sessions,
-> profile, habits and completions, and green against the Node backend and the
-> Next.js app. The full port of the existing scenarios and the CI job are still
-> to come (children of habitcraft-vxln.2). The suite is the parity harness for the Node → Go
-> rewrite. Until it runs in CI, the Playwright E2E and integration suites below
-> remain the gates.
+> [`acceptance/`](../acceptance/README.md). The behaviour the integration and
+> E2E suites check has been ported to it (habitcraft-ccpl): accounts, sessions,
+> profile, habits and completions, the spec's length limits, and the Node
+> backend's known bugs as expected failures. It is green against the Node
+> backend and the Next.js app. The CI job is still to come (habitcraft-a8dg).
+> The suite is the parity harness for the Node → Go rewrite. Until it runs in
+> CI, the Playwright E2E and integration suites below remain the gates.
 
 HabitCraft follows Dave Farley's acceptance-test-driven development. **Every
 user-facing bead starts with a failing acceptance test**, and the implementation

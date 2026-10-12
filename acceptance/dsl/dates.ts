@@ -1,7 +1,9 @@
 import type { IsoDate } from '../drivers/driver.ts';
 
 /** How a test case names a day: relative words, or an explicit YYYY-MM-DD. */
-export type Day = 'today' | 'yesterday' | IsoDate;
+export type Day = 'today' | 'yesterday' | 'tomorrow' | `${number} days ago` | IsoDate;
+
+const DAYS_AGO = /^(\d+) days ago$/;
 
 /**
  * Resolve a day to a calendar date. Dates are UTC, matching the database and
@@ -9,11 +11,21 @@ export type Day = 'today' | 'yesterday' | IsoDate;
  * test and to the system under test.
  */
 export function resolveDay(day: Day, now: Date = new Date()): IsoDate {
-  if (day === 'today' || day === 'yesterday') {
+  const offset = offsetOf(day);
+  if (offset !== undefined) {
     const date = new Date(now);
-    if (day === 'yesterday') date.setUTCDate(date.getUTCDate() - 1);
+    date.setUTCDate(date.getUTCDate() + offset);
     return date.toISOString().slice(0, 10);
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error(`Not a day: "${day}"`);
   return day;
+}
+
+/** Days from today for a relative day; undefined for an explicit date. */
+function offsetOf(day: Day): number | undefined {
+  if (day === 'today') return 0;
+  if (day === 'yesterday') return -1;
+  if (day === 'tomorrow') return 1;
+  const ago = DAYS_AGO.exec(day);
+  return ago ? -Number(ago[1]) : undefined;
 }

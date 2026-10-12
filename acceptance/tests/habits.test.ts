@@ -58,3 +58,21 @@ test("one user's habits are not visible to another", async ({ users, habits }) =
 
   await habits.shouldNotExist('Morning run');
 });
+
+test('a habit name has a length limit', async ({ users, habits }) => {
+  await users.register('Alice');
+
+  await habits.create({ length: 'too-long' }, { expect: 'invalid-input' });
+});
+
+test("deleting a habit leaves the other habits' days alone", async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.create('Read');
+  await habits.checkOff('Morning run', { on: 'today' });
+  await habits.checkOff('Read', { on: 'today' });
+
+  await habits.delete('Morning run');
+
+  await habits.shouldBeCheckedOff('Read', { on: 'today' });
+});

@@ -65,3 +65,65 @@ test('a deleted account can no longer sign in', async ({ users }) => {
   await users.shouldBeSignedOut();
   await users.signInAs('Alice', { expect: 'invalid-credentials' });
 });
+
+test('registration needs a well-formed email address', async ({ users }) => {
+  await users.register('Alice', { email: 'malformed', expect: 'invalid-input' });
+});
+
+test('registration needs a long enough password', async ({ users }) => {
+  await users.register('Alice', { password: 'too-short', expect: 'invalid-input' });
+});
+
+test('an email address as long as the limit allows can register', async ({ users, knownBug }) => {
+  knownBug('habitcraft-0roi');
+
+  await users.register('Alice', { email: 'longest-allowed' });
+  await users.signOut();
+
+  await users.signInAs('Alice');
+});
+
+test('an email address over the limit cannot register', async ({ users }) => {
+  await users.register('Alice', { email: 'too-long', expect: 'invalid-input' });
+});
+
+test('signing in with an email nobody registered is refused', async ({ users }) => {
+  await users.signInAs('Nobody', { expect: 'invalid-credentials' });
+});
+
+test('an email address signs in whatever its case', async ({ users }) => {
+  await users.register('Alice');
+  await users.signOut();
+
+  await users.signInAs('Alice', { withEmail: 'in-capitals' });
+  await users.shouldBeSignedIn();
+});
+
+test('changing password keeps the user signed in', async ({ users, knownBug }) => {
+  knownBug('habitcraft-4k7v');
+
+  await users.register('Alice');
+  await users.changePassword();
+
+  await users.renewSession();
+  await users.shouldBeSignedIn();
+});
+
+test('a new password must be long enough', async ({ users }) => {
+  await users.register('Alice');
+
+  await users.changePassword({ to: 'too-short', expect: 'invalid-input' });
+
+  await users.signOut();
+  await users.signInAs('Alice');
+});
+
+test("a deleted account's habits go with it", async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await users.deleteAccount();
+
+  await users.register('Alice');
+
+  await habits.shouldNotExist('Morning run');
+});

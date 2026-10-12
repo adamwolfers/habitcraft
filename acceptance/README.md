@@ -26,12 +26,14 @@ npm ci
 npx playwright install chromium                  # once, for the web project
 npm test                                         # every project
 npm test -- --project api                        # one project; no frontend needed
-ACCEPTANCE_API_URL=http://localhost:8080 npm test  # another server, e.g. the Go one
+ACCEPTANCE_API_URL=http://localhost:8080 ACCEPTANCE_BACKEND=go npm test  # the Go server
 npm run typecheck
 ```
 
 `ACCEPTANCE_WEB_URL` (default `http://localhost:3110`) points the web project at
 another app. The app finds its backend itself; `frontend-test` talks to `:3010`.
+`ACCEPTANCE_BACKEND` (`node`, the default, or `go`) says which server those URLs
+reach, which decides where the [known bugs](#known-bugs) are expected to fail.
 
 No database reset is needed between runs, and none happens. The DSL registers
 fresh users with unique emails for every test, so tests share nothing and run
@@ -67,15 +69,60 @@ The DSL keeps each alias's current email and password, so after
 `users.changePassword()` or `profile.changeEmail()`, `users.signInAs('Alice')`
 uses the new ones. `withPassword: 'previous'` tries the old password.
 
+A test about the product's rules names the *shape* of a value, never the value
+itself. The DSL makes it up, unique as ever, and takes every limit from
+`dsl/apiLimits.generated.ts` (generated from the spec by `npm run api:codegen`),
+so no number appears in a test:
+
+```ts
+await users.register('Alice', { email: 'malformed', expect: 'invalid-input' });
+await users.register('Alice', { password: 'too-short', expect: 'invalid-input' });
+await profile.changeEmail({ to: 'longest-allowed' }); // also 'in-capitals', 'too-long'
+await profile.rename({ length: 'too-long' }, { expect: 'invalid-input' });
+await habits.setNote('Morning run', { on: 'today', note: { length: 'longest-allowed' } });
+```
+
+Text made up to a length is the same every time, so a test can name it again
+in an assertion. Days are `'today'`, `'yesterday'`, `'tomorrow'`, `'10 days ago'`
+or a `YYYY-MM-DD` date.
+
 | Fixture | Covers |
 |---|---|
 | `users` | register, sign in and out, renew the session, change password, delete the account |
 | `profile` | the acting user's name and email |
 | `habits` | create, rename, archive, restore, delete; check off and uncheck days; notes |
+| `knownBug` | marks a test as one the backend under test is known to fail |
 
 If a step needs something the DSL can't say yet, add it to the DSL and to
 `ProtocolDriver`, then implement it in every driver. A test case that only makes
 sense for one driver is written at the wrong level.
+
+### Known bugs
+
+A bug the Node backend keeps until the Go server replaces it is still written as
+a test of what the product *should* do, marked with its bead:
+
+```ts
+test('changing password keeps the user signed in', async ({ users, knownBug }) => {
+  knownBug('habitcraft-4k7v');
+  // ...
+});
+```
+
+`dsl/knownBugs.ts` lists each bead and the backends it lives on. There the test
+is expected to fail: the list reporter prints it with a `✘` but counts it as
+passed. Anywhere else it must pass. When a fix lands, the test passes where it
+was expected to fail, which *is* reported as a failure, so the entry cannot
+outlive the bug. Check that an expected failure fails for the right reason by
+running it as the other backend:
+
+```bash
+ACCEPTANCE_BACKEND=go npx playwright test -g 'keeps the user signed in'
+```
+
+Behaviour that has no words in the user's language — a request for another
+user's habit by id, a malformed token, an expired one — stays in the backend's
+integration tests, which talk HTTP directly.
 
 ## The API driver and the contract
 
@@ -103,6 +150,14 @@ and habit detail views replace it; the test cases stay as they are.
   login page (`signed-out`).
 - Days are toggles in this UI, so a second check-off is reported as
   `already-checked-off` from the day already showing as done, without a click.
+  A future day's toggle is disabled, which is reported as `invalid-input`.
+- The forms refuse some input before sending it: a field the browser marks
+  invalid, a Save button held disabled, or a field with a `maxLength` that
+  stops taking characters. The driver reports each as `invalid-input` and never
+  submits a cut-off value.
+- The Next.js app shows only "Update failed" or "Registration failed" for the
+  server's validation errors (it reads `error` where the server sends
+  `errors`), so the driver maps those generic messages onto `invalid-input`.
 - The Next.js app cannot archive or restore a habit, so the archive scenario is
   **skipped on `web`** with that reason in the report. It shows archived habits
   with the rest, so the driver's archived list is always empty.

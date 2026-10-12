@@ -13,6 +13,7 @@ import type { ProtocolDriver } from '../drivers/driver.ts';
 import { WebDriver } from '../drivers/web/webDriver.ts';
 import { Accounts } from './accounts.ts';
 import { Habits } from './habits.ts';
+import { KNOWN_BUGS, type Backend, type KnownBugId } from './knownBugs.ts';
 import { Profile } from './profile.ts';
 import { Users } from './users.ts';
 
@@ -23,6 +24,8 @@ export interface ProtocolOptions {
   protocol: Protocol;
   apiUrl: string;
   webUrl: string;
+  /** Which server answers apiUrl, for the known bugs. */
+  backend: Backend;
 }
 
 interface Workers extends ProtocolOptions {
@@ -31,7 +34,7 @@ interface Workers extends ProtocolOptions {
 }
 
 function createDriver(
-  { protocol, apiUrl, webUrl }: ProtocolOptions,
+  { protocol, apiUrl, webUrl }: Omit<ProtocolOptions, 'backend'>,
   webBrowser: Browser | undefined
 ): ProtocolDriver {
   switch (protocol) {
@@ -49,12 +52,15 @@ interface Dsl {
   users: Users;
   profile: Profile;
   habits: Habits;
+  /** Mark this test as one the backend under test is known to fail. See knownBugs.ts. */
+  knownBug: (bead: KnownBugId) => void;
 }
 
 export const test = base.extend<Dsl, Workers>({
   protocol: ['api', { option: true, scope: 'worker' }],
   apiUrl: ['http://localhost:3010', { option: true, scope: 'worker' }],
   webUrl: ['http://localhost:3110', { option: true, scope: 'worker' }],
+  backend: ['node', { option: true, scope: 'worker' }],
 
   // Not Playwright's own `browser` fixture: a fixture that names it always
   // launches it, and the api project has no use for one.
@@ -85,6 +91,12 @@ export const test = base.extend<Dsl, Workers>({
   },
   habits: async ({ driver }, use) => {
     await use(new Habits(driver));
+  },
+  knownBug: async ({ backend }, use) => {
+    await use((bead) => {
+      const bug = KNOWN_BUGS[bead];
+      test.fail((bug.on as Backend[]).includes(backend), `${bead} on ${backend}: ${bug.summary}`);
+    });
   },
 });
 

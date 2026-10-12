@@ -1,14 +1,20 @@
 import { expect } from '@playwright/test';
 import type { ProtocolDriver } from '../drivers/driver.ts';
+import { requestLimits, schemaLimits } from './apiLimits.generated.ts';
 import { resolveDay, type Day } from './dates.ts';
 import { settle, type Expecting } from './outcomes.ts';
+import { describeText, resolveText, type Text } from './text.ts';
+
+const NAME_MAX = schemaLimits.HabitInput.name.maxLength;
+const NOTE_MAX = requestLimits.updateCompletionNote.notes.maxLength;
 
 /** The acting user's habits and the days they checked them off. */
 export class Habits {
   constructor(private readonly driver: ProtocolDriver) {}
 
-  async create(name: string, options: Expecting = {}): Promise<void> {
-    settle(await this.driver.createHabit(name), options, `create "${name}"`);
+  async create(name: Text, options: Expecting = {}): Promise<void> {
+    const outcome = await this.driver.createHabit(resolveText(name, NAME_MAX));
+    settle(outcome, options, `create ${describeText(name)}`);
   }
 
   async rename(name: string, { to, ...options }: Expecting & { to: string }): Promise<void> {
@@ -39,12 +45,18 @@ export class Habits {
     await this.driver.uncheck(name, resolveDay(on));
   }
 
-  async setNote(name: string, { on, note }: { on: Day; note: string }): Promise<void> {
-    await this.driver.setNote(name, resolveDay(on), note);
+  async setNote(
+    name: string,
+    { on, note, ...options }: Expecting & { on: Day; note: Text }
+  ): Promise<void> {
+    const date = resolveDay(on);
+    const outcome = await this.driver.setNote(name, date, resolveText(note, NOTE_MAX));
+    settle(outcome, options, `note ${describeText(note)} on "${name}" for ${date}`);
   }
 
   async clearNote(name: string, { on }: { on: Day }): Promise<void> {
-    await this.driver.setNote(name, resolveDay(on), null);
+    const date = resolveDay(on);
+    settle(await this.driver.setNote(name, date, null), {}, `clear the note on ${date}`);
   }
 
   // --- observations ---------------------------------------------------------
@@ -85,11 +97,10 @@ export class Habits {
   }
 
   /** The note on a checked-off day; `null` means the day has no note. */
-  async shouldHaveNote(
-    name: string,
-    { on, note }: { on: Day; note: string | null }
-  ): Promise<void> {
+  async shouldHaveNote(name: string, { on, note }: { on: Day; note: Text | null }): Promise<void> {
     const date = resolveDay(on);
-    expect(await this.driver.noteOn(name, date), `note on "${name}" for ${date}`).toBe(note);
+    expect(await this.driver.noteOn(name, date), `note on "${name}" for ${date}`).toBe(
+      note === null ? null : resolveText(note, NOTE_MAX)
+    );
   }
 }

@@ -152,12 +152,12 @@ export class ApiDriver implements ProtocolDriver {
     expectStatus(await this.request('DELETE', `/habits/${habit.id}/completions/${date}`), 200);
   }
 
-  async setNote(habitName: string, date: IsoDate, note: string | null): Promise<void> {
+  async setNote(habitName: string, date: IsoDate, note: string | null): Promise<Outcome> {
     const habit = await this.habitNamed(habitName);
     const response = await this.request('PUT', `/habits/${habit.id}/completions/${date}`, {
       notes: note,
     });
-    expectStatus(response, 200);
+    return outcomeOf(response, 200, { 400: 'invalid-input' });
   }
 
   async isCheckedOff(habitName: string, date: IsoDate): Promise<boolean> {
