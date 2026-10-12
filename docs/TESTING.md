@@ -191,10 +191,11 @@ need.
 
 ## Acceptance Tests (four-layer ATDD)
 
-> **Status:** walking skeleton in [`acceptance/`](../acceptance/README.md): the
-> DSL and the API protocol driver, green against the Node backend. The web
-> driver, the ported scenarios and the CI job are still to come (children of
-> habitcraft-vxln.2). The suite is the parity harness for the Node → Go
+> **Status:** the DSL and the API protocol driver are in
+> [`acceptance/`](../acceptance/README.md), covering accounts, sessions,
+> profile, habits and completions, and green against the Node backend. The web
+> driver, the full port of the existing scenarios and the CI job are still to
+> come (children of habitcraft-vxln.2). The suite is the parity harness for the Node → Go
 > rewrite. Until it runs in CI, the Playwright E2E and integration suites below
 > remain the gates.
 

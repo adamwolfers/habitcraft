@@ -48,6 +48,26 @@ test('a new habit can be checked off today', async ({ users, habits }) => {
 });
 ```
 
+A step the product may refuse takes `{ expect: '<refusal>' }`. Without it the
+step must succeed; with it the step must be refused for exactly that reason. The
+refusals (`email-taken`, `wrong-password`, …) are listed in `drivers/driver.ts`,
+and each driver maps its own channel's signal onto them:
+
+```ts
+await users.signInAs('Alice', { withPassword: 'wrong', expect: 'invalid-credentials' });
+await habits.checkOff('Morning run', { on: 'today', expect: 'already-checked-off' });
+```
+
+The DSL keeps each alias's current email and password, so after
+`users.changePassword()` or `profile.changeEmail()`, `users.signInAs('Alice')`
+uses the new ones. `withPassword: 'previous'` tries the old password.
+
+| Fixture | Covers |
+|---|---|
+| `users` | register, sign in and out, renew the session, change password, delete the account |
+| `profile` | the acting user's name and email |
+| `habits` | create, rename, archive, restore, delete; check off and uncheck days; notes |
+
 If a step needs something the DSL can't say yet, add it to the DSL and to
 `ProtocolDriver`, then implement it in every driver. A test case that only makes
 sense for one driver is written at the wrong level.

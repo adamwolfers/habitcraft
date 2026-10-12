@@ -1,20 +1,53 @@
 /**
- * Layer 1: test cases, in the language of habits and days only.
+ * Layer 1: test cases, in the language of habits only.
  */
 
 import { test } from '../dsl/index.ts';
 
-test('a new habit is listed and can be checked off today', async ({ users, habits }) => {
+test('a new habit is listed', async ({ users, habits }) => {
   await users.register('Alice');
+
   await habits.create('Morning run');
 
   await habits.shouldInclude('Morning run');
-  await habits.shouldNotBeCheckedOff('Morning run', { on: 'today' });
+});
 
-  await habits.checkOff('Morning run', { on: 'today' });
+test('a habit needs a name', async ({ users, habits }) => {
+  await users.register('Alice');
 
-  await habits.shouldBeCheckedOff('Morning run', { on: 'today' });
-  await habits.shouldNotBeCheckedOff('Morning run', { on: 'yesterday' });
+  await habits.create('', { expect: 'invalid-input' });
+});
+
+test('a renamed habit keeps its history', async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.checkOff('Morning run', { on: 'yesterday' });
+
+  await habits.rename('Morning run', { to: 'Evening run' });
+
+  await habits.shouldNotInclude('Morning run');
+  await habits.shouldInclude('Evening run');
+  await habits.shouldBeCheckedOff('Evening run', { on: 'yesterday' });
+});
+
+test('an archived habit leaves the list and can be restored', async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+
+  await habits.archive('Morning run');
+  await habits.shouldBeArchived('Morning run');
+
+  await habits.restore('Morning run');
+  await habits.shouldInclude('Morning run');
+});
+
+test('a deleted habit is gone', async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+
+  await habits.delete('Morning run');
+
+  await habits.shouldNotExist('Morning run');
 });
 
 test("one user's habits are not visible to another", async ({ users, habits }) => {
@@ -23,5 +56,5 @@ test("one user's habits are not visible to another", async ({ users, habits }) =
 
   await users.register('Bob');
 
-  await habits.shouldNotInclude('Morning run');
+  await habits.shouldNotExist('Morning run');
 });
