@@ -212,9 +212,8 @@ jobs:
               - '!**/*.md'
             workflow:
               - '.github/workflows/ci.yml'
-            # The four-layer acceptance suite. Only verify-api-codegen reads it
-            # so far, for the generated files under acceptance/; the suite's
-            # own CI job arrives with habitcraft-a8dg.
+            # The four-layer acceptance suite: gates acceptance-tests, and
+            # verify-api-codegen for the generated files under acceptance/.
             acceptance:
               - 'acceptance/**'
               - '!**/*.md'
@@ -981,6 +980,110 @@ jobs:
           path: frontend/playwright-report/
           retention-days: 7
 
+  # The four-layer acceptance suite (acceptance/README.md): every test case
+  # runs once per protocol driver, `api` and `web`, against the same compose
+  # stack the E2E job boots. It is the parity harness for the Go rebuild
+  # (habitcraft-vxln); when the Go server exists it becomes a second target
+  # here, selected by ACCEPTANCE_API_URL and ACCEPTANCE_BACKEND.
+  #
+  # Gated like e2e-tests plus `acceptance`, because the suite's own files are
+  # the test cases. Not sharded: the DSL isolates every test, so the config
+  # runs fullyParallel and Playwright splits the work across workers itself.
+  acceptance-tests:
+    name: Acceptance Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, backend-integration-tests]
+    if: |
+      always() &&
+      !failure() &&
+      !cancelled() &&
+      (
+        needs.detect-changes.outputs.backend == 'true' ||
+        needs.detect-changes.outputs.frontend == 'true' ||
+        needs.detect-changes.outputs.db == 'true' ||
+        needs.detect-changes.outputs.shared == 'true' ||
+        needs.detect-changes.outputs.e2e-infra == 'true' ||
+        needs.detect-changes.outputs.acceptance == 'true' ||
+        needs.detect-changes.outputs.workflow == 'true'
+      )
+    defaults:
+      run:
+        working-directory: acceptance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: acceptance/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The static checks first: neither needs a browser or the stack, so a
+      # type error or an uncollected test file fails in seconds.
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Verify every test file is collected
+        run: node ../scripts/verify-test-collection.js acceptance
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test containers with cache
+        uses: docker/bake-action@v5
+        with:
+          files: |
+            docker-compose.test.yml
+            docker-bake.test.hcl
+          set: |
+            ${{ !inputs.force_rebuild && '*.cache-from=type=gha' || '' }}
+            *.cache-to=type=gha,mode=max
+          load: true
+
+      # The web project needs frontend-test as well as backend-test; --wait
+      # covers the database and its migrations through depends_on.
+      - name: Start test environment
+        working-directory: .
+        run: docker compose -f docker-compose.test.yml up -d --wait
+
+      - name: Wait for services to be ready
+        run: |
+          timeout 60 bash -c 'until curl -s http://localhost:3010/health > /dev/null; do sleep 2; done'
+          echo "Backend is ready"
+          timeout 60 bash -c 'until curl -s http://localhost:3110 > /dev/null; do sleep 2; done'
+          echo "Frontend is ready"
+
+      - name: Run acceptance tests
+        env:
+          ACCEPTANCE_BACKEND: node
+        run: npx playwright test
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: acceptance-test-results
+          path: acceptance/test-results/
+          retention-days: 7
+
+      - name: Show service logs
+        if: failure()
+        working-directory: .
+        run: docker compose -f docker-compose.test.yml logs --tail 200 backend-test frontend-test
+
+      - name: Stop test environment
+        if: always()
+        working-directory: .
+        run: docker compose -f docker-compose.test.yml down -v
+
   # ===========================================
   # GCP Cloud Run Deployment
   # ===========================================
@@ -988,7 +1091,7 @@ jobs:
   run-migrations-gcp:
     name: Run Database Migrations
     runs-on: ubuntu-latest
-    needs: [detect-changes, backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests, mobile-e2e-tests]
+    needs: [detect-changes, backend-unit-tests, backend-integration-tests, frontend-unit-tests, e2e-tests, acceptance-tests, mobile-e2e-tests]
     # Only run migrations when db/ changed
     if: |
       github.ref == 'refs/heads/master' &&

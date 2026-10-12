@@ -56,6 +56,7 @@ LBL_FRONTEND_LINT="Frontend Lint"
 LBL_FRONTEND_TYPECHECK="Frontend Typecheck"
 LBL_MOBILE_LINT="Mobile Lint"
 LBL_MOBILE_TYPECHECK="Mobile Typecheck"
+LBL_ACCEPTANCE_TYPECHECK="Acceptance Typecheck"
 LBL_SCHEMA_DUMP="Generated Schema Check"
 LBL_API_CODEGEN="Generated API Artifacts Check"
 LBL_API_BREAKING="OpenAPI Breaking Changes"
@@ -66,8 +67,9 @@ LBL_BACKEND_UNIT="Backend Unit Tests"
 LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
+LBL_ACCEPTANCE="Acceptance Tests"
 
-TOTAL_PHASES=15
+TOTAL_PHASES=17
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -92,6 +94,7 @@ TIMEOUT_BACKEND_UNIT=300
 TIMEOUT_FRONTEND_UNIT=600
 TIMEOUT_INTEGRATION=300
 TIMEOUT_E2E_SHARD=900
+TIMEOUT_ACCEPTANCE=900
 
 # Number of parallel Playwright shards. This is NOT free to change: Playwright
 # shards by FILE (fullyParallel: false), so more shards than the test-file
@@ -236,7 +239,7 @@ wait_for_service() {
 # The repo root is in this list too: the generated-API check runs from there,
 # against the generator pinned in the root package.json.
 MISSING_DEPS=""
-for pkg in . backend frontend mobile; do
+for pkg in . backend frontend mobile acceptance; do
     if [ ! -d "$PROJECT_ROOT/$pkg/node_modules" ]; then
         MISSING_DEPS="$MISSING_DEPS $pkg"
     fi
@@ -306,6 +309,9 @@ run_phase "🪝" "$LBL_BEADS_DOCTOR" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
 run_phase "🧾" "$LBL_TEST_COLLECTION" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
     node "$PROJECT_ROOT/scripts/verify-test-collection.js" || STATIC_FAILED=1
 
+run_phase "🔤" "$LBL_ACCEPTANCE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/acceptance" \
+    npm run typecheck || STATIC_FAILED=1
+
 if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "🛑 Static checks failed -- stopping before the docker and E2E phases."
     echo "   Fix the above, or re-run with --keep-going to run everything anyway."
@@ -315,6 +321,7 @@ if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     record_phase skip "$LBL_FRONTEND_UNIT"
     record_phase skip "$LBL_INTEGRATION"
     record_phase skip "$LBL_E2E"
+    record_phase skip "$LBL_ACCEPTANCE"
     finish
 fi
 
@@ -519,5 +526,11 @@ else
     record_phase fail "$LBL_E2E"
 fi
 echo ""
+
+# The four-layer acceptance suite, both projects (api and web) against the
+# stack already up. It needs no database reset: the DSL registers fresh users
+# for every test, so it shares nothing with the E2E fixtures reset above.
+run_phase "🧪" "$LBL_ACCEPTANCE" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
+    npx playwright test || true
 
 finish

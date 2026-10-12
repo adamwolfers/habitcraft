@@ -35,6 +35,10 @@ another app. The app finds its backend itself; `frontend-test` talks to `:3010`.
 `ACCEPTANCE_BACKEND` (`node`, the default, or `go`) says which server those URLs
 reach, which decides where the [known bugs](#known-bugs) are expected to fail.
 
+CI runs both projects in the `acceptance-tests` job, and `scripts/test-all.sh`
+runs them as its last phase, so a failing acceptance test blocks a deploy. See
+[docs/TESTING.md](../docs/TESTING.md#all-tests).
+
 No database reset is needed between runs, and none happens. The DSL registers
 fresh users with unique emails for every test, so tests share nothing and run
 in parallel against a database that earlier runs have already written to.

@@ -196,9 +196,10 @@ need.
 > E2E suites check has been ported to it (habitcraft-ccpl): accounts, sessions,
 > profile, habits and completions, the spec's length limits, and the Node
 > backend's known bugs as expected failures. It is green against the Node
-> backend and the Next.js app. The CI job is still to come (habitcraft-a8dg).
-> The suite is the parity harness for the Node → Go rewrite. Until it runs in
-> CI, the Playwright E2E and integration suites below remain the gates.
+> backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
+> and phases 11 and 17 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
+> It is the parity harness for the Node → Go rewrite. The Playwright E2E and
+> integration suites below still run alongside it until they are retired.
 
 HabitCraft follows Dave Farley's acceptance-test-driven development. **Every
 user-facing bead starts with a failing acceptance test**, and the implementation
@@ -278,7 +279,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **15 phases, one per CI step**, so a green local run predicts a
+The script runs **17 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -293,15 +294,17 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 8 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
 | 9 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
 | 10 | Test Collection Check | `scripts/verify-test-collection.js` | no |
-| 11 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 12 | Backend Unit Tests | `backend: npm test` | yes |
-| 13 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 14 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 15 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 11 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
+| 12 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 13 | Backend Unit Tests | `backend: npm test` | yes |
+| 14 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 15 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 16 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 17 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
 
 Notes on that table:
 
-- **Phases 1–10 fail fast.** All ten always run (so you see every static error
+- **Phases 1–11 fail fast.** All eleven always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
@@ -335,6 +338,11 @@ Notes on that table:
   — plain `npm test` would silently skip a gate CI enforces. Backend and
   frontend have no thresholds, so they use plain `npm test` and skip the
   instrumentation cost.
+- **Phase 17 runs the acceptance suite against the stack phases 13–16 already
+  use**, with no database reset: the DSL makes a fresh user for every test.
+  It needs `acceptance/` installed (`npm ci`) and, once, `npx playwright install
+  chromium` there for the `web` project. In CI it is the `acceptance-tests` job,
+  which `run-migrations-gcp` waits on, so it gates every deploy.
 - **Every phase must report exactly one result.** The summary count is asserted
   against `TOTAL_PHASES` before exit; if they disagree the run fails with an
   internal error rather than reporting green. That guard exists because the E2E
