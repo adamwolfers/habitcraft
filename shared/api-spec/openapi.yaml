@@ -264,6 +264,7 @@ paths:
       operationId: getCurrentUser
       security:
         - bearerAuth: []
+        - cookieAuth: []
       responses:
         '200':
           description: User profile
@@ -288,6 +289,7 @@ paths:
       operationId: updateCurrentUser
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -340,6 +342,7 @@ paths:
       operationId: deleteCurrentUser
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -390,6 +393,7 @@ paths:
       operationId: changePassword
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -451,6 +455,7 @@ paths:
       operationId: listHabits
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - name: status
           in: query
@@ -479,6 +484,7 @@ paths:
       operationId: createHabit
       security:
         - bearerAuth: []
+        - cookieAuth: []
       requestBody:
         required: true
         content:
@@ -516,6 +522,7 @@ paths:
       operationId: updateHabit
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
       requestBody:
@@ -547,6 +554,7 @@ paths:
       operationId: deleteHabit
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
       responses:
@@ -569,6 +577,7 @@ paths:
       operationId: listCompletions
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
         - name: startDate
@@ -608,6 +617,7 @@ paths:
       operationId: createCompletion
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
       requestBody:
@@ -662,6 +672,7 @@ paths:
       operationId: updateCompletionNote
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
         - $ref: '#/components/parameters/CompletionDate'
@@ -703,6 +714,7 @@ paths:
       operationId: deleteCompletion
       security:
         - bearerAuth: []
+        - cookieAuth: []
       parameters:
         - $ref: '#/components/parameters/HabitId'
         - $ref: '#/components/parameters/CompletionDate'
@@ -726,10 +738,21 @@ paths:
 
 components:
   securitySchemes:
+    # A protected operation accepts EITHER scheme: each is its own entry in
+    # the operation's security list, and OpenAPI treats the entries as
+    # alternatives. The web client sends the cookie; the mobile client, which
+    # has no cookie jar, sends the header. When both are present the server
+    # uses the cookie (see AUTHENTICATION.md).
     bearerAuth:
+      description: 'Access token in an `Authorization: Bearer <token>` header.'
       type: http
       scheme: bearer
       bearerFormat: JWT
+    cookieAuth:
+      description: Access token in the httpOnly `accessToken` cookie set by register, login and refresh.
+      type: apiKey
+      in: cookie
+      name: accessToken
 
   parameters:
     HabitId:

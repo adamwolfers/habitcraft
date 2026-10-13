@@ -117,6 +117,15 @@ passwords exactly at each limit and one past it.
 
 Both checks also run as phases 7 and 8 of `scripts/test-all.sh`.
 
+## Authentication schemes
+
+Every protected operation lists two security requirements, `bearerAuth` and
+`cookieAuth`. OpenAPI treats separate entries as alternatives, so either one
+authenticates the request. The web client sends the httpOnly `accessToken`
+cookie, and the mobile client, which has no cookie jar, sends an
+`Authorization: Bearer` header. Until habitcraft-vxln.17 the spec declared only
+the header. When you add a protected operation, list both entries.
+
 ## Deliberate breaking changes
 
 Prefer making the change additive (a new optional field, a new endpoint) or

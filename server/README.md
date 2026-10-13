@@ -73,9 +73,11 @@ Three things tie the server to `openapi.yaml`:
   Both use `api/oapi-codegen.yaml` and produce the same file. oapi-codegen is
   pinned as a `tool` in `go.mod`.
 
-Authentication is not part of request validation. The spec's `bearerAuth`
-scheme does not describe the cookie the web client sends, so the handlers check
-the token themselves (habitcraft-vxln.4).
+Authentication is not part of request validation. The spec declares two
+alternative schemes on each protected operation, `cookieAuth` and `bearerAuth`.
+Authentication will run as its own middleware in front of validation, so an
+anonymous caller gets a 401 before any field is checked, as on the Node backend
+(habitcraft-vxln.4).
 
 ## Embedding
 

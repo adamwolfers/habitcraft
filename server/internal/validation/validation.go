@@ -48,8 +48,9 @@ func Middleware(spec *openapi3.T) (func(http.Handler) http.Handler, error) {
 	options := &openapi3filter.Options{
 		// Report every failed field, not just the first, as express-validator does.
 		MultiError: true,
-		// Authentication belongs to the handlers: the access token can arrive as
-		// a cookie, which the spec's bearerAuth scheme does not describe.
+		// Authentication is not validation's job. It belongs in its own
+		// middleware in front of this one, so an anonymous caller gets a 401
+		// before any field is checked (habitcraft-vxln.4).
 		AuthenticationFunc: openapi3filter.NoopAuthenticationFunc,
 	}
 

@@ -213,12 +213,17 @@ User → Expired Access Token → POST /api/v1/auth/refresh
 
 #### JWT Authentication Middleware (`jwtAuth.js`)
 
-Handles JWT authentication for protected routes.
+Handles JWT authentication for protected routes. The access token can arrive
+two ways, and `openapi.yaml` declares both as alternative security schemes on
+every protected operation: `cookieAuth` (the httpOnly `accessToken` cookie the
+web client sends) and `bearerAuth` (an `Authorization: Bearer` header, which
+the mobile client sends). When both are present, the cookie wins.
 
 ```javascript
 // Pseudo-code structure
 function jwtAuthMiddleware(req, res, next) {
-  // 1. Extract token from Authorization header
+  // 1. Take the token from the accessToken cookie, else the Authorization
+  //    header (a header not of the form "Bearer <token>" is a 401)
   // 2. Verify token signature with JWT_SECRET
   // 3. Check token expiration
   // 4. Validate token type (must be 'access')
