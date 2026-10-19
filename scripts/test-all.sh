@@ -581,8 +581,8 @@ echo ""
 run_phase "🧪" "$LBL_ACCEPTANCE" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
     npx playwright test || true
 
-# The api project again, against the Go server (habitcraft-8ml9). What Go has
-# not built yet is marked knownBug('habitcraft-vxln.5') and expected to fail.
+# The api project again, against the Go server (habitcraft-8ml9). A feature Go
+# has not built yet is marked knownBug('<its bead>') and expected to fail.
 # The web project stays on Node: frontend-test talks to backend-test. Its own
 # output directory, because Playwright empties test-results/ on start.
 run_phase "🧪" "$LBL_ACCEPTANCE_GO" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \

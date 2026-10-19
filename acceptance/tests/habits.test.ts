@@ -4,8 +4,7 @@
 
 import { test } from '../dsl/index.ts';
 
-test('a new habit is listed', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.5');
+test('a new habit is listed', async ({ users, habits }) => {
   await users.register('Alice');
 
   await habits.create('Morning run');
@@ -19,8 +18,7 @@ test('a habit needs a name', async ({ users, habits }) => {
   await habits.create('', { expect: 'invalid-input' });
 });
 
-test('a renamed habit keeps its history', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.5');
+test('a renamed habit keeps its history', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });
@@ -32,12 +30,7 @@ test('a renamed habit keeps its history', async ({ users, habits, knownBug }) =>
   await habits.shouldBeCheckedOff('Evening run', { on: 'yesterday' });
 });
 
-test('an archived habit leaves the list and can be restored', async ({
-  users,
-  habits,
-  knownBug,
-}) => {
-  knownBug('habitcraft-vxln.5');
+test('an archived habit leaves the list and can be restored', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -48,8 +41,7 @@ test('an archived habit leaves the list and can be restored', async ({
   await habits.shouldInclude('Morning run');
 });
 
-test('a deleted habit is gone', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.5');
+test('a deleted habit is gone', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -58,8 +50,7 @@ test('a deleted habit is gone', async ({ users, habits, knownBug }) => {
   await habits.shouldNotExist('Morning run');
 });
 
-test("one user's habits are not visible to another", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.5');
+test("one user's habits are not visible to another", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -74,12 +65,7 @@ test('a habit name has a length limit', async ({ users, habits }) => {
   await habits.create({ length: 'too-long' }, { expect: 'invalid-input' });
 });
 
-test("deleting a habit leaves the other habits' days alone", async ({
-  users,
-  habits,
-  knownBug,
-}) => {
-  knownBug('habitcraft-vxln.5');
+test("deleting a habit leaves the other habits' days alone", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');

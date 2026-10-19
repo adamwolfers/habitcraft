@@ -5,12 +5,11 @@ The Go server that replaces `backend/` in the rebuild (habitcraft-vxln; see
 standalone binary, and its HTTP interface is generated from
 [`shared/api-spec/openapi.yaml`](../shared/api-spec/README.md).
 
-**Status:** `/health`, `/hello`, auth (register, login, refresh, logout,
-change password) and `GET /api/v1/users/me` work (habitcraft-vxln.3,
-habitcraft-vxln.4). Every other operation answers `501 Not implemented` until
-habitcraft-vxln.5 lands users, habits and completions. The stubs are in
-`habitcraft/unimplemented.go`, so move each method out of that file as you
-implement it.
+**Status:** every operation in the spec works: `/health`, `/hello`, auth,
+the profile, habits and completions (habitcraft-vxln.3, habitcraft-vxln.4,
+habitcraft-vxln.5). The whole acceptance suite's `api` project passes against
+it. Where it differs from the Node backend on purpose, it says so under
+[Parity with the Node backend](#parity-with-the-node-backend).
 
 ## Layout
 
@@ -70,9 +69,13 @@ acceptance suite runs against this server with
 [acceptance/README.md](../acceptance/README.md)). CI and phase 21 of
 `scripts/test-all.sh` run its `api` project against this server built from
 `Dockerfile`, as `server-test` on :3020 in `docker-compose.test.yml`
-(habitcraft-8ml9). A test for something not built here yet is marked
-`knownBug('habitcraft-vxln.5')`; as you build it, the test passes and fails the
-run, so remove the mark.
+(habitcraft-8ml9).
+
+Behaviour the acceptance suite has no words for stays in the handler tests,
+at the HTTP level: another user's habit or completions by id (a 404, never a
+403), malformed habit ids and impossible dates on every route, completion
+date-range filters, the embedded-completions window, the habit limit, and
+store failures answered in each route's documented 500 shape.
 
 ## The spec is load-bearing here too
 
@@ -121,6 +124,34 @@ token hashes are interchangeable with the Node backend's.
   response time does not reveal who has an account.
 - **Not yet**: rate limiting (habitcraft-xhmk), and the hardening backlog
   (habitcraft-zr0t).
+
+## Parity with the Node backend
+
+The handlers follow `backend/routes/` message for message, so a client cannot
+tell the servers apart, except where Node is wrong or unbounded:
+
+- **Another user's habit is a 404**, as a missing one is. Node's completion
+  routes answer 403, which tells a caller that the id exists.
+- **`GET /api/v1/habits` embeds 366 days of completions**, today included,
+  where Node embeds every one ever recorded (habitcraft-172z). Older ones come
+  from `GET /api/v1/habits/{habitId}/completions`.
+- **The habit limit holds under concurrency.** Node counts, then inserts; Go
+  locks the user's row first, so two creates at 49 habits cannot both succeed.
+- **Strings are trimmed, not HTML-stripped.** Node passes every body string
+  through an XSS filter; Go stores what was sent, trimmed, and leaves escaping
+  to whatever renders it, as React does. A blank description or note is
+  stored as none.
+- **An icon over ten characters is a 400.** The column is `varchar(10)` and the
+  spec states no limit, so Node answers 500.
+- **An impossible date such as `2026-02-30` is a 400** wherever it is sent.
+  `internal/validation` checks `format: date` as a calendar date.
+- **A habit can be created archived**: `POST /habits` honours `status`, which
+  the spec allows and Node ignores.
+
+One parity detail takes more than the generated types: an update clears a
+description sent as `null` and keeps one not sent at all, as Node does. The
+generated structs decode both to `nil`, so `UpdateHabit` asks the raw body
+(`bodyHas` in `habitcraft.go`).
 
 ## Embedding
 

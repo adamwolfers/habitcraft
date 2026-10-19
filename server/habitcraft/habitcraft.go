@@ -9,10 +9,12 @@
 package habitcraft
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"time"
@@ -112,7 +114,40 @@ func (s *Server) Handler() (http.Handler, error) {
 		BaseRouter:       http.NewServeMux(),
 		ErrorHandlerFunc: s.badParameter,
 	})
-	return authenticate(validate(routes)), nil
+	return authenticate(validate(keepBody(routes))), nil
+}
+
+type bodyKey struct{}
+
+// keepBody keeps a copy of the request body in the context. The generated
+// handlers decode it into structs, where a field sent as null and a field not
+// sent look alike; bodyHas tells them apart.
+func keepBody(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Body == nil || r.Body == http.NoBody {
+			next.ServeHTTP(w, r)
+			return
+		}
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, api.Error{Error: "Could not read the request body"})
+			return
+		}
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), bodyKey{}, body)))
+	})
+}
+
+// bodyHas reports whether the request body is a JSON object with field in it,
+// whatever its value, null included.
+func bodyHas(ctx context.Context, field string) bool {
+	body, _ := ctx.Value(bodyKey{}).([]byte)
+	var fields map[string]json.RawMessage
+	if json.Unmarshal(body, &fields) != nil {
+		return false
+	}
+	_, ok := fields[field]
+	return ok
 }
 
 type requestKey struct{}
@@ -131,16 +166,8 @@ func requestFrom(ctx context.Context) *http.Request {
 	return r
 }
 
-// errNotImplemented marks an operation the rebuild has not reached yet.
-var errNotImplemented = errors.New("not implemented")
-
-// serverError answers a handler's error. Not implemented is a 501, which no
-// operation documents, so the acceptance suite fails loudly on one.
+// serverError answers a handler's error.
 func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
-	if errors.Is(err, errNotImplemented) {
-		writeJSON(w, http.StatusNotImplemented, api.Error{Error: "Not implemented"})
-		return
-	}
 	s.logger.ErrorContext(r.Context(), "request failed", "method", r.Method, "path", r.URL.Path, "err", err)
 	writeJSON(w, http.StatusInternalServerError, api.Error{Error: "Internal server error"})
 }

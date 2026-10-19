@@ -203,6 +203,11 @@ export interface paths {
          * @description All habits for the authenticated user, each with its completions
          *     embedded. This is the ONLY response that carries the completions array;
          *     every other habit response omits it (see HabitWithCompletions).
+         *
+         *     The embed is bounded: completions from the last 366 days, today (UTC)
+         *     included, newest first. Older ones come from listCompletions. The Node
+         *     backend embeds every completion until the Go server replaces it
+         *     (habitcraft-172z).
          */
         get: operations["listHabits"];
         put?: never;

@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -84,9 +85,11 @@ var formatsOnce sync.Once
 var anyUUID = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
 
 // defineFormats registers the string formats the spec uses that kin-openapi
-// does not check by default. Without them "format: email" and "format: uuid"
-// are silently ignored. The registry is global to kin-openapi, so this runs
-// once per process.
+// does not check by default, or checks too loosely. Without them "format:
+// email" and "format: uuid" are silently ignored, and "format: date" is a
+// pattern that lets 2026-02-30 through to fail in the generated types, as a
+// 500 from a body. The registry is global to kin-openapi, so this runs once
+// per process.
 func defineFormats() {
 	openapi3.DefineStringFormatCallback("email", func(value string) error {
 		// net/mail, not a regex: it has no cap on the local part, so an address
@@ -95,6 +98,14 @@ func defineFormats() {
 		address, err := mail.ParseAddress(value)
 		if err != nil || address.Address != value {
 			return errors.New("not a valid email address")
+		}
+		return nil
+	})
+	openapi3.DefineStringFormatCallback("date", func(value string) error {
+		// The layout the generated types parse with, so whatever passes here
+		// decodes there.
+		if _, err := time.Parse(time.DateOnly, value); err != nil {
+			return errors.New("not a valid date (YYYY-MM-DD)")
 		}
 		return nil
 	})

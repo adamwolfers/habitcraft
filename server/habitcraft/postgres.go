@@ -131,6 +131,39 @@ func (p pgStore) changePassword(ctx context.Context, userID uuid.UUID, passwordH
 	})
 }
 
+func (p pgStore) updateUser(ctx context.Context, id uuid.UUID, name, email *string) (user, error) {
+	u := user{id: id}
+	err := p.pool.QueryRow(ctx,
+		`UPDATE users SET name = COALESCE($2, name), email = COALESCE($3, email), updated_at = NOW()
+		 WHERE id = $1
+		 RETURNING email, name, password_hash, created_at`,
+		id, name, email,
+	).Scan(&u.email, &u.name, &u.passwordHash, &u.createdAt)
+	var pgErr *pgconn.PgError
+	switch {
+	case errors.As(err, &pgErr) && pgErr.Code == uniqueViolation:
+		return user{}, errEmailTaken
+	case errors.Is(err, pgx.ErrNoRows):
+		return user{}, errNoSuchUser
+	case err != nil:
+		return user{}, fmt.Errorf("updating a user: %w", err)
+	}
+	return u, nil
+}
+
+// deleteUser leans on the schema: habits, completions and refresh tokens all
+// go with their user by ON DELETE CASCADE.
+func (p pgStore) deleteUser(ctx context.Context, id uuid.UUID) error {
+	tag, err := p.pool.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("deleting a user: %w", err)
+	}
+	if tag.RowsAffected() == 0 {
+		return errNoSuchUser
+	}
+	return nil
+}
+
 // executor is what insertSession needs, from a pool or a transaction.
 type executor interface {
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)

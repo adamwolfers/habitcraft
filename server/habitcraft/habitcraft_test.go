@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/adamwolfers/habitcraft/server/api"
@@ -122,14 +121,6 @@ func TestHello(t *testing.T) {
 	}
 }
 
-func TestOperationsNotYetBuiltAnswer501(t *testing.T) {
-	w := serve(t, fakeDB{}, http.MethodGet, "/api/v1/habits", "", bearer(accessTokenFor(t, uuid.New())))
-
-	if w.Code != http.StatusNotImplemented {
-		t.Fatalf("status = %d, want 501", w.Code)
-	}
-}
-
 func TestRequestsAreValidatedBeforeTheHandler(t *testing.T) {
 	w := serve(t, fakeDB{}, http.MethodPost, "/api/v1/auth/register", `{}`)
 
@@ -149,7 +140,7 @@ func TestUnknownPathsAre404(t *testing.T) {
 
 func TestHandlerErrorsAre500WithoutDetail(t *testing.T) {
 	w := httptest.NewRecorder()
-	r := httptest.NewRequest(http.MethodGet, "/api/v1/habits", nil)
+	r := httptest.NewRequest(http.MethodGet, "/api/v1/users/me", nil)
 
 	newServer(fakeDB{}, newFakeStore(), testConfig()).serverError(w, r, errors.New("secret detail"))
 

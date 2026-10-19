@@ -199,8 +199,8 @@ need.
 > backend's known bugs as expected failures. It is green against the Node
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
 > and phases 11, 20 and 21 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
-> The `api` project also runs against the Go server, with what Go has not built
-> yet marked `knownBug('habitcraft-vxln.5')` (habitcraft-8ml9).
+> The `api` project also runs against the Go server, and passes there too
+> (habitcraft-8ml9, habitcraft-vxln.5).
 > It is the parity harness for the Node → Go rewrite. The Playwright E2E and
 > integration suites below still run alongside it until they are retired.
 
@@ -363,9 +363,9 @@ Notes on that table:
 - **Phase 21 runs the `api` project again, against the Go server**
   (`server-test` on :3020, same database and JWT secret, habitcraft-8ml9). The
   web project stays on Node, because `frontend-test` talks to `backend-test`.
-  Tests for what Go has not built yet are marked `knownBug('habitcraft-vxln.5')`
-  and expected to fail there, so one that starts passing fails the phase until
-  its mark is removed. The script rebuilds `server-test` on every run, since the
+  A feature Go has not built yet is marked with `knownBug('<its bead>')` and
+  expected to fail there (see [acceptance/README.md](../acceptance/README.md#known-bugs)).
+  The script rebuilds `server-test` on every run, since the
   dependency hash only covers the `package-lock.json` files. In CI it is a
   second step of the same `acceptance-tests` job.
 - **Every phase must report exactly one result.** The summary count is asserted

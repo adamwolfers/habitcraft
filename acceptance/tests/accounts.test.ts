@@ -56,8 +56,7 @@ test('changing password needs the current one', async ({ users }) => {
   await users.signInAs('Alice');
 });
 
-test('a deleted account can no longer sign in', async ({ users, knownBug }) => {
-  knownBug('habitcraft-vxln.5');
+test('a deleted account can no longer sign in', async ({ users }) => {
   await users.register('Alice');
 
   await users.deleteAccount({ confirmingWith: 'wrong', expect: 'wrong-password' });
@@ -117,8 +116,7 @@ test('a new password must be long enough', async ({ users }) => {
   await users.signInAs('Alice');
 });
 
-test("a deleted account's habits go with it", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.5');
+test("a deleted account's habits go with it", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await users.deleteAccount();

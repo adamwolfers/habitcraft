@@ -126,11 +126,10 @@ running it as the other backend:
 ACCEPTANCE_BACKEND=go npx playwright test -g 'as long as the limit allows'
 ```
 
-The same mark covers what the Go server has not built yet. Every test that
-needs users, habits or completions on Go is marked `knownBug('habitcraft-vxln.5')`,
-so CI runs the whole suite against Go today. As vxln.5 builds each piece, its
-tests start passing on Go and fail the run until their mark is removed; when
-none is left, delete the entry.
+The same mark covers a feature one backend has not built yet: list its bead
+on that backend, and the tests pass there the moment it lands, failing the
+run until the mark is removed. habitcraft-vxln.5 brought the Go server to
+the whole suite this way (habitcraft-8ml9).
 
 Behaviour that has no words in the user's language — a request for another
 user's habit by id, a malformed token, an expired one — stays in the backend's

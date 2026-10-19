@@ -168,6 +168,40 @@ func TestEmailFormat(t *testing.T) {
 	}
 }
 
+// The spec's date pattern lets through a day the month does not have, which
+// the generated types then fail to parse: a 500 from a body, a bare 400 from
+// a path. The format is checked as a calendar date instead, everywhere.
+func TestDateFormatIsACalendarDate(t *testing.T) {
+	h := newHandler(t)
+	completions := "/api/v1/habits/" + habitID + "/completions"
+
+	for _, tc := range []struct {
+		date  string
+		valid bool
+	}{
+		{"2024-02-29", true},
+		{"2026-12-31", true},
+		{"2026-02-29", false},
+		{"2026-02-30", false},
+		{"2026-04-31", false},
+		{"2026-13-01", false},
+		{"20260101", false},
+	} {
+		for where, w := range map[string]*httptest.ResponseRecorder{
+			"body":  send(t, h, http.MethodPost, completions, `{"date":"`+tc.date+`"}`),
+			"path":  send(t, h, http.MethodDelete, completions+"/"+tc.date, ""),
+			"query": send(t, h, http.MethodGet, completions+"?startDate="+tc.date, ""),
+		} {
+			if tc.valid && w.Code != passed {
+				t.Errorf("%s in the %s: status = %d, want it accepted (%s)", tc.date, where, w.Code, w.Body)
+			}
+			if !tc.valid && (w.Code != http.StatusBadRequest || decode[api.Error](t, w).Error == "") {
+				t.Errorf("%s in the %s: got %d %s, want a 400 in the Error shape", tc.date, where, w.Code, w.Body)
+			}
+		}
+	}
+}
+
 func TestUUIDFormatAcceptsAnyVersion(t *testing.T) {
 	h := newHandler(t)
 	for _, id := range []string{habitID, "00000000-0000-0000-0000-000000000000", "11111111-1111-1111-1111-111111111111"} {
