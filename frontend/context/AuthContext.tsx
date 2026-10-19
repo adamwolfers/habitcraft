@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { setOnAuthFailure, deleteAccount as deleteAccountRequest } from '@/lib/api';
+import { setOnAuthFailure, refreshSession, deleteAccount as deleteAccountRequest } from '@/lib/api';
 import { clearHabitViewModes } from '@/utils/storageUtils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
@@ -40,14 +40,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           credentials: 'include',
         });
 
-        // If 401, try to refresh the token and retry
+        // If 401, try to refresh the token and retry. Through the shared
+        // refresh, so a refresh already in flight is joined, not repeated.
         if (response.status === 401) {
-          const refreshResponse = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
-            method: 'POST',
-            credentials: 'include',
-          });
-
-          if (refreshResponse.ok) {
+          if (await refreshSession()) {
             // Retry the original request with new token
             response = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
               credentials: 'include',

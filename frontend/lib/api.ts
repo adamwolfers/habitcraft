@@ -66,6 +66,22 @@ function handleAuthFailure(): void {
 }
 
 /**
+ * Renew the session, joining a refresh already in progress rather than
+ * starting another. Refresh rotates the refresh token, so a second request
+ * with the same cookie would be refused and sign the user out
+ * (habitcraft-d586). Every refresh in the app must go through here.
+ * @returns Promise<boolean> - true if refresh succeeded, false otherwise
+ */
+export function refreshSession(): Promise<boolean> {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessToken().finally(() => {
+      refreshPromise = null;
+    });
+  }
+  return refreshPromise;
+}
+
+/**
  * Fetch wrapper that handles 401 responses by attempting token refresh
  * @param url - The URL to fetch
  * @param options - Fetch options
@@ -84,14 +100,7 @@ async function fetchWithAuth(
     return response;
   }
 
-  // Wait for any in-progress refresh, or start a new one
-  if (!refreshPromise) {
-    refreshPromise = refreshAccessToken().finally(() => {
-      refreshPromise = null;
-    });
-  }
-
-  const refreshSucceeded = await refreshPromise;
+  const refreshSucceeded = await refreshSession();
 
   if (!refreshSucceeded) {
     // Refresh failed, return the original 401 response

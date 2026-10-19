@@ -403,6 +403,50 @@ describe('AuthContext', () => {
       expect(result.current.user).toBeNull();
       expect(result.current.isAuthenticated).toBe(false);
     });
+
+    it('should join a refresh already in flight rather than start another (habitcraft-d586)', async () => {
+      // Refresh rotates the token: a second refresh with the same cookie is
+      // refused, and the user is signed out.
+      let finishRefresh: (response: Response) => void = () => {};
+      let meCalls = 0;
+      mockFetch.mockImplementation((input) => {
+        if (String(input).endsWith('/api/v1/auth/refresh')) {
+          return new Promise<Response>((resolve) => {
+            finishRefresh = resolve;
+          });
+        }
+        meCalls += 1;
+        return Promise.resolve(
+          meCalls === 1
+            ? ({
+                ok: false,
+                status: 401,
+                json: async () => ({ error: 'Token expired' }),
+              } as Response)
+            : ({ ok: true, status: 200, json: async () => mockUser } as Response)
+        );
+      });
+
+      try {
+        // Another request on the page has already started a refresh.
+        const inFlight = apiModule.refreshSession();
+
+        const { result } = renderHook(() => useAuth(), { wrapper });
+        await waitFor(() => expect(meCalls).toBe(1));
+        finishRefresh({ ok: true, status: 200, json: async () => ({}) } as Response);
+        await inFlight;
+
+        await waitFor(() => {
+          expect(result.current.user).toEqual(mockUser);
+        });
+        const refreshes = mockFetch.mock.calls.filter(([input]) =>
+          String(input).endsWith('/api/v1/auth/refresh')
+        );
+        expect(refreshes).toHaveLength(1);
+      } finally {
+        mockFetch.mockReset();
+      }
+    });
   });
 
   describe('auth failure callback', () => {

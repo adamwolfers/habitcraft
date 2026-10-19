@@ -8,6 +8,7 @@ import {
   updateCompletionNote,
   deleteHabit,
   setOnAuthFailure,
+  refreshSession,
   updateUserName,
   changePassword,
   deleteAccount,
@@ -680,6 +681,42 @@ describe('API Client - JWT Integration', () => {
 
       // Should only call once (no retry on 404)
       expect(global.fetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('refreshSession', () => {
+    it('shares one refresh request between concurrent callers (habitcraft-d586)', async () => {
+      // Refresh rotates the token, so a second request with the same cookie
+      // would be refused and sign the user out.
+      let finishRefresh: (response: Response) => void = () => {};
+      global.fetch = jest.fn(
+        () =>
+          new Promise<Response>((resolve) => {
+            finishRefresh = resolve;
+          })
+      ) as jest.Mock;
+
+      const first = refreshSession();
+      const second = refreshSession();
+      finishRefresh({ ok: true, status: 200, json: async () => ({}) } as Response);
+
+      await expect(Promise.all([first, second])).resolves.toEqual([true, true]);
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.fetch).toHaveBeenCalledWith(
+        `${API_BASE_URL}/api/v1/auth/refresh`,
+        expect.objectContaining({ method: 'POST', credentials: 'include' })
+      );
+    });
+
+    it('starts a new refresh once the previous one has finished', async () => {
+      global.fetch = jest.fn(() =>
+        Promise.resolve({ ok: true, status: 200, json: async () => ({}) } as Response)
+      ) as jest.Mock;
+
+      await refreshSession();
+      await refreshSession();
+
+      expect(global.fetch).toHaveBeenCalledTimes(2);
     });
   });
 
