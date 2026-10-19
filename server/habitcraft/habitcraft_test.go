@@ -10,6 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/adamwolfers/habitcraft/server/api"
 )
 
@@ -25,15 +28,22 @@ func (hangingDB) Ping(ctx context.Context) error {
 	return ctx.Err()
 }
 
-func serve(t *testing.T, db pinger, method, target, body string) *httptest.ResponseRecorder {
+func testConfig() Config {
+	return Config{JWTSecret: testSecret}
+}
+
+func serve(t *testing.T, db pinger, method, target, body string, edits ...func(*http.Request)) *httptest.ResponseRecorder {
 	t.Helper()
-	handler, err := newServer(db, nil).Handler()
+	handler, err := newServer(db, newFakeStore(), testConfig()).Handler()
 	if err != nil {
 		t.Fatal(err)
 	}
 	r := httptest.NewRequest(method, target, strings.NewReader(body))
 	if body != "" {
 		r.Header.Set("Content-Type", "application/json")
+	}
+	for _, edit := range edits {
+		edit(r)
 	}
 	w := httptest.NewRecorder()
 	handler.ServeHTTP(w, r)
@@ -50,8 +60,15 @@ func decode[T any](t *testing.T, w *httptest.ResponseRecorder) T {
 }
 
 func TestNewRequiresADatabase(t *testing.T) {
-	if _, err := New(Config{}); err == nil {
+	if _, err := New(Config{JWTSecret: testSecret}); err == nil {
 		t.Fatal("New with no DB succeeded")
+	}
+}
+
+func TestNewRequiresALongEnoughSecret(t *testing.T) {
+	short := testSecret[:minSecretLength-1]
+	if _, err := New(Config{DB: &pgxpool.Pool{}, JWTSecret: short}); err == nil {
+		t.Fatalf("New with a %d-byte secret succeeded", len(short))
 	}
 }
 
@@ -106,7 +123,7 @@ func TestHello(t *testing.T) {
 }
 
 func TestOperationsNotYetBuiltAnswer501(t *testing.T) {
-	w := serve(t, fakeDB{}, http.MethodGet, "/api/v1/habits", "")
+	w := serve(t, fakeDB{}, http.MethodGet, "/api/v1/habits", "", bearer(accessTokenFor(t, uuid.New())))
 
 	if w.Code != http.StatusNotImplemented {
 		t.Fatalf("status = %d, want 501", w.Code)
@@ -134,7 +151,7 @@ func TestHandlerErrorsAre500WithoutDetail(t *testing.T) {
 	w := httptest.NewRecorder()
 	r := httptest.NewRequest(http.MethodGet, "/api/v1/habits", nil)
 
-	newServer(fakeDB{}, nil).serverError(w, r, errors.New("secret detail"))
+	newServer(fakeDB{}, newFakeStore(), testConfig()).serverError(w, r, errors.New("secret detail"))
 
 	if w.Code != http.StatusInternalServerError || strings.Contains(w.Body.String(), "secret") {
 		t.Errorf("got %d %s, want a 500 that hides the cause", w.Code, w.Body)

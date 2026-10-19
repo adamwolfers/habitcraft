@@ -198,7 +198,7 @@ need.
 > profile, habits and completions, the spec's length limits, and the Node
 > backend's known bugs as expected failures. It is green against the Node
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
-> and phases 11 and 19 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
+> and phases 11 and 20 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
 > It is the parity harness for the Node → Go rewrite. The Playwright E2E and
 > integration suites below still run alongside it until they are retired.
 
@@ -280,7 +280,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **19 phases, one per CI step**, so a green local run predicts a
+The script runs **20 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -299,11 +299,12 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 12 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
 | 13 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
 | 14 | Server Unit Tests | `server: go test -race ./...` | no |
-| 15 | Backend Unit Tests | `backend: npm test` | yes |
-| 16 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 17 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 18 | E2E Tests | `frontend: playwright, 3 shards` | yes |
-| 19 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
+| 15 | Server Store Tests | `server: go test -run TestPostgresStore` on the test database | yes |
+| 16 | Backend Unit Tests | `backend: npm test` | yes |
+| 17 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 18 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 19 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 20 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
 
 Notes on that table:
 
@@ -342,10 +343,16 @@ Notes on that table:
   — plain `npm test` would silently skip a gate CI enforces. Backend and
   frontend have no thresholds, so they use plain `npm test` and skip the
   instrumentation cost.
-- **The Go server needs Go installed**, for phases 7, 12 and 14 (oapi-codegen
-  runs as a `go tool` pinned in `server/go.mod`). The script checks for it up
-  front, alongside each package's `node_modules`.
-- **Phase 19 runs the acceptance suite against the stack phases 15–18 already
+- **The Go server needs Go installed**, for phases 7, 12, 14 and 15
+  (oapi-codegen runs as a `go tool` pinned in `server/go.mod`). The script
+  checks for it up front, alongside each package's `node_modules`.
+- **Phase 15 runs the Go server's store tests against Postgres.** Phase 14
+  runs the same tests against an in-memory fake; with
+  `HABITCRAFT_TEST_DATABASE_URL` set they also run against the real schema, so
+  the SQL and the fake are held to one set of rules (habitcraft-vxln.4). They
+  make their own users and need no reset. In CI the `server-unit-tests` job
+  starts a migrated Postgres of its own and runs both in one `go test`.
+- **Phase 20 runs the acceptance suite against the stack phases 16–19 already
   use**, with no database reset: the DSL makes a fresh user for every test.
   It needs `acceptance/` installed (`npm ci`) and, once, `npx playwright install
   chromium` there for the `web` project. In CI it is the `acceptance-tests` job,

@@ -5,11 +5,12 @@ The Go server that replaces `backend/` in the rebuild (habitcraft-vxln; see
 standalone binary, and its HTTP interface is generated from
 [`shared/api-spec/openapi.yaml`](../shared/api-spec/README.md).
 
-**Status:** this is the skeleton (habitcraft-vxln.3). `/health` and `/hello`
-work. Every other operation answers `501 Not implemented` until its bead lands:
-auth in habitcraft-vxln.4, then users, habits and completions in
-habitcraft-vxln.5. The stubs are in `habitcraft/unimplemented.go`, so move each
-method out of that file as you implement it.
+**Status:** `/health`, `/hello`, auth (register, login, refresh, logout,
+change password) and `GET /api/v1/users/me` work (habitcraft-vxln.3,
+habitcraft-vxln.4). Every other operation answers `501 Not implemented` until
+habitcraft-vxln.5 lands users, habits and completions. The stubs are in
+`habitcraft/unimplemented.go`, so move each method out of that file as you
+implement it.
 
 ## Layout
 
@@ -28,8 +29,16 @@ docker compose -f docker-compose.test.yml up -d postgres-test db-migrate-test
 
 cd server
 DATABASE_URL='postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable' \
+JWT_SECRET='test-jwt-secret-key-for-testing-only' \
+INSECURE_COOKIES=true \
   go run ./cmd/habitcraft            # listens on :8080; PORT overrides
 ```
+
+`JWT_SECRET` is required and must be at least 32 bytes. While the Node backend
+still runs, give both the same secret: their tokens carry the same claims, so a
+session started on one is honoured by the other. `INSECURE_COOKIES=true` drops
+`Secure` from the auth cookies and relaxes `SameSite=Strict` to `Lax`, for a
+browser on plain HTTP. Never set it in production.
 
 The schema is `db/migrations/`, applied by dbmate exactly as for the Node
 backend. The server never migrates the database itself. To build a binary, use
@@ -42,13 +51,24 @@ backend. The server never migrates the database itself. To build a binary, use
 ```bash
 go test -race ./...        # unit tests; the database is faked
 ../scripts/go-lint.sh      # gofmt and go vet, as CI runs them
+
+# The store tests on a real database too (any database migrated by dbmate)
+HABITCRAFT_TEST_DATABASE_URL='postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable' \
+  go test -race -run TestPostgresStore ./habitcraft/
 ```
 
-These are phases 12 and 14 of `scripts/test-all.sh` and the
-`server-unit-tests` CI job. The acceptance suite runs against this server with
+The handler tests run on `fakeStore`, an in-memory store. `store_test.go` holds
+the rules every store must follow and runs them on the fake and, when
+`HABITCRAFT_TEST_DATABASE_URL` is set, on `pgStore`, so the fake cannot drift
+from the SQL. That includes the one property only a real database can show:
+of two concurrent refreshes with one refresh token, exactly one succeeds.
+
+These are phases 12, 14 and 15 of `scripts/test-all.sh` and the
+`server-unit-tests` CI job, which starts its own migrated Postgres. The
+acceptance suite runs against this server with
 `ACCEPTANCE_API_URL=http://localhost:8080 ACCEPTANCE_BACKEND=go` (see
-[acceptance/README.md](../acceptance/README.md)). It is only worth running once
-the auth endpoints exist, because every test registers a user first.
+[acceptance/README.md](../acceptance/README.md)); CI does not run it against Go
+yet (habitcraft-8ml9).
 
 ## The spec is load-bearing here too
 
@@ -73,16 +93,38 @@ Three things tie the server to `openapi.yaml`:
   Both use `api/oapi-codegen.yaml` and produce the same file. oapi-codegen is
   pinned as a `tool` in `go.mod`.
 
-Authentication is not part of request validation. The spec declares two
-alternative schemes on each protected operation, `cookieAuth` and `bearerAuth`.
-Authentication will run as its own middleware in front of validation, so an
-anonymous caller gets a 401 before any field is checked, as on the Node backend
-(habitcraft-vxln.4).
+## Authentication
+
+The flows and token rules are in [AUTHENTICATION.md](../AUTHENTICATION.md); the
+Go server follows them claim for claim, so tokens, cookies and stored refresh
+token hashes are interchangeable with the Node backend's.
+
+- **Its own middleware, in front of validation** (`habitcraft/authenticate.go`).
+  An anonymous caller gets a 401 before any field is checked, as on the Node
+  backend, and never sees per-field errors. Which operations need a token comes
+  from the spec: one with a non-empty `security` list. There is no route list.
+- **The access token** is read from the `accessToken` cookie first, then an
+  `Authorization: Bearer` header, the spec's `cookieAuth` and `bearerAuth`.
+  Verification accepts HS256 only, requires `exp`, and checks `type` is
+  `access`. Handlers read the user with `userFrom(ctx)`.
+- **Refresh tokens rotate**: each works once. Rotation is a conditional update
+  in one transaction, so of two concurrent refreshes with the same token one
+  succeeds and the other gets "Token has been revoked".
+- **A password change** revokes every refresh token the user has, the
+  caller's included, and hands the caller a fresh pair (habitcraft-4k7v).
+- **Passwords** are bcrypt at cost 10, cut at 72 bytes as Node's bcrypt cuts
+  them. A login for an unknown email still spends one bcrypt comparison, so
+  response time does not reveal who has an account.
+- **Not yet**: rate limiting (habitcraft-xhmk), and the hardening backlog
+  (habitcraft-zr0t).
 
 ## Embedding
 
 ```go
-server, err := habitcraft.New(habitcraft.Config{DB: pool}) // a *pgxpool.Pool
+server, err := habitcraft.New(habitcraft.Config{
+	DB:        pool,      // a *pgxpool.Pool
+	JWTSecret: jwtSecret, // at least 32 bytes
+})
 handler, err := server.Handler()
 mux.Handle("/", handler)
 ```

@@ -2,8 +2,11 @@
 //
 // Configuration is from the environment:
 //
-//	DATABASE_URL  required; a database migrated with db/migrations (dbmate)
-//	PORT          optional; default 8080
+//	DATABASE_URL      required; a database migrated with db/migrations (dbmate)
+//	JWT_SECRET        required; at least 32 bytes, the Node backend's while both run
+//	PORT              optional; default 8080
+//	INSECURE_COOKIES  optional; "true" for local development over plain HTTP
+//	                  (auth cookies without Secure, SameSite=Lax). Never in production.
 package main
 
 import (
@@ -15,6 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -41,9 +45,21 @@ func run() error {
 	if databaseURL == "" {
 		return errors.New("DATABASE_URL is not set")
 	}
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		return errors.New("JWT_SECRET is not set")
+	}
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
+	}
+	insecureCookies := false
+	if value := os.Getenv("INSECURE_COOKIES"); value != "" {
+		parsed, err := strconv.ParseBool(value)
+		if err != nil {
+			return fmt.Errorf("INSECURE_COOKIES=%q is not true or false", value)
+		}
+		insecureCookies = parsed
 	}
 
 	// pgxpool connects lazily, so the server starts, and /health reports
@@ -54,7 +70,11 @@ func run() error {
 	}
 	defer db.Close()
 
-	server, err := habitcraft.New(habitcraft.Config{DB: db})
+	server, err := habitcraft.New(habitcraft.Config{
+		DB:              db,
+		JWTSecret:       []byte(jwtSecret),
+		InsecureCookies: insecureCookies,
+	})
 	if err != nil {
 		return err
 	}

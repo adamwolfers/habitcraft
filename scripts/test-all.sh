@@ -65,13 +65,14 @@ LBL_BEADS_DOCTOR="Beads Wiring Tests"
 LBL_TEST_COLLECTION="Test Collection Check"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
 LBL_SERVER_UNIT="Server Unit Tests"
+LBL_SERVER_STORE="Server Store Tests"
 LBL_BACKEND_UNIT="Backend Unit Tests"
 LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 LBL_ACCEPTANCE="Acceptance Tests"
 
-TOTAL_PHASES=19
+TOTAL_PHASES=20
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -334,6 +335,7 @@ if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo ""
     record_phase skip "$LBL_MOBILE_UNIT"
     record_phase skip "$LBL_SERVER_UNIT"
+    record_phase skip "$LBL_SERVER_STORE"
     record_phase skip "$LBL_BACKEND_UNIT"
     record_phase skip "$LBL_FRONTEND_UNIT"
     record_phase skip "$LBL_INTEGRATION"
@@ -419,6 +421,13 @@ if ! wait_for_service "http://localhost:3110" "frontend"; then
 fi
 echo "✅ Frontend is ready"
 echo ""
+
+# The Go server's store tests on the real test database, as CI's
+# server-unit-tests job runs them. They make their own uniquely named users,
+# so they need no reset and leave the fixtures alone.
+run_phase "🐹" "$LBL_SERVER_STORE" "$TIMEOUT_SERVER_UNIT" "$PROJECT_ROOT/server" \
+    env HABITCRAFT_TEST_DATABASE_URL="postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable" \
+    go test -race -count=1 -run TestPostgresStore ./habitcraft/ || true
 
 # Backend Unit Tests
 run_phase "📦" "$LBL_BACKEND_UNIT" "$TIMEOUT_BACKEND_UNIT" "$PROJECT_ROOT/backend" \

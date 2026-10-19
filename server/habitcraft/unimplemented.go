@@ -7,12 +7,8 @@ import (
 )
 
 // The operations the rebuild has not reached. Each answers 501 until its bead
-// lands (habitcraft-vxln.4 auth, habitcraft-vxln.5 users, habits and
-// completions); move a method out of this file as it is implemented.
-
-func (s *Server) ChangePassword(context.Context, api.ChangePasswordRequestObject) (api.ChangePasswordResponseObject, error) {
-	return nil, errNotImplemented
-}
+// lands (habitcraft-vxln.5 users, habits and completions); move a method out
+// of this file as it is implemented.
 
 func (s *Server) CreateCompletion(context.Context, api.CreateCompletionRequestObject) (api.CreateCompletionResponseObject, error) {
 	return nil, errNotImplemented
@@ -34,31 +30,11 @@ func (s *Server) DeleteHabit(context.Context, api.DeleteHabitRequestObject) (api
 	return nil, errNotImplemented
 }
 
-func (s *Server) GetCurrentUser(context.Context, api.GetCurrentUserRequestObject) (api.GetCurrentUserResponseObject, error) {
-	return nil, errNotImplemented
-}
-
 func (s *Server) ListCompletions(context.Context, api.ListCompletionsRequestObject) (api.ListCompletionsResponseObject, error) {
 	return nil, errNotImplemented
 }
 
 func (s *Server) ListHabits(context.Context, api.ListHabitsRequestObject) (api.ListHabitsResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) Login(context.Context, api.LoginRequestObject) (api.LoginResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) Logout(context.Context, api.LogoutRequestObject) (api.LogoutResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) RefreshToken(context.Context, api.RefreshTokenRequestObject) (api.RefreshTokenResponseObject, error) {
-	return nil, errNotImplemented
-}
-
-func (s *Server) Register(context.Context, api.RegisterRequestObject) (api.RegisterResponseObject, error) {
 	return nil, errNotImplemented
 }
 

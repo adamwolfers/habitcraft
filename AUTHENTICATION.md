@@ -78,6 +78,11 @@ User → Expired Access Token → POST /api/v1/auth/refresh
 
 ## Backend Implementation (Node.js/Express)
 
+The Go server (`server/`, habitcraft-vxln) implements the same endpoints,
+tokens, cookies and refresh-token storage, so the two are interchangeable while
+both run on one `JWT_SECRET`. Its specifics are in
+[server/README.md](server/README.md#authentication).
+
 ### Dependencies
 
 ```json
@@ -452,7 +457,8 @@ In place today:
 - **Security Hardening** - Rate limiting, input sanitization, CORS, security headers
 - **Production Configuration** - JWT secrets, HTTPS, environment variables
 
-Planned for the Go server, tracked in beads: email verification
+Planned for the Go server, tracked in beads: rate limiting (habitcraft-xhmk),
+email verification
 (habitcraft-uuim), password reset (habitcraft-1h7e), and an auth hardening
 backlog (habitcraft-zr0t) covering expired refresh-token cleanup, refresh-token
 reuse detection, failed-login lockout and session management.

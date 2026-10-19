@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -26,6 +27,14 @@ import (
 type Config struct {
 	// DB is the HabitCraft database, already migrated with db/migrations.
 	DB *pgxpool.Pool
+	// JWTSecret signs and verifies the access and refresh tokens. It must be
+	// at least 32 bytes. Use the Node backend's JWT_SECRET while both run,
+	// so a session started on one is honoured by the other.
+	JWTSecret []byte
+	// InsecureCookies drops the Secure attribute from the auth cookies and
+	// relaxes SameSite from Strict to Lax, for local development over plain
+	// HTTP. Never set it in production.
+	InsecureCookies bool
 	// Logger defaults to slog.Default().
 	Logger *slog.Logger
 }
@@ -37,8 +46,11 @@ type pinger interface {
 
 // Server implements every operation in the spec.
 type Server struct {
-	db     pinger
-	logger *slog.Logger
+	db              pinger
+	store           store
+	tokens          tokens
+	insecureCookies bool
+	logger          *slog.Logger
 }
 
 var _ api.StrictServerInterface = (*Server)(nil)
@@ -48,30 +60,49 @@ func New(cfg Config) (*Server, error) {
 	if cfg.DB == nil {
 		return nil, errors.New("habitcraft: Config.DB is required")
 	}
-	return newServer(cfg.DB, cfg.Logger), nil
+	if len(cfg.JWTSecret) < minSecretLength {
+		return nil, fmt.Errorf("habitcraft: Config.JWTSecret must be at least %d bytes", minSecretLength)
+	}
+	return newServer(cfg.DB, pgStore{pool: cfg.DB}, cfg), nil
 }
 
-func newServer(db pinger, logger *slog.Logger) *Server {
+// newServer takes everything but the database from cfg, so tests can fake it.
+func newServer(db pinger, st store, cfg Config) *Server {
+	logger := cfg.Logger
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Server{db: db, logger: logger}
+	return &Server{
+		db:              db,
+		store:           st,
+		tokens:          tokens{secret: cfg.JWTSecret, now: time.Now},
+		insecureCookies: cfg.InsecureCookies,
+		logger:          logger,
+	}
 }
 
 // Handler serves the whole API. Its paths are absolute, as the spec writes
 // them (/health, /api/v1/...), so an application mounting it under a prefix
 // strips that prefix first.
+//
+// A request passes authentication, then validation, then reaches its handler.
+// Authentication goes first so an anonymous caller gets a 401 before any field
+// is checked, and never sees per-field errors.
 func (s *Server) Handler() (http.Handler, error) {
 	spec, err := api.GetSwagger()
 	if err != nil {
 		return nil, fmt.Errorf("habitcraft: loading the embedded spec: %w", err)
+	}
+	authenticate, err := s.authentication(spec)
+	if err != nil {
+		return nil, fmt.Errorf("habitcraft: %w", err)
 	}
 	validate, err := validation.Middleware(spec)
 	if err != nil {
 		return nil, fmt.Errorf("habitcraft: %w", err)
 	}
 
-	strict := api.NewStrictHandlerWithOptions(s, nil, api.StrictHTTPServerOptions{
+	strict := api.NewStrictHandlerWithOptions(s, []api.StrictMiddlewareFunc{withRequest}, api.StrictHTTPServerOptions{
 		// Validation has already passed, so a body that will not decode is a
 		// fault here, not in the request.
 		RequestErrorHandlerFunc:  s.serverError,
@@ -81,7 +112,23 @@ func (s *Server) Handler() (http.Handler, error) {
 		BaseRouter:       http.NewServeMux(),
 		ErrorHandlerFunc: s.badParameter,
 	})
-	return validate(routes), nil
+	return authenticate(validate(routes)), nil
+}
+
+type requestKey struct{}
+
+// withRequest hands the strict handlers the raw request, for the cookies the
+// spec does not model as parameters (refresh and logout read refreshToken).
+func withRequest(next api.StrictHandlerFunc, _ string) api.StrictHandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error) {
+		return next(context.WithValue(ctx, requestKey{}, r), w, r, request)
+	}
+}
+
+// requestFrom returns the request withRequest stored in ctx.
+func requestFrom(ctx context.Context) *http.Request {
+	r, _ := ctx.Value(requestKey{}).(*http.Request)
+	return r
 }
 
 // errNotImplemented marks an operation the rebuild has not reached yet.
