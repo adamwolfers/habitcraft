@@ -99,9 +99,7 @@ test('an email address signs in whatever its case', async ({ users }) => {
   await users.shouldBeSignedIn();
 });
 
-test('changing password keeps the user signed in', async ({ users, knownBug }) => {
-  knownBug('habitcraft-4k7v');
-
+test('changing password keeps the user signed in', async ({ users }) => {
   await users.register('Alice');
   await users.changePassword();
 

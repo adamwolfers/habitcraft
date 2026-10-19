@@ -643,6 +643,54 @@ describe('Users API', () => {
       );
     });
 
+    it('should keep the caller signed in on a fresh token pair (habitcraft-4k7v)', async () => {
+      const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
+        expiresIn: '15m',
+      });
+      const mockUser = {
+        id: mockUserId,
+        email: 'test@example.com',
+        password_hash: 'old_hashed_password',
+      };
+
+      pool.query.mockResolvedValueOnce({ rows: [mockUser] });
+      bcrypt.compare.mockResolvedValueOnce(true);
+      bcrypt.hash.mockResolvedValueOnce('new_hashed_password');
+      pool.query.mockResolvedValueOnce({ rows: [{ id: mockUserId }] });
+      tokenService.revokeAllUserTokens.mockResolvedValueOnce();
+
+      const response = await request(app)
+        .put('/api/v1/users/me/password')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .send(validPasswordChange);
+
+      expect(response.status).toBe(200);
+      const { refreshToken, accessToken: newAccessToken } = response.body;
+      expect(jwt.verify(newAccessToken, JWT_SECRET)).toMatchObject({
+        userId: mockUserId,
+        type: 'access',
+      });
+      expect(jwt.verify(refreshToken, JWT_SECRET)).toMatchObject({
+        userId: mockUserId,
+        type: 'refresh',
+      });
+
+      // The new refresh token is stored AFTER every old one is revoked, or the
+      // revoke would take it too.
+      expect(tokenService.storeRefreshToken).toHaveBeenCalledWith(
+        mockUserId,
+        refreshToken,
+        expect.any(Date)
+      );
+      expect(tokenService.storeRefreshToken.mock.invocationCallOrder[0]).toBeGreaterThan(
+        tokenService.revokeAllUserTokens.mock.invocationCallOrder[0]
+      );
+
+      const cookies = response.headers['set-cookie'].join('\n');
+      expect(cookies).toContain(`accessToken=${newAccessToken}`);
+      expect(cookies).toContain(`refreshToken=${refreshToken}`);
+    });
+
     it('should update password_hash in database', async () => {
       const accessToken = jwt.sign({ userId: mockUserId, type: 'access' }, JWT_SECRET, {
         expiresIn: '15m',

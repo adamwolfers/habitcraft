@@ -156,6 +156,28 @@ User → Expired Access Token → POST /api/v1/auth/refresh
   ```
   (New refreshToken is set via HttpOnly cookie)
 
+#### Change Password
+- **Endpoint:** `PUT /api/v1/users/me/password`
+- **Headers:** `Authorization: Bearer <accessToken>` (or the `accessToken` cookie)
+- **Request Body:** `currentPassword`, `newPassword`, `confirmPassword`
+- **Behavior:**
+  - Verifies the current password (wrong one: 401)
+  - Revokes **every** refresh token for the user, the caller's included, so
+    every session started with the old password must sign in again
+  - Issues the caller a fresh access + refresh token, set as HttpOnly cookies
+    and returned in the body, so the user stays signed in where they made the
+    change (habitcraft-4k7v)
+- **Response (200):**
+  ```json
+  {
+    "message": "Password changed successfully",
+    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIs..."
+  }
+  ```
+- Access tokens issued before the change, on any device, stay valid until they
+  expire (15 minutes): they are not checked against the database.
+
 #### 4. User Profile
 - **Endpoint:** `GET /api/v1/users/me`
 - **Headers:** `Authorization: Bearer <accessToken>`

@@ -22,10 +22,6 @@ interface KnownBug {
 }
 
 export const KNOWN_BUGS = {
-  'habitcraft-4k7v': {
-    on: ['node'],
-    summary: 'a password change revokes the session that made it',
-  },
   'habitcraft-0roi': {
     on: ['node'],
     summary: "an email at the spec's length limit is refused as malformed",

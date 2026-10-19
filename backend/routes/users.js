@@ -6,6 +6,7 @@ const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
 const { passwordChangeLimiter, accountDeleteLimiter } = require('../middleware/rateLimiter');
 const { sanitizeBody } = require('../middleware/sanitize');
 const tokenService = require('../services/tokenService');
+const { issueSession } = require('../services/sessionService');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 const { requestLimits } = require('../validators/apiLimits.generated');
 
@@ -254,15 +255,25 @@ router.put(
         req.userId,
       ]);
 
-      // Revoke all refresh tokens (force re-login on other devices)
+      // Revoke every refresh token, the caller's included, so any session
+      // started with the old password ends. Then give the caller a fresh pair
+      // so the user stays signed in where they made the change
+      // (habitcraft-4k7v). The order matters: issuing first would revoke the
+      // new token too.
       await tokenService.revokeAllUserTokens(req.userId);
+      const tokens = await issueSession(res, req.userId);
 
       logSecurityEvent(SECURITY_EVENTS.PASSWORD_CHANGE_SUCCESS, req, {
         userId: req.userId,
         email: user.email,
       });
 
-      res.json({ message: 'Password changed successfully' });
+      res.json({
+        message: 'Password changed successfully',
+        // Include tokens in body for mobile clients (web uses HttpOnly cookies)
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
     } catch (error) {
       console.error('Error changing password:', error);
       res.status(500).json({ error: 'Internal server error' });

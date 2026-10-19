@@ -722,13 +722,51 @@ describe('Authentication Integration Tests', () => {
 
       expect(refreshAfter.status).toBe(401);
 
-      // Step 5: Verify in database that all refresh tokens are revoked
+      // Step 5: Verify in database that the only live refresh token is the
+      // fresh one the change handed back
       const pool = getTestPool();
       const dbResult = await pool.query(
         'SELECT COUNT(*) as count FROM refresh_tokens WHERE user_id = $1 AND revoked = false',
         [testUsers.user1.id]
       );
-      expect(parseInt(dbResult.rows[0].count)).toBe(0);
+      expect(parseInt(dbResult.rows[0].count)).toBe(1);
+    });
+
+    it('should keep the caller signed in on the fresh pair (habitcraft-4k7v)', async () => {
+      const newPassword = 'StaySignedIn321!';
+
+      const loginResponse = await request(testServer).post('/api/v1/auth/login').send({
+        email: testUsers.user1.email,
+        password: testUsers.user1.password,
+      });
+      const cookieString = loginResponse.headers['set-cookie']
+        .map((c) => c.split(';')[0])
+        .join('; ');
+
+      const changeResponse = await request(testServer)
+        .put('/api/v1/users/me/password')
+        .set('Cookie', cookieString)
+        .send({
+          currentPassword: testUsers.user1.password,
+          newPassword,
+          confirmPassword: newPassword,
+        });
+
+      expect(changeResponse.status).toBe(200);
+      const changeCookies = changeResponse.headers['set-cookie'].join('\n');
+      expect(changeCookies).toContain(`refreshToken=${changeResponse.body.refreshToken}`);
+
+      // The fresh refresh token renews the session...
+      const refreshResponse = await request(testServer)
+        .post('/api/v1/auth/refresh')
+        .set('Cookie', `refreshToken=${changeResponse.body.refreshToken}`);
+      expect(refreshResponse.status).toBe(200);
+
+      // ...and the fresh access token works.
+      const meResponse = await request(testServer)
+        .get('/api/v1/users/me')
+        .set('Authorization', `Bearer ${changeResponse.body.accessToken}`);
+      expect(meResponse.status).toBe(200);
     });
   });
 });

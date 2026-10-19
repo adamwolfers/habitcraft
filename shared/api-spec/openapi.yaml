@@ -389,7 +389,10 @@ paths:
       summary: Change password
       description: |
         Change the password after verifying the current one. On success every
-        refresh token for the user is revoked, forcing re-login elsewhere.
+        refresh token for the user is revoked, the caller's included, so every
+        other session must sign in again. The caller gets a fresh pair, set as
+        cookies and returned in the body (see /api/v1/auth/register), and stays
+        signed in.
       operationId: changePassword
       security:
         - bearerAuth: []
@@ -423,9 +426,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Message'
-              example:
-                message: Password changed successfully
+                $ref: '#/components/schemas/PasswordChanged'
         '400':
           $ref: '#/components/responses/ValidationFailed'
         '401':
@@ -874,6 +875,23 @@ components:
       additionalProperties: false
       required: [accessToken, refreshToken]
       properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+
+    PasswordChanged:
+      type: object
+      description: |
+        Change-password response. The change revokes every refresh token the
+        user had, so the caller's session continues on the fresh pair here,
+        which is also set as HttpOnly cookies.
+      additionalProperties: false
+      required: [message, accessToken, refreshToken]
+      properties:
+        message:
+          type: string
+          example: Password changed successfully
         accessToken:
           type: string
         refreshToken:

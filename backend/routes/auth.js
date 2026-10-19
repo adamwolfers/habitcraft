@@ -1,59 +1,17 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const pool = require('../db/pool');
 const { loginLimiter, registerLimiter, refreshLimiter } = require('../middleware/rateLimiter');
 const { sanitizeBody, sanitizeEmail } = require('../middleware/sanitize');
 const { logSecurityEvent, SECURITY_EVENTS } = require('../utils/securityLogger');
 const tokenService = require('../services/tokenService');
+const { issueSession, clearAuthCookies } = require('../services/sessionService');
 const { requestLimits } = require('../validators/apiLimits.generated');
-const {
-  JWT_SECRET,
-  JWT_ALGORITHM,
-  JWT_ALGORITHMS,
-  ACCESS_TOKEN_EXPIRES,
-  REFRESH_TOKEN_EXPIRES,
-  ACCESS_TOKEN_MAX_AGE,
-  REFRESH_TOKEN_MAX_AGE,
-  IS_PRODUCTION,
-} = require('../config/jwt');
+const { JWT_SECRET, JWT_ALGORITHMS } = require('../config/jwt');
 
 const router = express.Router();
-
-// Cookie options
-const cookieOptions = {
-  httpOnly: true,
-  secure: IS_PRODUCTION, // Only send over HTTPS in production
-  sameSite: IS_PRODUCTION ? 'strict' : 'lax',
-  path: '/',
-};
-
-// Set auth cookies on response
-function setAuthCookies(res, accessToken, refreshToken) {
-  res.cookie('accessToken', accessToken, {
-    ...cookieOptions,
-    maxAge: ACCESS_TOKEN_MAX_AGE,
-  });
-  res.cookie('refreshToken', refreshToken, {
-    ...cookieOptions,
-    maxAge: REFRESH_TOKEN_MAX_AGE,
-  });
-}
-
-// Generate tokens with unique jti claims
-function generateTokens(userId) {
-  const accessToken = jwt.sign({ userId, type: 'access', jti: crypto.randomUUID() }, JWT_SECRET, {
-    algorithm: JWT_ALGORITHM,
-    expiresIn: ACCESS_TOKEN_EXPIRES,
-  });
-  const refreshToken = jwt.sign({ userId, type: 'refresh', jti: crypto.randomUUID() }, JWT_SECRET, {
-    algorithm: JWT_ALGORITHM,
-    expiresIn: REFRESH_TOKEN_EXPIRES,
-  });
-  return { accessToken, refreshToken };
-}
 
 // Validation middleware.
 //
@@ -84,12 +42,6 @@ const loginValidation = [
   body('email').isEmail().withMessage('Valid email is required'),
   body('password').notEmpty().withMessage('Password is required'),
 ];
-
-// Clear auth cookies on response
-function clearAuthCookies(res) {
-  res.clearCookie('accessToken', cookieOptions);
-  res.clearCookie('refreshToken', cookieOptions);
-}
 
 // POST /api/v1/auth/register
 router.post(
@@ -128,14 +80,7 @@ router.post(
       );
 
       const user = result.rows[0];
-      const tokens = generateTokens(user.id);
-
-      // Store refresh token in database for rotation/revocation
-      const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
-      await tokenService.storeRefreshToken(user.id, tokens.refreshToken, refreshTokenExpiry);
-
-      // Set HttpOnly cookies
-      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      const tokens = await issueSession(res, user.id);
 
       logSecurityEvent(SECURITY_EVENTS.REGISTER_SUCCESS, req, {
         email: user.email,
@@ -202,14 +147,7 @@ router.post(
         return res.status(401).json({ error: 'Invalid credentials' });
       }
 
-      const tokens = generateTokens(user.id);
-
-      // Store refresh token in database for rotation/revocation
-      const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
-      await tokenService.storeRefreshToken(user.id, tokens.refreshToken, refreshTokenExpiry);
-
-      // Set HttpOnly cookies
-      setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+      const tokens = await issueSession(res, user.id);
 
       logSecurityEvent(SECURITY_EVENTS.LOGIN_SUCCESS, req, {
         email: user.email,
@@ -268,15 +206,8 @@ router.post('/refresh', refreshLimiter, async (req, res) => {
     // Revoke the old refresh token
     await tokenService.revokeRefreshToken(refreshToken);
 
-    // Generate new tokens (rotation)
-    const tokens = generateTokens(decoded.userId);
-
-    // Store new refresh token in database
-    const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_MAX_AGE);
-    await tokenService.storeRefreshToken(decoded.userId, tokens.refreshToken, refreshTokenExpiry);
-
-    // Set new cookies
-    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
+    // Issue a new pair (rotation)
+    const tokens = await issueSession(res, decoded.userId);
 
     logSecurityEvent(SECURITY_EVENTS.TOKEN_REFRESH_SUCCESS, req, {
       userId: decoded.userId,

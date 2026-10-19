@@ -107,8 +107,8 @@ A bug the Node backend keeps until the Go server replaces it is still written as
 a test of what the product *should* do, marked with its bead:
 
 ```ts
-test('changing password keeps the user signed in', async ({ users, knownBug }) => {
-  knownBug('habitcraft-4k7v');
+test('an email address as long as the limit allows can register', async ({ users, knownBug }) => {
+  knownBug('habitcraft-0roi');
   // ...
 });
 ```
@@ -121,7 +121,7 @@ outlive the bug. Check that an expected failure fails for the right reason by
 running it as the other backend:
 
 ```bash
-ACCEPTANCE_BACKEND=go npx playwright test -g 'keeps the user signed in'
+ACCEPTANCE_BACKEND=go npx playwright test -g 'as long as the limit allows'
 ```
 
 Behaviour that has no words in the user's language — a request for another

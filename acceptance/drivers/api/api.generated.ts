@@ -178,7 +178,10 @@ export interface paths {
         /**
          * Change password
          * @description Change the password after verifying the current one. On success every
-         *     refresh token for the user is revoked, forcing re-login elsewhere.
+         *     refresh token for the user is revoked, the caller's included, so every
+         *     other session must sign in again. The caller gets a fresh pair, set as
+         *     cookies and returned in the body (see /api/v1/auth/register), and stays
+         *     signed in.
          */
         put: operations["changePassword"];
         post?: never;
@@ -323,6 +326,17 @@ export interface components {
             refreshToken: string;
         };
         TokenPair: {
+            accessToken: string;
+            refreshToken: string;
+        };
+        /**
+         * @description Change-password response. The change revokes every refresh token the
+         *     user had, so the caller's session continues on the fresh pair here,
+         *     which is also set as HttpOnly cookies.
+         */
+        PasswordChanged: {
+            /** @example Password changed successfully */
+            message: string;
             accessToken: string;
             refreshToken: string;
         };
@@ -991,12 +1005,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    /**
-                     * @example {
-                     *       "message": "Password changed successfully"
-                     *     }
-                     */
-                    "application/json": components["schemas"]["Message"];
+                    "application/json": components["schemas"]["PasswordChanged"];
                 };
             };
             400: components["responses"]["ValidationFailed"];

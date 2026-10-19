@@ -93,7 +93,11 @@ export class ApiDriver implements ProtocolDriver {
       newPassword,
       confirmPassword: newPassword,
     });
-    return outcomeOf(response, 200, { 400: 'invalid-input', 401: 'wrong-password' });
+    const outcome = outcomeOf(response, 200, { 400: 'invalid-input', 401: 'wrong-password' });
+    // The change revokes every refresh token, this session's included, and
+    // hands back a fresh pair to carry on with.
+    if (outcome.ok) this.keepTokens(response.body as Schemas['PasswordChanged']);
+    return outcome;
   }
 
   async deleteAccount(password: string): Promise<Outcome> {
