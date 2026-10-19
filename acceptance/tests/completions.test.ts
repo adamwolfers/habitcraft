@@ -4,7 +4,12 @@
 
 import { test } from '../dsl/index.ts';
 
-test('a habit checked off today is done today and only today', async ({ users, habits }) => {
+test('a habit checked off today is done today and only today', async ({
+  users,
+  habits,
+  knownBug,
+}) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'today' });
@@ -15,7 +20,8 @@ test('a habit checked off today is done today and only today', async ({ users, h
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'yesterday' });
 });
 
-test('a day can only be checked off once', async ({ users, habits }) => {
+test('a day can only be checked off once', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'today' });
@@ -23,7 +29,8 @@ test('a day can only be checked off once', async ({ users, habits }) => {
   await habits.checkOff('Morning run', { on: 'today', expect: 'already-checked-off' });
 });
 
-test('unchecking a day undoes it', async ({ users, habits }) => {
+test('unchecking a day undoes it', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });
@@ -33,7 +40,8 @@ test('unchecking a day undoes it', async ({ users, habits }) => {
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'yesterday' });
 });
 
-test('a checked-off day can carry a note', async ({ users, habits }) => {
+test('a checked-off day can carry a note', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -47,7 +55,8 @@ test('a checked-off day can carry a note', async ({ users, habits }) => {
   await habits.shouldHaveNote('Morning run', { on: 'today', note: null });
 });
 
-test('a day in the future cannot be checked off', async ({ users, habits }) => {
+test('a day in the future cannot be checked off', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -56,7 +65,8 @@ test('a day in the future cannot be checked off', async ({ users, habits }) => {
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'tomorrow' });
 });
 
-test('each day is checked off on its own', async ({ users, habits }) => {
+test('each day is checked off on its own', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: '10 days ago' });
@@ -70,7 +80,8 @@ test('each day is checked off on its own', async ({ users, habits }) => {
   await habits.shouldBeCheckedOff('Morning run', { on: 'today' });
 });
 
-test('each habit is checked off on its own', async ({ users, habits }) => {
+test('each habit is checked off on its own', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');
@@ -81,7 +92,8 @@ test('each habit is checked off on its own', async ({ users, habits }) => {
   await habits.shouldNotBeCheckedOff('Read', { on: 'today' });
 });
 
-test("one user's check-offs do not touch another's", async ({ users, habits }) => {
+test("one user's check-offs do not touch another's", async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'today' });
@@ -96,7 +108,12 @@ test("one user's check-offs do not touch another's", async ({ users, habits }) =
   await habits.shouldBeCheckedOff('Morning run', { on: 'today' });
 });
 
-test('a note can be as long as the limit allows, and no longer', async ({ users, habits }) => {
+test('a note can be as long as the limit allows, and no longer', async ({
+  users,
+  habits,
+  knownBug,
+}) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'today' });

@@ -26,6 +26,14 @@ export const KNOWN_BUGS = {
     on: ['node'],
     summary: "an email at the spec's length limit is refused as malformed",
   },
+  // Not a bug but a gap: the Go server answers 501 for habits, completions,
+  // profile updates and account deletion until this bead lands. Marked the
+  // same way so CI can run the whole suite against Go now, and so each test
+  // vxln.5 makes pass fails the run until its mark is removed.
+  'habitcraft-vxln.5': {
+    on: ['go'],
+    summary: 'users, habits and completions are not built on the Go server yet',
+  },
 } satisfies Record<string, KnownBug>;
 
 export type KnownBugId = keyof typeof KNOWN_BUGS;

@@ -978,6 +978,7 @@ jobs:
           files: |
             docker-compose.test.yml
             docker-bake.test.hcl
+          targets: backend-test,frontend-test
           set: |
             ${{ !inputs.force_rebuild && '*.cache-from=type=gha' || '' }}
             *.cache-to=type=gha,mode=max
@@ -996,8 +997,10 @@ jobs:
         working-directory: frontend
         run: npx playwright install --with-deps chromium
 
+      # Named, so the Go server (server-test) is neither built nor started:
+      # only the acceptance job uses it.
       - name: Start test environment
-        run: docker compose -f docker-compose.test.yml up -d --wait
+        run: docker compose -f docker-compose.test.yml up -d --wait backend-test frontend-test
 
       - name: Wait for services to be ready
         run: |
@@ -1063,11 +1066,14 @@ jobs:
   # The four-layer acceptance suite (acceptance/README.md): every test case
   # runs once per protocol driver, `api` and `web`, against the same compose
   # stack the E2E job boots. It is the parity harness for the Go rebuild
-  # (habitcraft-vxln); when the Go server exists it becomes a second target
-  # here, selected by ACCEPTANCE_API_URL and ACCEPTANCE_BACKEND.
+  # (habitcraft-vxln), so the api project runs a second time against the Go
+  # server (server-test), selected by ACCEPTANCE_API_URL and ACCEPTANCE_BACKEND
+  # (habitcraft-8ml9). What Go has not built yet is marked
+  # knownBug('habitcraft-vxln.5') and expected to fail there. The web project
+  # stays on Node: frontend-test talks to backend-test.
   #
   # Gated like e2e-tests plus `acceptance`, because the suite's own files are
-  # the test cases. Not sharded: the DSL isolates every test, so the config
+  # the test cases, and `server` for the Go target. Not sharded: the DSL isolates every test, so the config
   # runs fullyParallel and Playwright splits the work across workers itself.
   acceptance-tests:
     name: Acceptance Tests
@@ -1084,6 +1090,7 @@ jobs:
         needs.detect-changes.outputs.shared == 'true' ||
         needs.detect-changes.outputs.e2e-infra == 'true' ||
         needs.detect-changes.outputs.acceptance == 'true' ||
+        needs.detect-changes.outputs.server == 'true' ||
         needs.detect-changes.outputs.workflow == 'true'
       )
     defaults:
@@ -1128,8 +1135,9 @@ jobs:
             *.cache-to=type=gha,mode=max
           load: true
 
-      # The web project needs frontend-test as well as backend-test; --wait
-      # covers the database and its migrations through depends_on.
+      # The web project needs frontend-test as well as backend-test, and the Go
+      # target needs server-test; --wait covers the database and its
+      # migrations through depends_on.
       - name: Start test environment
         working-directory: .
         run: docker compose -f docker-compose.test.yml up -d --wait
@@ -1140,24 +1148,37 @@ jobs:
           echo "Backend is ready"
           timeout 60 bash -c 'until curl -s http://localhost:3110 > /dev/null; do sleep 2; done'
           echo "Frontend is ready"
+          timeout 60 bash -c 'until curl -s http://localhost:3020/health > /dev/null; do sleep 2; done'
+          echo "Go server is ready"
 
       - name: Run acceptance tests
         env:
           ACCEPTANCE_BACKEND: node
         run: npx playwright test
 
+      # Runs even when the Node run failed, so one red run reports both. Its own
+      # output directory, because Playwright empties test-results/ on start.
+      - name: Run acceptance tests against the Go server
+        if: success() || failure()
+        env:
+          ACCEPTANCE_API_URL: http://localhost:3020
+          ACCEPTANCE_BACKEND: go
+        run: npx playwright test --project api --output test-results-go
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: acceptance-test-results
-          path: acceptance/test-results/
+          path: |
+            acceptance/test-results/
+            acceptance/test-results-go/
           retention-days: 7
 
       - name: Show service logs
         if: failure()
         working-directory: .
-        run: docker compose -f docker-compose.test.yml logs --tail 200 backend-test frontend-test
+        run: docker compose -f docker-compose.test.yml logs --tail 200 backend-test server-test frontend-test
 
       - name: Stop test environment
         if: always()

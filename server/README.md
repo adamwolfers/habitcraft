@@ -67,8 +67,12 @@ These are phases 12, 14 and 15 of `scripts/test-all.sh` and the
 `server-unit-tests` CI job, which starts its own migrated Postgres. The
 acceptance suite runs against this server with
 `ACCEPTANCE_API_URL=http://localhost:8080 ACCEPTANCE_BACKEND=go` (see
-[acceptance/README.md](../acceptance/README.md)); CI does not run it against Go
-yet (habitcraft-8ml9).
+[acceptance/README.md](../acceptance/README.md)). CI and phase 21 of
+`scripts/test-all.sh` run its `api` project against this server built from
+`Dockerfile`, as `server-test` on :3020 in `docker-compose.test.yml`
+(habitcraft-8ml9). A test for something not built here yet is marked
+`knownBug('habitcraft-vxln.5')`; as you build it, the test passes and fails the
+run, so remove the mark.
 
 ## The spec is load-bearing here too
 

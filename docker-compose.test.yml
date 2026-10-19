@@ -73,6 +73,27 @@ services:
       - habitcraft-test-network
     command: npm run dev
 
+  # Go server: the acceptance suite's second target (habitcraft-8ml9), on the
+  # same database and with the same JWT secret as backend-test. It answers the
+  # api project only; frontend-test talks to backend-test.
+  server-test:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: habitcraft-server-test
+    environment:
+      DATABASE_URL: postgresql://habituser:habitpass@postgres-test:5432/habitcraft_test?sslmode=disable
+      JWT_SECRET: test-jwt-secret-key-for-testing-only
+      PORT: 8080
+      INSECURE_COOKIES: "true"
+    ports:
+      - "3020:8080"
+    depends_on:
+      db-migrate-test:
+        condition: service_completed_successfully
+    networks:
+      - habitcraft-test-network
+
   # Next.js Frontend for E2E Tests
   frontend-test:
     build:

@@ -9,13 +9,19 @@
 #   docker buildx bake -f docker-compose.test.yml -f docker-bake.test.hcl --load
 
 group "default" {
-  targets = ["backend-test", "frontend-test"]
+  targets = ["backend-test", "server-test", "frontend-test"]
 }
 
 target "backend-test" {
   context = "."
   dockerfile = "./backend/Dockerfile.dev"
   tags = ["habitcraft-backend-test:latest"]
+}
+
+target "server-test" {
+  context = "./server"
+  dockerfile = "Dockerfile"
+  tags = ["habitcraft-server-test:latest"]
 }
 
 target "frontend-test" {

@@ -4,7 +4,8 @@
 
 import { test } from '../dsl/index.ts';
 
-test('a user can rename themselves', async ({ users, profile }) => {
+test('a user can rename themselves', async ({ users, profile, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice', { name: 'Alice Smith' });
   await profile.shouldHaveName('Alice Smith');
 
@@ -13,7 +14,12 @@ test('a user can rename themselves', async ({ users, profile }) => {
   await profile.shouldHaveName('Alice Jones');
 });
 
-test('a user signs in with their new email after changing it', async ({ users, profile }) => {
+test('a user signs in with their new email after changing it', async ({
+  users,
+  profile,
+  knownBug,
+}) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
 
   await profile.changeEmail();
@@ -23,7 +29,8 @@ test('a user signs in with their new email after changing it', async ({ users, p
   await users.signInAs('Alice');
 });
 
-test("a user cannot take another user's email", async ({ users, profile }) => {
+test("a user cannot take another user's email", async ({ users, profile, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Bob');
   await users.register('Alice');
 
@@ -32,7 +39,8 @@ test("a user cannot take another user's email", async ({ users, profile }) => {
   await profile.shouldHaveEmailOf('Alice');
 });
 
-test('a user can keep their own email', async ({ users, profile }) => {
+test('a user can keep their own email', async ({ users, profile, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
 
   await profile.changeEmailToThatOf('Alice');
@@ -40,7 +48,8 @@ test('a user can keep their own email', async ({ users, profile }) => {
   await profile.shouldHaveEmailOf('Alice');
 });
 
-test('an email is kept in lower case', async ({ users, profile }) => {
+test('an email is kept in lower case', async ({ users, profile, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice');
 
   await profile.changeEmail({ to: 'in-capitals' });
@@ -59,6 +68,7 @@ test('a profile email must be well-formed', async ({ users, profile }) => {
 });
 
 test('a profile email can be as long as the limit allows', async ({ users, profile, knownBug }) => {
+  knownBug('habitcraft-vxln.5');
   knownBug('habitcraft-0roi');
   await users.register('Alice');
 
@@ -75,7 +85,12 @@ test('a profile email over the limit is refused', async ({ users, profile }) => 
   await profile.shouldHaveEmailOf('Alice');
 });
 
-test('a name can be as long as the limit allows, and no longer', async ({ users, profile }) => {
+test('a name can be as long as the limit allows, and no longer', async ({
+  users,
+  profile,
+  knownBug,
+}) => {
+  knownBug('habitcraft-vxln.5');
   await users.register('Alice', { name: 'Alice Smith' });
 
   await profile.rename({ length: 'longest-allowed' });

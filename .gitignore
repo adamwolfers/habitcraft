@@ -43,6 +43,7 @@ playwright-results-gcp/
 playwright-report/
 blob-report/
 test-results/
+test-results-go/
 .e2e-shard-logs/
 
 # Next.js

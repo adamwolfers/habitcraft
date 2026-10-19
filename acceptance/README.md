@@ -17,16 +17,17 @@ per project, unchanged. There are two: `api` and `web`.
 ## Running
 
 ```bash
-# From the repo root: the test database, the Node backend on :3010 and the
-# Next.js app on :3110 (the web project's system under test)
-docker compose -f docker-compose.test.yml up -d postgres-test db-migrate-test backend-test frontend-test
+# From the repo root: the test database, the Node backend on :3010, the Go
+# server on :3020 and the Next.js app on :3110 (the web project's system under
+# test)
+docker compose -f docker-compose.test.yml up -d postgres-test db-migrate-test backend-test server-test frontend-test
 
 cd acceptance
 npm ci
 npx playwright install chromium                  # once, for the web project
 npm test                                         # every project
 npm test -- --project api                        # one project; no frontend needed
-ACCEPTANCE_API_URL=http://localhost:8080 ACCEPTANCE_BACKEND=go npm test  # the Go server
+ACCEPTANCE_API_URL=http://localhost:3020 ACCEPTANCE_BACKEND=go npm test -- --project api  # the Go server (server-test)
 npm run typecheck
 ```
 
@@ -35,8 +36,9 @@ another app. The app finds its backend itself; `frontend-test` talks to `:3010`.
 `ACCEPTANCE_BACKEND` (`node`, the default, or `go`) says which server those URLs
 reach, which decides where the [known bugs](#known-bugs) are expected to fail.
 
-CI runs both projects in the `acceptance-tests` job, and `scripts/test-all.sh`
-runs them as its last phase, so a failing acceptance test blocks a deploy. See
+CI runs both projects in the `acceptance-tests` job, then the `api` project
+again against the Go server (`server-test`), and `scripts/test-all.sh` does the
+same in its last two phases, so a failing acceptance test blocks a deploy. See
 [docs/TESTING.md](../docs/TESTING.md#all-tests).
 
 No database reset is needed between runs, and none happens. The DSL registers
@@ -123,6 +125,12 @@ running it as the other backend:
 ```bash
 ACCEPTANCE_BACKEND=go npx playwright test -g 'as long as the limit allows'
 ```
+
+The same mark covers what the Go server has not built yet. Every test that
+needs users, habits or completions on Go is marked `knownBug('habitcraft-vxln.5')`,
+so CI runs the whole suite against Go today. As vxln.5 builds each piece, its
+tests start passing on Go and fail the run until their mark is removed; when
+none is left, delete the entry.
 
 Behaviour that has no words in the user's language — a request for another
 user's habit by id, a malformed token, an expired one — stays in the backend's

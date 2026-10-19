@@ -71,8 +71,9 @@ LBL_FRONTEND_UNIT="Frontend Unit Tests"
 LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 LBL_ACCEPTANCE="Acceptance Tests"
+LBL_ACCEPTANCE_GO="Acceptance Tests (Go server)"
 
-TOTAL_PHASES=20
+TOTAL_PHASES=21
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -341,6 +342,7 @@ if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     record_phase skip "$LBL_INTEGRATION"
     record_phase skip "$LBL_E2E"
     record_phase skip "$LBL_ACCEPTANCE"
+    record_phase skip "$LBL_ACCEPTANCE_GO"
     finish
 fi
 
@@ -381,7 +383,7 @@ if [ "$FORCE_REBUILD" = true ]; then
     echo "Force rebuild requested - removing old containers and volumes..."
     docker compose -f docker-compose.test.yml down -v 2>/dev/null || true
     echo "Removing old test images..."
-    docker rmi habitcraft-backend-test habitcraft-frontend-test 2>/dev/null || true
+    docker rmi habitcraft-backend-test habitcraft-server-test habitcraft-frontend-test 2>/dev/null || true
     echo "Building Docker containers (--no-cache for fresh dependencies)..."
     docker compose -f docker-compose.test.yml build --no-cache
     echo "Starting Docker containers..."
@@ -391,6 +393,12 @@ else
     docker compose -f docker-compose.test.yml up -d
 fi
 DOCKER_STARTED=1
+
+# The lock-file hash above says nothing about Go code, and `up` reuses an
+# existing image, so a stale server-test would test old code. Rebuild it every
+# run; the Dockerfile's build cache keeps an unchanged rebuild to seconds.
+echo "Rebuilding the Go server container..."
+docker compose -f docker-compose.test.yml up -d --build server-test
 
 # Wait for database to be healthy first
 echo "Waiting for database..."
@@ -420,6 +428,13 @@ if ! wait_for_service "http://localhost:3110" "frontend"; then
     exit 1
 fi
 echo "✅ Frontend is ready"
+
+# Wait for the Go server
+if ! wait_for_service "http://localhost:3020/health" "Go server"; then
+    echo "Check logs: docker compose -f docker-compose.test.yml logs server-test"
+    exit 1
+fi
+echo "✅ Go server is ready"
 echo ""
 
 # The Go server's store tests on the real test database, as CI's
@@ -565,5 +580,13 @@ echo ""
 # for every test, so it shares nothing with the E2E fixtures reset above.
 run_phase "🧪" "$LBL_ACCEPTANCE" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
     npx playwright test || true
+
+# The api project again, against the Go server (habitcraft-8ml9). What Go has
+# not built yet is marked knownBug('habitcraft-vxln.5') and expected to fail.
+# The web project stays on Node: frontend-test talks to backend-test. Its own
+# output directory, because Playwright empties test-results/ on start.
+run_phase "🧪" "$LBL_ACCEPTANCE_GO" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
+    env ACCEPTANCE_API_URL=http://localhost:3020 ACCEPTANCE_BACKEND=go \
+    npx playwright test --project api --output test-results-go || true
 
 finish
