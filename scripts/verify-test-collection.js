@@ -26,7 +26,7 @@
  * fails. That is the "root" package, which needs no installed dependencies.
  *
  * Usage: node scripts/verify-test-collection.js [package...]
- *   package: backend | frontend | mobile | root   (default: all of them)
+ *   package: backend | frontend | mobile | web | acceptance | root   (default: all of them)
  */
 
 const path = require('path');
@@ -60,9 +60,17 @@ const playwright = (config) => ({
   },
 });
 
+const vitest = () => ({
+  label: 'vitest',
+  command: 'node_modules/.bin/vitest',
+  args: ['list', '--filesOnly', '--json'],
+  parse: (stdout) => JSON.parse(stdout).map((entry) => entry.file),
+});
+
 const PACKAGES = {
   backend: [jest(), jest('jest.integration.config.js')],
   frontend: [jest(), playwright('playwright.config.ts'), playwright('playwright.gcp.config.ts')],
+  web: [vitest()],
   // jest.smoke.config.js is jest.config.js narrowed by test name, not by file,
   // so it collects the same files and needs no entry of its own.
   mobile: [jest(), jest('e2e/jest.config.js')],
@@ -101,6 +109,8 @@ const CASES = [
   ['mobile/src/screens/Login.spec.tsx', false, true],
   ['mobile/src/lib/api.test.mjs', false, true], // any js/ts extension counts
   ['mobile/e2e/config/perFileSetup.ts', false, false], // harness, not a test
+  ['web/src/App.test.tsx', true, false],
+  ['web/src/App.spec.tsx', false, true],
   ['frontend/e2e/gcp-auth.setup.ts', false, false],
   ['scripts/helper.test.js', false, true], // no package runs scripts/
   ['foo.test.js', false, true], // nor the repo root
@@ -184,7 +194,7 @@ function main() {
     const pkg = owningPackage(file);
     const fix =
       pkg === 'root'
-        ? 'Nothing runs tests outside backend/, frontend/ and mobile/; move it into one.'
+        ? 'Nothing runs tests outside the packages in PACKAGES; move it into one.'
         : 'Rename it to *.test.* and put it where its package config looks, ' +
           'or add the config that runs it to PACKAGES in this script.';
     failures.push(`${file} looks like a test but no ${pkg} runner collects it. ${fix}`);

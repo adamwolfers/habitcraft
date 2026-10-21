@@ -77,9 +77,10 @@ services:
   # same database and with the same JWT secret as backend-test. It answers the
   # api project only; frontend-test talks to backend-test.
   server-test:
+    # The repo root, for the web app it embeds (see server/Dockerfile)
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./server/Dockerfile
     container_name: habitcraft-server-test
     environment:
       DATABASE_URL: postgresql://habituser:habitpass@postgres-test:5432/habitcraft_test?sslmode=disable

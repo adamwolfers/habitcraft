@@ -1,4 +1,5 @@
-// Command habitcraft runs the HabitCraft server on its own.
+// Command habitcraft runs the HabitCraft server on its own, with the web app
+// (web/) embedded beside the API when it was built first; see webapp.go.
 //
 // Configuration is from the environment:
 //
@@ -14,16 +15,19 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/adamwolfers/habitcraft/server/api"
 	"github.com/adamwolfers/habitcraft/server/habitcraft"
 )
 
@@ -82,6 +86,15 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	spec, err := api.GetSwagger()
+	if err != nil {
+		return fmt.Errorf("loading the embedded spec: %w", err)
+	}
+	webApp, err := webAppFiles()
+	if err != nil {
+		return err
+	}
+	handler = withWebApp(handler, webApp, slices.Collect(maps.Keys(spec.Paths.Map())))
 
 	httpServer := &http.Server{
 		Addr:              net.JoinHostPort("", port),

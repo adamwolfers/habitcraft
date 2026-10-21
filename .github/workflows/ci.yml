@@ -115,6 +115,7 @@ jobs:
       workflow: ${{ steps.filter.outputs.workflow }}
       acceptance: ${{ steps.filter.outputs.acceptance }}
       server: ${{ steps.filter.outputs.server }}
+      web: ${{ steps.filter.outputs.web }}
     steps:
       - uses: actions/checkout@v4
 
@@ -224,6 +225,11 @@ jobs:
             server:
               - 'server/**'
               - '!**/*.md'
+            # The Vite web app (habitcraft-vxln.8), which the Go server embeds.
+            # It ships nothing on its own, so one filter, as for server.
+            web:
+              - 'web/**'
+              - '!**/*.md'
 
   # ===========================================
   # CI Configuration Checks
@@ -321,7 +327,7 @@ jobs:
   # are YAML literal block scalars, so a '#' line inside one becomes part of the
   # expression string rather than a comment.
   #
-  # `shared` covers openapi.yaml itself; `frontend`/`mobile`/`acceptance`/`server`
+  # `shared` covers openapi.yaml itself; `frontend`/`mobile`/`web`/`acceptance`/`server`
   # cover the generated files, which live in those trees and could be
   # hand-edited; `tooling` covers scripts/api-codegen.js and the root
   # package.json that pins the TypeScript generator. `server` also covers
@@ -334,6 +340,7 @@ jobs:
       needs.detect-changes.outputs.shared == 'true' ||
       needs.detect-changes.outputs.frontend == 'true' ||
       needs.detect-changes.outputs.mobile == 'true' ||
+      needs.detect-changes.outputs.web == 'true' ||
       needs.detect-changes.outputs.acceptance == 'true' ||
       needs.detect-changes.outputs.server == 'true' ||
       needs.detect-changes.outputs.tooling == 'true' ||
@@ -671,6 +678,60 @@ jobs:
           directory: frontend/coverage
           flags: frontend
           name: frontend-coverage
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  # The Vite web app (habitcraft-vxln.8). `shared` because its types and limits
+  # are generated from the spec. Node 24: Vitest 5 needs 22.12 or later.
+  web-unit-tests:
+    name: Web Unit Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.web == 'true' ||
+      needs.detect-changes.outputs.shared == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify every test file is collected
+        run: node ../scripts/verify-test-collection.js web
+
+      - name: Run linter
+        run: npm run lint
+
+      # Vite strips types without checking them, so tsc is its own gate.
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      # What server/Dockerfile embeds; a failure here fails that image too.
+      - name: Build
+        run: npm run build
+
+      - name: Upload web coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          directory: web/coverage
+          flags: web
+          name: web-coverage
           fail_ci_if_error: false
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -1073,7 +1134,8 @@ jobs:
   # stays on Node: frontend-test talks to backend-test.
   #
   # Gated like e2e-tests plus `acceptance`, because the suite's own files are
-  # the test cases, and `server` for the Go target. Not sharded: the DSL isolates every test, so the config
+  # the test cases, `server` for the Go target, and `web` for the app that
+  # target embeds. Not sharded: the DSL isolates every test, so the config
   # runs fullyParallel and Playwright splits the work across workers itself.
   acceptance-tests:
     name: Acceptance Tests
@@ -1091,6 +1153,7 @@ jobs:
         needs.detect-changes.outputs.e2e-infra == 'true' ||
         needs.detect-changes.outputs.acceptance == 'true' ||
         needs.detect-changes.outputs.server == 'true' ||
+        needs.detect-changes.outputs.web == 'true' ||
         needs.detect-changes.outputs.workflow == 'true'
       )
     defaults:

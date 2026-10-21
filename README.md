@@ -46,6 +46,8 @@ habittracker_fullstack/
 ├── mobile/               # React Native (Expo) mobile app
 ├── server/               # Go server, the rebuild (habitcraft-vxln): embeddable
 │                         #   package + standalone binary, generated from api-spec/
+├── web/                  # React + Vite web app, the rebuild: embedded in the
+│                         #   Go binary, replaces frontend/
 ├── acceptance/           # Four-layer acceptance suite (Node and Go backends)
 ├── db/                   # dbmate SQL migrations (schema source of truth)
 │                         #   + schema.sql, generated from them

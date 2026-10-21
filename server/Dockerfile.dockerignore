@@ -1,0 +1,12 @@
+# The build context is the repo root (see Dockerfile). BuildKit reads this file
+# in place of a root .dockerignore, and only for this Dockerfile. Send server/
+# and web/ alone, without anything a local build left behind.
+*
+!server/
+!web/
+server/bin/
+server/cmd/habitcraft/spa/dist/
+web/node_modules/
+web/coverage/
+**/*.md
+!server/cmd/habitcraft/spa/README.md

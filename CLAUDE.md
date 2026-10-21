@@ -2,7 +2,8 @@
 
 - Verify that you're in the expected branch and directory before running terminal commands
 - `scripts/test-all.sh` runs every gate CI runs — lint, typecheck, and unit
-  tests for backend/frontend/mobile, plus integration and E2E — sequentially, in
+  tests for backend/frontend/mobile/web and the Go server, plus integration,
+  E2E and acceptance — sequentially, in
   the same order (cheap static checks first, docker phases last). A green run
   there predicts a green CI run. Lint/typecheck failures stop the run before
   containers start; pass `--keep-going` to run everything anyway. See
@@ -356,7 +357,7 @@ npm run api:breaking           # fails on a change that breaks a deployed client
 ```
 
 `<consumer>/types/api.generated.ts` and `apiLimits.generated.ts` are generated
-into `frontend/` and `mobile/`, `acceptance/drivers/api/api.generated.ts` types
+into `frontend/`, `mobile/src/` and `web/src/`, `acceptance/drivers/api/api.generated.ts` types
 the acceptance suite's API driver, `acceptance/dsl/apiLimits.generated.ts` gives
 its DSL the limits to test at, `backend/validators/apiLimits.generated.js`
 is the same numbers as CommonJS for the backend, and `server/api/api.gen.go` is

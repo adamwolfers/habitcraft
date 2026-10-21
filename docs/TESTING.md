@@ -155,7 +155,7 @@ own lines for that reason.
 Runs in CI as the `verify-beads-doctor` job, gated on the `tooling` and
 `workflow` filters. `tooling` covers both `scripts/**` and `.husky/**`, so a
 hook edit that breaks the doctor's assumptions is caught on the commit that
-makes it. It is also phase 9 of `scripts/test-all.sh`. It needs only `sh`, `git`
+makes it. It is also phase 11 of `scripts/test-all.sh`. It needs only `sh`, `git`
 and the root `npm ci`, never `bd`, and it must stay that way, because CI has no
 `bd` (habitcraft-308j).
 
@@ -169,15 +169,15 @@ green without it (habitcraft-hxw3).
 
 ```bash
 npm run verify:test-collection                    # from the repo root
-node scripts/verify-test-collection.js [package...]  # backend frontend mobile root
+node scripts/verify-test-collection.js [package...]  # backend frontend mobile web acceptance root
 ```
 
 It finds every tracked or not-yet-added file matching `*.{test,spec}.{js,ts,...}`
 and asks each runner of the owning package what it really collects —
-`jest --listTests` for every jest config, `playwright test --list` for both
-Playwright configs — so the live configs are tested rather than a copy of their
+`jest --listTests` for every jest config, `playwright test --list` for every
+Playwright config, `vitest list` for `web/` — so the live configs are tested rather than a copy of their
 globs. It fails on a test-shaped file that no runner collects, and on a runner
-that collects nothing. `root` is everything outside the three packages, where
+that collects nothing. `root` is everything outside the packages, where
 no runner exists, so any test-shaped file there fails. Playwright lists only
 files that contain tests, so an empty `frontend/e2e/*.test.ts` is reported too.
 
@@ -185,7 +185,7 @@ files that contain tests, so an empty `frontend/e2e/*.test.ts` is reported too.
 it collects are reported as orphans. `mobile/e2e/jest.smoke.config.js` is not
 listed because it narrows by test name, not by file.
 
-Phase 10 of `scripts/test-all.sh`. In CI, each package's unit-test job runs it
+Phase 12 of `scripts/test-all.sh`. In CI, each package's unit-test job runs it
 for that package and `root` after `npm ci`, and the `verify-ci-filters` job
 runs it for `root` alone, so no job installs a package it does not already
 need.
@@ -198,7 +198,7 @@ need.
 > profile, habits and completions, the spec's length limits, and the Node
 > backend's known bugs as expected failures. It is green against the Node
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
-> and phases 11, 20 and 21 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
+> and phases 13, 23 and 24 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
 > The `api` project also runs against the Go server, and passes there too
 > (habitcraft-8ml9, habitcraft-vxln.5).
 > It is the parity harness for the Node → Go rewrite. The Playwright E2E and
@@ -282,7 +282,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **20 phases, one per CI step**, so a green local run predicts a
+The script runs **24 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -292,31 +292,34 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 3 | Frontend Typecheck | `frontend: npm run typecheck` | no |
 | 4 | Mobile Lint | `mobile: npm run lint` | no |
 | 5 | Mobile Typecheck | `mobile: npm run typecheck` | no |
-| 6 | Generated Schema Check | `scripts/schema-dump.sh --check` | daemon only |
-| 7 | Generated API Artifacts Check | `npm run api:codegen -- --check` | no |
-| 8 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
-| 9 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
-| 10 | Test Collection Check | `scripts/verify-test-collection.js` | no |
-| 11 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
-| 12 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
-| 13 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 14 | Server Unit Tests | `server: go test -race ./...` | no |
-| 15 | Server Store Tests | `server: go test -run TestPostgresStore` on the test database | yes |
-| 16 | Backend Unit Tests | `backend: npm test` | yes |
-| 17 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 18 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 19 | E2E Tests | `frontend: playwright, 3 shards` | yes |
-| 20 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
-| 21 | Acceptance Tests (Go server) | `acceptance: playwright test --project api` against `server-test` | yes |
+| 6 | Web Lint | `web: npm run lint` | no |
+| 7 | Web Typecheck | `web: npm run typecheck` | no |
+| 8 | Generated Schema Check | `scripts/schema-dump.sh --check` | daemon only |
+| 9 | Generated API Artifacts Check | `npm run api:codegen -- --check` | no |
+| 10 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
+| 11 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
+| 12 | Test Collection Check | `scripts/verify-test-collection.js` | no |
+| 13 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
+| 14 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
+| 15 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 16 | Web Unit Tests | `web: npm run test:coverage` | no |
+| 17 | Server Unit Tests | `server: go test -race ./...` | no |
+| 18 | Server Store Tests | `server: go test -run TestPostgresStore` on the test database | yes |
+| 19 | Backend Unit Tests | `backend: npm test` | yes |
+| 20 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 21 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 22 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 23 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
+| 24 | Acceptance Tests (Go server) | `acceptance: playwright test --project api` against `server-test` | yes |
 
 Notes on that table:
 
-- **Phases 1–12 fail fast.** All twelve always run (so you see every static error
+- **Phases 1–14 fail fast.** All fourteen always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
   ordering. `--keep-going` runs everything regardless.
-- **Phases 6 and 8 need the docker *daemon*, but not the compose stack.**
+- **Phases 8 and 10 need the docker *daemon*, but not the compose stack.**
   `scripts/schema-dump.sh` starts a throwaway postgres of its own, applies
   `db/migrations/`, dumps the result, and diffs it against the committed
   `db/schema.sql`; the whole phase is about five seconds. It sits in the
@@ -325,15 +328,15 @@ Notes on that table:
   the same check is the `verify-schema-dump` job. See
   [db/README.md](../db/README.md#the-generated-schema-dump-dbschemasql) for why
   the dump is generated rather than hand-maintained.
-- **Phases 7 and 8 are the API contract's two halves.** Phase 7 regenerates
+- **Phases 9 and 10 are the API contract's two halves.** Phase 9 regenerates
   each consumer's `api.generated.ts` and `apiLimits.generated.ts`, the
   backend's CommonJS `apiLimits.generated.js` and the Go server's
   `server/api/api.gen.go`, from
   `shared/api-spec/openapi.yaml` and diffs them against the committed files, so
   a spec edit that skipped `npm run api:codegen` fails here — the same idea as
-  phase 6, one layer up. The limits a migration states in SQL are held to the
+  phase 8, one layer up. The limits a migration states in SQL are held to the
   same numbers by `backend/validators/apiLimits.test.js`, which runs with the
-  backend unit tests rather than here. Phase 8 asks the different question of whether the
+  backend unit tests rather than here. Phase 10 asks the different question of whether the
   spec change is safe to ship at all: it runs oasdiff (in a pinned container,
   hence the daemon) against `origin/master` and fails on a change that would
   break a client already deployed. In CI these are the `verify-api-codegen` and
@@ -345,22 +348,27 @@ Notes on that table:
   an 80% `coverageThreshold`, and that threshold only applies under `--coverage`
   — plain `npm test` would silently skip a gate CI enforces. Backend and
   frontend have no thresholds, so they use plain `npm test` and skip the
-  instrumentation cost.
-- **The Go server needs Go installed**, for phases 7, 12, 14 and 15
+  instrumentation cost. Web runs `test:coverage` too, as its CI job does.
+- **The web app's build has no phase of its own.** `server/Dockerfile` builds
+  it and embeds it in the Go binary. The script rebuilds `server-test` when it
+  starts the docker services, before phase 18, and stops there if the web app
+  does not build. In CI the `web-unit-tests` job runs `npm run build` as its
+  last step.
+- **The Go server needs Go installed**, for phases 9, 14, 17 and 18
   (oapi-codegen runs as a `go tool` pinned in `server/go.mod`). The script
   checks for it up front, alongside each package's `node_modules`.
-- **Phase 15 runs the Go server's store tests against Postgres.** Phase 14
+- **Phase 18 runs the Go server's store tests against Postgres.** Phase 17
   runs the same tests against an in-memory fake; with
   `HABITCRAFT_TEST_DATABASE_URL` set they also run against the real schema, so
   the SQL and the fake are held to one set of rules (habitcraft-vxln.4). They
   make their own users and need no reset. In CI the `server-unit-tests` job
   starts a migrated Postgres of its own and runs both in one `go test`.
-- **Phase 20 runs the acceptance suite against the stack phases 16–19 already
+- **Phase 23 runs the acceptance suite against the stack phases 19–22 already
   use**, with no database reset: the DSL makes a fresh user for every test.
   It needs `acceptance/` installed (`npm ci`) and, once, `npx playwright install
   chromium` there for the `web` project. In CI it is the `acceptance-tests` job,
   which `run-migrations-gcp` waits on, so it gates every deploy.
-- **Phase 21 runs the `api` project again, against the Go server**
+- **Phase 24 runs the `api` project again, against the Go server**
   (`server-test` on :3020, same database and JWT secret, habitcraft-8ml9). The
   web project stays on Node, because `frontend-test` talks to `backend-test`.
   A feature Go has not built yet is marked with `knownBug('<its bead>')` and

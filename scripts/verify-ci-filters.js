@@ -83,7 +83,18 @@ const CASES = [
   ['server/habitcraft/habitcraft_test.go', true, ['server']],
   ['server/api/api.gen.go', true, ['server']], // generated, and verified by verify-api-codegen
   ['server/go.mod', true, ['server']],
+  ['server/cmd/habitcraft/webapp.go', true, ['server']],
+  ['server/cmd/habitcraft/spa/README.md', false, []],
+  // The image's context is the repo root; this keeps it to server/ and web/.
+  ['server/Dockerfile.dockerignore', true, ['server', 'e2e-infra']],
   ['scripts/go-lint.sh', true, ['tooling']],
+
+  // --- Web app (habitcraft-vxln.8): embedded by the server, so one filter ---
+  ['web/src/App.tsx', true, ['web']],
+  ['web/src/App.test.tsx', true, ['web']],
+  ['web/src/types/api.generated.ts', true, ['web']], // verified by verify-api-codegen
+  ['web/package-lock.json', true, ['web']], // not root tooling
+  ['web/README.md', false, []],
 
   // --- Other packages -------------------------------------------------------
   ['db/migrations/20250101000000_init.sql', true, ['db']],

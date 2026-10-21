@@ -19,8 +19,8 @@ target "backend-test" {
 }
 
 target "server-test" {
-  context = "./server"
-  dockerfile = "Dockerfile"
+  context = "."
+  dockerfile = "./server/Dockerfile"
   tags = ["habitcraft-server-test:latest"]
 }
 

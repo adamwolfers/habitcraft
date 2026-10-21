@@ -38,6 +38,8 @@ frontend/types/api.generated.ts          openapi-typescript's paths/components t
 frontend/types/apiLimits.generated.ts    the spec's minLength/maxLength values
 mobile/src/types/api.generated.ts
 mobile/src/types/apiLimits.generated.ts
+web/src/types/api.generated.ts
+web/src/types/apiLimits.generated.ts
 backend/validators/apiLimits.generated.js   the same numbers, as CommonJS
 acceptance/drivers/api/api.generated.ts
 acceptance/dsl/apiLimits.generated.ts
@@ -88,7 +90,7 @@ width to compare and the limit is enforced solely by the route. That is asserted
 too, so narrowing the column later forces the cross-check to be added.
 
 Nothing imports the generated *types* directly. Each consumer's own types module
-(`frontend/types/habit.ts`, `mobile/src/types/index.ts`) re-exports the aliases
+(`frontend/types/habit.ts`, `mobile/src/types/index.ts`, `web/src/types/api.ts`) re-exports the aliases
 its components use, so a bad regeneration fails that consumer's typecheck.
 That indirection is the point. `shared/types/models.ts` used to be a
 hand-written mirror of this spec that **nothing in the repo imports**, which is
@@ -115,7 +117,7 @@ passwords exactly at each limit and one past it.
 3. Run `npm run api:breaking` before pushing. It compares your working tree
    against `origin/master`; CI compares against the pull request's merge target.
 
-Both checks also run as phases 7 and 8 of `scripts/test-all.sh`.
+Both checks also run as phases 9 and 10 of `scripts/test-all.sh`.
 
 ## Authentication schemes
 

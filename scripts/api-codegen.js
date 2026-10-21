@@ -97,6 +97,12 @@ const CONSUMERS = [
     files: [TYPES_FILE, LIMITS_FILE],
   },
   {
+    // The Vite web app, which replaces frontend/ (habitcraft-vxln.8).
+    name: 'web',
+    dir: path.join(PROJECT_ROOT, 'web/src/types'),
+    files: [TYPES_FILE, LIMITS_FILE],
+  },
+  {
     // The acceptance suite's API driver types its requests and responses.
     name: 'acceptance',
     dir: path.join(PROJECT_ROOT, 'acceptance/drivers/api'),

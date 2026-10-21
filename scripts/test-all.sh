@@ -56,6 +56,8 @@ LBL_FRONTEND_LINT="Frontend Lint"
 LBL_FRONTEND_TYPECHECK="Frontend Typecheck"
 LBL_MOBILE_LINT="Mobile Lint"
 LBL_MOBILE_TYPECHECK="Mobile Typecheck"
+LBL_WEB_LINT="Web Lint"
+LBL_WEB_TYPECHECK="Web Typecheck"
 LBL_ACCEPTANCE_TYPECHECK="Acceptance Typecheck"
 LBL_SERVER_LINT="Server Lint"
 LBL_SCHEMA_DUMP="Generated Schema Check"
@@ -64,6 +66,7 @@ LBL_API_BREAKING="OpenAPI Breaking Changes"
 LBL_BEADS_DOCTOR="Beads Wiring Tests"
 LBL_TEST_COLLECTION="Test Collection Check"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
+LBL_WEB_UNIT="Web Unit Tests"
 LBL_SERVER_UNIT="Server Unit Tests"
 LBL_SERVER_STORE="Server Store Tests"
 LBL_BACKEND_UNIT="Backend Unit Tests"
@@ -73,7 +76,7 @@ LBL_E2E="E2E Tests"
 LBL_ACCEPTANCE="Acceptance Tests"
 LBL_ACCEPTANCE_GO="Acceptance Tests (Go server)"
 
-TOTAL_PHASES=21
+TOTAL_PHASES=24
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -244,7 +247,7 @@ wait_for_service() {
 # The repo root is in this list too: the generated-API check runs from there,
 # against the generator pinned in the root package.json.
 MISSING_DEPS=""
-for pkg in . backend frontend mobile acceptance; do
+for pkg in . backend frontend mobile web acceptance; do
     if [ ! -d "$PROJECT_ROOT/$pkg/node_modules" ]; then
         MISSING_DEPS="$MISSING_DEPS $pkg"
     fi
@@ -291,6 +294,12 @@ run_phase "🧹" "$LBL_MOBILE_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile" \
 run_phase "🔤" "$LBL_MOBILE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/mobile" \
     npm run typecheck || STATIC_FAILED=1
 
+run_phase "🧹" "$LBL_WEB_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/web" \
+    npm run lint || STATIC_FAILED=1
+
+run_phase "🔤" "$LBL_WEB_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/web" \
+    npm run typecheck || STATIC_FAILED=1
+
 # db/migrations/ is the sole source of truth; db/schema.sql is generated from
 # it and committed. This regenerates and diffs, so a migration landing without
 # a regenerated dump fails here exactly as it does in CI (habitcraft-by9).
@@ -335,6 +344,7 @@ if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "   Fix the above, or re-run with --keep-going to run everything anyway."
     echo ""
     record_phase skip "$LBL_MOBILE_UNIT"
+    record_phase skip "$LBL_WEB_UNIT"
     record_phase skip "$LBL_SERVER_UNIT"
     record_phase skip "$LBL_SERVER_STORE"
     record_phase skip "$LBL_BACKEND_UNIT"
@@ -352,6 +362,13 @@ fi
 # that only applies under --coverage; `npm test` would skip that CI gate.
 # ==============================================================================
 run_phase "📱" "$LBL_MOBILE_UNIT" "$TIMEOUT_MOBILE_UNIT" "$PROJECT_ROOT/mobile" \
+    npm run test:coverage || true
+
+# ==============================================================================
+# Web unit tests -- Vitest in jsdom, no services. Its build is checked by the
+# server-test image below, which embeds it (server/Dockerfile).
+# ==============================================================================
+run_phase "🕸️ " "$LBL_WEB_UNIT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/web" \
     npm run test:coverage || true
 
 # ==============================================================================

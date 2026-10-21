@@ -1,18 +1,32 @@
 # Go server Dockerfile
-# A static binary on alpine. docker-compose.test.yml runs it as server-test,
-# the Go target of the acceptance suite (habitcraft-8ml9). The build context is
-# server/ alone: the spec is embedded in api/api.gen.go, so nothing outside it
-# is needed.
+# A static binary on alpine, with the web app (web/) embedded beside the API.
+# docker-compose.test.yml runs it as server-test, the Go target of the
+# acceptance suite (habitcraft-8ml9). The build context is the repo root, for
+# web/; Dockerfile.dockerignore beside this file keeps it to server/ and web/.
+# The spec is embedded in api/api.gen.go, so nothing else is needed.
+
+FROM node:24-alpine AS web
+
+WORKDIR /src/web
+
+# Dependencies first, so a code change does not reinstall them
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+
+COPY web/ ./
+# Writes the bundle into ../server/cmd/habitcraft/spa/dist (vite.config.ts)
+RUN npm run build
 
 FROM golang:1.25-alpine AS build
 
 WORKDIR /src
 
 # Modules first, so a code change does not re-download them
-COPY go.mod go.sum ./
+COPY server/go.mod server/go.sum ./
 RUN go mod download
 
-COPY . .
+COPY server/ ./
+COPY --from=web /src/server/cmd/habitcraft/spa/dist ./cmd/habitcraft/spa/dist
 # The build cache persists across builds, so scripts/test-all.sh can rebuild
 # this image on every run without paying for a cold compile
 RUN --mount=type=cache,target=/root/.cache/go-build \
