@@ -8,6 +8,7 @@ const { getTrustedProxyHops } = require('./config/proxy');
 const habitsRouter = require('./routes/habits');
 const authRouter = require('./routes/auth');
 const usersRouter = require('./routes/users');
+const completionsRangeRouter = require('./routes/completionsRange');
 const app = express();
 
 // Trust a bounded number of proxy hops (required for Cloud Run / load
@@ -108,5 +109,6 @@ app.get('/health', async (req, res) => {
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/habits', habitsRouter);
+app.use('/api/v1/completions', completionsRangeRouter);
 
 module.exports = app;

@@ -96,6 +96,29 @@ export class Habits {
     );
   }
 
+  /**
+   * Over the period, each habit was checked off on exactly the days listed,
+   * and the acting user has no habits but these.
+   */
+  async shouldShowDays(
+    { from, to }: { from: Day; to: Day },
+    expected: Record<string, Day[]>
+  ): Promise<void> {
+    const start = resolveDay(from);
+    const end = resolveDay(to);
+    const resolved = Object.fromEntries(
+      Object.entries(expected).map(([name, days]) => [
+        name,
+        days.map((day) => resolveDay(day)).sort(),
+      ])
+    );
+    const actual = await this.driver.checkedOffDays(start, end);
+    const sorted = Object.fromEntries(
+      Object.entries(actual).map(([name, dates]) => [name, [...dates].sort()])
+    );
+    expect(sorted, `days checked off from ${start} to ${end}`).toEqual(resolved);
+  }
+
   /** The note on a checked-off day; `null` means the day has no note. */
   async shouldHaveNote(name: string, { on, note }: { on: Day; note: Text | null }): Promise<void> {
     const date = resolveDay(on);

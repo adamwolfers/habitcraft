@@ -3,6 +3,7 @@ package habitcraft
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,40 @@ func (s *Server) ListCompletions(ctx context.Context, request api.ListCompletion
 	out := make(api.ListCompletions200JSONResponse, 0, len(list))
 	for _, c := range list {
 		out = append(out, completionOut(c))
+	}
+	return out, nil
+}
+
+// maxRangeDays is the longest range ListCompletionsInRange answers, both ends
+// included: the year and a day GET /habits embeds. The Node backend's
+// MAX_RANGE_DAYS is the same.
+const maxRangeDays = embedDays
+
+// ListCompletionsInRange lists every habit the user has, each with its
+// completions in the range, so a client draws them all from one request.
+func (s *Server) ListCompletionsInRange(ctx context.Context, request api.ListCompletionsInRangeRequestObject) (api.ListCompletionsInRangeResponseObject, error) {
+	from, to := request.Params.StartDate.Time, request.Params.EndDate.Time
+	switch {
+	case to.Before(from):
+		return api.ListCompletionsInRange400JSONResponse{BadRequestJSONResponse: api.BadRequestJSONResponse{
+			Error: "endDate must not be before startDate",
+		}}, nil
+	case to.Sub(from) >= maxRangeDays*24*time.Hour:
+		return api.ListCompletionsInRange400JSONResponse{BadRequestJSONResponse: api.BadRequestJSONResponse{
+			Error: fmt.Sprintf("The range can be at most %d days", maxRangeDays),
+		}}, nil
+	}
+	habits, err := s.store.habitsBetween(ctx, userFrom(ctx), from, to)
+	if err != nil {
+		return nil, err
+	}
+	out := make(api.ListCompletionsInRange200JSONResponse, 0, len(habits))
+	for _, h := range habits {
+		completions := make([]api.Completion, 0, len(h.completions))
+		for _, c := range h.completions {
+			completions = append(completions, completionOut(c))
+		}
+		out = append(out, api.HabitCompletions{HabitId: h.id, Completions: completions})
 	}
 	return out, nil
 }

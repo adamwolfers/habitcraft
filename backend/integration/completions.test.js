@@ -11,6 +11,8 @@
 const request = require('supertest');
 const { quickReset, testUsers, testHabits, getTestPool, getTestServer } = require('./setup');
 
+const { MAX_RANGE_DAYS } = require('../routes/completionsRange');
+
 const testServer = getTestServer();
 
 describe('Completion Tracking Integration Tests', () => {
@@ -751,6 +753,78 @@ describe('Completion Tracking Integration Tests', () => {
         .set('Cookie', user1Cookies);
 
       expect(filteredResponse.body.length).toBe(7);
+    });
+  });
+
+  describe('Completions across habits (GET /api/v1/completions)', () => {
+    beforeEach(async () => {
+      const pool = getTestPool();
+      await pool.query(
+        `INSERT INTO completions (habit_id, date, notes)
+         VALUES
+           ($1, $3, 'In range'),
+           ($1, $4, 'Too old'),
+           ($2, $5, NULL),
+           ($6, $3, 'Another user')`,
+        [
+          testHabits.exercise,
+          testHabits.archived,
+          getDaysAgo(1),
+          getDaysAgo(10),
+          getDaysAgo(2),
+          testHabits.user2Habit,
+        ]
+      );
+    });
+
+    it("groups the user's completions in the range by habit, every habit listed", async () => {
+      const response = await request(testServer)
+        .get('/api/v1/completions')
+        .query({ startDate: getDaysAgo(6), endDate: getToday() })
+        .set('Cookie', user1Cookies);
+
+      expect(response.status).toBe(200);
+      expect(response.body.map((entry) => entry.habitId)).toEqual([
+        testHabits.exercise,
+        testHabits.reading,
+        testHabits.archived,
+      ]);
+      const [exercise, reading, archived] = response.body;
+      expect(exercise.completions.map((c) => [c.date, c.notes])).toEqual([
+        [getDaysAgo(1), 'In range'],
+      ]);
+      expect(reading.completions).toEqual([]);
+      expect(archived.completions.map((c) => c.date)).toEqual([getDaysAgo(2)]);
+    });
+
+    it('lists completions newest first', async () => {
+      const response = await request(testServer)
+        .get('/api/v1/completions')
+        .query({ startDate: getDaysAgo(30), endDate: getToday() })
+        .set('Cookie', user1Cookies);
+
+      expect(response.status).toBe(200);
+      expect(response.body[0].completions.map((c) => c.date)).toEqual([
+        getDaysAgo(1),
+        getDaysAgo(10),
+      ]);
+    });
+
+    it('returns 400 for a range longer than allowed', async () => {
+      const response = await request(testServer)
+        .get('/api/v1/completions')
+        .query({ startDate: getDaysAgo(MAX_RANGE_DAYS), endDate: getToday() })
+        .set('Cookie', user1Cookies);
+
+      expect(response.status).toBe(400);
+    });
+
+    it('returns 401 without authentication', async () => {
+      const response = await request(testServer)
+        .get('/api/v1/completions')
+        .query({ startDate: getDaysAgo(6), endDate: getToday() });
+
+      expect(response.status).toBe(401);
     });
   });
 });

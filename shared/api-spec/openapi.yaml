@@ -575,6 +575,56 @@ paths:
         '500':
           $ref: '#/components/responses/HabitInternalError'
 
+  /api/v1/completions:
+    get:
+      tags:
+        - Completions
+      summary: List completions across habits
+      description: |
+        Every habit the authenticated user has, active and archived, oldest
+        first as listHabits orders them, each with its completions from
+        startDate to endDate inclusive, newest first. A habit with none in the
+        range is listed with an empty array, so a client can draw every habit
+        from one request instead of one listCompletions per habit.
+
+        The range is at most 366 days, both ends included: endDate may be up to
+        365 days after startDate. A missing or malformed date, an endDate
+        before startDate, or a longer range is a 400.
+      operationId: listCompletionsInRange
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          description: First day of the range
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          description: Last day of the range
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Each habit with its completions in the range
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HabitCompletions'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
   /api/v1/habits/{habitId}/completions:
     get:
       tags:
@@ -1036,6 +1086,23 @@ components:
         createdAt:
           type: string
           format: date-time
+
+    HabitCompletions:
+      type: object
+      description: |
+        One habit's completions in a range, as listCompletionsInRange returns
+        them. Each element of `completions` is the same shape listCompletions
+        returns for the same row.
+      additionalProperties: false
+      required: [habitId, completions]
+      properties:
+        habitId:
+          type: string
+          format: uuid
+        completions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Completion'
 
     CompletionDeleted:
       type: object

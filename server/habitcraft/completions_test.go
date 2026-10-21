@@ -2,6 +2,7 @@ package habitcraft
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"slices"
@@ -222,5 +223,127 @@ func TestCompletionStoreFailuresAre500sWithoutDetail(t *testing.T) {
 			strings.Contains(w.Body.String(), errDatabaseDown.Error()) {
 			t.Errorf("%s %s: got %d %s", tc.method, tc.target, w.Code, w.Body)
 		}
+	}
+}
+
+func rangePath(from, to int) string {
+	return "/api/v1/completions?startDate=" + dateString(from) + "&endDate=" + dateString(to)
+}
+
+func (a *app) listCompletionsInRange(u testUser, from, to int) []api.HabitCompletions {
+	a.t.Helper()
+	w := a.as(u, http.MethodGet, rangePath(from, to), "")
+	if w.Code != http.StatusOK {
+		a.t.Fatalf("list completions in a range: %d %s", w.Code, w.Body)
+	}
+	return decode[[]api.HabitCompletions](a.t, w)
+}
+
+func TestARangeListsEveryHabitOldestFirstWithItsDaysNewestFirst(t *testing.T) {
+	a := newApp(t)
+	alice := a.newUser()
+	run := a.createHabit(alice, `{"name":"Run"}`)
+	read := a.createHabit(alice, `{"name":"Read","status":"archived"}`)
+	stretch := a.createHabit(alice, `{"name":"Stretch"}`)
+	for _, ago := range []int{7, 6, 0, 1} {
+		a.checkOffDay(alice, run.Id, `{"date":"`+dateString(ago)+`"}`)
+	}
+	created := decode[api.Completion](t, a.checkOffDay(alice, read.Id, `{"date":"`+dateString(3)+`","notes":"ch. 4"}`))
+
+	got := a.listCompletionsInRange(alice, 6, 0)
+
+	var ids []uuid.UUID
+	for _, entry := range got {
+		ids = append(ids, entry.HabitId)
+	}
+	if !slices.Equal(ids, []uuid.UUID{run.Id, read.Id, stretch.Id}) {
+		t.Fatalf("habits %v", ids)
+	}
+	var runDays []int
+	for _, c := range got[0].Completions {
+		runDays = append(runDays, int(today().Sub(c.Date.Time).Hours()/24))
+	}
+	if !slices.Equal(runDays, []int{0, 1, 6}) {
+		t.Errorf("Run's days ago %v", runDays)
+	}
+	// One entity, one wire shape (habitcraft-34d.1).
+	if len(got[1].Completions) != 1 || jsonOf(t, got[1].Completions[0]) != jsonOf(t, created) {
+		t.Errorf("Read %+v, created %+v", got[1].Completions, created)
+	}
+	if got[2].Completions == nil || len(got[2].Completions) != 0 {
+		t.Errorf("Stretch %#v, want an empty list", got[2].Completions)
+	}
+}
+
+func TestARangeShowsOnlyTheCallersHabits(t *testing.T) {
+	a := newApp(t)
+	alice, bob := a.newUser(), a.newUser()
+	run := a.createHabit(alice, `{"name":"Run"}`)
+	a.checkOffDay(alice, run.Id, `{"date":"`+dateString(0)+`"}`)
+
+	if got := a.listCompletionsInRange(bob, 6, 0); len(got) != 0 {
+		t.Errorf("Bob sees %+v", got)
+	}
+}
+
+func TestARangeIsAtMostMaxRangeDays(t *testing.T) {
+	a := newApp(t)
+	alice := a.newUser()
+
+	if w := a.as(alice, http.MethodGet, rangePath(maxRangeDays-1, 0), ""); w.Code != http.StatusOK {
+		t.Errorf("the longest range: got %d %s", w.Code, w.Body)
+	}
+	if w := a.as(alice, http.MethodGet, rangePath(0, 0), ""); w.Code != http.StatusOK {
+		t.Errorf("a single day: got %d %s", w.Code, w.Body)
+	}
+	for target, want := range map[string]string{
+		rangePath(maxRangeDays, 0): fmt.Sprintf("The range can be at most %d days", maxRangeDays),
+		rangePath(0, 1):            "endDate must not be before startDate",
+	} {
+		w := a.as(alice, http.MethodGet, target, "")
+		if w.Code != http.StatusBadRequest || errorOf(t, w) != want {
+			t.Errorf("%s: got %d %s", target, w.Code, w.Body)
+		}
+	}
+}
+
+// Both dates are required and must be dates; the validation middleware
+// refuses anything else in the completion routes' Error shape.
+func TestARangeNeedsTwoRealDates(t *testing.T) {
+	a := newApp(t)
+	alice := a.newUser()
+
+	for _, query := range []string{
+		"",
+		"?startDate=" + dateString(1),
+		"?endDate=" + dateString(1),
+		"?startDate=2026-02-30&endDate=" + dateString(0),
+		"?startDate=" + dateString(1) + "&endDate=yesterday",
+	} {
+		w := a.as(alice, http.MethodGet, "/api/v1/completions"+query, "")
+		if w.Code != http.StatusBadRequest || errorOf(t, w) == "" {
+			t.Errorf("%q: got %d %s", query, w.Code, w.Body)
+		}
+	}
+}
+
+func TestARangeNeedsSigningIn(t *testing.T) {
+	a := newApp(t)
+
+	if w := a.do(http.MethodGet, rangePath(1, 0), ""); w.Code != http.StatusUnauthorized {
+		t.Errorf("got %d %s", w.Code, w.Body)
+	}
+}
+
+func TestARangeStoreFailureIs500WithoutDetail(t *testing.T) {
+	a := newApp(t)
+	alice := a.newUser()
+	a.store.err = errDatabaseDown
+
+	w := a.as(alice, http.MethodGet, rangePath(1, 0), "")
+
+	if w.Code != http.StatusInternalServerError || errorOf(t, w) != "Internal server error" ||
+		strings.Contains(w.Body.String(), errDatabaseDown.Error()) {
+		t.Errorf("got %d %s", w.Code, w.Body)
 	}
 }

@@ -292,6 +292,21 @@ export class WebDriver implements ProtocolDriver {
     return note;
   }
 
+  /**
+   * Read day by day off each habit's card, since the week view shows one
+   * habit's week at a time.
+   */
+  async checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>> {
+    const days: Record<string, IsoDate[]> = {};
+    for (const name of await this.habitNames()) {
+      days[name] = [];
+      for (const date of datesFrom(from, to)) {
+        if (await this.isCheckedOff(name, date)) days[name].push(date);
+      }
+    }
+    return days;
+  }
+
   async close(): Promise<void> {
     await this.context?.close();
     this.context = undefined;
@@ -500,6 +515,15 @@ async function holds(field: Locator, value: string): Promise<boolean> {
 }
 
 /** Midnight UTC on the Sunday that starts the week holding `date`. */
+/** Every date from `from` to `to`, both included. */
+function datesFrom(from: IsoDate, to: IsoDate): IsoDate[] {
+  const dates: IsoDate[] = [];
+  for (let t = Date.parse(`${from}T00:00:00Z`); t <= Date.parse(`${to}T00:00:00Z`); t += DAY_MS) {
+    dates.push(new Date(t).toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
 function sundayOf(date: IsoDate): number {
   const day = new Date(`${date}T00:00:00Z`);
   return day.getTime() - day.getUTCDay() * DAY_MS;

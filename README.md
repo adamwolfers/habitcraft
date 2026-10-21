@@ -157,6 +157,7 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 ### Completions
 - `POST /api/v1/habits/:habitId/completions` - Mark habit complete
 - `GET /api/v1/habits/:habitId/completions` - Get completions (with date filtering)
+- `GET /api/v1/completions?startDate&endDate` - Every habit's completions in a range of up to 366 days, grouped by habit
 - `DELETE /api/v1/habits/:habitId/completions/:date` - Remove completion
 
 See the [OpenAPI specification](./shared/api-spec/openapi.yaml) for complete API documentation.

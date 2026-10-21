@@ -278,3 +278,4 @@ router.delete('/:date', jwtAuthMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+module.exports.isValidDate = isValidDate;

@@ -203,6 +203,22 @@ func (f *fakeStore) habits(_ context.Context, userID uuid.UUID, status string, s
 	return list, nil
 }
 
+func (f *fakeStore) habitsBetween(_ context.Context, userID uuid.UUID, from, to time.Time) ([]habitWithCompletions, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return nil, f.err
+	}
+	list := []habitWithCompletions{}
+	for _, h := range f.habitRows {
+		if h.userID == userID {
+			list = append(list, habitWithCompletions{habit: h, completions: f.completionsOf(h.id, &from, &to)})
+		}
+	}
+	slices.SortFunc(list, func(a, b habitWithCompletions) int { return a.createdAt.Compare(b.createdAt) })
+	return list, nil
+}
+
 func (f *fakeStore) createHabit(_ context.Context, h habit, limit int) (habit, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

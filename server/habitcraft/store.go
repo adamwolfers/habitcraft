@@ -112,6 +112,9 @@ type store interface {
 	// habits lists the user's habits, oldest first, with status "" meaning
 	// any. Each carries its completions on or after since.
 	habits(ctx context.Context, userID uuid.UUID, status string, since time.Time) ([]habitWithCompletions, error)
+	// habitsBetween lists all the user's habits, oldest first, each with its
+	// completions from from to to inclusive.
+	habitsBetween(ctx context.Context, userID uuid.UUID, from, to time.Time) ([]habitWithCompletions, error)
 	// createHabit saves h unless the user already has limit habits, which is
 	// errHabitLimit. It returns h with the timestamps filled in. Two
 	// concurrent creates cannot both pass the limit.

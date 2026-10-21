@@ -103,6 +103,13 @@ export interface ProtocolDriver {
   /** The note on a checked-off day; null when there is none. */
   noteOn(habitName: string, date: IsoDate): Promise<string | null>;
 
+  /**
+   * The days each of the acting user's habits was checked off from `from` to
+   * `to` inclusive, keyed by habit name, in any order. A habit with none in
+   * the period maps to an empty list.
+   */
+  checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>>;
+
   /** Release anything the driver holds: sessions, browsers, sockets. */
   close(): Promise<void>;
 }

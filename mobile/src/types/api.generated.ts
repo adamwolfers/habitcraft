@@ -237,6 +237,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/completions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List completions across habits
+         * @description Every habit the authenticated user has, active and archived, oldest
+         *     first as listHabits orders them, each with its completions from
+         *     startDate to endDate inclusive, newest first. A habit with none in the
+         *     range is listed with an empty array, so a client can draw every habit
+         *     from one request instead of one listCompletions per habit.
+         *
+         *     The range is at most 366 days, both ends included: endDate may be up to
+         *     365 days after startDate. A missing or malformed date, an endDate
+         *     before startDate, or a longer range is a 400.
+         */
+        get: operations["listCompletionsInRange"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/habits/{habitId}/completions": {
         parameters: {
             query?: never;
@@ -420,6 +448,16 @@ export interface components {
             notes: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        /**
+         * @description One habit's completions in a range, as listCompletionsInRange returns
+         *     them. Each element of `completions` is the same shape listCompletions
+         *     returns for the same row.
+         */
+        HabitCompletions: {
+            /** Format: uuid */
+            habitId: string;
+            completions: components["schemas"]["Completion"][];
         };
         CompletionDeleted: {
             message: string;
@@ -1154,6 +1192,34 @@ export interface operations {
             401: components["responses"]["Unauthorized"];
             404: components["responses"]["HabitNotFound"];
             500: components["responses"]["HabitInternalError"];
+        };
+    };
+    listCompletionsInRange: {
+        parameters: {
+            query: {
+                /** @description First day of the range */
+                startDate: string;
+                /** @description Last day of the range */
+                endDate: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Each habit with its completions in the range */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitCompletions"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            500: components["responses"]["InternalError"];
         };
     };
     listCompletions: {

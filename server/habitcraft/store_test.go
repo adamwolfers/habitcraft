@@ -319,6 +319,45 @@ func testHabitStore(t *testing.T, open func(*testing.T) store) {
 		}
 	})
 
+	t.Run("habits between two days carry only those days' completions, every habit listed", func(t *testing.T) {
+		st, ctx := open(t), t.Context()
+		u, _ := createTestUser(t, st)
+		bob, _ := createTestUser(t, st)
+		run := createTestHabit(t, st, u.id, "Run")
+		read := createTestHabit(t, st, u.id, "Read")
+		status := "archived"
+		if _, err := st.updateHabit(ctx, u.id, read.id, habitChanges{name: "Read", status: &status}); err != nil {
+			t.Fatal(err)
+		}
+		createTestHabit(t, st, u.id, "Stretch")
+		createTestHabit(t, st, bob.id, "Bob's")
+		for _, ago := range []int{6, 0, 3, 2, 7} {
+			checkOff(t, st, u.id, run.id, daysAgo(ago))
+		}
+		checkOff(t, st, u.id, read.id, daysAgo(4))
+
+		habits, err := st.habitsBetween(ctx, u.id, daysAgo(6), daysAgo(1))
+		if err != nil {
+			t.Fatal(err)
+		}
+		var names []string
+		for _, h := range habits {
+			names = append(names, h.name)
+		}
+		if !slices.Equal(names, []string{"Run", "Read", "Stretch"}) {
+			t.Fatalf("habits %v", names)
+		}
+		if days := completionDays(habits[0].completions); !slices.Equal(days, []int{2, 3, 6}) {
+			t.Errorf("Run's completions %v days ago, want [2 3 6]", days)
+		}
+		if days := completionDays(habits[1].completions); !slices.Equal(days, []int{4}) {
+			t.Errorf("Read's completions %v days ago, want [4]", days)
+		}
+		if habits[2].completions == nil || len(habits[2].completions) != 0 {
+			t.Errorf("Stretch %#v, want an empty list", habits[2].completions)
+		}
+	})
+
 	t.Run("a habit with no completions lists an empty list", func(t *testing.T) {
 		st, ctx := open(t), t.Context()
 		u, _ := createTestUser(t, st)

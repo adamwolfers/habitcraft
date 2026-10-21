@@ -111,3 +111,42 @@ test('a note can be as long as the limit allows, and no longer', async ({ users,
   });
   await habits.shouldHaveNote('Morning run', { on: 'today', note: { length: 'longest-allowed' } });
 });
+
+test("a period shows every habit's checked-off days in it", async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.create('Read');
+  await habits.create('Stretch');
+  await habits.checkOff('Morning run', { on: '7 days ago' });
+  await habits.checkOff('Morning run', { on: '6 days ago' });
+  await habits.checkOff('Morning run', { on: 'yesterday' });
+  await habits.checkOff('Morning run', { on: 'today' });
+  await habits.checkOff('Read', { on: '3 days ago' });
+
+  await habits.shouldShowDays(
+    { from: '6 days ago', to: 'today' },
+    {
+      'Morning run': ['6 days ago', 'yesterday', 'today'],
+      Read: ['3 days ago'],
+      Stretch: [],
+    }
+  );
+});
+
+test("a period shows only the acting user's days", async ({ users, habits }) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.checkOff('Morning run', { on: 'yesterday' });
+
+  await users.register('Bob');
+  await habits.create('Read');
+  await habits.checkOff('Read', { on: 'today' });
+
+  await habits.shouldShowDays({ from: '6 days ago', to: 'today' }, { Read: ['today'] });
+
+  await users.signInAs('Alice');
+  await habits.shouldShowDays(
+    { from: '6 days ago', to: 'today' },
+    { 'Morning run': ['yesterday'] }
+  );
+});

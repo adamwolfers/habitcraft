@@ -31,6 +31,17 @@ func scanCompletion(row pgx.Row) (completion, error) {
 }
 
 func (p pgStore) habits(ctx context.Context, userID uuid.UUID, status string, since time.Time) ([]habitWithCompletions, error) {
+	return p.habitsWithCompletions(ctx, userID, status, since, nil)
+}
+
+func (p pgStore) habitsBetween(ctx context.Context, userID uuid.UUID, from, to time.Time) ([]habitWithCompletions, error) {
+	return p.habitsWithCompletions(ctx, userID, "", from, &to)
+}
+
+// habitsWithCompletions lists the user's habits with status ("" for any),
+// oldest first, each with its completions on or after from and, unless to is
+// nil, on or before to.
+func (p pgStore) habitsWithCompletions(ctx context.Context, userID uuid.UUID, status string, from time.Time, to *time.Time) ([]habitWithCompletions, error) {
 	rows, err := p.pool.Query(ctx,
 		`SELECT `+habitColumns+` FROM habits
 		 WHERE user_id = $1 AND ($2::text = '' OR status = $2)
@@ -58,9 +69,10 @@ func (p pgStore) habits(ctx context.Context, userID uuid.UUID, status string, si
 	rows, err = p.pool.Query(ctx,
 		`SELECT c.id, c.habit_id, c.date, c.notes, c.created_at
 		 FROM completions c JOIN habits h ON h.id = c.habit_id
-		 WHERE h.user_id = $1 AND ($2::text = '' OR h.status = $2) AND c.date >= $3
+		 WHERE h.user_id = $1 AND ($2::text = '' OR h.status = $2)
+		   AND c.date >= $3 AND ($4::date IS NULL OR c.date <= $4)
 		 ORDER BY c.date DESC`,
-		userID, status, since,
+		userID, status, from, to,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("listing completions: %w", err)

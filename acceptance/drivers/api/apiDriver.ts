@@ -22,6 +22,7 @@ import { assertDocumentedResponse } from './apiDescription.ts';
 
 type Schemas = components['schemas'];
 type HabitWithCompletions = Schemas['HabitWithCompletions'];
+type HabitCompletions = Schemas['HabitCompletions'];
 
 interface Response {
   status: number;
@@ -174,6 +175,19 @@ export class ApiDriver implements ProtocolDriver {
     return completion.notes;
   }
 
+  async checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>> {
+    const all = expectStatus<HabitWithCompletions[]>(await this.request('GET', '/habits'), 200);
+    const names = new Map(all.map((habit) => [habit.id, habit.name]));
+    const days: Record<string, IsoDate[]> = {};
+    for (const { habitId, completions } of await this.completionsBetween(from, to)) {
+      const name = names.get(habitId);
+      if (name === undefined)
+        throw new Error(`A period lists habit ${habitId}, which is not listed`);
+      days[name] = completions.map((completion) => completion.date);
+    }
+    return days;
+  }
+
   async close(): Promise<void> {
     this.accessToken = undefined;
     this.refreshToken = undefined;
@@ -213,12 +227,27 @@ export class ApiDriver implements ProtocolDriver {
     expectStatus(await this.request('PUT', `/habits/${habit.id}`, input), 200);
   }
 
+  /**
+   * Read through the range endpoint, as the web app's views do, so any day is
+   * in reach: GET /habits embeds only the last year.
+   */
   private async completionOn(
     habitName: string,
     date: IsoDate
   ): Promise<Schemas['Completion'] | undefined> {
     const habit = await this.habitNamed(habitName);
-    return habit.completions.find((completion) => completion.date === date);
+    const period = await this.completionsBetween(date, date);
+    const entry = period.find((candidate) => candidate.habitId === habit.id);
+    if (!entry) throw new Error(`The period ${date} does not list "${habitName}"`);
+    return entry.completions.find((completion) => completion.date === date);
+  }
+
+  private async completionsBetween(from: IsoDate, to: IsoDate): Promise<HabitCompletions[]> {
+    const query = new URLSearchParams({ startDate: from, endDate: to });
+    return expectStatus<HabitCompletions[]>(
+      await this.request('GET', `/completions?${query}`),
+      200
+    );
   }
 
   /** Make one request and check the response against the API Description. */
