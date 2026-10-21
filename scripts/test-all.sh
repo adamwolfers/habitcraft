@@ -596,14 +596,15 @@ echo ""
 # stack already up. It needs no database reset: the DSL registers fresh users
 # for every test, so it shares nothing with the E2E fixtures reset above.
 run_phase "🧪" "$LBL_ACCEPTANCE" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
-    npx playwright test || true
+    npx playwright test --project api --project web || true
 
-# The api project again, against the Go server (habitcraft-8ml9). A feature Go
-# has not built yet is marked knownBug('<its bead>') and expected to fail.
-# The web project stays on Node: frontend-test talks to backend-test. Its own
-# output directory, because Playwright empties test-results/ on start.
+# The api project again, against the Go server (habitcraft-8ml9), and the spa
+# project, the Vite app that server serves (habitcraft-vxln.8). A feature
+# either has not built yet is marked knownBug('<its bead>') and expected to
+# fail. The web project stays on Node: frontend-test talks to backend-test.
+# Its own output directory, because Playwright empties test-results/ on start.
 run_phase "🧪" "$LBL_ACCEPTANCE_GO" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
     env ACCEPTANCE_API_URL=http://localhost:3020 ACCEPTANCE_BACKEND=go \
-    npx playwright test --project api --output test-results-go || true
+    npx playwright test --project api --project spa --output test-results-go || true
 
 finish

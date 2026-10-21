@@ -9,37 +9,47 @@ this file covers the layout and how to run it.
 | 1. Test cases | `tests/*.test.ts` | Habits, users and days. Nothing else |
 | 2. DSL | `dsl/` | Aliases, dates, assertions, which driver to use |
 | 3. Protocol drivers | `drivers/` | One channel each. `driver.ts` is the contract |
-| 4. System under test | — | Found through `ACCEPTANCE_API_URL` and `ACCEPTANCE_WEB_URL` |
+| 4. System under test | — | Found through `ACCEPTANCE_API_URL`, `ACCEPTANCE_WEB_URL` and `ACCEPTANCE_SPA_URL` |
 
 Each Playwright project is one protocol driver, and every test case runs once
-per project, unchanged. There are two: `api` and `web`.
+per project, unchanged. There are three:
+
+| Project | Drives | Against |
+|---|---|---|
+| `api` | HTTP calls | the Node backend, or the Go server with `ACCEPTANCE_BACKEND=go` |
+| `web` | the Next.js app in a browser | the Node backend behind it |
+| `spa` | the Vite app (`web/`) in a browser | the Go server, which serves it |
 
 ## Running
 
 ```bash
 # From the repo root: the test database, the Node backend on :3010, the Go
-# server on :3020 and the Next.js app on :3110 (the web project's system under
-# test)
+# server and the Vite app on :3020, and the Next.js app on :3110 (the web
+# project's system under test)
 docker compose -f docker-compose.test.yml up -d postgres-test db-migrate-test backend-test server-test frontend-test
 
 cd acceptance
 npm ci
-npx playwright install chromium                  # once, for the web project
-npm test                                         # every project
+npx playwright install chromium                  # once, for the web and spa projects
+npm test -- --project api --project web          # the Node backend and the Next.js app
 npm test -- --project api                        # one project; no frontend needed
-ACCEPTANCE_API_URL=http://localhost:3020 ACCEPTANCE_BACKEND=go npm test -- --project api  # the Go server (server-test)
+ACCEPTANCE_API_URL=http://localhost:3020 ACCEPTANCE_BACKEND=go npm test -- --project api --project spa  # the Go server (server-test) and its SPA
 npm run typecheck
 ```
 
 `ACCEPTANCE_WEB_URL` (default `http://localhost:3110`) points the web project at
 another app. The app finds its backend itself; `frontend-test` talks to `:3010`.
-`ACCEPTANCE_BACKEND` (`node`, the default, or `go`) says which server those URLs
-reach, which decides where the [known bugs](#known-bugs) are expected to fail.
+`ACCEPTANCE_SPA_URL` (default `http://localhost:3020`) points the spa project at
+another Go server. A local one built from `server/` serves the SPA when
+`web/` was built first (see [server/README.md](../server/README.md#the-web-app)).
+`ACCEPTANCE_BACKEND` (`node`, the default, or `go`) says which server the api
+and web URLs reach, which decides where the [known bugs](#known-bugs) are
+expected to fail. The spa project is always on `go`.
 
-CI runs both projects in the `acceptance-tests` job, then the `api` project
-again against the Go server (`server-test`), and `scripts/test-all.sh` does the
-same in its last two phases, so a failing acceptance test blocks a deploy. See
-[docs/TESTING.md](../docs/TESTING.md#all-tests).
+CI runs `api` and `web` against Node in the `acceptance-tests` job, then `api`
+and `spa` against the Go server (`server-test`), and `scripts/test-all.sh` does
+the same in its last two phases, so a failing acceptance test blocks a deploy.
+See [docs/TESTING.md](../docs/TESTING.md#all-tests).
 
 No database reset is needed between runs, and none happens. The DSL registers
 fresh users with unique emails for every test, so tests share nothing and run
@@ -131,6 +141,22 @@ on that backend, and the tests pass there the moment it lands, failing the
 run until the mark is removed. habitcraft-vxln.5 brought the Go server to
 the whole suite this way (habitcraft-8ml9).
 
+It covers a feature the SPA has not built yet too. A bead listed on `spa`
+marks the test as an expected failure in the spa project only. A test that
+needs several features names all their beads, and stays an expected failure
+until the last of them lands:
+
+```ts
+test("a period shows every habit's checked-off days in it", async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.15', 'habitcraft-vxln.16');
+  // ...
+});
+```
+
+When a view lands, take `spa` off its bead in `dsl/knownBugs.ts`. Each test
+that names it then either passes, and its mark comes out, or is still held by
+another bead it names.
+
 Behaviour that has no words in the user's language — a request for another
 user's habit by id, a malformed token, an expired one — stays in the backend's
 integration tests, which talk HTTP directly.
@@ -150,10 +176,10 @@ never edit it by hand.
 
 ## The web driver
 
-`drivers/web/` clicks through the web app in a real Chromium, and reads every
-observation off the screen. Its selectors live there and nowhere else. They
-target the Next.js app today and get rewritten when the Vite SPA's Today, Dots
-and habit detail views replace it; the test cases stay as they are.
+`drivers/web/` clicks through the Next.js app in a real Chromium, and reads
+every observation off the screen. Its selectors live there and nowhere else.
+It goes with the Next.js app at cutover, when the [SPA driver](#the-spa-driver)
+takes its place; the test cases stay as they are.
 
 - Every sign-in or registration opens a fresh browser context, as a second
   person would use their own browser. Contexts run in UTC, like the DSL's
@@ -178,3 +204,23 @@ and habit detail views replace it; the test cases stay as they are.
 - The Next.js app cannot archive or restore a habit, so the archive scenario is
   **skipped on `web`** with that reason in the report. It shows archived habits
   with the rest, so the driver's archived list is always empty.
+
+## The SPA driver
+
+`drivers/spa/` clicks through the Vite app (`web/`) that the Go server serves,
+in a real Chromium, and reads every observation off the screen. It works like
+the web driver: a fresh browser context for each sign-in, contexts in UTC, and
+on-screen messages mapped onto refusals, with an unknown one thrown.
+
+- Its selectors are roles, labels and accessible names, never classes: the
+  Habits page's `Active habits` and `Archived habits` regions, each habit's name
+  as a level-3 heading, the Profile page's sections by their titles.
+- A form field refuses a value when it cuts it short at its `maxLength` or the
+  browser marks it invalid (`required`, `type=email`, `minLength`). The driver
+  reports that as `invalid-input` and never submits.
+- Renewing the session drops the access-token cookie and reloads, as for the
+  web driver. The app renews from the refresh token or shows sign-in.
+- Habits are added, renamed, archived, restored and deleted on the Habits page.
+  Days cannot be checked off yet: the Today, Dots and habit detail views add
+  that (habitcraft-vxln.14, .15 and .16), and until then the scenarios that
+  need them are [known bugs](#known-bugs) on `spa`.

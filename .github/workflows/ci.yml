@@ -1129,8 +1129,9 @@ jobs:
   # stack the E2E job boots. It is the parity harness for the Go rebuild
   # (habitcraft-vxln), so the api project runs a second time against the Go
   # server (server-test), selected by ACCEPTANCE_API_URL and ACCEPTANCE_BACKEND
-  # (habitcraft-8ml9). A feature Go has not built yet is marked
-  # knownBug('<its bead>') and expected to fail there. The web project
+  # (habitcraft-8ml9), alongside the spa project, the Vite app server-test
+  # serves (habitcraft-vxln.8). A feature Go or the SPA has not built yet is
+  # marked knownBug('<its bead>') and expected to fail there. The web project
   # stays on Node: frontend-test talks to backend-test.
   #
   # Gated like e2e-tests plus `acceptance`, because the suite's own files are
@@ -1217,16 +1218,17 @@ jobs:
       - name: Run acceptance tests
         env:
           ACCEPTANCE_BACKEND: node
-        run: npx playwright test
+        run: npx playwright test --project api --project web
 
       # Runs even when the Node run failed, so one red run reports both. Its own
       # output directory, because Playwright empties test-results/ on start.
+      # The spa project is the Vite app server-test serves (habitcraft-vxln.8).
       - name: Run acceptance tests against the Go server
         if: success() || failure()
         env:
           ACCEPTANCE_API_URL: http://localhost:3020
           ACCEPTANCE_BACKEND: go
-        run: npx playwright test --project api --output test-results-go
+        run: npx playwright test --project api --project spa --output test-results-go
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

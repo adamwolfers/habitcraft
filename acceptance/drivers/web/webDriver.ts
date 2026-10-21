@@ -2,9 +2,9 @@
  * The web protocol driver: performs each user action by clicking through the
  * web app in a real browser, and reads every observation off the screen.
  *
- * Selectors live here and nowhere else. They target the Next.js app today and
- * get rewritten for the Vite SPA's Today, Dots and habit detail views; the
- * test cases above them do not change.
+ * Selectors live here and nowhere else. They target the Next.js app, and this
+ * driver goes with it at cutover, when drivers/spa/ takes its place; the test
+ * cases above them do not change.
  *
  * Each sign-in or registration opens a fresh browser context, the way a second
  * person would use their own browser. The context runs in UTC, as the DSL

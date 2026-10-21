@@ -18,7 +18,8 @@ test('a habit needs a name', async ({ users, habits }) => {
   await habits.create('', { expect: 'invalid-input' });
 });
 
-test('a renamed habit keeps its history', async ({ users, habits }) => {
+test('a renamed habit keeps its history', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.16');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });
@@ -65,7 +66,12 @@ test('a habit name has a length limit', async ({ users, habits }) => {
   await habits.create({ length: 'too-long' }, { expect: 'invalid-input' });
 });
 
-test("deleting a habit leaves the other habits' days alone", async ({ users, habits }) => {
+test("deleting a habit leaves the other habits' days alone", async ({
+  users,
+  habits,
+  knownBug,
+}) => {
+  knownBug('habitcraft-vxln.14');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');

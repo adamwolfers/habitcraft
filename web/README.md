@@ -21,6 +21,25 @@ an origin as they do in production, and the auth cookies work unchanged.
 `npm run build` typechecks, then writes the bundle into
 `../server/cmd/habitcraft/spa/dist/`, where `go build` embeds it.
 
+## Layout
+
+| Path | What it is |
+|---|---|
+| `src/App.tsx` | The routes: `/login` and `/register` signed out, `/habits` and `/profile` signed in |
+| `src/api/` | The API client, typed from the spec by openapi-fetch, and the messages for its failures |
+| `src/session/` | Who is signed in, as a React Query query of `GET /api/v1/users/me` |
+| `src/pages/` | One component per page |
+| `src/components/` | The layout around the signed-in pages, and the form parts every page uses |
+
+The access token is an httpOnly cookie the app cannot read. Every request
+goes through `src/api/renewingFetch.ts`: on a 401 it renews the session from
+the refresh-token cookie once and sends the request again. Requests that fail
+together share one renewal, since a refresh token works once. When the
+session cannot be renewed, the app drops the user's data and shows sign-in.
+
+Server data lives in React Query's cache. Signing in or out drops everything
+in it but the current user, so nothing of one user's shows to the next.
+
 ## Testing
 
 ```bash
@@ -31,7 +50,10 @@ npm run typecheck
 ```
 
 These are phases 6, 7 and 16 of `scripts/test-all.sh`, and the
-`web-unit-tests` CI job, which also builds the bundle. Vitest 5 needs Node
+`web-unit-tests` CI job, which also builds the bundle. The unit tests render
+the whole app against a fake API (`src/test/fakeServer.ts`). The acceptance
+suite's `spa` project drives the real thing, served by the Go server (see
+[acceptance/README.md](../acceptance/README.md#the-spa-driver)). Vitest 5 needs Node
 22.12 or later. TypeScript is pinned to 6.0 because typescript-eslint does not
 support 7 yet.
 

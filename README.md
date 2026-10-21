@@ -22,6 +22,7 @@ It is being **rebuilt side by side** on a new stack (decided 2026-10-10). The cu
   - **Today** (the default): the active habits not yet done today. A completed habit leaves the list, and a collapsed "Completed today (N)" row at the bottom expands to list them, where a completion can be undone.
   - **Dots**: one compact grid per habit, a dot per day running back up to a year. Filled means done, so consistency shows at a glance.
   - **Habit detail**: a month calendar for backfilling past days and adding notes, plus completion rates over 30 and 365 days.
+  - **Habits** and **Profile** pages for management: adding, renaming, archiving, restoring and deleting habits (decided 2026-10-21), and the account's name, email, password and deletion.
   - The per-habit Week/Month toggles are not carried over. Deliberately, **habits are daily only** (no other schedules) and there is **no streak tracking**.
 - **Hosting:** a single VPS deployed with Kamal, replacing Cloud Run + Cloud SQL.
 - **Testing:** acceptance-test-driven development using Dave Farley's four-layer model (test cases in domain language → DSL → protocol drivers → system), in TypeScript. The same acceptance suite proves the Node → Go parity. See [docs/TESTING.md](docs/TESTING.md#acceptance-tests-four-layer-atdd).

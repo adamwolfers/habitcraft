@@ -200,7 +200,8 @@ need.
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
 > and phases 13, 23 and 24 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
 > The `api` project also runs against the Go server, and passes there too
-> (habitcraft-8ml9, habitcraft-vxln.5).
+> (habitcraft-8ml9, habitcraft-vxln.5). The `spa` project drives the Vite app
+> the Go server serves (habitcraft-vxln.8).
 > It is the parity harness for the Node → Go rewrite. The Playwright E2E and
 > integration suites below still run alongside it until they are retired.
 
@@ -213,7 +214,7 @@ TypeScript and split into four layers:
 |---|---|---|
 | **Test cases** | The problem domain only. No selectors, URLs, status codes or fixtures | `habits.create("Morning run"); habits.checkOff("Morning run", today); today.shouldNotList("Morning run")` |
 | **DSL** | Translating domain calls into driver calls; test isolation | Turns the alias `"Morning run"` into a unique name per test run, so tests never share data |
-| **Protocol drivers** | One channel each: **API** (HTTP), **web** (Playwright), later native apps (WebdriverIO + Appium) | The web driver clicks; the API driver POSTs |
+| **Protocol drivers** | One channel each: **API** (HTTP), **web** and **spa** (Playwright, one per web app), later native apps (WebdriverIO + Appium) | The web driver clicks; the API driver POSTs |
 | **System under test** | — | The Node backend today, the Go server after the rebuild; the Next.js app today, the Vite SPA after |
 
 Rules:
@@ -309,8 +310,8 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 20 | Frontend Unit Tests | `frontend: npm test` | yes |
 | 21 | Backend Integration Tests | `backend: npm run test:integration` | yes |
 | 22 | E2E Tests | `frontend: playwright, 3 shards` | yes |
-| 23 | Acceptance Tests | `acceptance: playwright test` (`api` and `web`) | yes |
-| 24 | Acceptance Tests (Go server) | `acceptance: playwright test --project api` against `server-test` | yes |
+| 23 | Acceptance Tests | `acceptance: playwright test --project api --project web` | yes |
+| 24 | Acceptance Tests (Go server) | `acceptance: playwright test --project api --project spa` against `server-test` | yes |
 
 Notes on that table:
 
@@ -369,10 +370,12 @@ Notes on that table:
   chromium` there for the `web` project. In CI it is the `acceptance-tests` job,
   which `run-migrations-gcp` waits on, so it gates every deploy.
 - **Phase 24 runs the `api` project again, against the Go server**
-  (`server-test` on :3020, same database and JWT secret, habitcraft-8ml9). The
-  web project stays on Node, because `frontend-test` talks to `backend-test`.
-  A feature Go has not built yet is marked with `knownBug('<its bead>')` and
-  expected to fail there (see [acceptance/README.md](../acceptance/README.md#known-bugs)).
+  (`server-test` on :3020, same database and JWT secret, habitcraft-8ml9),
+  and the `spa` project, which drives the Vite app that server serves
+  (habitcraft-vxln.8). The web project stays on Node, because `frontend-test`
+  talks to `backend-test`. A feature Go or the SPA has not built yet is marked
+  with `knownBug('<its bead>')` and expected to fail there (see
+  [acceptance/README.md](../acceptance/README.md#known-bugs)).
   The script rebuilds `server-test` on every run, since the
   dependency hash only covers the `package-lock.json` files. In CI it is a
   second step of the same `acceptance-tests` job.

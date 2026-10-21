@@ -12,8 +12,11 @@ import type { Backend } from './dsl/knownBugs.ts';
  *   ACCEPTANCE_API_URL   default http://localhost:3010 (docker-compose.test.yml)
  *   ACCEPTANCE_WEB_URL   default http://localhost:3110 (frontend-test, which talks
  *                        to the backend on 3010 itself)
- *   ACCEPTANCE_BACKEND   node (default) or go: which server those URLs reach, so
- *                        the tests for its known bugs are expected to fail
+ *   ACCEPTANCE_SPA_URL   default http://localhost:3020 (server-test: the Go
+ *                        server, which serves the Vite SPA beside its API)
+ *   ACCEPTANCE_BACKEND   node (default) or go: which server the api and web
+ *                        URLs reach, so the tests for its known bugs are
+ *                        expected to fail. The spa project is always on go.
  */
 const backend = backendFromEnv(process.env.ACCEPTANCE_BACKEND);
 
@@ -43,6 +46,14 @@ export default defineConfig<ProtocolOptions>({
         protocol: 'web',
         backend,
         webUrl: process.env.ACCEPTANCE_WEB_URL ?? 'http://localhost:3110',
+      },
+    },
+    {
+      name: 'spa',
+      use: {
+        protocol: 'spa',
+        backend: 'go',
+        spaUrl: process.env.ACCEPTANCE_SPA_URL ?? 'http://localhost:3020',
       },
     },
   ],
