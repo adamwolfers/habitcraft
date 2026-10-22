@@ -20,6 +20,7 @@ describe('SignInPage', () => {
       ...signedOut,
       'POST /api/v1/auth/login': answer,
       'GET /api/v1/habits': [200, []],
+      'GET /api/v1/completions': [200, []],
     });
     const { user } = renderApp('/login');
     await user.type(await screen.findByLabelText('Email'), 'alice@example.com');
@@ -28,10 +29,10 @@ describe('SignInPage', () => {
     return server;
   }
 
-  it('signs in and opens the habits', async () => {
+  it('signs in and opens Today', async () => {
     const server = await signIn([200, { user: alice, ...tokens }]);
 
-    expect(await screen.findByRole('heading', { name: 'Habits' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
     expect(await server.bodiesSentTo('POST /api/v1/auth/login')).toEqual([
       { email: 'alice@example.com', password: 'Pass-1234' },
     ]);
@@ -73,6 +74,7 @@ describe('RegisterPage', () => {
       ...signedOut,
       'POST /api/v1/auth/register': answer,
       'GET /api/v1/habits': [200, []],
+      'GET /api/v1/completions': [200, []],
     });
     const { user } = renderApp('/register');
     await user.type(await screen.findByLabelText('Name'), 'Alice');
@@ -82,10 +84,10 @@ describe('RegisterPage', () => {
     return server;
   }
 
-  it('creates the account and opens the habits', async () => {
+  it('creates the account and opens Today', async () => {
     const server = await register([201, { user: alice, ...tokens }]);
 
-    expect(await screen.findByRole('heading', { name: 'Habits' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
     expect(await server.bodiesSentTo('POST /api/v1/auth/register')).toEqual([
       { name: 'Alice', email: 'alice@example.com', password: 'Pass-1234' },
     ]);

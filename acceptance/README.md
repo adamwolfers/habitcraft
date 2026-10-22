@@ -221,6 +221,12 @@ on-screen messages mapped onto refusals, with an unknown one thrown.
 - Renewing the session drops the access-token cookie and reloads, as for the
   web driver. The app renews from the refresh token or shows sign-in.
 - Habits are added, renamed, archived, restored and deleted on the Habits page.
-  Days cannot be checked off yet: the Today, Dots and habit detail views add
-  that (habitcraft-vxln.14, .15 and .16), and until then the scenarios that
-  need them are [known bugs](#known-bugs) on `spa`.
+- Today is checked off, read and unchecked on the Today view, where signing in
+  lands: its `To do` region, and the collapsed `Completed today` region, which
+  the driver opens to read. Like the web driver, it reports a second check-off
+  as `already-checked-off` from the habit already showing as done, without a
+  click. Undoing a day with a note asks first, and the driver confirms.
+- Any other day, and any note, waits on the habit detail page
+  (habitcraft-vxln.16), and a period on the Dots view (habitcraft-vxln.15).
+  Until then the scenarios that need them are [known bugs](#known-bugs) on
+  `spa`.

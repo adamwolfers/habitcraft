@@ -12,6 +12,12 @@ const signedOut = {
   'POST /api/v1/auth/refresh': [401, { error: 'Refresh token required' }],
 } as const;
 
+const signedIn = {
+  'GET /api/v1/users/me': [200, alice],
+  'GET /api/v1/habits': [200, []],
+  'GET /api/v1/completions': [200, []],
+} as const;
+
 describe('App', () => {
   it('sends a signed-out visitor to sign in', async () => {
     fakeServer({ ...signedOut });
@@ -21,20 +27,20 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 
-  it('takes a signed-in user from sign-in to their habits', async () => {
-    fakeServer({ 'GET /api/v1/users/me': [200, alice], 'GET /api/v1/habits': [200, []] });
+  it('takes a signed-in user from sign-in to Today', async () => {
+    fakeServer(signedIn);
 
     renderApp('/login');
 
-    expect(await screen.findByRole('heading', { name: 'Habits' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
   });
 
-  it('opens on the habits for any path it does not know', async () => {
-    fakeServer({ 'GET /api/v1/users/me': [200, alice], 'GET /api/v1/habits': [200, []] });
+  it('opens on Today for any path it does not know', async () => {
+    fakeServer(signedIn);
 
     renderApp('/no-such-page');
 
-    expect(await screen.findByRole('heading', { name: 'Habits' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Today' })).toBeInTheDocument();
   });
 
   it('says so when the server cannot be reached', async () => {

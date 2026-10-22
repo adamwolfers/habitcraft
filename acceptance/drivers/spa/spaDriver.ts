@@ -7,7 +7,10 @@
  * Selectors live here and nowhere else, and they are roles and labels, never
  * classes. Each sign-in or registration opens a fresh browser context, as a
  * second person would use their own browser. Contexts run in UTC, as the DSL
- * resolves "today" in UTC.
+ * resolves "today" in UTC, so the Today view's day is the DSL's today.
+ *
+ * Today is read and changed on the Today view. Any other day, and any note,
+ * waits on the habit detail page (habitcraft-vxln.16).
  *
  * Refusals reach the user as messages on screen. The driver maps the ones it
  * knows onto a Refusal and throws on any other, so a reworded message fails
@@ -64,12 +67,10 @@ export class SpaDriver implements ProtocolDriver {
     if (fields.some((accepted) => !accepted)) return REFUSED_AS_INVALID;
     await form.getByRole('button', { name: 'Create account' }).click();
 
-    return this.outcome(
-      'register',
-      () => habitsHeading(page).isVisible(),
-      page.getByRole('alert'),
-      [[/already exists/, 'email-taken'], NOT_VALID]
-    );
+    return this.outcome('register', () => todayHeading(page).isVisible(), page.getByRole('alert'), [
+      [/already exists/, 'email-taken'],
+      NOT_VALID,
+    ]);
   }
 
   async signIn({ email, password }: Credentials): Promise<Outcome> {
@@ -80,7 +81,7 @@ export class SpaDriver implements ProtocolDriver {
     await form.getByLabel('Password').fill(password);
     await form.getByRole('button', { name: 'Sign in' }).click();
 
-    return this.outcome('sign in', () => habitsHeading(page).isVisible(), page.getByRole('alert'), [
+    return this.outcome('sign in', () => todayHeading(page).isVisible(), page.getByRole('alert'), [
       [/^Wrong email or password/, 'invalid-credentials'],
     ]);
   }
@@ -231,22 +232,49 @@ export class SpaDriver implements ProtocolDriver {
   }
 
   // --- completions ----------------------------------------------------------
-  // Which scenarios wait on these: dsl/knownBugs.ts.
+  // Which scenarios wait on the rest: dsl/knownBugs.ts.
 
-  async checkOff(): Promise<Outcome> {
-    return notBuilt('check a habit off');
+  async checkOff(habitName: string, date: IsoDate, note?: string): Promise<Outcome> {
+    if (date !== today() || note !== undefined)
+      return notBuilt('check off another day, or note one');
+    const page = await this.todayPage();
+    if ((await this.completedToday(page)).includes(habitName)) {
+      return { ok: false, refusal: 'already-checked-off' };
+    }
+    const row = await this.toDoRow(page, habitName);
+    await row.getByRole('button', { name: `Check off ${habitName}` }).click();
+
+    return this.outcome(
+      'check a habit off',
+      async () => (await row.count()) === 0,
+      row.getByRole('alert'),
+      []
+    );
   }
 
-  async uncheck(): Promise<void> {
-    notBuilt('uncheck a day');
+  async uncheck(habitName: string, date: IsoDate): Promise<void> {
+    if (date !== today()) notBuilt('uncheck another day');
+    const page = await this.todayPage();
+    const done = await this.doneRow(page, habitName);
+    await done.getByRole('button', { name: `Undo ${habitName}` }).click();
+    // A day with a note asks first, since undoing it deletes the note.
+    const confirm = done.getByRole('button', { name: 'Undo and delete note' });
+    const toDo = this.toDo(page, habitName);
+    await expect(toDo.or(confirm)).toBeVisible();
+    if (await confirm.isVisible()) await confirm.click();
+    await expect(toDo, `"${habitName}" unchecked today`).toHaveCount(1);
   }
 
   async setNote(): Promise<Outcome> {
     return notBuilt('note a day');
   }
 
-  async isCheckedOff(): Promise<boolean> {
-    return notBuilt('show whether a day is checked off');
+  async isCheckedOff(habitName: string, date: IsoDate): Promise<boolean> {
+    if (date !== today()) notBuilt('show whether another day is checked off');
+    const page = await this.todayPage();
+    if ((await this.toDo(page, habitName).count()) > 0) return false;
+    if ((await this.completedToday(page)).includes(habitName)) return true;
+    throw new Error(`"${habitName}" is not on the Today view`);
   }
 
   async noteOn(): Promise<string | null> {
@@ -290,7 +318,12 @@ export class SpaDriver implements ProtocolDriver {
     if (!this.current) return undefined;
     const page = this.current;
     await page.goto(path);
-    const heading = path === '/profile' ? profileHeading(page) : habitsHeading(page);
+    const heading =
+      path === '/'
+        ? todayHeading(page)
+        : path === '/profile'
+          ? profileHeading(page)
+          : habitsHeading(page);
     await expect(heading.or(signInHeading(page))).toBeVisible();
     return (await signInHeading(page).isVisible()) ? undefined : page;
   }
@@ -306,6 +339,55 @@ export class SpaDriver implements ProtocolDriver {
     const page = await this.signedIn('/habits');
     await expect(page.getByRole('region', { name: 'Active habits' })).toBeVisible();
     return page;
+  }
+
+  /** The Today view, once its habits and days have loaded. */
+  private async todayPage(): Promise<Page> {
+    const page = await this.signedIn('/');
+    await expect(
+      page.getByRole('region', { name: 'To do' }).or(page.getByText('No habits yet'))
+    ).toBeVisible();
+    return page;
+  }
+
+  /** A habit's row in Today's to-do list; none when it is done or not there. */
+  private toDo(page: Page, name: string): Locator {
+    return page
+      .getByRole('region', { name: 'To do' })
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { level: 3, name, exact: true }) });
+  }
+
+  private async toDoRow(page: Page, name: string): Promise<Locator> {
+    const row = this.toDo(page, name);
+    await expect(row, `"${name}" to do today`).toHaveCount(1);
+    return row;
+  }
+
+  /** Open the collapsed "Completed today" list, when there is one. */
+  private async openCompleted(page: Page): Promise<Locator> {
+    const region = page.getByRole('region', { name: 'Completed today' });
+    const toggle = region.getByRole('button', { name: /^Completed today/ });
+    if ((await toggle.count()) > 0 && (await toggle.getAttribute('aria-expanded')) === 'false') {
+      await toggle.click();
+    }
+    return region;
+  }
+
+  /** The names of the habits done today; none when the list is hidden. */
+  private async completedToday(page: Page): Promise<string[]> {
+    return (await this.openCompleted(page))
+      .getByRole('listitem')
+      .getByRole('heading', { level: 3 })
+      .allInnerTexts();
+  }
+
+  private async doneRow(page: Page, name: string): Promise<Locator> {
+    const row = (await this.openCompleted(page))
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { level: 3, name, exact: true }) });
+    await expect(row, `"${name}" done today`).toHaveCount(1);
+    return row;
   }
 
   private async profileSection(name: string): Promise<Locator> {
@@ -364,6 +446,10 @@ export class SpaDriver implements ProtocolDriver {
   }
 }
 
+function todayHeading(page: Page): Locator {
+  return page.getByRole('heading', { level: 1, name: 'Today' });
+}
+
 function habitsHeading(page: Page): Locator {
   return page.getByRole('heading', { level: 1, name: 'Habits' });
 }
@@ -386,6 +472,11 @@ async function fill(field: Locator, value: string): Promise<boolean> {
   await field.fill(value);
   if ((await field.inputValue()) !== value) return false;
   return field.evaluate((element: HTMLInputElement) => element.validity.valid);
+}
+
+/** Today in UTC, as the DSL and the driver's browser contexts reckon it. */
+function today(): IsoDate {
+  return new Date().toISOString().slice(0, 10);
 }
 
 function notBuilt(action: string): never {

@@ -1,19 +1,12 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { api } from '../api/client.ts';
+import { HABITS, useHabits } from '../api/habits.ts';
 import { messageFor } from '../api/messages.ts';
 import { Button, ErrorMessage, Field } from '../components/forms.tsx';
 import { schemaLimits, type Habit } from '../types/api.ts';
 
 const NAME = schemaLimits.HabitInput.name;
-
-const HABITS = ['habits'] as const;
-
-async function fetchHabits(): Promise<Habit[]> {
-  const { data, response } = await api.GET('/api/v1/habits');
-  if (!data) throw new Error(`Loading habits failed with ${response.status}`);
-  return data;
-}
 
 /** Replace a habit in the cached list with the server's copy, or drop it. */
 function useHabitsCache() {
@@ -31,7 +24,7 @@ function useHabitsCache() {
 }
 
 export function HabitsPage() {
-  const habits = useQuery({ queryKey: HABITS, queryFn: fetchHabits });
+  const habits = useHabits();
 
   return (
     <div className="space-y-6">

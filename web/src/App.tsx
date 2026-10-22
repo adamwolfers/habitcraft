@@ -6,11 +6,12 @@ import { Layout } from './components/Layout.tsx';
 import { RegisterPage, SignInPage } from './pages/AuthPages.tsx';
 import { HabitsPage } from './pages/HabitsPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
+import { TodayPage } from './pages/TodayPage.tsx';
 import { useCurrentUser, useSession } from './session/session.ts';
 import type { User } from './types/api.ts';
 
-/** Where a signed-in user lands. Today replaces it as the default view (habitcraft-vxln.14). */
-const HOME = '/habits';
+/** Where a signed-in user lands: the Today view. */
+const HOME = '/';
 
 export function App() {
   const [queryClient] = useState(() => new QueryClient());
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route path="/register" element={<RegisterPage />} />
       </Route>
       <Route element={<SignedInOnly>{(user) => <Layout key={user.id} />}</SignedInOnly>}>
+        <Route path="/" element={<TodayPage />} />
         <Route path="/habits" element={<HabitsPage />} />
         <Route
           path="/profile"

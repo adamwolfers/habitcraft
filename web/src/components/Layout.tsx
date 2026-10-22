@@ -25,6 +25,9 @@ export function Layout() {
       <header className="border-b border-gray-800">
         <nav aria-label="Main" className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
           <span className="mr-auto text-lg font-bold text-blue-400">HabitCraft</span>
+          <NavLink to="/" end className={link}>
+            Today
+          </NavLink>
           <NavLink to="/habits" className={link}>
             Habits
           </NavLink>

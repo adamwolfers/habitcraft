@@ -25,8 +25,9 @@ an origin as they do in production, and the auth cookies work unchanged.
 
 | Path | What it is |
 |---|---|
-| `src/App.tsx` | The routes: `/login` and `/register` signed out, `/habits` and `/profile` signed in |
+| `src/App.tsx` | The routes: `/login` and `/register` signed out; `/` (Today, where signing in lands), `/habits` and `/profile` signed in |
 | `src/api/` | The API client, typed from the spec by openapi-fetch, and the messages for its failures |
+| `src/today/` | Today's date on the user's own calendar, kept current past midnight |
 | `src/session/` | Who is signed in, as a React Query query of `GET /api/v1/users/me` |
 | `src/pages/` | One component per page |
 | `src/components/` | The layout around the signed-in pages, and the form parts every page uses |
@@ -39,6 +40,19 @@ session cannot be renewed, the app drops the user's data and shows sign-in.
 
 Server data lives in React Query's cache. Signing in or out drops everything
 in it but the current user, so nothing of one user's shows to the next.
+
+## The Today view
+
+Today lists the active habits not yet checked off on the user's local date,
+read with one `GET /api/v1/completions` for that day. Checking one off takes
+it off the list at once. The ones done today sit under a collapsed
+`Completed today (N)`, and each can be undone. The date turns over at local
+midnight and catches up when the page regains focus, as a sleeping machine
+runs no timers.
+
+A note lives on its day's completion, so undoing a day deletes its note. A
+day with a note therefore asks before it is undone; one without is undone at
+once.
 
 ## Testing
 

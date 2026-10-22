@@ -31,10 +31,6 @@ export const KNOWN_BUGS = {
     on: ['node'],
     summary: "an email at the spec's length limit is refused as malformed",
   },
-  'habitcraft-vxln.14': {
-    on: ['spa'],
-    summary: 'the SPA has no Today view to check a habit off today',
-  },
   'habitcraft-vxln.15': {
     on: ['spa'],
     summary: "the SPA has no Dots view to show a period's days",

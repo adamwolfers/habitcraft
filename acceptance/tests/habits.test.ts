@@ -66,12 +66,7 @@ test('a habit name has a length limit', async ({ users, habits }) => {
   await habits.create({ length: 'too-long' }, { expect: 'invalid-input' });
 });
 
-test("deleting a habit leaves the other habits' days alone", async ({
-  users,
-  habits,
-  knownBug,
-}) => {
-  knownBug('habitcraft-vxln.14');
+test("deleting a habit leaves the other habits' days alone", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');
