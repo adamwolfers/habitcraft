@@ -967,7 +967,8 @@ jobs:
 
   e2e-tests:
     name: E2E Tests (Shard ${{ matrix.shard }}/3)
-    runs-on: ubuntu-latest
+    # Pinned until Playwright supports ubuntu-latest (26.04): habitcraft-hvh7.
+    runs-on: ubuntu-24.04
     needs: [detect-changes, backend-integration-tests]
     if: |
       always() &&
@@ -1140,7 +1141,8 @@ jobs:
   # runs fullyParallel and Playwright splits the work across workers itself.
   acceptance-tests:
     name: Acceptance Tests
-    runs-on: ubuntu-latest
+    # Pinned until Playwright supports ubuntu-latest (26.04): habitcraft-hvh7.
+    runs-on: ubuntu-24.04
     needs: [detect-changes, backend-integration-tests]
     if: |
       always() &&
