@@ -57,16 +57,16 @@ once.
 
 ## The Dots view
 
-Dots shows a card for each active habit, its days as a row of dots that wraps,
-oldest first and ending today. A done day is filled in the habit's colour, and
+Dots shows a card for each active habit, its last 196 days as a grid of dots:
+7 rows of 28 days, each row running left to right, the last one ending today
+in the bottom-right corner. Every card shows the whole grid, however new the
+habit, so the cards line up. A done day is filled in the habit's colour, and
 the rest are outlined. Hovering a dot names its date. Each grid is one image
-to a screen reader, summed up as "Completed 210 of 365 days".
+to a screen reader, summed up as "Completed 120 of 196 days".
 
-A grid starts on the day its habit was created, or on its first checked-off
-day when that is earlier, since a day before a habit existed can be checked
-off too. It shows at most the last 365 days. One `GET /api/v1/completions`
-reads every habit's days at once. A check-off on Today marks that range stale,
-so Dots reloads it when it next opens.
+The grid's shape is `ROWS` and `DAYS_PER_ROW` in `src/dots/dots.ts`. One
+`GET /api/v1/completions` reads every habit's days at once. A check-off on
+Today marks that range stale, so Dots reloads it when it next opens.
 
 ## Testing
 

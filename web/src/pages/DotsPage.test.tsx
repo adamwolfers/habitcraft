@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { firstDay } from '../dots/dots.ts';
+import { DAYS_PER_ROW, firstDay, GRID_DAYS } from '../dots/dots.ts';
 import { alice, fakeServer, habit, type Answer } from '../test/fakeServer.ts';
 import { renderApp } from '../test/renderApp.tsx';
 
@@ -91,7 +91,7 @@ describe('Dots view', () => {
     expect(screen.queryByRole('heading', { level: 3, name: 'Stretch' })).not.toBeInTheDocument();
   });
 
-  it('reads every habit’s days in one request, from the first day a grid can show to today', async () => {
+  it('reads every habit’s days in one request, from the grid’s first day to today', async () => {
     const { server } = await openDots([run]);
     await card('Morning run');
 
@@ -101,52 +101,59 @@ describe('Dots view', () => {
     expect(ranges).toEqual([{ startDate: firstDay(TODAY), endDate: TODAY }]);
   });
 
-  it('shows a dot for each day since the habit was created, ending today', async () => {
-    await openDots([run], { [run.id]: ['2026-10-20', TODAY] });
+  it('shows the whole grid of days, ending today, however new the habit is', async () => {
+    await openDots([read], { [read.id]: ['2026-10-20', TODAY] });
 
-    expect(dots(await card('Morning run'))).toEqual([
+    const shown = dots(await card('Read'));
+    expect(shown).toHaveLength(GRID_DAYS);
+    expect(shown[0]).toEqual([firstDay(TODAY), false]);
+    expect(shown.slice(-3)).toEqual([
       ['2026-10-20', true],
       ['2026-10-21', false],
       [TODAY, true],
     ]);
   });
 
-  it('starts at a day checked off before the habit was created', async () => {
-    await openDots([read], { [read.id]: ['2026-10-19'] });
+  it('shows a day checked off before the habit was created', async () => {
+    await openDots([read], { [read.id]: ['2026-10-01'] });
 
-    expect(dots(await card('Read'))).toEqual([
-      ['2026-10-19', true],
-      ['2026-10-20', false],
-      ['2026-10-21', false],
-      [TODAY, false],
-    ]);
+    expect(dots(await card('Read'))).toContainEqual(['2026-10-01', true]);
+  });
+
+  it('lays the days out in rows of the same length', async () => {
+    await openDots([run]);
+
+    expect(within(await card('Morning run')).getByRole('img')).toHaveStyle({
+      gridTemplateColumns: `repeat(${DAYS_PER_ROW}, minmax(0, 1fr))`,
+    });
   });
 
   it('fills a done day in the habit’s colour and outlines the rest', async () => {
     await openDots([run], { [run.id]: [TODAY] });
-    const [first, , last] = (await card('Morning run')).querySelectorAll('time');
+    const shown = (await card('Morning run')).querySelectorAll('time');
+    const [yesterday, today] = [shown[shown.length - 2], shown[shown.length - 1]];
 
-    expect(last).toHaveStyle({ backgroundColor: 'rgb(34, 197, 94)' });
-    expect(first).toHaveStyle({ borderColor: 'rgb(34, 197, 94)' });
-    expect(first).not.toHaveStyle({ backgroundColor: 'rgb(34, 197, 94)' });
+    expect(today).toHaveStyle({ backgroundColor: 'rgb(34, 197, 94)' });
+    expect(yesterday).toHaveStyle({ borderColor: 'rgb(34, 197, 94)' });
+    expect(yesterday).not.toHaveStyle({ backgroundColor: 'rgb(34, 197, 94)' });
   });
 
   it('names each dot’s date, for hovering', async () => {
     await openDots([run], { [run.id]: [TODAY] });
-    const [first, , last] = (await card('Morning run')).querySelectorAll('time');
+    const shown = (await card('Morning run')).querySelectorAll('time');
 
-    expect(first).toHaveAttribute('title', 'Tue, Oct 20, 2026: not done');
-    expect(last).toHaveAttribute('title', 'Thu, Oct 22, 2026: done');
+    expect(shown[shown.length - 2]).toHaveAttribute('title', 'Wed, Oct 21, 2026: not done');
+    expect(shown[shown.length - 1]).toHaveAttribute('title', 'Thu, Oct 22, 2026: done');
   });
 
   it('sums up each grid for a screen reader', async () => {
     await openDots([run, read], { [run.id]: ['2026-10-20', TODAY] });
 
     expect(within(await card('Morning run')).getByRole('img')).toHaveAccessibleName(
-      'Completed 2 of 3 days'
+      `Completed 2 of ${GRID_DAYS} days`
     );
     expect(within(await card('Read')).getByRole('img')).toHaveAccessibleName(
-      'Completed 0 of 1 day'
+      `Completed 0 of ${GRID_DAYS} days`
     );
   });
 
@@ -179,7 +186,7 @@ describe('Dots view', () => {
     });
     const { user } = renderApp('/dots');
     expect(within(await card('Morning run')).getByRole('img')).toHaveAccessibleName(
-      'Completed 0 of 3 days'
+      `Completed 0 of ${GRID_DAYS} days`
     );
 
     await user.click(screen.getByRole('link', { name: 'Today' }));
@@ -188,7 +195,9 @@ describe('Dots view', () => {
     await user.click(screen.getByRole('link', { name: 'Dots' }));
 
     expect(
-      await within(await card('Morning run')).findByRole('img', { name: 'Completed 1 of 3 days' })
+      await within(await card('Morning run')).findByRole('img', {
+        name: `Completed 1 of ${GRID_DAYS} days`,
+      })
     ).toBeInTheDocument();
   });
 });

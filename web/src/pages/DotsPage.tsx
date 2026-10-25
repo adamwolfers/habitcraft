@@ -3,7 +3,7 @@ import { Link } from 'react-router';
 import { completionsKey, fetchCompletions } from '../api/completions.ts';
 import { useHabits } from '../api/habits.ts';
 import { ErrorMessage } from '../components/forms.tsx';
-import { dotDays, firstDay } from '../dots/dots.ts';
+import { DAYS_PER_ROW, firstDay, gridDays } from '../dots/dots.ts';
 import { useToday } from '../today/today.ts';
 import type { Habit } from '../types/api.ts';
 
@@ -70,7 +70,7 @@ function Cards({ today, habits, done }: { today: string; habits: Habit[]; done: 
 }
 
 function Card({ habit, today, done }: { habit: Habit; today: string; done: Set<string> }) {
-  const days = dotDays(today, habit.createdAt, done);
+  const days = gridDays(today);
   const completed = days.filter((date) => done.has(date)).length;
 
   return (
@@ -79,15 +79,16 @@ function Card({ habit, today, done }: { habit: Habit; today: string; done: Set<s
       {/* One summary for a screen reader, rather than a dot at a time. */}
       <div
         role="img"
-        aria-label={`Completed ${completed} of ${days.length} ${days.length === 1 ? 'day' : 'days'}`}
-        className="flex flex-wrap gap-1"
+        aria-label={`Completed ${completed} of ${days.length} days`}
+        className="grid max-w-md gap-0.5 sm:gap-1"
+        style={{ gridTemplateColumns: `repeat(${DAYS_PER_ROW}, minmax(0, 1fr))` }}
       >
         {days.map((date) => (
           <time
             key={date}
             dateTime={date}
             title={`${formatDate(date)}: ${done.has(date) ? 'done' : 'not done'}`}
-            className="size-3 rounded-full border"
+            className="aspect-square rounded-full border"
             style={{
               borderColor: habit.color,
               backgroundColor: done.has(date) ? habit.color : undefined,

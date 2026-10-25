@@ -42,8 +42,8 @@ const OK: Outcome = { ok: true };
 
 const REFUSED_AS_INVALID: Outcome = { ok: false, refusal: 'invalid-input' };
 
-/** The most days the Dots view shows for a habit, ending today. */
-const DOTS_DAYS = 365;
+/** The days the Dots view shows for every habit, ending today: 7 rows of 28. */
+const DOTS_DAYS = 7 * 28;
 
 /** The server refused what was sent (web/src/api/messages.ts). */
 const NOT_VALID: [RegExp, Refusal] = [/^Some details are not valid/, 'invalid-input'];
@@ -287,8 +287,7 @@ export class SpaDriver implements ProtocolDriver {
 
   /**
    * Read each habit's card on the Dots view. A dot is a <time> naming its
-   * date, titled with whether that day is done. A card starts no earlier than
-   * the habit's first day, so a day before it has nothing to read.
+   * date, titled with whether that day is done.
    */
   async checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>> {
     if (from < addDays(today(), 1 - DOTS_DAYS)) {

@@ -232,8 +232,8 @@ on-screen messages mapped onto refusals, with an unknown one thrown.
   click. Undoing a day with a note asks first, and the driver confirms.
 - A period is read off the Dots view: each active habit's card, whose dots
   are `<time>` elements naming their dates, each titled with whether that day
-  is done. The view shows at most the last 365 days, and the driver throws for
-  a period that starts earlier.
+  is done. The view shows the last 196 days, and the driver throws for a
+  period that starts earlier.
 - Any other day, and any note, waits on the habit detail page
   (habitcraft-vxln.16). Until then the scenarios that need it are
   [known bugs](#known-bugs) on `spa`.
