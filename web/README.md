@@ -25,9 +25,10 @@ an origin as they do in production, and the auth cookies work unchanged.
 
 | Path | What it is |
 |---|---|
-| `src/App.tsx` | The routes: `/login` and `/register` signed out; `/` (Today, where signing in lands), `/habits` and `/profile` signed in |
+| `src/App.tsx` | The routes: `/login` and `/register` signed out; `/` (Today, where signing in lands), `/dots`, `/habits` and `/profile` signed in |
 | `src/api/` | The API client, typed from the spec by openapi-fetch, and the messages for its failures |
 | `src/today/` | Today's date on the user's own calendar, kept current past midnight |
+| `src/dots/` | Which days each habit's grid on the Dots view shows |
 | `src/session/` | Who is signed in, as a React Query query of `GET /api/v1/users/me` |
 | `src/pages/` | One component per page |
 | `src/components/` | The layout around the signed-in pages, and the form parts every page uses |
@@ -53,6 +54,19 @@ runs no timers.
 A note lives on its day's completion, so undoing a day deletes its note. A
 day with a note therefore asks before it is undone; one without is undone at
 once.
+
+## The Dots view
+
+Dots shows a card for each active habit, its days as a row of dots that wraps,
+oldest first and ending today. A done day is filled in the habit's colour, and
+the rest are outlined. Hovering a dot names its date. Each grid is one image
+to a screen reader, summed up as "Completed 210 of 365 days".
+
+A grid starts on the day its habit was created, or on its first checked-off
+day when that is earlier, since a day before a habit existed can be checked
+off too. It shows at most the last 365 days. One `GET /api/v1/completions`
+reads every habit's days at once. A check-off on Today marks that range stale,
+so Dots reloads it when it next opens.
 
 ## Testing
 

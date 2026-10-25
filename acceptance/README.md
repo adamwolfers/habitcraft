@@ -144,7 +144,8 @@ the whole suite this way (habitcraft-8ml9).
 It covers a feature the SPA has not built yet too. A bead listed on `spa`
 marks the test as an expected failure in the spa project only. A test that
 needs several features names all their beads, and stays an expected failure
-until the last of them lands:
+until the last of them lands. The period scenarios needed both the Dots view
+and the habit detail page:
 
 ```ts
 test("a period shows every habit's checked-off days in it", async ({ users, habits, knownBug }) => {
@@ -152,6 +153,9 @@ test("a period shows every habit's checked-off days in it", async ({ users, habi
   // ...
 });
 ```
+
+When the Dots view (habitcraft-vxln.15) landed, its bead came off them, and
+they wait on the detail page alone.
 
 When a view lands, take `spa` off its bead in `dsl/knownBugs.ts`. Each test
 that names it then either passes, and its mark comes out, or is still held by
@@ -226,7 +230,10 @@ on-screen messages mapped onto refusals, with an unknown one thrown.
   the driver opens to read. Like the web driver, it reports a second check-off
   as `already-checked-off` from the habit already showing as done, without a
   click. Undoing a day with a note asks first, and the driver confirms.
+- A period is read off the Dots view: each active habit's card, whose dots
+  are `<time>` elements naming their dates, each titled with whether that day
+  is done. The view shows at most the last 365 days, and the driver throws for
+  a period that starts earlier.
 - Any other day, and any note, waits on the habit detail page
-  (habitcraft-vxln.16), and a period on the Dots view (habitcraft-vxln.15).
-  Until then the scenarios that need them are [known bugs](#known-bugs) on
-  `spa`.
+  (habitcraft-vxln.16). Until then the scenarios that need it are
+  [known bugs](#known-bugs) on `spa`.

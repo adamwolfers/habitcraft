@@ -9,8 +9,9 @@
  * second person would use their own browser. Contexts run in UTC, as the DSL
  * resolves "today" in UTC, so the Today view's day is the DSL's today.
  *
- * Today is read and changed on the Today view. Any other day, and any note,
- * waits on the habit detail page (habitcraft-vxln.16).
+ * Today is read and changed on the Today view, and a period is read off the
+ * Dots view. Any other day, and any note, waits on the habit detail page
+ * (habitcraft-vxln.16).
  *
  * Refusals reach the user as messages on screen. The driver maps the ones it
  * knows onto a Refusal and throws on any other, so a reworded message fails
@@ -40,6 +41,9 @@ type Messages = [RegExp, Refusal][];
 const OK: Outcome = { ok: true };
 
 const REFUSED_AS_INVALID: Outcome = { ok: false, refusal: 'invalid-input' };
+
+/** The most days the Dots view shows for a habit, ending today. */
+const DOTS_DAYS = 365;
 
 /** The server refused what was sent (web/src/api/messages.ts). */
 const NOT_VALID: [RegExp, Refusal] = [/^Some details are not valid/, 'invalid-input'];
@@ -281,8 +285,29 @@ export class SpaDriver implements ProtocolDriver {
     return notBuilt("show a day's note");
   }
 
-  async checkedOffDays(): Promise<Record<string, IsoDate[]>> {
-    return notBuilt('show the days checked off in a period');
+  /**
+   * Read each habit's card on the Dots view. A dot is a <time> naming its
+   * date, titled with whether that day is done. A card starts no earlier than
+   * the habit's first day, so a day before it has nothing to read.
+   */
+  async checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>> {
+    if (from < addDays(today(), 1 - DOTS_DAYS)) {
+      throw new Error(`The Dots view shows only the last ${DOTS_DAYS} days, not back to ${from}`);
+    }
+    const page = await this.dotsPage();
+    const days: Record<string, IsoDate[]> = {};
+    for (const card of await this.dotsCards(page).all()) {
+      const name = await card.getByRole('heading', { level: 3 }).innerText();
+      const dots = await card
+        .locator('time')
+        .evaluateAll((elements: HTMLTimeElement[]) =>
+          elements.map((dot) => ({ date: dot.dateTime, done: dot.title.endsWith(': done') }))
+        );
+      days[name] = dots
+        .filter(({ date, done }) => done && date >= from && date <= to)
+        .map(({ date }) => date);
+    }
+    return days;
   }
 
   async close(): Promise<void> {
@@ -321,9 +346,11 @@ export class SpaDriver implements ProtocolDriver {
     const heading =
       path === '/'
         ? todayHeading(page)
-        : path === '/profile'
-          ? profileHeading(page)
-          : habitsHeading(page);
+        : path === '/dots'
+          ? dotsHeading(page)
+          : path === '/profile'
+            ? profileHeading(page)
+            : habitsHeading(page);
     await expect(heading.or(signInHeading(page))).toBeVisible();
     return (await signInHeading(page).isVisible()) ? undefined : page;
   }
@@ -348,6 +375,21 @@ export class SpaDriver implements ProtocolDriver {
       page.getByRole('region', { name: 'To do' }).or(page.getByText('No habits yet'))
     ).toBeVisible();
     return page;
+  }
+
+  /** The Dots view, once its habits and days have loaded. */
+  private async dotsPage(): Promise<Page> {
+    const page = await this.signedIn('/dots');
+    await expect(this.dotsCards(page).first().or(page.getByText('No habits yet'))).toBeVisible();
+    return page;
+  }
+
+  /** Each active habit's card on the Dots view. */
+  private dotsCards(page: Page): Locator {
+    return page
+      .getByRole('main')
+      .getByRole('listitem')
+      .filter({ has: page.getByRole('heading', { level: 3 }) });
   }
 
   /** A habit's row in Today's to-do list; none when it is done or not there. */
@@ -450,6 +492,10 @@ function todayHeading(page: Page): Locator {
   return page.getByRole('heading', { level: 1, name: 'Today' });
 }
 
+function dotsHeading(page: Page): Locator {
+  return page.getByRole('heading', { level: 1, name: 'Dots' });
+}
+
 function habitsHeading(page: Page): Locator {
   return page.getByRole('heading', { level: 1, name: 'Habits' });
 }
@@ -477,6 +523,13 @@ async function fill(field: Locator, value: string): Promise<boolean> {
 /** Today in UTC, as the DSL and the driver's browser contexts reckon it. */
 function today(): IsoDate {
   return new Date().toISOString().slice(0, 10);
+}
+
+/** The date `days` days after `date` (before it, when negative). */
+function addDays(date: IsoDate, days: number): IsoDate {
+  const moment = new Date(`${date}T00:00:00Z`);
+  moment.setUTCDate(moment.getUTCDate() + days);
+  return moment.toISOString().slice(0, 10);
 }
 
 function notBuilt(action: string): never {

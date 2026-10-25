@@ -28,6 +28,9 @@ export function Layout() {
           <NavLink to="/" end className={link}>
             Today
           </NavLink>
+          <NavLink to="/dots" className={link}>
+            Dots
+          </NavLink>
           <NavLink to="/habits" className={link}>
             Habits
           </NavLink>

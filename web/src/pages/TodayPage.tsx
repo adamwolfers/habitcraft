@@ -2,27 +2,19 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link } from 'react-router';
 import { api } from '../api/client.ts';
+import { COMPLETIONS, completionsKey, fetchCompletions } from '../api/completions.ts';
 import { useHabits } from '../api/habits.ts';
 import { messageFor } from '../api/messages.ts';
 import { Button, ErrorMessage } from '../components/forms.tsx';
 import { useToday } from '../today/today.ts';
 import type { Habit } from '../types/api.ts';
 
-/** Every completions query starts with this, so a change can mark them all stale. */
-const COMPLETIONS = 'completions';
-
 /** Today's completion for each habit that has one, keyed by habit id. */
 type Done = Record<string, { notes: string | null }>;
 
-const completionsKey = (date: string) => [COMPLETIONS, date, date] as const;
-
 async function fetchDone(date: string): Promise<Done> {
-  const { data, response } = await api.GET('/api/v1/completions', {
-    params: { query: { startDate: date, endDate: date } },
-  });
-  if (!data) throw new Error(`Loading today's completions failed with ${response.status}`);
   const done: Done = {};
-  for (const { habitId, completions } of data) {
+  for (const { habitId, completions } of await fetchCompletions(date, date)) {
     if (completions[0]) done[habitId] = { notes: completions[0].notes };
   }
   return done;
@@ -34,7 +26,7 @@ async function fetchDone(date: string): Promise<Done> {
  */
 function useDone(date: string) {
   const queryClient = useQueryClient();
-  const key = completionsKey(date);
+  const key = completionsKey(date, date);
   const done = useQuery({ queryKey: key, queryFn: () => fetchDone(date) });
 
   const set = (habitId: string, completion: Done[string] | undefined) => {

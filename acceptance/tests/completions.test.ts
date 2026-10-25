@@ -139,7 +139,7 @@ test('a note can be as long as the limit allows, and no longer', async ({
 });
 
 test("a period shows every habit's checked-off days in it", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.15', 'habitcraft-vxln.16');
+  knownBug('habitcraft-vxln.16');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');
@@ -160,8 +160,27 @@ test("a period shows every habit's checked-off days in it", async ({ users, habi
   );
 });
 
+test('a period shows the days checked off today, and not those undone', async ({
+  users,
+  habits,
+}) => {
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.create('Read');
+  await habits.create('Stretch');
+  await habits.checkOff('Morning run', { on: 'today' });
+  await habits.checkOff('Read', { on: 'today' });
+
+  await habits.uncheck('Read', { on: 'today' });
+
+  await habits.shouldShowDays(
+    { from: '6 days ago', to: 'today' },
+    { 'Morning run': ['today'], Read: [], Stretch: [] }
+  );
+});
+
 test("a period shows only the acting user's days", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.15', 'habitcraft-vxln.16');
+  knownBug('habitcraft-vxln.16');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });
