@@ -4,7 +4,7 @@ import { api } from '../api/client.ts';
 import { useSession } from '../session/session.ts';
 
 const link = ({ isActive }: { isActive: boolean }) =>
-  `rounded-md px-3 py-2 text-sm font-medium ${
+  `rounded-md px-2 py-2 text-sm font-medium sm:px-3 ${
     isActive ? 'bg-gray-800 text-white' : 'text-gray-300 hover:text-white'
   }`;
 
@@ -23,8 +23,14 @@ export function Layout() {
   return (
     <div className="min-h-screen bg-gray-900 text-gray-100">
       <header className="border-b border-gray-800">
-        <nav aria-label="Main" className="mx-auto flex max-w-3xl items-center gap-2 px-4 py-3">
-          <span className="mr-auto text-lg font-bold text-blue-400">HabitCraft</span>
+        <nav
+          aria-label="Main"
+          className="mx-auto flex max-w-3xl flex-wrap items-center gap-x-1 gap-y-2 px-4 py-3 sm:gap-x-2"
+        >
+          {/* On a phone the name takes its own line, so the links fit beneath it. */}
+          <span className="w-full text-lg font-bold text-blue-400 sm:mr-auto sm:w-auto">
+            HabitCraft
+          </span>
           <NavLink to="/" end className={link}>
             Today
           </NavLink>
@@ -40,7 +46,7 @@ export function Layout() {
           <button
             onClick={signOut}
             disabled={busy}
-            className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+            className="rounded-md px-2 py-2 text-sm font-medium text-gray-300 hover:text-white sm:px-3"
           >
             Sign out
           </button>
