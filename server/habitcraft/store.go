@@ -123,6 +123,10 @@ type store interface {
 	// deleteHabit removes the habit and its completions.
 	deleteHabit(ctx context.Context, userID, habitID uuid.UUID) error
 
+	// habitStart returns when the habit was created and the day it was first
+	// completed, nil when it never was. It returns errNoSuchHabit when the
+	// user has no such habit.
+	habitStart(ctx context.Context, userID, habitID uuid.UUID) (created time.Time, firstDone *time.Time, err error)
 	// completions lists a habit's completions, newest first, between from and
 	// to inclusive where they are not nil.
 	completions(ctx context.Context, userID, habitID uuid.UUID, from, to *time.Time) ([]completion, error)

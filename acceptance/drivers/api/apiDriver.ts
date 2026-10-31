@@ -10,6 +10,7 @@
 
 import type {
   Account,
+  CompletionRates,
   Credentials,
   IsoDate,
   Outcome,
@@ -186,6 +187,20 @@ export class ApiDriver implements ProtocolDriver {
       days[name] = completions.map((completion) => completion.date);
     }
     return days;
+  }
+
+  async completionRates(habitName: string): Promise<CompletionRates> {
+    const habit = await this.habitNamed(habitName);
+    const stats = expectStatus<Schemas['HabitStats']>(
+      await this.request('GET', `/habits/${habit.id}/stats`),
+      200
+    );
+    const counts = ({ completedDays, totalDays, rate }: Schemas['CompletionRate']) => {
+      if (rate !== completedDays / totalDays)
+        throw new Error(`rate ${rate} is not ${completedDays} / ${totalDays}`);
+      return { completedDays, totalDays };
+    };
+    return { last30Days: counts(stats.last30Days), last365Days: counts(stats.last365Days) };
   }
 
   async close(): Promise<void> {

@@ -197,3 +197,71 @@ test("a period shows only the acting user's days", async ({ users, habits, known
     { 'Morning run': ['yesterday'] }
   );
 });
+
+test('a new habit is measured from the day it started', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.16');
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.shouldHaveCompletionRates('Morning run', {
+    last30Days: [0, 1],
+    last365Days: [0, 1],
+  });
+
+  await habits.checkOff('Morning run', { on: 'today' });
+  await habits.shouldHaveCompletionRates('Morning run', {
+    last30Days: [1, 1],
+    last365Days: [1, 1],
+  });
+});
+
+test('a day checked off before the habit was created starts it earlier', async ({
+  users,
+  habits,
+  knownBug,
+}) => {
+  knownBug('habitcraft-vxln.16');
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.checkOff('Morning run', { on: '9 days ago' });
+  await habits.checkOff('Morning run', { on: '4 days ago' });
+  await habits.checkOff('Morning run', { on: 'today' });
+
+  await habits.shouldHaveCompletionRates('Morning run', {
+    last30Days: [3, 10],
+    last365Days: [3, 10],
+  });
+});
+
+test('each rate counts only the days in its window', async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.16');
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.checkOff('Morning run', { on: '400 days ago' });
+  await habits.checkOff('Morning run', { on: '100 days ago' });
+  await habits.checkOff('Morning run', { on: '30 days ago' });
+  await habits.checkOff('Morning run', { on: '29 days ago' });
+  await habits.checkOff('Morning run', { on: 'yesterday' });
+
+  await habits.shouldHaveCompletionRates('Morning run', {
+    last30Days: [2, 30],
+    last365Days: [4, 365],
+  });
+});
+
+test("a habit's rates count only its own days", async ({ users, habits, knownBug }) => {
+  knownBug('habitcraft-vxln.16');
+  await users.register('Alice');
+  await habits.create('Morning run');
+  await habits.create('Read');
+  await habits.checkOff('Read', { on: 'today' });
+
+  await users.register('Bob');
+  await habits.create('Morning run');
+  await habits.checkOff('Morning run', { on: 'today' });
+
+  await users.signInAs('Alice');
+  await habits.shouldHaveCompletionRates('Morning run', {
+    last30Days: [0, 1],
+    last365Days: [0, 1],
+  });
+});

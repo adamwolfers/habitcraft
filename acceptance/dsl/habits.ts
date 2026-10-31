@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import type { ProtocolDriver } from '../drivers/driver.ts';
+import type { CompletionRate, ProtocolDriver } from '../drivers/driver.ts';
 import { requestLimits, schemaLimits } from './apiLimits.generated.ts';
 import { resolveDay, type Day } from './dates.ts';
 import { settle, type Expecting } from './outcomes.ts';
@@ -125,5 +125,23 @@ export class Habits {
     expect(await this.driver.noteOn(name, date), `note on "${name}" for ${date}`).toBe(
       note === null ? null : resolveText(note, NOTE_MAX)
     );
+  }
+
+  /**
+   * How often the habit was done: `[completed, total]` days over the last 30
+   * and the last 365, each window cut to the habit's start.
+   */
+  async shouldHaveCompletionRates(
+    name: string,
+    { last30Days, last365Days }: { last30Days: [number, number]; last365Days: [number, number] }
+  ): Promise<void> {
+    const rate = ([completedDays, totalDays]: [number, number]): CompletionRate => ({
+      completedDays,
+      totalDays,
+    });
+    expect(await this.driver.completionRates(name), `completion rates of "${name}"`).toEqual({
+      last30Days: rate(last30Days),
+      last365Days: rate(last365Days),
+    });
   }
 }

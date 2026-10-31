@@ -25,6 +25,7 @@ import {
 } from '@playwright/test';
 import type {
   Account,
+  CompletionRates,
   Credentials,
   IsoDate,
   Outcome,
@@ -305,6 +306,10 @@ export class WebDriver implements ProtocolDriver {
       }
     }
     return days;
+  }
+
+  async completionRates(): Promise<CompletionRates> {
+    noSuchControl("show a habit's completion rates");
   }
 
   async close(): Promise<void> {

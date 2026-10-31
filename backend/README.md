@@ -100,6 +100,7 @@ startup. See `config/proxy.js` and
 - `POST /api/v1/habits/:habitId/completions` - Mark habit complete (optional notes)
 - `GET /api/v1/habits/:habitId/completions` - List completions (?startDate & ?endDate filters)
 - `GET /api/v1/completions` - Every habit's completions from ?startDate to ?endDate (both required, at most 366 days), grouped by habit
+- `GET /api/v1/habits/:habitId/stats` - Completion rates over the last 30 and 365 days, each window starting no earlier than the habit did
 - `PUT /api/v1/habits/:habitId/completions/:date` - Update completion note
 - `DELETE /api/v1/habits/:habitId/completions/:date` - Remove completion
 
@@ -140,7 +141,9 @@ backend/
 │   ├── completions.js            # Completion tracking endpoints
 │   ├── completions.test.js       # Completion endpoint tests
 │   ├── completionsRange.js       # Completions across habits in a date range
-│   └── completionsRange.test.js  # Range endpoint tests
+│   ├── completionsRange.test.js  # Range endpoint tests
+│   ├── habitStats.js             # A habit's completion rates
+│   └── habitStats.test.js        # Stats endpoint tests
 ├── middleware/                    # Express middleware
 │   ├── jwtAuth.js                # JWT authentication middleware
 │   ├── jwtAuth.test.js           # JWT middleware tests

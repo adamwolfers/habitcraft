@@ -827,4 +827,73 @@ describe('Completion Tracking Integration Tests', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('Habit stats (GET /api/v1/habits/:habitId/stats)', () => {
+    const rate = (completedDays, totalDays) => ({
+      completedDays,
+      totalDays,
+      rate: completedDays / totalDays,
+    });
+
+    /** Set when the habit was created, `days` days ago. */
+    const createdDaysAgo = (habitId, days) =>
+      getTestPool().query(
+        `UPDATE habits SET created_at = NOW() - make_interval(days => $2) WHERE id = $1`,
+        [habitId, days]
+      );
+
+    const checkOff = (habitId, ...days) =>
+      getTestPool().query(
+        `INSERT INTO completions (habit_id, date) SELECT $1, d::date FROM unnest($2::text[]) d`,
+        [habitId, days.map(getDaysAgo)]
+      );
+
+    const statsOf = (habitId, cookies = user1Cookies) =>
+      request(testServer).get(`/api/v1/habits/${habitId}/stats`).set('Cookie', cookies);
+
+    it('counts each window from the day the habit was created', async () => {
+      await createdDaysAgo(testHabits.exercise, 20);
+      await checkOff(testHabits.exercise, 20, 1, 0);
+
+      const response = await statsOf(testHabits.exercise);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        habitId: testHabits.exercise,
+        last30Days: rate(3, 21),
+        last365Days: rate(3, 21),
+      });
+    });
+
+    it('starts a habit on a day checked off before it was created', async () => {
+      await createdDaysAgo(testHabits.exercise, 0);
+      await checkOff(testHabits.exercise, 400, 100, 29, 0);
+
+      const response = await statsOf(testHabits.exercise);
+
+      expect(response.status).toBe(200);
+      expect(response.body.last30Days).toEqual(rate(2, 30));
+      expect(response.body.last365Days).toEqual(rate(3, 365));
+    });
+
+    it("is a 403 for another user's habit", async () => {
+      const response = await statsOf(testHabits.user2Habit);
+
+      expect(response.status).toBe(403);
+      expect(response.body).toEqual({ error: 'Access denied' });
+    });
+
+    it('is a 404 for a missing habit', async () => {
+      const response = await statsOf('99999999-9999-9999-9999-999999999999');
+
+      expect(response.status).toBe(404);
+      expect(response.body).toEqual({ error: 'Habit not found' });
+    });
+
+    it('requires authentication', async () => {
+      const response = await request(testServer).get(`/api/v1/habits/${testHabits.exercise}/stats`);
+
+      expect(response.status).toBe(401);
+    });
+  });
 });

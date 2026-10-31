@@ -4,6 +4,7 @@ const { validateHabitInput } = require('../validators/habitValidator');
 const { jwtAuthMiddleware } = require('../middleware/jwtAuth');
 const { sanitizeBody } = require('../middleware/sanitize');
 const completionsRouter = require('./completions');
+const habitStatsRouter = require('./habitStats');
 
 const router = express.Router();
 
@@ -285,5 +286,6 @@ router.delete('/:id', jwtAuthMiddleware, async (req, res) => {
 
 // Mount completions router
 router.use('/:habitId/completions', completionsRouter);
+router.use('/:habitId/stats', habitStatsRouter);
 
 module.exports = router;

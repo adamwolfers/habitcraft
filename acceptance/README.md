@@ -106,7 +106,7 @@ or a `YYYY-MM-DD` date.
 |---|---|
 | `users` | register, sign in and out, renew the session, change password, delete the account |
 | `profile` | the acting user's name and email |
-| `habits` | create, rename, archive, restore, delete; check off and uncheck days; notes; every habit's days over a period |
+| `habits` | create, rename, archive, restore, delete; check off and uncheck days; notes; every habit's days over a period; completion rates |
 | `knownBug` | marks a test as one the backend under test is known to fail |
 
 If a step needs something the DSL can't say yet, add it to the DSL and to
@@ -208,6 +208,9 @@ takes its place; the test cases stay as they are.
 - The Next.js app cannot archive or restore a habit, so the archive scenario is
   **skipped on `web`** with that reason in the report. It shows archived habits
   with the rest, so the driver's archived list is always empty.
+- The Next.js app shows no completion rates, so the rate scenarios are
+  **skipped on `web`** the same way. The SPA will show them on its habit
+  detail page, so they are known bugs there until habitcraft-vxln.16.
 
 ## The SPA driver
 

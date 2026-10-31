@@ -176,6 +176,23 @@ func (p pgStore) completions(ctx context.Context, userID, habitID uuid.UUID, fro
 	return completions, nil
 }
 
+func (p pgStore) habitStart(ctx context.Context, userID, habitID uuid.UUID) (time.Time, *time.Time, error) {
+	var created time.Time
+	var first *time.Time
+	err := p.pool.QueryRow(ctx,
+		`SELECT h.created_at, (SELECT MIN(date) FROM completions WHERE habit_id = h.id)
+		 FROM habits h WHERE h.id = $1 AND h.user_id = $2`,
+		habitID, userID,
+	).Scan(&created, &first)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return time.Time{}, nil, errNoSuchHabit
+	}
+	if err != nil {
+		return time.Time{}, nil, fmt.Errorf("finding a habit's start: %w", err)
+	}
+	return created, first, nil
+}
+
 func (p pgStore) createCompletion(ctx context.Context, userID uuid.UUID, c completion) (completion, error) {
 	// The ownership check is inside the insert, so the habit cannot change
 	// hands, or go, between the two.

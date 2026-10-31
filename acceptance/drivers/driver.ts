@@ -34,6 +34,17 @@ export type Refusal =
 
 export type Outcome = { ok: true } | { ok: false; refusal: Refusal };
 
+/** How often a habit was done in one window: `completedDays` of `totalDays`. */
+export interface CompletionRate {
+  completedDays: number;
+  totalDays: number;
+}
+
+export interface CompletionRates {
+  last30Days: CompletionRate;
+  last365Days: CompletionRate;
+}
+
 export interface Profile {
   name: string;
   email: string;
@@ -109,6 +120,9 @@ export interface ProtocolDriver {
    * the period maps to an empty list.
    */
   checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>>;
+
+  /** How often the habit was done over the last 30 and 365 days. */
+  completionRates(habitName: string): Promise<CompletionRates>;
 
   /** Release anything the driver holds: sessions, browsers, sockets. */
   close(): Promise<void>;

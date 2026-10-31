@@ -289,6 +289,25 @@ func (f *fakeStore) completions(_ context.Context, userID, habitID uuid.UUID, fr
 	return f.completionsOf(habitID, from, to), nil
 }
 
+func (f *fakeStore) habitStart(_ context.Context, userID, habitID uuid.UUID) (time.Time, *time.Time, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return time.Time{}, nil, f.err
+	}
+	h, ok := f.habitRows[habitID]
+	if !ok || h.userID != userID {
+		return time.Time{}, nil, errNoSuchHabit
+	}
+	var first *time.Time
+	for _, c := range f.completionsOf(habitID, nil, nil) {
+		if first == nil || c.date.Before(*first) {
+			first = &c.date
+		}
+	}
+	return h.createdAt, first, nil
+}
+
 func (f *fakeStore) createCompletion(_ context.Context, userID uuid.UUID, c completion) (completion, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()

@@ -619,6 +619,39 @@ func testCompletionStore(t *testing.T, open func(*testing.T) store) {
 		}
 	})
 
+	t.Run("a habit's start is its creation and its first completion", func(t *testing.T) {
+		st, ctx := open(t), t.Context()
+		u, _ := createTestUser(t, st)
+		bob, _ := createTestUser(t, st)
+		run := createTestHabit(t, st, u.id, "Run")
+
+		created, first, err := st.habitStart(ctx, u.id, run.id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !created.Equal(run.createdAt) || first != nil {
+			t.Errorf("before any completion: created %v (want %v), first %v", created, run.createdAt, first)
+		}
+
+		for _, ago := range []int{3, 40, 0} {
+			checkOff(t, st, u.id, run.id, daysAgo(ago))
+		}
+		_, first, err = st.habitStart(ctx, u.id, run.id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if first == nil || !first.Equal(daysAgo(40)) {
+			t.Errorf("first completion %v, want %v", first, daysAgo(40))
+		}
+
+		if _, _, err := st.habitStart(ctx, bob.id, run.id); !errors.Is(err, errNoSuchHabit) {
+			t.Errorf("another user's habit: %v", err)
+		}
+		if _, _, err := st.habitStart(ctx, u.id, uuid.New()); !errors.Is(err, errNoSuchHabit) {
+			t.Errorf("a missing habit: %v", err)
+		}
+	})
+
 	t.Run("a deleted completion is gone and its day can be completed again", func(t *testing.T) {
 		st, ctx := open(t), t.Context()
 		u, _ := createTestUser(t, st)

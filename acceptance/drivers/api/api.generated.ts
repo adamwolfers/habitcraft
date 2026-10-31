@@ -283,6 +283,34 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/habits/{habitId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Habit completion rates
+         * @description How often the habit was done over the last 30 and the last 365 days,
+         *     both ending today in UTC, computed here so every client shows the same
+         *     numbers. There are no streaks, by design.
+         *
+         *     A window starts no earlier than the habit's start: the earlier of the
+         *     day it was created (in UTC) and its first completion, since a day
+         *     before creation can be checked off. So a habit created a week ago is
+         *     measured over 7 days in both windows, and a rate is never above 1.
+         *     Today is always in the window, done or not.
+         */
+        get: operations["getHabitStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/habits/{habitId}/completions/{date}": {
         parameters: {
             query?: never;
@@ -458,6 +486,29 @@ export interface components {
             /** Format: uuid */
             habitId: string;
             completions: components["schemas"]["Completion"][];
+        };
+        /** @description A habit's completion rates, as getHabitStats returns them. */
+        HabitStats: {
+            /** Format: uuid */
+            habitId: string;
+            last30Days: components["schemas"]["CompletionRate"];
+            last365Days: components["schemas"]["CompletionRate"];
+        };
+        /**
+         * @description The days a habit was done in one window, out of the days the window
+         *     holds once it is cut to the habit's start.
+         */
+        CompletionRate: {
+            /** @example 21 */
+            completedDays: number;
+            /** @example 30 */
+            totalDays: number;
+            /**
+             * Format: double
+             * @description completedDays divided by totalDays, unrounded
+             * @example 0.7
+             */
+            rate: number;
         };
         CompletionDeleted: {
             message: string;
@@ -1305,6 +1356,34 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
+            500: components["responses"]["InternalError"];
+        };
+    };
+    getHabitStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Habit identifier */
+                habitId: components["parameters"]["HabitId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The habit's completion rates */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HabitStats"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["CompletionNotFound"];
             500: components["responses"]["InternalError"];
         };
     };

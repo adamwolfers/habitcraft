@@ -27,6 +27,7 @@ import {
 } from '@playwright/test';
 import type {
   Account,
+  CompletionRates,
   Credentials,
   IsoDate,
   Outcome,
@@ -307,6 +308,10 @@ export class SpaDriver implements ProtocolDriver {
         .map(({ date }) => date);
     }
     return days;
+  }
+
+  async completionRates(): Promise<CompletionRates> {
+    return notBuilt("show a habit's completion rates");
   }
 
   async close(): Promise<void> {

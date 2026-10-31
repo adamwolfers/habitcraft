@@ -7,8 +7,8 @@ standalone binary, and its HTTP interface is generated from
 
 **Status:** every operation in the spec works: `/health`, `/hello`, auth,
 the profile, habits and completions, including every habit's completions in a
-date range (habitcraft-vxln.3, habitcraft-vxln.4, habitcraft-vxln.5,
-habitcraft-vxln.12). The whole acceptance suite's `api` project passes against
+date range and a habit's completion rates (habitcraft-vxln.3,
+habitcraft-vxln.4, habitcraft-vxln.5, habitcraft-vxln.12, habitcraft-vxln.13). The whole acceptance suite's `api` project passes against
 it. Where it differs from the Node backend on purpose, it says so under
 [Parity with the Node backend](#parity-with-the-node-backend).
 
