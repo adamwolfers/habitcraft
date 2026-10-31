@@ -4,12 +4,7 @@
 
 import { test } from '../dsl/index.ts';
 
-test('a habit checked off today is done today and only today', async ({
-  users,
-  habits,
-  knownBug,
-}) => {
-  knownBug('habitcraft-vxln.16');
+test('a habit checked off today is done today and only today', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'today' });
@@ -28,8 +23,7 @@ test('a day can only be checked off once', async ({ users, habits }) => {
   await habits.checkOff('Morning run', { on: 'today', expect: 'already-checked-off' });
 });
 
-test('unchecking a day undoes it', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('unchecking a day undoes it', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });
@@ -39,8 +33,7 @@ test('unchecking a day undoes it', async ({ users, habits, knownBug }) => {
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'yesterday' });
 });
 
-test('a checked-off day can carry a note', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('a checked-off day can carry a note', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -54,8 +47,7 @@ test('a checked-off day can carry a note', async ({ users, habits, knownBug }) =
   await habits.shouldHaveNote('Morning run', { on: 'today', note: null });
 });
 
-test('unchecking a day takes its note with it', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('unchecking a day takes its note with it', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'today', note: '5k in the rain' });
@@ -66,8 +58,7 @@ test('unchecking a day takes its note with it', async ({ users, habits, knownBug
   await habits.shouldHaveNote('Morning run', { on: 'today', note: null });
 });
 
-test('a day in the future cannot be checked off', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('a day in the future cannot be checked off', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
 
@@ -76,8 +67,7 @@ test('a day in the future cannot be checked off', async ({ users, habits, knownB
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'tomorrow' });
 });
 
-test('each day is checked off on its own', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('each day is checked off on its own', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: '10 days ago' });
@@ -117,12 +107,7 @@ test("one user's check-offs do not touch another's", async ({ users, habits }) =
   await habits.shouldBeCheckedOff('Morning run', { on: 'today' });
 });
 
-test('a note can be as long as the limit allows, and no longer', async ({
-  users,
-  habits,
-  knownBug,
-}) => {
-  knownBug('habitcraft-vxln.16');
+test('a note can be as long as the limit allows, and no longer', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'today' });
@@ -138,8 +123,7 @@ test('a note can be as long as the limit allows, and no longer', async ({
   await habits.shouldHaveNote('Morning run', { on: 'today', note: { length: 'longest-allowed' } });
 });
 
-test("a period shows every habit's checked-off days in it", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test("a period shows every habit's checked-off days in it", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');
@@ -179,8 +163,7 @@ test('a period shows the days checked off today, and not those undone', async ({
   );
 });
 
-test("a period shows only the acting user's days", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test("a period shows only the acting user's days", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });
@@ -198,8 +181,7 @@ test("a period shows only the acting user's days", async ({ users, habits, known
   );
 });
 
-test('a new habit is measured from the day it started', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('a new habit is measured from the day it started', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.shouldHaveCompletionRates('Morning run', {
@@ -217,9 +199,7 @@ test('a new habit is measured from the day it started', async ({ users, habits, 
 test('a day checked off before the habit was created starts it earlier', async ({
   users,
   habits,
-  knownBug,
 }) => {
-  knownBug('habitcraft-vxln.16');
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: '9 days ago' });
@@ -232,8 +212,7 @@ test('a day checked off before the habit was created starts it earlier', async (
   });
 });
 
-test('each rate counts only the days in its window', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('each rate counts only the days in its window', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: '400 days ago' });
@@ -248,8 +227,7 @@ test('each rate counts only the days in its window', async ({ users, habits, kno
   });
 });
 
-test("a habit's rates count only its own days", async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test("a habit's rates count only its own days", async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.create('Read');

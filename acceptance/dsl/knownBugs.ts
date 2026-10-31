@@ -31,10 +31,6 @@ export const KNOWN_BUGS = {
     on: ['node'],
     summary: "an email at the spec's length limit is refused as malformed",
   },
-  'habitcraft-vxln.16': {
-    on: ['spa'],
-    summary: 'the SPA has no habit detail page to check off or note any day',
-  },
 } satisfies Record<string, KnownBug>;
 
 export type KnownBugId = keyof typeof KNOWN_BUGS;

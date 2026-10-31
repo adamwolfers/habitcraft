@@ -155,7 +155,7 @@ test("a period shows every habit's checked-off days in it", async ({ users, habi
 ```
 
 When the Dots view (habitcraft-vxln.15) landed, its bead came off them, and
-they wait on the detail page alone.
+they waited on the detail page alone until it landed too (habitcraft-vxln.16).
 
 When a view lands, take `spa` off its bead in `dsl/knownBugs.ts`. Each test
 that names it then either passes, and its mark comes out, or is still held by
@@ -209,8 +209,8 @@ takes its place; the test cases stay as they are.
   **skipped on `web`** with that reason in the report. It shows archived habits
   with the rest, so the driver's archived list is always empty.
 - The Next.js app shows no completion rates, so the rate scenarios are
-  **skipped on `web`** the same way. The SPA will show them on its habit
-  detail page, so they are known bugs there until habitcraft-vxln.16.
+  **skipped on `web`** the same way. The SPA shows them on its habit detail
+  page.
 
 ## The SPA driver
 
@@ -237,6 +237,16 @@ on-screen messages mapped onto refusals, with an unknown one thrown.
   are `<time>` elements naming their dates, each titled with whether that day
   is done. The view shows the last 196 days, and the driver throws for a
   period that starts earlier.
-- Any other day, and any note, waits on the habit detail page
-  (habitcraft-vxln.16). Until then the scenarios that need it are
-  [known bugs](#known-bugs) on `spa`.
+- Any other day, any note, and a habit's completion rates are read and
+  changed on the habit's detail page, opened by clicking its name on the Dots
+  view. The driver steps the month calendar back or forward a month at a
+  time, as a person would, and finds a day by the `<time>` inside its toggle;
+  `aria-pressed` says whether it is done. A day after today is a disabled
+  toggle, and a month after this one cannot be shown at all: either is
+  reported as `invalid-input`. As on Today, it reports a second check-off as
+  `already-checked-off` without a click, and confirms when undoing a day with
+  a note.
+- A note is written in its day's dialog, opened from the month's `Days done`
+  list, which also shows each note. A check-off with a note is a check-off
+  followed by that dialog. Clearing a note is the dialog's `Delete note`.
+- Rates are read off the page's `Completion rate` region as "N of M days".

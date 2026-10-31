@@ -91,6 +91,13 @@ describe('Dots view', () => {
     expect(screen.queryByRole('heading', { level: 3, name: 'Stretch' })).not.toBeInTheDocument();
   });
 
+  it("opens a habit's own page from its card", async () => {
+    await openDots([run, read]);
+
+    const link = within(await card('Morning run')).getByRole('link', { name: 'Morning run' });
+    expect(link).toHaveAttribute('href', `/habits/${run.id}`);
+  });
+
   it('reads every habit’s days in one request, from the grid’s first day to today', async () => {
     const { server } = await openDots([run]);
     await card('Morning run');

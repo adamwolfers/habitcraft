@@ -5,6 +5,7 @@ import { onSignedOut } from './api/client.ts';
 import { Layout } from './components/Layout.tsx';
 import { RegisterPage, SignInPage } from './pages/AuthPages.tsx';
 import { DotsPage } from './pages/DotsPage.tsx';
+import { HabitDetailPage } from './pages/HabitDetailPage.tsx';
 import { HabitsPage } from './pages/HabitsPage.tsx';
 import { ProfilePage } from './pages/ProfilePage.tsx';
 import { TodayPage } from './pages/TodayPage.tsx';
@@ -41,6 +42,7 @@ export function AppRoutes() {
         <Route path="/" element={<TodayPage />} />
         <Route path="/dots" element={<DotsPage />} />
         <Route path="/habits" element={<HabitsPage />} />
+        <Route path="/habits/:habitId" element={<HabitDetailPage />} />
         <Route
           path="/profile"
           element={<CurrentUser>{(user) => <ProfilePage user={user} />}</CurrentUser>}

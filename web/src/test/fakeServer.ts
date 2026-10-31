@@ -3,20 +3,32 @@ import { vi } from 'vitest';
 /** One canned answer: a status and an optional JSON body. */
 export type Answer = readonly [status: number, body?: unknown];
 
+type Route = Answer | ((request: Request) => Answer | Promise<Answer>);
+
+/** The route for a request: an exact "METHOD /path", or one with :params. */
+function routeFor(routes: Record<string, Route>, key: string): Route | undefined {
+  if (routes[key]) return routes[key];
+  const pattern = (route: string) =>
+    new RegExp(`^${route.replace(/:[^/]+/g, '[^/]+').replace(/[.?]/g, '\\$&')}$`);
+  const match = Object.keys(routes).find(
+    (route) => route.includes(':') && pattern(route).test(key)
+  );
+  return match ? routes[match] : undefined;
+}
+
 /**
  * Stubs the global fetch with a fake API. `routes` maps "METHOD /path" to an
- * answer, or to a function of the request for one that depends on it. Any
- * other request fails the test that made it.
+ * answer, or to a function of the request for one that depends on it. A path
+ * segment written `:name` matches any one segment. Any other request fails
+ * the test that made it.
  */
-export function fakeServer(
-  routes: Record<string, Answer | ((request: Request) => Answer | Promise<Answer>)>
-) {
+export function fakeServer(routes: Record<string, Route>) {
   const requests: Request[] = [];
   const fetchImpl = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const request = new Request(input, init);
     requests.push(request.clone());
     const key = `${request.method} ${new URL(request.url).pathname}`;
-    const route = routes[key];
+    const route = routeFor(routes, key);
     if (!route) throw new Error(`Unexpected request: ${key}`);
     const [status, body] = typeof route === 'function' ? await route(request) : route;
     return new Response(body === undefined ? null : JSON.stringify(body), {

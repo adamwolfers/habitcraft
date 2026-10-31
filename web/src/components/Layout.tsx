@@ -37,7 +37,8 @@ export function Layout() {
           <NavLink to="/dots" className={link}>
             Dots
           </NavLink>
-          <NavLink to="/habits" className={link}>
+          {/* end: a habit's own page is reached from Dots, not this list. */}
+          <NavLink to="/habits" end className={link}>
             Habits
           </NavLink>
           <NavLink to="/profile" className={link}>

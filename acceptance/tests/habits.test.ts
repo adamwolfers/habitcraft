@@ -18,8 +18,7 @@ test('a habit needs a name', async ({ users, habits }) => {
   await habits.create('', { expect: 'invalid-input' });
 });
 
-test('a renamed habit keeps its history', async ({ users, habits, knownBug }) => {
-  knownBug('habitcraft-vxln.16');
+test('a renamed habit keeps its history', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
   await habits.checkOff('Morning run', { on: 'yesterday' });

@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
 import { completionsKey, fetchCompletions } from '../api/completions.ts';
 import { useHabits } from '../api/habits.ts';
+import { formatDate } from '../calendar/calendar.ts';
 import { ErrorMessage } from '../components/forms.tsx';
 import { DAYS_PER_ROW, firstDay, gridDays } from '../dots/dots.ts';
 import { useToday } from '../today/today.ts';
@@ -74,8 +75,16 @@ function Card({ habit, today, done }: { habit: Habit; today: string; done: Set<s
   const completed = days.filter((date) => done.has(date)).length;
 
   return (
-    <li className="space-y-3 rounded-lg bg-gray-800/60 p-4">
-      <h3 className="font-medium break-all">{habit.name}</h3>
+    // The whole card opens the habit's page: its name's link covers the card.
+    <li className="relative space-y-3 rounded-lg bg-gray-800/60 p-4 hover:bg-gray-800">
+      <h3 className="font-medium break-all">
+        <Link
+          to={`/habits/${habit.id}`}
+          className="after:absolute after:inset-0 after:rounded-lg focus:outline-none focus-visible:after:ring-2 focus-visible:after:ring-blue-400"
+        >
+          {habit.name}
+        </Link>
+      </h3>
       {/* One summary for a screen reader, rather than a dot at a time. */}
       <div
         role="img"
@@ -98,15 +107,4 @@ function Card({ habit, today, done }: { habit: Habit; today: string; done: Set<s
       </div>
     </li>
   );
-}
-
-/** "Thu, Oct 22, 2026", from a YYYY-MM-DD date, in the user's language. */
-function formatDate(date: string): string {
-  const [year, month, day] = date.split('-').map(Number);
-  return new Date(year!, month! - 1, day).toLocaleDateString(undefined, {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
 }

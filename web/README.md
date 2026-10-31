@@ -25,10 +25,11 @@ an origin as they do in production, and the auth cookies work unchanged.
 
 | Path | What it is |
 |---|---|
-| `src/App.tsx` | The routes: `/login` and `/register` signed out; `/` (Today, where signing in lands), `/dots`, `/habits` and `/profile` signed in |
+| `src/App.tsx` | The routes: `/login` and `/register` signed out; `/` (Today, where signing in lands), `/dots`, `/habits`, `/habits/:habitId` (a habit's detail page) and `/profile` signed in |
 | `src/api/` | The API client, typed from the spec by openapi-fetch, and the messages for its failures |
 | `src/today/` | Today's date on the user's own calendar, kept current past midnight |
 | `src/dots/` | Which days each habit's grid on the Dots view shows |
+| `src/calendar/` | The months on the habit detail page, and the date words every page shows |
 | `src/session/` | Who is signed in, as a React Query query of `GET /api/v1/users/me` |
 | `src/pages/` | One component per page |
 | `src/components/` | The layout around the signed-in pages, and the form parts every page uses |
@@ -67,6 +68,32 @@ to a screen reader, summed up as "Completed 120 of 196 days".
 The grid's shape is `ROWS` and `DAYS_PER_ROW` in `src/dots/dots.ts`. One
 `GET /api/v1/completions` reads every habit's days at once. A check-off on
 Today marks that range stale, so Dots reloads it when it next opens.
+
+A card opens its habit's detail page: the name is a link stretched over the
+whole card.
+
+## The habit detail page
+
+`/habits/:habitId` shows one habit: its completion rates over the last 30 and
+365 days, from `GET /api/v1/habits/{habitId}/stats`, and a month calendar.
+There are no streaks, by design.
+
+The calendar opens on this month, with weeks from Sunday, and steps back a
+month at a time; it stops at this month, since a later one would hold only
+days that cannot be checked off. The month shown is in the address as
+`?month=YYYY-MM`, left off for this month, so a reload keeps it. Each day is a
+toggle. Tapping a past day, or today, checks it off or undoes it; the days
+after today are disabled. One `GET /api/v1/habits/{habitId}/completions` reads
+the month. A change marks the rates and every other view's completions stale.
+
+Below the calendar, `Days done` lists the month's checked-off days, newest
+first, with their notes. Each has an `Add note` or `Edit note` button that
+opens the note dialog, which sets the note with
+`PUT /api/v1/habits/{habitId}/completions/{date}`. Saving it empty, or
+`Delete note`, clears it. The note's length limit comes from the spec.
+
+As on Today, undoing a day with a note asks first, since the note lives on
+the day's completion and goes with it; a day without one is undone at once.
 
 ## Testing
 

@@ -10,8 +10,8 @@
  * resolves "today" in UTC, so the Today view's day is the DSL's today.
  *
  * Today is read and changed on the Today view, and a period is read off the
- * Dots view. Any other day, and any note, waits on the habit detail page
- * (habitcraft-vxln.16).
+ * Dots view. Any other day, any note and a habit's completion rates are read
+ * and changed on its detail page, reached by its card on the Dots view.
  *
  * Refusals reach the user as messages on screen. The driver maps the ones it
  * knows onto a Refusal and throws on any other, so a reworded message fails
@@ -27,6 +27,7 @@ import {
 } from '@playwright/test';
 import type {
   Account,
+  CompletionRate,
   CompletionRates,
   Credentials,
   IsoDate,
@@ -237,53 +238,65 @@ export class SpaDriver implements ProtocolDriver {
   }
 
   // --- completions ----------------------------------------------------------
-  // Which scenarios wait on the rest: dsl/knownBugs.ts.
+  // Today without a note goes through the Today view, where signing in lands;
+  // every other day, and every note, through the habit's detail page.
 
   async checkOff(habitName: string, date: IsoDate, note?: string): Promise<Outcome> {
-    if (date !== today() || note !== undefined)
-      return notBuilt('check off another day, or note one');
-    const page = await this.todayPage();
-    if ((await this.completedToday(page)).includes(habitName)) {
+    if (date === today() && note === undefined) return this.checkOffToday(habitName);
+    const page = await this.detailPage(habitName);
+    // A month after this one cannot be shown, so none of its days can be ticked.
+    if (!(await this.toMonth(page, date))) return REFUSED_AS_INVALID;
+    const day = this.day(page, date);
+    if (await day.isDisabled()) return REFUSED_AS_INVALID;
+    if ((await day.getAttribute('aria-pressed')) === 'true') {
       return { ok: false, refusal: 'already-checked-off' };
     }
-    const row = await this.toDoRow(page, habitName);
-    await row.getByRole('button', { name: `Check off ${habitName}` }).click();
+    await day.click();
 
-    return this.outcome(
-      'check a habit off',
-      async () => (await row.count()) === 0,
-      row.getByRole('alert'),
-      []
+    const checked = await this.outcome(
+      'check a day off',
+      async () => (await day.getAttribute('aria-pressed')) === 'true',
+      calendar(page).getByRole('alert'),
+      [NOT_VALID]
     );
+    if (!checked.ok || note === undefined) return checked;
+    return this.writeNote(page, date, note);
   }
 
   async uncheck(habitName: string, date: IsoDate): Promise<void> {
-    if (date !== today()) notBuilt('uncheck another day');
-    const page = await this.todayPage();
-    const done = await this.doneRow(page, habitName);
-    await done.getByRole('button', { name: `Undo ${habitName}` }).click();
+    if (date === today()) return this.uncheckToday(habitName);
+    const page = await this.detailPage(habitName);
+    if (!(await this.toMonth(page, date))) throw new Error(`${date} cannot be shown`);
+    const day = this.day(page, date);
+    await day.click();
     // A day with a note asks first, since undoing it deletes the note.
-    const confirm = done.getByRole('button', { name: 'Undo and delete note' });
-    const toDo = this.toDo(page, habitName);
-    await expect(toDo.or(confirm)).toBeVisible();
+    const confirm = calendar(page).getByRole('button', { name: 'Undo and delete note' });
+    const undone = day.and(page.locator('[aria-pressed="false"]'));
+    await expect(undone.or(confirm)).toBeVisible();
     if (await confirm.isVisible()) await confirm.click();
-    await expect(toDo, `"${habitName}" unchecked today`).toHaveCount(1);
+    await expect(undone, `"${habitName}" unchecked on ${date}`).toHaveCount(1);
   }
 
-  async setNote(): Promise<Outcome> {
-    return notBuilt('note a day');
+  async setNote(habitName: string, date: IsoDate, note: string | null): Promise<Outcome> {
+    const page = await this.detailPage(habitName);
+    if (!(await this.toMonth(page, date))) throw new Error(`${date} cannot be shown`);
+    return this.writeNote(page, date, note);
   }
 
   async isCheckedOff(habitName: string, date: IsoDate): Promise<boolean> {
-    if (date !== today()) notBuilt('show whether another day is checked off');
-    const page = await this.todayPage();
-    if ((await this.toDo(page, habitName).count()) > 0) return false;
-    if ((await this.completedToday(page)).includes(habitName)) return true;
-    throw new Error(`"${habitName}" is not on the Today view`);
+    if (date === today()) return this.isCheckedOffToday(habitName);
+    const page = await this.detailPage(habitName);
+    if (!(await this.toMonth(page, date))) return false;
+    return (await this.day(page, date).getAttribute('aria-pressed')) === 'true';
   }
 
-  async noteOn(): Promise<string | null> {
-    return notBuilt("show a day's note");
+  async noteOn(habitName: string, date: IsoDate): Promise<string | null> {
+    const page = await this.detailPage(habitName);
+    if (!(await this.toMonth(page, date))) throw new Error(`${date} cannot be shown`);
+    const done = this.doneDay(page, date);
+    if ((await done.count()) === 0) return null;
+    const note = done.getByRole('paragraph');
+    return (await note.count()) === 0 ? null : note.textContent();
   }
 
   /**
@@ -310,14 +323,145 @@ export class SpaDriver implements ProtocolDriver {
     return days;
   }
 
-  async completionRates(): Promise<CompletionRates> {
-    return notBuilt("show a habit's completion rates");
+  /** Read the habit's detail page: "Last 30 days: 21 of 30 days". */
+  async completionRates(habitName: string): Promise<CompletionRates> {
+    const page = await this.detailPage(habitName);
+    const rates = page.getByRole('region', { name: 'Completion rate' });
+    const rate = async (window: string): Promise<CompletionRate> => {
+      const item = rates.getByRole('listitem').filter({ hasText: window });
+      await expect(item).toHaveText(/\d+ of \d+ days/);
+      const [, completedDays, totalDays] = /(\d+) of (\d+) days/.exec(await item.innerText())!;
+      return { completedDays: Number(completedDays), totalDays: Number(totalDays) };
+    };
+    return { last30Days: await rate('Last 30 days'), last365Days: await rate('Last 365 days') };
   }
 
   async close(): Promise<void> {
     await this.context?.close();
     this.context = undefined;
     this.current = undefined;
+  }
+
+  // --- today, on the Today view ----------------------------------------------
+
+  private async checkOffToday(habitName: string): Promise<Outcome> {
+    const page = await this.todayPage();
+    if ((await this.completedToday(page)).includes(habitName)) {
+      return { ok: false, refusal: 'already-checked-off' };
+    }
+    const row = await this.toDoRow(page, habitName);
+    await row.getByRole('button', { name: `Check off ${habitName}` }).click();
+
+    return this.outcome(
+      'check a habit off',
+      async () => (await row.count()) === 0,
+      row.getByRole('alert'),
+      []
+    );
+  }
+
+  private async uncheckToday(habitName: string): Promise<void> {
+    const page = await this.todayPage();
+    const done = await this.doneRow(page, habitName);
+    await done.getByRole('button', { name: `Undo ${habitName}` }).click();
+    // A day with a note asks first, since undoing it deletes the note.
+    const confirm = done.getByRole('button', { name: 'Undo and delete note' });
+    const toDo = this.toDo(page, habitName);
+    await expect(toDo.or(confirm)).toBeVisible();
+    if (await confirm.isVisible()) await confirm.click();
+    await expect(toDo, `"${habitName}" unchecked today`).toHaveCount(1);
+  }
+
+  private async isCheckedOffToday(habitName: string): Promise<boolean> {
+    const page = await this.todayPage();
+    if ((await this.toDo(page, habitName).count()) > 0) return false;
+    if ((await this.completedToday(page)).includes(habitName)) return true;
+    throw new Error(`"${habitName}" is not on the Today view`);
+  }
+
+  // --- the habit detail page --------------------------------------------------
+
+  /** A habit's detail page, opened from its card on the Dots view. */
+  private async detailPage(habitName: string): Promise<Page> {
+    const page = await this.dotsPage();
+    await this.dotsCards(page)
+      .getByRole('heading', { level: 3 })
+      .getByRole('link', { name: habitName, exact: true })
+      .click();
+    await expect(
+      page.getByRole('heading', { level: 1, name: habitName, exact: true })
+    ).toBeVisible();
+    await expect(calendar(page).getByRole('table')).toBeVisible();
+    return page;
+  }
+
+  /**
+   * Step the calendar to the month holding `date`, a month at a time as a
+   * person would. False when that month is after this one, which the page
+   * does not show.
+   */
+  private async toMonth(page: Page, date: IsoDate): Promise<boolean> {
+    const target = date.slice(0, 7);
+    const shown = calendar(page).getByRole('heading', { level: 2 }).locator('time');
+    for (;;) {
+      const month = await shown.getAttribute('datetime');
+      if (month === target) break;
+      const step = calendar(page).getByRole('button', {
+        name: target < month! ? 'Previous month' : 'Next month',
+      });
+      if (await step.isDisabled()) return false;
+      await step.click();
+      await expect(shown).not.toHaveAttribute('datetime', month!);
+    }
+    await expect(calendar(page).getByRole('table')).toBeVisible();
+    return true;
+  }
+
+  /** A day's toggle in the calendar, found by the date its <time> names. */
+  private day(page: Page, date: IsoDate): Locator {
+    return calendar(page)
+      .getByRole('table')
+      .getByRole('button')
+      .filter({ has: page.locator(`time[datetime="${date}"]`) });
+  }
+
+  /** A checked-off day in the month's list of days done; none when not done. */
+  private doneDay(page: Page, date: IsoDate): Locator {
+    return page
+      .getByRole('region', { name: 'Days done' })
+      .getByRole('listitem')
+      .filter({ has: page.locator(`time[datetime="${date}"]`) });
+  }
+
+  /** Write, or with null delete, a checked-off day's note in its dialog. */
+  private async writeNote(page: Page, date: IsoDate, note: string | null): Promise<Outcome> {
+    const done = this.doneDay(page, date);
+    await expect(done, `${date} checked off`).toHaveCount(1);
+    await done.getByRole('button', { name: /^(Add|Edit) note/ }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+
+    const remove = dialog.getByRole('button', { name: 'Delete note' });
+    if (note === null && (await remove.count()) === 0) {
+      await dialog.getByRole('button', { name: 'Cancel' }).click();
+      return OK;
+    }
+    if (note === null) {
+      await remove.click();
+    } else {
+      if (!(await fill(dialog.getByLabel('Note'), note))) {
+        await dialog.getByRole('button', { name: 'Cancel' }).click();
+        return REFUSED_AS_INVALID;
+      }
+      await dialog.getByRole('button', { name: 'Save' }).click();
+    }
+
+    return this.outcome(
+      'write a note',
+      async () => (await dialog.count()) === 0,
+      dialog.getByRole('alert'),
+      [NOT_VALID]
+    );
   }
 
   // --- helpers --------------------------------------------------------------
@@ -508,6 +652,11 @@ function profileHeading(page: Page): Locator {
   return page.getByRole('heading', { level: 1, name: 'Profile' });
 }
 
+/** The month calendar on a habit's detail page. */
+function calendar(page: Page): Locator {
+  return page.getByRole('region', { name: 'Calendar' });
+}
+
 function signInHeading(page: Page): Locator {
   return page.getByRole('heading', { level: 1, name: 'Sign in' });
 }
@@ -534,8 +683,4 @@ function addDays(date: IsoDate, days: number): IsoDate {
   const moment = new Date(`${date}T00:00:00Z`);
   moment.setUTCDate(moment.getUTCDate() + days);
   return moment.toISOString().slice(0, 10);
-}
-
-function notBuilt(action: string): never {
-  throw new Error(`The SPA has no way to ${action} yet`);
 }
