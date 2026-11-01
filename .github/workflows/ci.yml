@@ -1184,6 +1184,11 @@ jobs:
       - name: Verify every test file is collected
         run: node ../scripts/verify-test-collection.js acceptance
 
+      # The product owner's review page is every test case verbatim, generated
+      # and committed like db/schema.sql (habitcraft-ser3).
+      - name: Verify the review page matches the test cases
+        run: npm run review:check && npm run test:review
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 

@@ -78,11 +78,11 @@ the rules every store must follow and runs them on the fake and, when
 from the SQL. That includes the one property only a real database can show:
 of two concurrent refreshes with one refresh token, exactly one succeeds.
 
-These are phases 14, 17 and 18 of `scripts/test-all.sh` and the
+These are phases 15, 18 and 19 of `scripts/test-all.sh` and the
 `server-unit-tests` CI job, which starts its own migrated Postgres. The
 acceptance suite runs against this server with
 `ACCEPTANCE_API_URL=http://localhost:8080 ACCEPTANCE_BACKEND=go` (see
-[acceptance/README.md](../acceptance/README.md)). CI and phase 24 of
+[acceptance/README.md](../acceptance/README.md)). CI and phase 25 of
 `scripts/test-all.sh` run its `api` project against this server built from
 `Dockerfile`, as `server-test` on :3020 in `docker-compose.test.yml`
 (habitcraft-8ml9).

@@ -59,6 +59,7 @@ LBL_MOBILE_TYPECHECK="Mobile Typecheck"
 LBL_WEB_LINT="Web Lint"
 LBL_WEB_TYPECHECK="Web Typecheck"
 LBL_ACCEPTANCE_TYPECHECK="Acceptance Typecheck"
+LBL_ACCEPTANCE_REVIEW="Acceptance Review Page"
 LBL_SERVER_LINT="Server Lint"
 LBL_SCHEMA_DUMP="Generated Schema Check"
 LBL_API_CODEGEN="Generated API Artifacts Check"
@@ -334,6 +335,12 @@ run_phase "🧾" "$LBL_TEST_COLLECTION" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
 
 run_phase "🔤" "$LBL_ACCEPTANCE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/acceptance" \
     npm run typecheck || STATIC_FAILED=1
+
+# The product owner's review page shows every acceptance test verbatim, so it
+# must be regenerated whenever a test changes, as CI's acceptance-tests job
+# checks; then the generator's own tests (habitcraft-ser3).
+run_phase "📖" "$LBL_ACCEPTANCE_REVIEW" "$TIMEOUT_STATIC" "$PROJECT_ROOT/acceptance" \
+    sh -c 'npm run review:check && npm run test:review' || STATIC_FAILED=1
 
 # gofmt and go vet over the Go server, as CI's server-unit-tests job runs them.
 run_phase "🐹" "$LBL_SERVER_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \

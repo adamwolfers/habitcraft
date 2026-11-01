@@ -165,6 +165,28 @@ Behaviour that has no words in the user's language — a request for another
 user's habit by id, a malformed token, an expired one — stays in the backend's
 integration tests, which talk HTTP directly.
 
+## The review page
+
+`review/acceptance-tests.html` is every test case on one page, for the product
+owner to review (habitcraft-ser3). It shows each test exactly as written: its
+title, its file and line, and its body, with only `await` and trailing
+semicolons removed. Nothing is paraphrased. A hand-written summary drifted
+from the tests, claiming things no test checked, and this page replaced it.
+
+It is generated and committed, like `db/schema.sql`. Regenerate it whenever a
+test case changes:
+
+```bash
+npm run review          # rewrite review/acceptance-tests.html; commit it
+npm run review:check    # what CI and scripts/test-all.sh run: fails if it is stale
+npm run test:review     # the generator's own tests (playwright.review.config.ts)
+```
+
+The generator throws on any top-level statement in `tests/` that is not an
+import or a `test('<written-out title>', …)` call, such as `test.describe`,
+rather than leave it off the page. Supporting a new shape means changing
+`review/render.mjs` and its tests.
+
 ## The API driver and the contract
 
 `drivers/api/` sends each action as the HTTP calls a client would make, with a

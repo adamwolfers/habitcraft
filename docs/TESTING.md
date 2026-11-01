@@ -198,7 +198,7 @@ need.
 > profile, habits and completions, the spec's length limits, and the Node
 > backend's known bugs as expected failures. It is green against the Node
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
-> and phases 13, 23 and 24 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
+> and phases 13, 24 and 25 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
 > The `api` project also runs against the Go server, and passes there too
 > (habitcraft-8ml9, habitcraft-vxln.5). The `spa` project drives the Vite app
 > the Go server serves (habitcraft-vxln.8).
@@ -283,7 +283,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **24 phases, one per CI step**, so a green local run predicts a
+The script runs **25 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -301,21 +301,22 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 11 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
 | 12 | Test Collection Check | `scripts/verify-test-collection.js` | no |
 | 13 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
-| 14 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
-| 15 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 16 | Web Unit Tests | `web: npm run test:coverage` | no |
-| 17 | Server Unit Tests | `server: go test -race ./...` | no |
-| 18 | Server Store Tests | `server: go test -run TestPostgresStore` on the test database | yes |
-| 19 | Backend Unit Tests | `backend: npm test` | yes |
-| 20 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 21 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 22 | E2E Tests | `frontend: playwright, 3 shards` | yes |
-| 23 | Acceptance Tests | `acceptance: playwright test --project api --project web` | yes |
-| 24 | Acceptance Tests (Go server) | `acceptance: playwright test --project api --project spa` against `server-test` | yes |
+| 14 | Acceptance Review Page | `acceptance: npm run review:check && npm run test:review` | no |
+| 15 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
+| 16 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 17 | Web Unit Tests | `web: npm run test:coverage` | no |
+| 18 | Server Unit Tests | `server: go test -race ./...` | no |
+| 19 | Server Store Tests | `server: go test -run TestPostgresStore` on the test database | yes |
+| 20 | Backend Unit Tests | `backend: npm test` | yes |
+| 21 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 22 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 23 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 24 | Acceptance Tests | `acceptance: playwright test --project api --project web` | yes |
+| 25 | Acceptance Tests (Go server) | `acceptance: playwright test --project api --project spa` against `server-test` | yes |
 
 Notes on that table:
 
-- **Phases 1–14 fail fast.** All fourteen always run (so you see every static error
+- **Phases 1–15 fail fast.** All fifteen always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
@@ -352,24 +353,24 @@ Notes on that table:
   instrumentation cost. Web runs `test:coverage` too, as its CI job does.
 - **The web app's build has no phase of its own.** `server/Dockerfile` builds
   it and embeds it in the Go binary. The script rebuilds `server-test` when it
-  starts the docker services, before phase 18, and stops there if the web app
+  starts the docker services, before phase 19, and stops there if the web app
   does not build. In CI the `web-unit-tests` job runs `npm run build` as its
   last step.
-- **The Go server needs Go installed**, for phases 9, 14, 17 and 18
+- **The Go server needs Go installed**, for phases 9, 15, 18 and 19
   (oapi-codegen runs as a `go tool` pinned in `server/go.mod`). The script
   checks for it up front, alongside each package's `node_modules`.
-- **Phase 18 runs the Go server's store tests against Postgres.** Phase 17
+- **Phase 19 runs the Go server's store tests against Postgres.** Phase 18
   runs the same tests against an in-memory fake; with
   `HABITCRAFT_TEST_DATABASE_URL` set they also run against the real schema, so
   the SQL and the fake are held to one set of rules (habitcraft-vxln.4). They
   make their own users and need no reset. In CI the `server-unit-tests` job
   starts a migrated Postgres of its own and runs both in one `go test`.
-- **Phase 23 runs the acceptance suite against the stack phases 19–22 already
+- **Phase 24 runs the acceptance suite against the stack phases 20–23 already
   use**, with no database reset: the DSL makes a fresh user for every test.
   It needs `acceptance/` installed (`npm ci`) and, once, `npx playwright install
   chromium` there for the `web` project. In CI it is the `acceptance-tests` job,
   which `run-migrations-gcp` waits on, so it gates every deploy.
-- **Phase 24 runs the `api` project again, against the Go server**
+- **Phase 25 runs the `api` project again, against the Go server**
   (`server-test` on :3020, same database and JWT secret, habitcraft-8ml9),
   and the `spa` project, which drives the Vite app that server serves
   (habitcraft-vxln.8). The web project stays on Node, because `frontend-test`
