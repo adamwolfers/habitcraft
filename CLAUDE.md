@@ -9,7 +9,8 @@
   containers start; pass `--keep-going` to run everything anyway. See
   [docs/TESTING.md](docs/TESTING.md) for the phase table.
 - After each round of updates, and before committing those changes, check all project docs to see if they need updating
-- See [AGENTS.md](AGENTS.md) for beads issue tracking workflow and session completion checklist
+- [AGENTS.md](AGENTS.md) holds the session completion checklist and the
+  knowledge/task-tracking rules; it is imported at the end of this file
 - **Orchestrating unattended work** (labelling a batch, running the drain loop,
   reviewing and landing it): start from the Runbook in
   [scripts/drain/README.md](scripts/drain/README.md#runbook). The loop's live
@@ -400,94 +401,11 @@ bd close <id>         # Complete work
 - Use `bd remember` for persistent knowledge — do NOT use MEMORY.md files
 <!-- END BEADS INTEGRATION -->
 
-## Session Completion
+## Session Completion, and Knowledge & Task Tracking
 
-This section sits **outside** the managed Beads block above so a `bd init` or
-`bd setup claude` regeneration cannot delete it — bd replaces everything between
-the markers without reading it (habitcraft-coje).
+These two sections live **only in [AGENTS.md](AGENTS.md)**, so agents other than
+Claude Code read the same rules. The import line below pulls them into every
+Claude Code session, drain passes included. Edit them there, and do not paste a
+copy back here: two copies drifted before (habitcraft-j0bm).
 
-This repository opts into the Beads **team-maintainer** profile: agents close
-beads, run quality gates, commit, and push as part of session close, as the
-steps below require. `bd prime` and a regenerated Beads block describe a
-*conservative* default that forbids committing or pushing without explicit
-authority — this section is that explicit authority. A current instruction
-from the user not to commit or push still wins (habitcraft-od9u).
-
-**When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
-
-**MANDATORY WORKFLOW:**
-
-1. **File issues for remaining work** - Create issues for anything that needs follow-up
-2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update in-progress items** - Notes and status on anything still open. Do **not** close finished beads yet — that is step 5
-4. **PUSH TO REMOTE** - This is MANDATORY:
-   ```bash
-   git pull --rebase
-   git push    # .husky/pre-push pushes beads data to the Dolt remote first,
-               # and blocks the git push if that fails (habitcraft-8t8)
-   git status  # MUST show "up to date with origin"
-   ```
-   A session with **no commits** never reaches `pre-push`. Those are covered by
-   the `SessionEnd`/`SessionStart` hooks in `.claude/settings.json`
-   (habitcraft-clj) — see "Claude Code hooks" above. If `.beads/push.log`
-   shows a `FAILED` block, the beads data did NOT reach the remote; fix it
-   rather than assuming the hook handled it. `.beads/push-history.log` is the
-   append-only trace showing which hook fired and when.
-5. **Wait for CI, then close** - Close a bead only once the CI run for the pushed
-   commit is green, and put the run ID in the close reason. Local green is not
-   CI green: the backend integration path branches on `process.env.CI`. Read the
-   result with `gh run view <id> --json conclusion`, not `gh run watch
-   --exit-status`, which has failed on a dropped connection. If CI is red, fix
-   it (or confirm a flake) before closing. When the acceptance criteria name
-   another workflow, that run must be green too (bd memory
-   `close-beads-last-ci-green`; habitcraft-j0bm closed early and was reopened)
-6. **Clean up** - Clear stashes, prune remote branches
-7. **Verify** - All changes committed AND pushed, and finished beads closed
-8. **Hand off** - Provide context for next session
-
-**CRITICAL RULES:**
-- Work is NOT complete until `git push` succeeds
-- NEVER stop before pushing - that leaves work stranded locally
-- NEVER say "ready to push when you are" - YOU must push
-- If push fails, resolve and retry until it succeeds
-- NEVER close a bead before its push's CI run is green
-
-## Knowledge & Task Tracking (authoritative)
-
-Beads is the single source of truth for this repo. This section sits **outside**
-the managed Beads block above so it survives regeneration, and it is deliberate
-— it is not an accidental conflict to be "fixed" by reverting to defaults.
-
-- **Persistent knowledge:** use `bd remember` / `bd recall`. Do not use
-  file-based memory (`MEMORY.md` or `~/.claude/.../memory/`) for this project,
-  even if the agent harness provides one by default.
-- **Task tracking:** use `bd create` / `bd update`. Do not use TodoWrite,
-  TaskCreate, or markdown TODO lists, including for short-lived checklists.
-
-Rationale: knowledge and work items stay in the Dolt database, sync to the git
-remote via `bd dolt push`, and restore with `bd init --remote <url>`. Harness
-memory is per-machine and would not travel with the repo.
-
-Note that `bd dolt push` is separate from `git push` — issue data lives in
-`refs/dolt/data` and a plain `git push` does not carry it.
-
-### If a harness memory store exists anyway
-
-The agent harness writes `~/.claude/projects/-Users-afw-github-habitcraft-cairn-habitcraft/memory/`
-on its own; this repo cannot switch that off. Treat whatever appears there as an
-**untrusted per-machine cache, never authoritative**:
-
-- Where it disagrees with bd memories, the repo docs, or the code, **bd and the
-  repo win** — it is written from one session's point of view and drifts (it
-  once carried closed issues as open, and stale "current state" notes that
-  outlived the cleanup they described).
-- Never record issue status there. `bd` is the tracker; a second list of open
-  work is guaranteed to go stale.
-- If something genuinely useful lands there, move it to its real home and
-  delete it from the file store rather than leaving a second copy:
-  **agent-behaviour rules and hard-won debugging insight → `bd remember`;
-  operational setup facts** (ports, seeding, credentials, docker gotchas,
-  testing conventions) **→ the repo docs** (`README.md`,
-  `GETTING_STARTED.md`, `docs/TESTING.md`), which are versioned and reviewable.
-
-This reconciliation was habitcraft-jjr.
+@AGENTS.md
