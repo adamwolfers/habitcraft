@@ -60,7 +60,7 @@ from the user not to commit or push still wins (habitcraft-od9u).
 
 1. **File issues for remaining work** - Create issues for anything that needs follow-up
 2. **Run quality gates** (if code changed) - Tests, linters, builds
-3. **Update issue status** - Close finished work, update in-progress items
+3. **Update in-progress items** - Notes and status on anything still open. Do **not** close finished beads yet — that is step 5
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
@@ -74,15 +74,24 @@ from the user not to commit or push still wins (habitcraft-od9u).
    shows a `FAILED` block, the beads data did NOT reach the remote; fix it
    rather than assuming the hook handled it. `.beads/push-history.log` is the
    append-only trace showing which hook fired and when.
-5. **Clean up** - Clear stashes, prune remote branches
-6. **Verify** - All changes committed AND pushed
-7. **Hand off** - Provide context for next session
+5. **Wait for CI, then close** - Close a bead only once the CI run for the pushed
+   commit is green, and put the run ID in the close reason. Local green is not
+   CI green: the backend integration path branches on `process.env.CI`. Read the
+   result with `gh run view <id> --json conclusion`, not `gh run watch
+   --exit-status`, which has failed on a dropped connection. If CI is red, fix
+   it (or confirm a flake) before closing. When the acceptance criteria name
+   another workflow, that run must be green too (bd memory
+   `close-beads-last-ci-green`; habitcraft-j0bm closed early and was reopened)
+6. **Clean up** - Clear stashes, prune remote branches
+7. **Verify** - All changes committed AND pushed, and finished beads closed
+8. **Hand off** - Provide context for next session
 
 **CRITICAL RULES:**
 - Work is NOT complete until `git push` succeeds
 - NEVER stop before pushing - that leaves work stranded locally
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
+- NEVER close a bead before its push's CI run is green
 
 ## Knowledge & Task Tracking (authoritative)
 
