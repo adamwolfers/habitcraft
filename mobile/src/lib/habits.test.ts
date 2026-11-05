@@ -120,7 +120,10 @@ describe('habitsApi', () => {
 
       await habitsApi.completeHabit('1', completionData);
 
-      expect(mockApi.post).toHaveBeenCalledWith('/habits/1/completions', completionData);
+      expect(mockApi.post).toHaveBeenCalledWith('/habits/1/completions', {
+        ...completionData,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
     });
 
     it('returns completion data', async () => {

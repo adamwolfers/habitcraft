@@ -1,7 +1,8 @@
 import { expect } from '@playwright/test';
-import type { CompletionRate, ProtocolDriver } from '../drivers/driver.ts';
+import type { CompletionRate, IsoDate, ProtocolDriver } from '../drivers/driver.ts';
+import type { Accounts } from './accounts.ts';
 import { requestLimits, schemaLimits } from './apiLimits.generated.ts';
-import { resolveDay, type Day } from './dates.ts';
+import { resolveDay as resolveDayIn, type Day } from './dates.ts';
 import { settle, type Expecting } from './outcomes.ts';
 import { describeText, resolveText, type Text } from './text.ts';
 
@@ -10,7 +11,10 @@ const NOTE_MAX = requestLimits.updateCompletionNote.notes.maxLength;
 
 /** The acting user's habits and the days they checked them off. */
 export class Habits {
-  constructor(private readonly driver: ProtocolDriver) {}
+  constructor(
+    private readonly driver: ProtocolDriver,
+    private readonly accounts: Accounts
+  ) {}
 
   async create(name: Text, options: Expecting = {}): Promise<void> {
     const outcome = await this.driver.createHabit(resolveText(name, NAME_MAX));
@@ -37,25 +41,25 @@ export class Habits {
     name: string,
     { on, note, ...options }: Expecting & { on: Day; note?: string }
   ): Promise<void> {
-    const date = resolveDay(on);
+    const date = this.day(on);
     settle(await this.driver.checkOff(name, date, note), options, `check off "${name}" on ${date}`);
   }
 
   async uncheck(name: string, { on }: { on: Day }): Promise<void> {
-    await this.driver.uncheck(name, resolveDay(on));
+    await this.driver.uncheck(name, this.day(on));
   }
 
   async setNote(
     name: string,
     { on, note, ...options }: Expecting & { on: Day; note: Text }
   ): Promise<void> {
-    const date = resolveDay(on);
+    const date = this.day(on);
     const outcome = await this.driver.setNote(name, date, resolveText(note, NOTE_MAX));
     settle(outcome, options, `note ${describeText(note)} on "${name}" for ${date}`);
   }
 
   async clearNote(name: string, { on }: { on: Day }): Promise<void> {
-    const date = resolveDay(on);
+    const date = this.day(on);
     settle(await this.driver.setNote(name, date, null), {}, `clear the note on ${date}`);
   }
 
@@ -83,14 +87,14 @@ export class Habits {
   }
 
   async shouldBeCheckedOff(name: string, { on }: { on: Day }): Promise<void> {
-    const date = resolveDay(on);
+    const date = this.day(on);
     expect(await this.driver.isCheckedOff(name, date), `"${name}" checked off on ${date}`).toBe(
       true
     );
   }
 
   async shouldNotBeCheckedOff(name: string, { on }: { on: Day }): Promise<void> {
-    const date = resolveDay(on);
+    const date = this.day(on);
     expect(await this.driver.isCheckedOff(name, date), `"${name}" not checked off on ${date}`).toBe(
       false
     );
@@ -104,12 +108,12 @@ export class Habits {
     { from, to }: { from: Day; to: Day },
     expected: Record<string, Day[]>
   ): Promise<void> {
-    const start = resolveDay(from);
-    const end = resolveDay(to);
+    const start = this.day(from);
+    const end = this.day(to);
     const resolved = Object.fromEntries(
       Object.entries(expected).map(([name, days]) => [
         name,
-        days.map((day) => resolveDay(day)).sort(),
+        days.map((day) => this.day(day)).sort(),
       ])
     );
     const actual = await this.driver.checkedOffDays(start, end);
@@ -121,7 +125,7 @@ export class Habits {
 
   /** The note on a checked-off day; `null` means the day has no note. */
   async shouldHaveNote(name: string, { on, note }: { on: Day; note: Text | null }): Promise<void> {
-    const date = resolveDay(on);
+    const date = this.day(on);
     expect(await this.driver.noteOn(name, date), `note on "${name}" for ${date}`).toBe(
       note === null ? null : resolveText(note, NOTE_MAX)
     );
@@ -143,5 +147,10 @@ export class Habits {
       last30Days: rate(last30Days),
       last365Days: rate(last365Days),
     });
+  }
+
+  /** A day on the acting user's own calendar. */
+  private day(day: Day): IsoDate {
+    return resolveDayIn(day, this.accounts.timeZone);
   }
 }

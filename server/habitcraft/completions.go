@@ -5,6 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"time"
+	// The zone database, built in: the server's image has none, and an
+	// embedding application's may not either.
+	_ "time/tzdata"
 
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
@@ -67,10 +70,17 @@ func (s *Server) ListCompletionsInRange(ctx context.Context, request api.ListCom
 	return out, nil
 }
 
-// CreateCompletion records the habit as done on a day, today or before.
+// CreateCompletion records the habit as done on a day, today or before, where
+// today is the date in the user's time zone (habitcraft-vxln.19).
 func (s *Server) CreateCompletion(ctx context.Context, request api.CreateCompletionRequestObject) (api.CreateCompletionResponseObject, error) {
 	date := request.Body.Date.Time
-	if date.After(today()) {
+	today, ok := todayIn(request.Body.TimeZone)
+	if !ok {
+		return api.CreateCompletion400JSONResponse{BadRequestJSONResponse: api.BadRequestJSONResponse{
+			Error: "Unknown time zone",
+		}}, nil
+	}
+	if date.After(today) {
 		return api.CreateCompletion400JSONResponse{BadRequestJSONResponse: api.BadRequestJSONResponse{
 			Error: "Cannot mark completions for future dates",
 		}}, nil
@@ -153,4 +163,24 @@ func dateOrNil(d *openapi_types.Date) *time.Time {
 		return nil
 	}
 	return &d.Time
+}
+
+// todayIn is today's date in the IANA time zone the client named, or in UTC
+// when it named none, as midnight UTC like every date the API carries. It is
+// false for a zone that is not in the database. "Local" and "" are refused
+// too: LoadLocation reads them as the server's zone and UTC, neither of which
+// is the user's.
+func todayIn(zone *string) (time.Time, bool) {
+	if zone == nil {
+		return today(), true
+	}
+	if *zone == "" || *zone == "Local" {
+		return time.Time{}, false
+	}
+	loc, err := time.LoadLocation(*zone)
+	if err != nil {
+		return time.Time{}, false
+	}
+	y, m, d := time.Now().In(loc).Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, time.UTC), true
 }

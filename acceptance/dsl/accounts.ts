@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { requestLimits } from './apiLimits.generated.ts';
+import type { TimeZone } from './dates.ts';
 import { lengthFor, type Length } from './text.ts';
 
 /**
@@ -33,6 +34,8 @@ export interface AccountState {
   password: string;
   /** The password before the last successful change, if there was one. */
   previousPassword?: string;
+  /** Where the user lives, which decides what day it is for them. */
+  timeZone: TimeZone;
 }
 
 const unique = () => randomBytes(6).toString('hex');
@@ -45,7 +48,12 @@ export class Accounts {
   named(alias: string): AccountState {
     let account = this.byAlias.get(alias);
     if (!account) {
-      account = { alias, email: this.freshEmail(alias), password: `Pass-${unique()}` };
+      account = {
+        alias,
+        email: this.freshEmail(alias),
+        password: `Pass-${unique()}`,
+        timeZone: 'UTC',
+      };
       this.byAlias.set(alias, account);
     }
     return account;
@@ -75,6 +83,11 @@ export class Accounts {
 
   actAs(alias: string | undefined): void {
     this.actingAlias = alias;
+  }
+
+  /** What day it is is decided by where the acting user lives; UTC when nobody acts. */
+  get timeZone(): TimeZone {
+    return this.actingAlias ? this.acting.timeZone : 'UTC';
   }
 
   /** The account acting now. A step that needs one fails if nobody is. */

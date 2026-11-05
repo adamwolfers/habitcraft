@@ -87,6 +87,9 @@ export const requestLimits = {
     notes: {
       maxLength: 500,
     },
+    timeZone: {
+      maxLength: 64,
+    },
   },
   updateCompletionNote: {
     notes: {

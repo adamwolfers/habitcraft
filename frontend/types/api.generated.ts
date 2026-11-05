@@ -1325,6 +1325,11 @@ export interface operations {
                     date: string;
                     /** @example Went for a 30-minute run */
                     notes?: string | null;
+                    /**
+                     * @description The IANA time zone the user is in. A date after today in this zone is refused as a future date, so a user east of UTC can check off their own today. Without it, today is judged in UTC. A zone the server does not know is a 400.
+                     * @example Australia/Sydney
+                     */
+                    timeZone?: string;
                 };
             };
         };

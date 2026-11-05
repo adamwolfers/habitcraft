@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -89,6 +90,56 @@ func TestADayInTheFutureCannotBeCheckedOff(t *testing.T) {
 	}
 	if list := a.listCompletions(alice, h.Id, ""); len(list) != 0 {
 		t.Errorf("stored %+v", list)
+	}
+}
+
+// At any hour, one of these zones is on a different date from UTC: Kiritimati
+// from 10:00 UTC, Pago Pago until 11:00 UTC.
+var zonesFarFromUTC = []string{"Pacific/Kiritimati", "Pacific/Pago_Pago"}
+
+func TestTodayIsTheDateInTheUsersTimeZone(t *testing.T) {
+	for _, zone := range zonesFarFromUTC {
+		t.Run(zone, func(t *testing.T) {
+			loc, err := time.LoadLocation(zone)
+			if err != nil {
+				t.Fatal(err)
+			}
+			local := time.Now().In(loc)
+			today := local.Format(time.DateOnly)
+			tomorrow := local.AddDate(0, 0, 1).Format(time.DateOnly)
+			a := newApp(t)
+			alice := a.newUser()
+			h := a.createHabit(alice, `{"name":"Run"}`)
+
+			w := a.checkOffDay(alice, h.Id, `{"date":"`+today+`","timeZone":"`+zone+`"}`)
+			if w.Code != http.StatusCreated {
+				t.Errorf("today %s: got %d %s", today, w.Code, w.Body)
+			}
+			w = a.checkOffDay(alice, h.Id, `{"date":"`+tomorrow+`","timeZone":"`+zone+`"}`)
+			if w.Code != http.StatusBadRequest || errorOf(t, w) != "Cannot mark completions for future dates" {
+				t.Errorf("tomorrow %s: got %d %s", tomorrow, w.Code, w.Body)
+			}
+		})
+	}
+}
+
+func TestAnUnknownTimeZoneIsRefused(t *testing.T) {
+	// "Local" would be the server's own zone, which says nothing about the user's.
+	for _, zone := range []string{"Mars/Olympus_Mons", "Local", "", "../../etc/passwd"} {
+		t.Run(zone, func(t *testing.T) {
+			a := newApp(t)
+			alice := a.newUser()
+			h := a.createHabit(alice, `{"name":"Run"}`)
+
+			w := a.checkOffDay(alice, h.Id, `{"date":"`+dateString(0)+`","timeZone":"`+zone+`"}`)
+
+			if w.Code != http.StatusBadRequest || errorOf(t, w) != "Unknown time zone" {
+				t.Errorf("got %d %s", w.Code, w.Body)
+			}
+			if list := a.listCompletions(alice, h.Id, ""); len(list) != 0 {
+				t.Errorf("stored %+v", list)
+			}
+		})
 	}
 }
 

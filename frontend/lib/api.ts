@@ -2,6 +2,7 @@
  * API client for communicating with the HabitCraft backend
  */
 import { Habit, HabitWithCompletions, HabitFormData, Completion } from '@/types/habit';
+import { localTimeZone } from '@/utils/dateUtils';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 
@@ -223,10 +224,11 @@ export async function createCompletion(
   date: string,
   notes?: string
 ): Promise<Completion> {
-  const body: { date: string; notes?: string } = { date };
+  const body: { date: string; notes?: string; timeZone?: string } = { date };
   if (notes) {
     body.notes = notes;
   }
+  body.timeZone = localTimeZone();
 
   const response = await fetchWithAuth(`${API_BASE_URL}/api/v1/habits/${habitId}/completions`, {
     method: 'POST',

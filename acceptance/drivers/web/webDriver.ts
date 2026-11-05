@@ -50,10 +50,17 @@ export class WebDriver implements ProtocolDriver {
   private context: BrowserContext | undefined;
   private current: Page | undefined;
 
+  private timeZone = 'UTC';
+
   constructor(
     private readonly browser: Browser,
     private readonly baseUrl: string
   ) {}
+
+  /** The next browser opens with its clock in this zone. */
+  liveIn(timeZone: string): void {
+    this.timeZone = timeZone;
+  }
 
   // --- account and session --------------------------------------------------
 
@@ -330,7 +337,7 @@ export class WebDriver implements ProtocolDriver {
     await this.close();
     this.context = await this.browser.newContext({
       baseURL: this.baseUrl,
-      timezoneId: 'UTC',
+      timezoneId: this.timeZone,
       locale: 'en-US',
     });
     this.current = await this.context.newPage();

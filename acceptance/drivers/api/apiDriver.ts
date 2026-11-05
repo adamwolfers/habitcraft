@@ -39,7 +39,14 @@ export class ApiDriver implements ProtocolDriver {
   private accessToken: string | undefined;
   private refreshToken: string | undefined;
 
+  private timeZone = 'UTC';
+
   constructor(private readonly baseUrl: string) {}
+
+  /** Every client says which zone its user is in when checking off a day. */
+  liveIn(timeZone: string): void {
+    this.timeZone = timeZone;
+  }
 
   // --- account and session --------------------------------------------------
 
@@ -148,6 +155,7 @@ export class ApiDriver implements ProtocolDriver {
     const habit = await this.habitNamed(habitName);
     const response = await this.request('POST', `/habits/${habit.id}/completions`, {
       date,
+      timeZone: this.timeZone,
       ...(note === undefined ? {} : { notes: note }),
     });
     return outcomeOf(response, 201, { 400: 'invalid-input', 409: 'already-checked-off' });

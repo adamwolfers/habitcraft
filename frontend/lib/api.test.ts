@@ -354,6 +354,7 @@ describe('createCompletion', () => {
         body: JSON.stringify({
           date: '2025-01-15',
           notes: 'Completed 30 minutes',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         }),
       }
     );
@@ -380,7 +381,10 @@ describe('createCompletion', () => {
     expect(global.fetch).toHaveBeenCalledWith(
       `${API_BASE_URL}/api/v1/habits/${mockHabitId}/completions`,
       expect.objectContaining({
-        body: JSON.stringify({ date: '2025-01-15' }),
+        body: JSON.stringify({
+          date: '2025-01-15',
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        }),
       })
     );
   });

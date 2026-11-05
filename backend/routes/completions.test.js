@@ -204,6 +204,64 @@ describe('Completions API', () => {
       expect(response.body.error).toMatch(/future/i);
     });
 
+    // At any hour one of these is on a different date from UTC: Kiritimati
+    // from 10:00 UTC, Pago Pago until 11:00 UTC (habitcraft-vxln.19).
+    describe.each(['Pacific/Kiritimati', 'Pacific/Pago_Pago'])(
+      "judges today in the user's time zone, %s",
+      (timeZone) => {
+        const dateIn = (offsetDays) => {
+          const today = new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
+          const date = new Date(`${today}T00:00:00Z`);
+          date.setUTCDate(date.getUTCDate() + offsetDays);
+          return date.toISOString().slice(0, 10);
+        };
+
+        it("should allow completion for the user's today", async () => {
+          pool.query.mockResolvedValueOnce({ rows: [{ id: mockHabitId, user_id: mockUserId }] });
+          pool.query.mockResolvedValueOnce({ rows: [{ id: mockCompletionId }] });
+
+          const response = await request(app)
+            .post(`/api/v1/habits/${mockHabitId}/completions`)
+            .set('Authorization', `Bearer ${mockToken}`)
+            .send({ date: dateIn(0), timeZone });
+
+          expect(response.status).toBe(201);
+        });
+
+        it("should return 400 for the user's tomorrow", async () => {
+          const response = await request(app)
+            .post(`/api/v1/habits/${mockHabitId}/completions`)
+            .set('Authorization', `Bearer ${mockToken}`)
+            .send({ date: dateIn(1), timeZone });
+
+          expect(response.status).toBe(400);
+          expect(response.body.error).toBe('Cannot mark completions for future dates');
+          expect(pool.query).not.toHaveBeenCalled();
+        });
+      }
+    );
+
+    it.each([
+      ['an unknown zone', 'Mars/Olympus_Mons'],
+      ["the server's own zone", 'Local'],
+      ['an empty zone', ''],
+      ['a path', '../../etc/passwd'],
+      ['a number', 10],
+      [
+        'a zone over the length limit',
+        'A'.repeat(requestLimits.createCompletion.timeZone.maxLength + 1),
+      ],
+    ])('should return 400 for %s', async (_, timeZone) => {
+      const response = await request(app)
+        .post(`/api/v1/habits/${mockHabitId}/completions`)
+        .set('Authorization', `Bearer ${mockToken}`)
+        .send({ date: mockDate, timeZone });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Unknown time zone');
+      expect(pool.query).not.toHaveBeenCalled();
+    });
+
     it('should allow completion for today', async () => {
       const today = new Date().toISOString().split('T')[0];
       const mockCompletion = {

@@ -130,7 +130,7 @@ describe('TodayPage', () => {
     await vi.waitFor(() => expect(toDo()).toEqual(['Read']));
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
     expect(await server.bodiesSentTo(`POST /api/v1/habits/${run.id}/completions`)).toEqual([
-      { date: TODAY },
+      { date: TODAY, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
     ]);
     expect(completedToggle()).toHaveTextContent('Completed today (1)');
   });

@@ -8,6 +8,7 @@ import {
   getCalendarMonth,
   parseLocalDateFromString,
   isFutureDate,
+  localTimeZone,
 } from './dateUtils';
 
 // A YYYY-MM-DD date as a count of days, measured in UTC so that every day is
@@ -395,5 +396,27 @@ describe('dateUtils', () => {
       const monthWithZero = getCalendarMonth(0);
       expect(monthWithDefault).toEqual(monthWithZero);
     });
+  });
+});
+
+describe('localTimeZone', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("is the device's IANA time zone", () => {
+    jest.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      timeZone: 'Pacific/Kiritimati',
+    } as Intl.ResolvedDateTimeFormatOptions);
+
+    expect(localTimeZone()).toBe('Pacific/Kiritimati');
+  });
+
+  it('is undefined when the runtime cannot say', () => {
+    jest.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      timeZone: '',
+    } as Intl.ResolvedDateTimeFormatOptions);
+
+    expect(localTimeZone()).toBeUndefined();
   });
 });

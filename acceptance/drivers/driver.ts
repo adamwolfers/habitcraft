@@ -51,6 +51,16 @@ export interface Profile {
 }
 
 export interface ProtocolDriver {
+  // --- where the user is ----------------------------------------------------
+
+  /**
+   * Act from now on from a device whose clock is set to this IANA time zone,
+   * as a user who lives there would. Until it is called the device is on UTC.
+   * Call it before registering or signing in: a browser driver opens its
+   * browser in the zone then.
+   */
+  liveIn(timeZone: string): void;
+
   // --- account and session ------------------------------------------------
 
   /** Create an account and, on success, act as that user from now on. */

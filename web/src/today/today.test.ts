@@ -1,11 +1,33 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { localDate, useToday } from './today.ts';
+import { localDate, localTimeZone, useToday } from './today.ts';
 
 describe('localDate', () => {
   it("is the day on the user's own calendar, as YYYY-MM-DD", () => {
     expect(localDate(new Date(2026, 0, 5, 23, 59))).toBe('2026-01-05');
     expect(localDate(new Date(2026, 11, 31, 0, 0))).toBe('2026-12-31');
+  });
+});
+
+describe('localTimeZone', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("is the browser's IANA time zone", () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      timeZone: 'Pacific/Kiritimati',
+    } as Intl.ResolvedDateTimeFormatOptions);
+
+    expect(localTimeZone()).toBe('Pacific/Kiritimati');
+  });
+
+  it('is undefined when the browser cannot say', () => {
+    vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+      timeZone: '',
+    } as Intl.ResolvedDateTimeFormatOptions);
+
+    expect(localTimeZone()).toBeUndefined();
   });
 });
 

@@ -54,10 +54,17 @@ export class SpaDriver implements ProtocolDriver {
   private context: BrowserContext | undefined;
   private current: Page | undefined;
 
+  private timeZone = 'UTC';
+
   constructor(
     private readonly browser: Browser,
     private readonly baseUrl: string
   ) {}
+
+  /** The next browser opens with its clock in this zone. */
+  liveIn(timeZone: string): void {
+    this.timeZone = timeZone;
+  }
 
   // --- account and session --------------------------------------------------
 
@@ -242,7 +249,7 @@ export class SpaDriver implements ProtocolDriver {
   // every other day, and every note, through the habit's detail page.
 
   async checkOff(habitName: string, date: IsoDate, note?: string): Promise<Outcome> {
-    if (date === today() && note === undefined) return this.checkOffToday(habitName);
+    if (date === todayIn(this.timeZone) && note === undefined) return this.checkOffToday(habitName);
     const page = await this.detailPage(habitName);
     // A month after this one cannot be shown, so none of its days can be ticked.
     if (!(await this.toMonth(page, date))) return REFUSED_AS_INVALID;
@@ -264,7 +271,7 @@ export class SpaDriver implements ProtocolDriver {
   }
 
   async uncheck(habitName: string, date: IsoDate): Promise<void> {
-    if (date === today()) return this.uncheckToday(habitName);
+    if (date === todayIn(this.timeZone)) return this.uncheckToday(habitName);
     const page = await this.detailPage(habitName);
     if (!(await this.toMonth(page, date))) throw new Error(`${date} cannot be shown`);
     const day = this.day(page, date);
@@ -284,7 +291,7 @@ export class SpaDriver implements ProtocolDriver {
   }
 
   async isCheckedOff(habitName: string, date: IsoDate): Promise<boolean> {
-    if (date === today()) return this.isCheckedOffToday(habitName);
+    if (date === todayIn(this.timeZone)) return this.isCheckedOffToday(habitName);
     const page = await this.detailPage(habitName);
     if (!(await this.toMonth(page, date))) return false;
     return (await this.day(page, date).getAttribute('aria-pressed')) === 'true';
@@ -304,7 +311,7 @@ export class SpaDriver implements ProtocolDriver {
    * date, titled with whether that day is done.
    */
   async checkedOffDays(from: IsoDate, to: IsoDate): Promise<Record<string, IsoDate[]>> {
-    if (from < addDays(today(), 1 - DOTS_DAYS)) {
+    if (from < addDays(todayIn(this.timeZone), 1 - DOTS_DAYS)) {
       throw new Error(`The Dots view shows only the last ${DOTS_DAYS} days, not back to ${from}`);
     }
     const page = await this.dotsPage();
@@ -476,7 +483,7 @@ export class SpaDriver implements ProtocolDriver {
     await this.close();
     this.context = await this.browser.newContext({
       baseURL: this.baseUrl,
-      timezoneId: 'UTC',
+      timezoneId: this.timeZone,
       locale: 'en-US',
     });
     this.current = await this.context.newPage();
@@ -673,9 +680,12 @@ async function fill(field: Locator, value: string): Promise<boolean> {
   return field.evaluate((element: HTMLInputElement) => element.validity.valid);
 }
 
-/** Today in UTC, as the DSL and the driver's browser contexts reckon it. */
-function today(): IsoDate {
-  return new Date().toISOString().slice(0, 10);
+/**
+ * Today in a time zone, as the DSL and a browser context in that zone reckon
+ * it. en-CA formats a date as YYYY-MM-DD.
+ */
+function todayIn(timeZone: string): IsoDate {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
 }
 
 /** The date `days` days after `date` (before it, when negative). */

@@ -15,7 +15,7 @@ import {
   monthOf,
 } from '../calendar/calendar.ts';
 import { Button, ErrorMessage } from '../components/forms.tsx';
-import { useToday } from '../today/today.ts';
+import { localTimeZone, useToday } from '../today/today.ts';
 import { requestLimits, type Habit } from '../types/api.ts';
 
 // From the spec, not a literal: the dialog sets notes through this operation.
@@ -203,7 +203,7 @@ function MonthView({ habit, month, today, onPrevious, onNext }: MonthProps) {
     change(date, async () => {
       const { data, error, response } = await api.POST('/api/v1/habits/{habitId}/completions', {
         params: { path: { habitId: habit.id } },
-        body: { date },
+        body: { date, timeZone: localTimeZone() },
       });
       if (data) set(date, data.notes);
       // Checked off elsewhere, in another tab or on another device.

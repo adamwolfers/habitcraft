@@ -39,10 +39,34 @@ function isValidDate(dateString) {
   return date instanceof Date && !isNaN(date) && dateString === date.toISOString().split('T')[0];
 }
 
-// Helper function to check if a date is in the future
-function isFutureDate(dateString) {
-  const today = new Date().toISOString().split('T')[0];
-  return dateString > today;
+const MAX_TIME_ZONE_LENGTH = requestLimits.createCompletion.timeZone.maxLength;
+
+/**
+ * Today's date as YYYY-MM-DD in the IANA time zone the client named, or in UTC
+ * when it named none, so a user east of UTC can check off their own today
+ * (habitcraft-vxln.19). Returns null for a zone Intl does not know. 'Local'
+ * and '' are refused too, as on the Go server: neither names the user's zone.
+ * @param {unknown} timeZone The request body's timeZone field
+ * @returns {string|null}
+ */
+function todayIn(timeZone) {
+  if (timeZone === undefined) {
+    return new Date().toISOString().split('T')[0];
+  }
+  if (
+    typeof timeZone !== 'string' ||
+    timeZone === '' ||
+    timeZone === 'Local' ||
+    timeZone.length > MAX_TIME_ZONE_LENGTH
+  ) {
+    return null;
+  }
+  try {
+    // en-CA formats a date as YYYY-MM-DD.
+    return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
+  } catch {
+    return null; // RangeError: not a zone
+  }
 }
 
 // Helper function to verify habit ownership
@@ -63,7 +87,7 @@ async function verifyHabitOwnership(habitId, userId) {
 router.post('/', jwtAuthMiddleware, sanitizeBody, async (req, res) => {
   try {
     const { habitId } = req.params;
-    const { date, notes } = req.body;
+    const { date, notes, timeZone } = req.body;
     const userId = req.userId;
 
     // Validate date
@@ -75,8 +99,13 @@ router.post('/', jwtAuthMiddleware, sanitizeBody, async (req, res) => {
       return res.status(400).json({ error: 'Invalid date format. Use YYYY-MM-DD' });
     }
 
+    const today = todayIn(timeZone);
+    if (today === null) {
+      return res.status(400).json({ error: 'Unknown time zone' });
+    }
+
     // Check if date is in the future
-    if (isFutureDate(date)) {
+    if (date > today) {
       return res.status(400).json({ error: 'Cannot mark completions for future dates' });
     }
 

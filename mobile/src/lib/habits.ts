@@ -1,5 +1,6 @@
 import { api } from './api';
 import { Habit, HabitCompletion, HabitWithStats } from '@/types';
+import { localTimeZone } from '@/utils/timeZone';
 
 interface CreateHabitData {
   name: string;
@@ -42,7 +43,12 @@ export const habitsApi = {
   },
 
   async completeHabit(id: string, data: CompleteHabitData): Promise<HabitCompletion> {
-    const response = await api.post(`/habits/${id}/completions`, data);
+    // Sent with the zone at send time, so a check-off queued offline still
+    // carries one when it is replayed.
+    const response = await api.post(`/habits/${id}/completions`, {
+      ...data,
+      timeZone: localTimeZone(),
+    });
     return response.data;
   },
 

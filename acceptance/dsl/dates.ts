@@ -5,15 +5,18 @@ export type Day = 'today' | 'yesterday' | 'tomorrow' | `${number} days ago` | Is
 
 const DAYS_AGO = /^(\d+) days ago$/;
 
+/** An IANA time zone, as a user's device reports it: 'UTC', 'Pacific/Kiritimati'. */
+export type TimeZone = string;
+
 /**
- * Resolve a day to a calendar date. Dates are UTC, matching the database and
- * the web driver's browser time zone, so "today" means the same day to the
- * test and to the system under test.
+ * Resolve a day to a calendar date on the clock of a user who lives in
+ * `timeZone`. The drivers act from a device in that same zone, so "today"
+ * means the same day to the test and to the system under test.
  */
-export function resolveDay(day: Day, now: Date = new Date()): IsoDate {
+export function resolveDay(day: Day, timeZone: TimeZone = 'UTC', now: Date = new Date()): IsoDate {
   const offset = offsetOf(day);
   if (offset !== undefined) {
-    const date = new Date(now);
+    const date = new Date(`${dateIn(timeZone, now)}T00:00:00Z`);
     date.setUTCDate(date.getUTCDate() + offset);
     return date.toISOString().slice(0, 10);
   }
@@ -28,4 +31,10 @@ function offsetOf(day: Day): number | undefined {
   if (day === 'tomorrow') return 1;
   const ago = DAYS_AGO.exec(day);
   return ago ? -Number(ago[1]) : undefined;
+}
+
+/** The calendar date `now` falls on in a time zone. */
+function dateIn(timeZone: TimeZone, now: Date): IsoDate {
+  // en-CA formats a date as YYYY-MM-DD.
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(now);
 }

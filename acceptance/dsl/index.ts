@@ -104,8 +104,8 @@ export const test = base.extend<Dsl, Workers>({
   profile: async ({ driver, accounts }, use) => {
     await use(new Profile(driver, accounts));
   },
-  habits: async ({ driver }, use) => {
-    await use(new Habits(driver));
+  habits: async ({ driver, accounts }, use) => {
+    await use(new Habits(driver, accounts));
   },
   knownBug: async ({ protocol, backend }, use) => {
     await use((...beads) => {

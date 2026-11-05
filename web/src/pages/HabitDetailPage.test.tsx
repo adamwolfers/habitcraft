@@ -178,7 +178,7 @@ describe('HabitDetailPage', () => {
 
       await vi.waitFor(() => expect(day('2026-10-10')).toHaveAttribute('aria-pressed', 'true'));
       expect(await server.bodiesSentTo(`POST /api/v1/habits/${run.id}/completions`)).toEqual([
-        { date: '2026-10-10' },
+        { date: '2026-10-10', timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
       ]);
       await vi.waitFor(() => expect(rate('Last 30 days')).toHaveTextContent('1 of 30 days'));
       expect(doneDates()).toEqual(['2026-10-10']);

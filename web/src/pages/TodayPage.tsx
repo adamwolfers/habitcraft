@@ -6,7 +6,7 @@ import { COMPLETIONS, completionsKey, fetchCompletions } from '../api/completion
 import { useHabits } from '../api/habits.ts';
 import { messageFor } from '../api/messages.ts';
 import { Button, ErrorMessage } from '../components/forms.tsx';
-import { useToday } from '../today/today.ts';
+import { localTimeZone, useToday } from '../today/today.ts';
 import type { Habit } from '../types/api.ts';
 
 /** Today's completion for each habit that has one, keyed by habit id. */
@@ -166,7 +166,7 @@ function ToDoRow({ habit, date, set, reload }: Changes & { habit: Habit }) {
     change(async () => {
       const { data, error, response } = await api.POST('/api/v1/habits/{habitId}/completions', {
         params: { path: { habitId: habit.id } },
-        body: { date },
+        body: { date, timeZone: localTimeZone() },
       });
       if (data) set(habit.id, { notes: data.notes });
       // Checked off elsewhere, in another tab or on another device.

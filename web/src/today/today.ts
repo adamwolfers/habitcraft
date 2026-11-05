@@ -11,6 +11,15 @@ export function localDate(moment: Date): string {
   return `${moment.getFullYear()}-${month}-${day}`;
 }
 
+/**
+ * The browser's IANA time zone, sent with each check-off so the server judges
+ * "today" on the user's calendar rather than UTC's (habitcraft-vxln.19).
+ * Undefined if the browser cannot say, and the server then falls back to UTC.
+ */
+export function localTimeZone(): string | undefined {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+}
+
 /** The time until the next local midnight, just past it. */
 function untilMidnight(now: Date): number {
   const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);

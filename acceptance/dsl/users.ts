@@ -2,6 +2,7 @@ import { expect } from '@playwright/test';
 import type { ProtocolDriver } from '../drivers/driver.ts';
 import type { Accounts, AccountState, EmailChoice } from './accounts.ts';
 import { requestLimits } from './apiLimits.generated.ts';
+import type { TimeZone } from './dates.ts';
 import { settle, type Expecting } from './outcomes.ts';
 
 /** Which password a step uses: the account's own, its last one, or a wrong one. */
@@ -35,13 +36,21 @@ export class Users {
    *
    * `email` gives the alias a new address of that shape first, and `password`
    * registers with one that breaks the rules instead of the alias's own.
+   * `livingIn` names the IANA time zone the user lives in; it is UTC otherwise.
    */
   async register(
     alias: string,
-    options: Expecting & { name?: string; email?: EmailChoice; password?: WeakPassword } = {}
+    options: Expecting & {
+      name?: string;
+      email?: EmailChoice;
+      password?: WeakPassword;
+      livingIn?: TimeZone;
+    } = {}
   ): Promise<void> {
     const account = this.accounts.named(alias);
     if (options.email) account.email = this.accounts.freshEmail(alias, options.email);
+    if (options.livingIn) account.timeZone = options.livingIn;
+    this.driver.liveIn(account.timeZone);
     const outcome = await this.driver.register({
       email: account.email,
       password: options.password ? tooShort(account.password) : account.password,
@@ -56,6 +65,7 @@ export class Users {
     options: Expecting & { withPassword?: PasswordChoice; withEmail?: 'in-capitals' } = {}
   ): Promise<void> {
     const account = this.accounts.named(alias);
+    this.driver.liveIn(account.timeZone);
     const outcome = await this.driver.signIn({
       email: options.withEmail ? account.email.toUpperCase() : account.email,
       password: passwordFor(account, options.withPassword),

@@ -67,6 +67,29 @@ test('a day in the future cannot be checked off', async ({ users, habits }) => {
   await habits.shouldNotBeCheckedOff('Morning run', { on: 'tomorrow' });
 });
 
+// "Today" is the user's own today, wherever they live. Kiritimati (UTC+14) is
+// a day ahead of UTC from 10:00 UTC, and Pago Pago (UTC-11) a day behind it
+// until 11:00 UTC, so at any hour one of these two tests tells a server that
+// judges dates in UTC apart from one that judges them on the user's clock.
+
+test('a user far ahead of UTC can check off their own today', async ({ users, habits }) => {
+  await users.register('Alice', { livingIn: 'Pacific/Kiritimati' });
+  await habits.create('Morning run');
+
+  await habits.checkOff('Morning run', { on: 'today' });
+
+  await habits.shouldBeCheckedOff('Morning run', { on: 'today' });
+});
+
+test('a user far behind UTC cannot check off their own tomorrow', async ({ users, habits }) => {
+  await users.register('Alice', { livingIn: 'Pacific/Pago_Pago' });
+  await habits.create('Morning run');
+
+  await habits.checkOff('Morning run', { on: 'tomorrow', expect: 'invalid-input' });
+
+  await habits.shouldNotBeCheckedOff('Morning run', { on: 'tomorrow' });
+});
+
 test('each day is checked off on its own', async ({ users, habits }) => {
   await users.register('Alice');
   await habits.create('Morning run');
