@@ -10,6 +10,14 @@ import {
   isFutureDate,
 } from './dateUtils';
 
+// A YYYY-MM-DD date as a count of days, measured in UTC so that every day is
+// 24 hours long. Measuring local midnights instead counts the day a DST change
+// falls on as 23 or 25 hours, which failed these tests in the week of one.
+const dayNumber = (date: string): number => {
+  const [year, month, day] = date.split('-').map(Number);
+  return Date.UTC(year, month - 1, day) / (1000 * 60 * 60 * 24);
+};
+
 describe('dateUtils', () => {
   describe('formatDate', () => {
     it('should format date to YYYY-MM-DD', () => {
@@ -228,13 +236,7 @@ describe('dateUtils', () => {
     it('should return consecutive days', () => {
       const week = getCalendarWeek(0);
       for (let i = 0; i < week.length - 1; i++) {
-        // Parse as local date to avoid timezone issues
-        const [year1, month1, day1] = week[i].split('-').map(Number);
-        const current = new Date(year1, month1 - 1, day1);
-        const [year2, month2, day2] = week[i + 1].split('-').map(Number);
-        const next = new Date(year2, month2 - 1, day2);
-        const diffInDays = (next.getTime() - current.getTime()) / (1000 * 60 * 60 * 24);
-        expect(diffInDays).toBe(1);
+        expect(dayNumber(week[i + 1]) - dayNumber(week[i])).toBe(1);
       }
     });
 
@@ -242,28 +244,14 @@ describe('dateUtils', () => {
       const currentWeek = getCalendarWeek(0);
       const previousWeek = getCalendarWeek(-1);
 
-      // Parse as local date to avoid timezone issues
-      const [year1, month1, day1] = currentWeek[0].split('-').map(Number);
-      const currentStart = new Date(year1, month1 - 1, day1);
-      const [year2, month2, day2] = previousWeek[0].split('-').map(Number);
-      const previousStart = new Date(year2, month2 - 1, day2);
-
-      const diffInDays = (currentStart.getTime() - previousStart.getTime()) / (1000 * 60 * 60 * 24);
-      expect(diffInDays).toBe(7);
+      expect(dayNumber(currentWeek[0]) - dayNumber(previousWeek[0])).toBe(7);
     });
 
     it('should return next week when offset is 1', () => {
       const currentWeek = getCalendarWeek(0);
       const nextWeek = getCalendarWeek(1);
 
-      // Parse as local date to avoid timezone issues
-      const [year1, month1, day1] = currentWeek[0].split('-').map(Number);
-      const currentStart = new Date(year1, month1 - 1, day1);
-      const [year2, month2, day2] = nextWeek[0].split('-').map(Number);
-      const nextStart = new Date(year2, month2 - 1, day2);
-
-      const diffInDays = (nextStart.getTime() - currentStart.getTime()) / (1000 * 60 * 60 * 24);
-      expect(diffInDays).toBe(7);
+      expect(dayNumber(nextWeek[0]) - dayNumber(currentWeek[0])).toBe(7);
     });
 
     it('should handle week that spans two months', () => {
