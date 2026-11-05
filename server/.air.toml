@@ -1,0 +1,19 @@
+# air: rebuild and restart the Go server on a source change. Used by the
+# `server` service in docker-compose.yml (server/Dockerfile.dev). The binary
+# and air's own files go to /tmp/air, outside the bind mount, so nothing lands
+# in the checkout.
+root = "."
+tmp_dir = "/tmp/air"
+
+[build]
+  cmd = "go build -o /tmp/air/habitcraft ./cmd/habitcraft"
+  bin = "/tmp/air/habitcraft"
+  include_ext = ["go", "mod", "sum"]
+  exclude_dir = ["bin", "cmd/habitcraft/spa"]
+  exclude_regex = ["_test\\.go$"]
+  # SIGINT first, so the server shuts down gracefully as it does on SIGTERM
+  send_interrupt = true
+  kill_delay = "2s"
+
+[misc]
+  clean_on_exit = true

@@ -1,0 +1,5 @@
+# For Dockerfile.dev, whose build context is server/. It copies only the
+# module files; the source is bind-mounted at run time.
+*
+!go.mod
+!go.sum

@@ -23,16 +23,29 @@ it. Where it differs from the Node backend on purpose, it says so under
 
 ## Running
 
-```bash
-# From the repo root: the test database on :5433, migrated by db-migrate-test
-docker compose -f docker-compose.test.yml up -d postgres-test db-migrate-test
+The dev compose stack runs it, beside the Node backend until cutover
+(habitcraft-vxln.20):
 
-cd server
-DATABASE_URL='postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable' \
-JWT_SECRET='test-jwt-secret-key-for-testing-only' \
-INSECURE_COOKIES=true \
-  go run ./cmd/habitcraft            # listens on :8080; PORT overrides
+```bash
+# From the repo root
+docker compose up -d                              # http://localhost:3030
+docker compose --profile seed run --rm db-seed    # once: test@example.com / Test1234!
+docker compose logs -f server
 ```
+
+The `server` service runs `Dockerfile.dev` against the dev database on :5432,
+after `db-migrate`. `server/` is bind-mounted, and [air](https://github.com/air-verse/air)
+(`.air.toml`) rebuilds and restarts it on every change to a `.go` file outside
+the tests, in a few seconds. Host port 3030, because adminer holds 8080, the
+server's own default, and `server-test` holds 3020. The web app runs beside it
+as `web`, on :3200 ([web/README.md](../web/README.md#running)); this server
+does not serve the built app unless `cmd/habitcraft/spa/dist/` exists.
+
+The binary's settings are its environment, listed at the top of
+`cmd/habitcraft/main.go`; the `server` service in `docker-compose.yml` shows
+the values the dev stack gives them. Prefer the service to a hand-started
+`go run`, which outlives the shell that forgot it and is invisible to
+`docker compose` (habitcraft-vxln.20).
 
 `JWT_SECRET` is required and must be at least 32 bytes. While the Node backend
 still runs, give both the same secret: their tokens carry the same claims, so a
@@ -81,7 +94,7 @@ of two concurrent refreshes with one refresh token, exactly one succeeds.
 These are phases 15, 18 and 19 of `scripts/test-all.sh` and the
 `server-unit-tests` CI job, which starts its own migrated Postgres. The
 acceptance suite runs against this server with
-`ACCEPTANCE_API_URL=http://localhost:8080 ACCEPTANCE_BACKEND=go` (see
+`ACCEPTANCE_API_URL=<its URL> ACCEPTANCE_BACKEND=go` (see
 [acceptance/README.md](../acceptance/README.md)). CI and phase 25 of
 `scripts/test-all.sh` run its `api` project against this server built from
 `Dockerfile`, as `server-test` on :3020 in `docker-compose.test.yml`

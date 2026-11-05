@@ -106,6 +106,53 @@ services:
       - habitcraft-network
     command: npm run dev
 
+  # Go server (the rebuild, habitcraft-vxln), beside the Node backend until
+  # cutover. air rebuilds and restarts it on a change to server/*.go
+  # (server/.air.toml). Host port 3030: adminer holds 8080, the server's
+  # default, and server-test holds 3020 (habitcraft-vxln.20).
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: habitcraft-server
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-habituser}:${DB_PASSWORD:-habitpass}@postgres:5432/${DB_NAME:-habitcraft}?sslmode=disable
+      # The Node backend's secret, so a session from either is honoured by both
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
+      PORT: 8080
+      INSECURE_COOKIES: "true"
+    ports:
+      - "${SERVER_PORT:-3030}:8080"
+    volumes:
+      - ./server:/src/server
+      - go_mod_cache:/go/pkg/mod
+      - go_build_cache:/root/.cache/go-build
+    depends_on:
+      db-migrate:
+        condition: service_completed_successfully
+    networks:
+      - habitcraft-network
+
+  # React + Vite web app (the rebuild), with hot reload. It proxies /api and
+  # /health to `server`, so the app and the API share an origin as they do
+  # in production, where the Go server embeds the built app.
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.dev
+    container_name: habitcraft-web
+    environment:
+      HABITCRAFT_API_URL: http://server:8080
+    ports:
+      - "3200:3200"
+    volumes:
+      - ./web:/app
+      - web_node_modules:/app/node_modules
+    depends_on:
+      - server
+    networks:
+      - habitcraft-network
+
   # Adminer - Database management UI
   adminer:
     image: adminer:latest
@@ -124,3 +171,6 @@ networks:
 volumes:
   postgres_data:
   backend_node_modules:
+  web_node_modules:
+  go_mod_cache:
+  go_build_cache:

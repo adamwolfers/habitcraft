@@ -107,14 +107,19 @@ Create an account to get started.
 ### Running with Docker
 
 ```bash
-# Start all services (database + backend + frontend)
-docker-compose up postgres backend frontend
+# Start all services: the database, both stacks, and adminer
+docker compose up -d
 
 # Access the application:
-# - Frontend: http://localhost:3100
-# - Backend API: http://localhost:3000
+# - Frontend (Next.js): http://localhost:3100
+# - Backend API (Node): http://localhost:3000
+# - Web app (React + Vite, the rebuild): http://localhost:3200
+# - Go server (the rebuild): http://localhost:3030
 # - Database Admin: http://localhost:8080
 ```
+
+The two stacks share the database and the JWT secret until cutover, so the
+same accounts sign in to both.
 
 **Seed the database** (one-off, after the services are up):
 

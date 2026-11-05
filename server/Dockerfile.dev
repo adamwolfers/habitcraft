@@ -1,0 +1,19 @@
+# Go server Dockerfile (development)
+# docker-compose.yml runs it as `server`: the source is bind-mounted over
+# /src/server, and air (.air.toml) rebuilds and restarts the server on every
+# change to a .go file (habitcraft-vxln.20). The build context is server/.
+# server/Dockerfile is the production image, with the web app embedded.
+
+FROM golang:1.25-alpine
+
+RUN go install github.com/air-verse/air@v1.61.7
+
+WORKDIR /src/server
+
+# Modules into the image, so the first start does not download them
+COPY go.mod go.sum ./
+RUN go mod download
+
+EXPOSE 8080
+
+CMD ["air", "-c", ".air.toml"]

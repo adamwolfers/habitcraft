@@ -1,0 +1,17 @@
+# Web app Dockerfile (development)
+# docker-compose.yml runs it as `web`: the Vite dev server with hot reload on
+# :3200, the source bind-mounted over /app, proxying /api and /health to the
+# `server` service through HABITCRAFT_API_URL (habitcraft-vxln.20). The build
+# context is web/. The production web app is built into server/Dockerfile.
+
+FROM node:24-alpine
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+EXPOSE 3200
+
+# --host: listen on every interface, so the port mapping reaches it
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

@@ -5,8 +5,10 @@ import { defineConfig } from 'vite';
 
 // The Go server embeds the build and serves it beside the API, so the app and
 // the API share an origin and the auth cookies need no CORS. `npm run dev`
-// keeps that shape by proxying the API's paths to a Go server on :8080.
-const API = process.env.HABITCRAFT_API_URL ?? 'http://localhost:8080';
+// keeps that shape by proxying the API's paths to a Go server: by default the
+// dev compose stack's `server` on :3030 (the `web` service sets
+// HABITCRAFT_API_URL to reach it inside the network instead).
+const API = process.env.HABITCRAFT_API_URL ?? 'http://localhost:3030';
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

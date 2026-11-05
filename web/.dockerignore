@@ -1,0 +1,4 @@
+# For web/Dockerfile.dev, whose build context is web/. It copies only the
+# package files, so keep the host's node_modules (macOS binaries) out.
+node_modules/
+coverage/

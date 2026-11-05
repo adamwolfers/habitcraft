@@ -7,16 +7,27 @@ there is no Node at all (see [server/README.md](../server/README.md#the-web-app)
 
 ## Running
 
+The dev compose stack runs it, beside the Go server (habitcraft-vxln.20):
+
 ```bash
-npm ci
-npm run dev        # http://localhost:3200, proxying the API to a Go server on :8080
+# From the repo root
+docker compose up -d                              # http://localhost:3200
+docker compose --profile seed run --rm db-seed    # once: test@example.com / Test1234!
 ```
 
-Start the Go server first ([server/README.md](../server/README.md#running)).
-`npm run dev` proxies `/api` and `/health` to it, so the app and the API share
-an origin as they do in production, and the auth cookies work unchanged.
-`HABITCRAFT_API_URL` points the proxy at another server, such as
-`server-test` on `http://localhost:3020`.
+The `web` service is the Vite dev server with hot reload: `web/` is
+bind-mounted, so an edit under `src/` reaches the browser at once. It proxies
+`/api` and `/health` to the `server` service, so the app and the API share an
+origin as they do in production, and the auth cookies work unchanged.
+`node_modules` lives in the `web_node_modules` volume, built from
+`web/Dockerfile.dev`; after a dependency change, rebuild with
+`docker compose build web` and drop that volume (see
+[GETTING_STARTED.md](../GETTING_STARTED.md#docker-troubleshooting)).
+
+Outside docker, `npm ci && npm run dev` serves the same thing on :3200,
+proxying to the stack's Go server on `http://localhost:3030`; stop the `web`
+service first, which holds the port. `HABITCRAFT_API_URL` points the proxy at
+another server, such as `server-test` on `http://localhost:3020`.
 
 `npm run build` typechecks, then writes the bundle into
 `../server/cmd/habitcraft/spa/dist/`, where `go build` embeds it.

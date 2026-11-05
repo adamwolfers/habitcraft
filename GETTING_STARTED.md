@@ -19,13 +19,21 @@ The easiest way to run HabitCraft is with Docker Compose, which starts all requi
 cp docker-compose.override.yml.example docker-compose.override.yml
 
 # Start services
-docker-compose up postgres backend frontend
+docker compose up -d
 
 # Access the application:
-# - Frontend: http://localhost:3100
-# - Backend API: http://localhost:3000
+# - Frontend (Next.js): http://localhost:3100
+# - Backend API (Node): http://localhost:3000
+# - Web app (React + Vite, the rebuild): http://localhost:3200
+# - Go server (the rebuild): http://localhost:3030
 # - Database Admin (Adminer): http://localhost:8080
 ```
+
+The rebuild (habitcraft-vxln) runs beside the old stack until cutover, on the
+same database and JWT secret. Both of its services reload on their own: `web`
+is the Vite dev server with hot reload, and `server` runs under air, which
+rebuilds and restarts the Go server when a `.go` file changes
+(habitcraft-vxln.20). Follow either with `docker compose logs -f server web`.
 
 **Stopping the services:**
 
@@ -50,7 +58,8 @@ docker compose --profile seed run --rm db-seed
 - Email: `test@example.com`
 - Password: `Test1234!`
 
-Login at http://localhost:3100/login to start tracking habits!
+Login at http://localhost:3100/login, or at http://localhost:3200/login for
+the rebuild, to start tracking habits!
 
 ### Docker Troubleshooting
 
@@ -65,13 +74,18 @@ selects the dev images, and it is not committed (copy it from
 `docker-compose.override.yml.example`).
 
 **Dependency changes do not take effect.** `node_modules` lives in a named
-volume (`backend_node_modules`), which persists across `docker-compose down`
-and will happily shadow a rebuilt image with stale packages. `down -v` clears
-it along with the database; to drop just the dependency cache:
+volume (`backend_node_modules`, and `web_node_modules` for the web app), which
+persists across `docker-compose down` and will happily shadow a rebuilt image
+with stale packages. `down -v` clears it along with the database; to drop just
+the dependency cache:
 
 ```bash
-docker volume rm habitcraft_backend_node_modules
+docker volume rm habitcraft_backend_node_modules   # or habitcraft_web_node_modules
 ```
+
+The Go server's modules and build cache live in `go_mod_cache` and
+`go_build_cache` in the same way. A `go.mod` change needs no rebuild, as air
+downloads new modules on its next build.
 
 Then rebuild. Re-seed afterwards only if you also removed the database volume.
 
@@ -370,9 +384,9 @@ the services are up. This loads `shared/database/test-fixtures.sql`, the same fi
 
 To test the application:
 
-1. Start the services with Docker: `docker-compose up postgres backend frontend`
+1. Start the services with Docker: `docker compose up -d`
 2. Seed the database: `docker compose --profile seed run --rm db-seed`
-3. Open http://localhost:3100/login
+3. Open http://localhost:3100/login, or http://localhost:3200/login for the rebuild
 4. Login with either test user's credentials
 5. Start tracking your habits!
 
