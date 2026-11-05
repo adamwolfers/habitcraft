@@ -77,7 +77,7 @@ LBL_E2E="E2E Tests"
 LBL_ACCEPTANCE="Acceptance Tests"
 LBL_ACCEPTANCE_GO="Acceptance Tests (Go server)"
 
-TOTAL_PHASES=24
+TOTAL_PHASES=25
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every

@@ -104,7 +104,7 @@ npm run lint           # ESLint, with Prettier as a lint rule
 npm run typecheck
 ```
 
-These are phases 6, 7 and 16 of `scripts/test-all.sh`, and the
+These are phases 6, 7 and 17 of `scripts/test-all.sh`, and the
 `web-unit-tests` CI job, which also builds the bundle. The unit tests render
 the whole app against a fake API (`src/test/fakeServer.ts`). The acceptance
 suite's `spa` project drives the real thing, served by the Go server (see
