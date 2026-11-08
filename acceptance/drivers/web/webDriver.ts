@@ -66,7 +66,7 @@ export class WebDriver implements ProtocolDriver {
 
   async register({ email, password, name }: Account): Promise<Outcome> {
     const page = await this.freshBrowser();
-    await page.goto('/register');
+    await openForm(page, '/register');
     await page.getByLabel('Name').fill(name);
     const emailField = page.getByLabel('Email');
     await emailField.fill(email);
@@ -85,7 +85,7 @@ export class WebDriver implements ProtocolDriver {
 
   async signIn({ email, password }: Credentials): Promise<Outcome> {
     const page = await this.freshBrowser();
-    await page.goto('/login');
+    await openForm(page, '/login');
     await page.getByLabel('Email').fill(email);
     await page.getByLabel('Password', { exact: true }).fill(password);
     await page.getByRole('button', { name: 'Log In' }).click();
@@ -503,6 +503,24 @@ interface Day {
   toggle: Locator;
   noteButton: Locator;
   isCheckedOff(): Promise<boolean>;
+}
+
+/**
+ * Open a server-rendered form and wait until React has hydrated it. `goto`
+ * returns at the load event, about 40ms before hydration, and a value typed in
+ * that gap can be wiped when React takes the inputs over: the field reads empty
+ * and the submit is refused as invalid input, or blocked by the browser's own
+ * `required` check (habitcraft-m5ez). React tags each element it owns with an
+ * expando `__reactProps$<id>` key; that is internal to React, but this driver
+ * leaves with the Next.js app at cutover, and the SPA renders on the client
+ * only, so has no such gap.
+ */
+async function openForm(page: Page, path: string): Promise<void> {
+  await page.goto(path);
+  await page.waitForFunction(() => {
+    const form = document.querySelector('form');
+    return !!form && Object.keys(form).some((key) => key.startsWith('__reactProps$'));
+  });
 }
 
 /** The red message box at the top of the login, register and add-habit forms. */

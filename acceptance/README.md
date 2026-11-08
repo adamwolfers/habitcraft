@@ -220,6 +220,9 @@ takes its place; the test cases stay as they are.
 - Every sign-in or registration opens a fresh browser context, as a second
   person would use their own browser. Contexts run in the acting user's time
   zone (UTC unless the test says otherwise), the zone the DSL's "today" is in.
+- The login and register pages are rendered on the server, and `goto` returns
+  before React hydrates them. A value typed in that gap can be wiped, so the
+  driver waits for hydration before filling a form (habitcraft-m5ez).
 - Refusals arrive as messages on screen. The driver maps the messages it knows
   onto a refusal and throws on any other, so a reworded message fails loudly.
 - Renewing the session drops the access-token cookie, as the browser does when
