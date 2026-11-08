@@ -87,6 +87,9 @@ services:
       JWT_SECRET: test-jwt-secret-key-for-testing-only
       PORT: 8080
       INSECURE_COOKIES: "true"
+      # The acceptance suite registers and logs in hundreds of users from one
+      # address, as backend-test's SKIP_RATE_LIMIT allows (habitcraft-xhmk)
+      SKIP_RATE_LIMIT: "true"
     ports:
       - "3020:8080"
     depends_on:

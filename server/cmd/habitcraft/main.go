@@ -8,6 +8,13 @@
 //	PORT              optional; default 8080
 //	INSECURE_COOKIES  optional; "true" for local development over plain HTTP
 //	                  (auth cookies without Secure, SameSite=Lax). Never in production.
+//	TRUSTED_PROXY_HOPS optional; default 1, the proxies in front of the server
+//	                  that append to X-Forwarded-For. Production is Kamal on one
+//	                  VPS: kamal-proxy, and nothing else, so 1. Use 0 with nothing
+//	                  in front. The rate limits depend on it being exact.
+//	SKIP_RATE_LIMIT   optional; "true" turns the rate limits off, for test
+//	                  suites that make many requests from one address, as on
+//	                  the Node backend. Never in production.
 package main
 
 import (
@@ -57,13 +64,17 @@ func run() error {
 	if port == "" {
 		port = "8080"
 	}
-	insecureCookies := false
-	if value := os.Getenv("INSECURE_COOKIES"); value != "" {
-		parsed, err := strconv.ParseBool(value)
-		if err != nil {
-			return fmt.Errorf("INSECURE_COOKIES=%q is not true or false", value)
-		}
-		insecureCookies = parsed
+	insecureCookies, err := boolFromEnv("INSECURE_COOKIES")
+	if err != nil {
+		return err
+	}
+	skipRateLimit, err := boolFromEnv("SKIP_RATE_LIMIT")
+	if err != nil {
+		return err
+	}
+	trustedProxyHops, err := trustedProxyHopsFromEnv(os.Getenv("TRUSTED_PROXY_HOPS"))
+	if err != nil {
+		return err
 	}
 
 	// pgxpool connects lazily, so the server starts, and /health reports
@@ -75,9 +86,11 @@ func run() error {
 	defer db.Close()
 
 	server, err := habitcraft.New(habitcraft.Config{
-		DB:              db,
-		JWTSecret:       []byte(jwtSecret),
-		InsecureCookies: insecureCookies,
+		DB:                  db,
+		JWTSecret:           []byte(jwtSecret),
+		InsecureCookies:     insecureCookies,
+		TrustedProxyHops:    trustedProxyHops,
+		DisableRateLimiting: skipRateLimit,
 	})
 	if err != nil {
 		return err
@@ -121,4 +134,37 @@ func run() error {
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownGrace)
 	defer cancel()
 	return httpServer.Shutdown(shutdownCtx)
+}
+
+// defaultTrustedProxyHops is production's topology: kamal-proxy terminates
+// TLS on the VPS and is the only proxy in front of the server
+// (habitcraft-vxln.9). It appends the connecting address to X-Forwarded-For,
+// making the last entry the only one a client cannot forge.
+const defaultTrustedProxyHops = 1
+
+// trustedProxyHopsFromEnv parses TRUSTED_PROXY_HOPS. An unusable value is an
+// error, never a fallback: a wrong count either lets a caller choose their own
+// address and walk past every rate limit, or puts every client in one bucket.
+func trustedProxyHopsFromEnv(value string) (int, error) {
+	if value == "" {
+		return defaultTrustedProxyHops, nil
+	}
+	hops, err := strconv.Atoi(value)
+	if err != nil || hops < 0 {
+		return 0, fmt.Errorf("TRUSTED_PROXY_HOPS=%q is not a non-negative integer: it is the number of proxies in front of the server (kamal-proxy alone: 1)", value)
+	}
+	return hops, nil
+}
+
+// boolFromEnv parses an optional true/false setting; unset is false.
+func boolFromEnv(name string) (bool, error) {
+	value := os.Getenv(name)
+	if value == "" {
+		return false, nil
+	}
+	parsed, err := strconv.ParseBool(value)
+	if err != nil {
+		return false, fmt.Errorf("%s=%q is not true or false", name, value)
+	}
+	return parsed, nil
 }

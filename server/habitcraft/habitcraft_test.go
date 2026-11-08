@@ -27,8 +27,11 @@ func (hangingDB) Ping(ctx context.Context) error {
 	return ctx.Err()
 }
 
+// testConfig turns rate limiting off, as SKIP_RATE_LIMIT does for the
+// acceptance suite: every test request comes from httptest's one address.
+// ratelimit_test.go turns it back on.
 func testConfig() Config {
-	return Config{JWTSecret: testSecret}
+	return Config{JWTSecret: testSecret, DisableRateLimiting: true}
 }
 
 func serve(t *testing.T, db pinger, method, target, body string, edits ...func(*http.Request)) *httptest.ResponseRecorder {

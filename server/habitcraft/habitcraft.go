@@ -37,6 +37,17 @@ type Config struct {
 	// relaxes SameSite from Strict to Lax, for local development over plain
 	// HTTP. Never set it in production.
 	InsecureCookies bool
+	// TrustedProxyHops is how many reverse proxies stand between clients and
+	// this server, each appending to X-Forwarded-For. The rate limits key on
+	// the client's address, and only the entries those proxies appended can
+	// be believed: count one too many and a caller picks their own address
+	// per request; one too few and every client shares the proxy's. The zero
+	// value ignores X-Forwarded-For, which is right with no proxy in front.
+	TrustedProxyHops int
+	// DisableRateLimiting turns off the limits on register, login, refresh,
+	// change password and delete account, for a test suite that makes many
+	// requests from one address. Never set it in production.
+	DisableRateLimiting bool
 	// Logger defaults to slog.Default().
 	Logger *slog.Logger
 }
@@ -53,6 +64,10 @@ type Server struct {
 	tokens          tokens
 	insecureCookies bool
 	logger          *slog.Logger
+
+	trustedProxyHops int
+	rateLimitingOff  bool
+	limiter          *limiter
 }
 
 var _ api.StrictServerInterface = (*Server)(nil)
@@ -64,6 +79,9 @@ func New(cfg Config) (*Server, error) {
 	}
 	if len(cfg.JWTSecret) < minSecretLength {
 		return nil, fmt.Errorf("habitcraft: Config.JWTSecret must be at least %d bytes", minSecretLength)
+	}
+	if cfg.TrustedProxyHops < 0 {
+		return nil, errNegativeHops
 	}
 	return newServer(cfg.DB, pgStore{pool: cfg.DB}, cfg), nil
 }
@@ -80,6 +98,10 @@ func newServer(db pinger, st store, cfg Config) *Server {
 		tokens:          tokens{secret: cfg.JWTSecret, now: time.Now},
 		insecureCookies: cfg.InsecureCookies,
 		logger:          logger,
+
+		trustedProxyHops: cfg.TrustedProxyHops,
+		rateLimitingOff:  cfg.DisableRateLimiting,
+		limiter:          newLimiter(),
 	}
 }
 
@@ -87,9 +109,10 @@ func newServer(db pinger, st store, cfg Config) *Server {
 // them (/health, /api/v1/...), so an application mounting it under a prefix
 // strips that prefix first.
 //
-// A request passes authentication, then validation, then reaches its handler.
-// Authentication goes first so an anonymous caller gets a 401 before any field
-// is checked, and never sees per-field errors.
+// A request's body is read first, up to maxBodyBytes. It then passes
+// authentication, rate limiting and validation, in that order, and reaches its
+// handler. Authentication goes before validation so an anonymous caller gets a
+// 401 before any field is checked, and never sees per-field errors.
 func (s *Server) Handler() (http.Handler, error) {
 	spec, err := api.GetSwagger()
 	if err != nil {
@@ -98,6 +121,10 @@ func (s *Server) Handler() (http.Handler, error) {
 	authenticate, err := s.authentication(spec)
 	if err != nil {
 		return nil, fmt.Errorf("habitcraft: %w", err)
+	}
+	limit, err := s.rateLimiting(spec)
+	if err != nil {
+		return nil, err
 	}
 	validate, err := validation.Middleware(spec)
 	if err != nil {
@@ -114,21 +141,35 @@ func (s *Server) Handler() (http.Handler, error) {
 		BaseRouter:       http.NewServeMux(),
 		ErrorHandlerFunc: s.badParameter,
 	})
-	return authenticate(validate(keepBody(routes))), nil
+	return readBody(authenticate(limit(validate(routes)))), nil
 }
+
+// maxBodyBytes caps a request body. The largest valid one is a few KB (the
+// spec's longest strings are 500 characters); this is Express's json()
+// default, 100kb, so the Node backend refuses the same bodies.
+const maxBodyBytes = 100 << 10
 
 type bodyKey struct{}
 
-// keepBody keeps a copy of the request body in the context. The generated
-// handlers decode it into structs, where a field sent as null and a field not
-// sent look alike; bodyHas tells them apart.
-func keepBody(next http.Handler) http.Handler {
+// readBody reads the request body, refusing one over maxBodyBytes with a
+// 413 before anything else sees it, and keeps a copy in the context. The
+// generated handlers decode it into structs, where a field sent as null and a
+// field not sent look alike; bodyHas tells them apart.
+func readBody(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.ContentLength > maxBodyBytes {
+			writeJSON(w, http.StatusRequestEntityTooLarge, api.Error{Error: "Request body too large"})
+			return
+		}
 		if r.Body == nil || r.Body == http.NoBody {
 			next.ServeHTTP(w, r)
 			return
 		}
-		body, err := io.ReadAll(r.Body)
+		body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxBodyBytes))
+		if tooLarge := (*http.MaxBytesError)(nil); errors.As(err, &tooLarge) {
+			writeJSON(w, http.StatusRequestEntityTooLarge, api.Error{Error: "Request body too large"})
+			return
+		}
 		if err != nil {
 			writeJSON(w, http.StatusBadRequest, api.Error{Error: "Could not read the request body"})
 			return

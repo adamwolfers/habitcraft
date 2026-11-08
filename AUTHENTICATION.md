@@ -495,6 +495,12 @@ For the same reason, security log entries take `req.ip` rather than the leftmost
 `X-Forwarded-For` entry. Reading the header directly let a caller choose the
 address recorded against their own failed logins.
 
+The Go server (`server/habitcraft/ratelimit.go`, habitcraft-xhmk) applies the
+same rule with the same variable. Its production is Kamal on one VPS, where
+kamal-proxy is the only proxy, so the binary's default is also `1`, and an
+unusable `TRUSTED_PROXY_HOPS` stops it at startup. Embedded as a package, its
+zero value is `0`, which ignores the header.
+
 ### Tokens pin their algorithm
 
 `config/jwt.js` exports `JWT_ALGORITHM` / `JWT_ALGORITHMS`, and both `jwt.sign`

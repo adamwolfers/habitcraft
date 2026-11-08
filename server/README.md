@@ -151,8 +151,26 @@ token hashes are interchangeable with the Node backend's.
 - **Passwords** are bcrypt at cost 10, cut at 72 bytes as Node's bcrypt cuts
   them. A login for an unknown email still spends one bcrypt comparison, so
   response time does not reveal who has an account.
-- **Not yet**: rate limiting (habitcraft-xhmk), and the hardening backlog
-  (habitcraft-zr0t).
+- **Rate limits** are Node's, request for request: register 10 an hour, login
+  15, refresh 30, change password 5 and delete account 5 per 15 minutes, each
+  per client address and operation (`habitcraft/ratelimit.go`,
+  habitcraft-xhmk). They apply to exactly the operations the spec documents a
+  429 for, and `Handler` refuses to start if the two disagree. They run after
+  authentication and before validation, so an anonymous delete is a 401 and
+  uncounted, and an invalid login counts. A 429 is the spec's `DetailedError`
+  with `Retry-After` and the `RateLimit-*` headers. Counts are in memory, so
+  they hold for the one instance production runs.
+- **The client's address** is the connection's, or behind proxies the
+  `X-Forwarded-For` entry the nearest `TRUSTED_PROXY_HOPS` proxies appended,
+  never anything before it. The binary defaults to 1, for kamal-proxy on the
+  VPS (habitcraft-vxln.9). The package's zero value is 0, which ignores the
+  header. An IPv6 client counts as its /56, as express-rate-limit's does. The
+  security log records the same address. See AUTHENTICATION.md, "Rate
+  limiting depends on a bounded proxy trust boundary".
+- **`SKIP_RATE_LIMIT=true`** (`Config.DisableRateLimiting`) turns the limits
+  off for test suites, as on the Node backend. `server-test` sets it, and so
+  do the handler tests, except `ratelimit_test.go`.
+- **Not yet**: the hardening backlog (habitcraft-zr0t).
 
 ## Parity with the Node backend
 
@@ -176,6 +194,11 @@ tell the servers apart, except where Node is wrong or unbounded:
   `internal/validation` checks `format: date` as a calendar date.
 - **A habit can be created archived**: `POST /habits` honours `status`, which
   the spec allows and Node ignores.
+- **A body over 100 KiB is a 413** `{"error": "Request body too large"}`,
+  before authentication, as Express's `json()` parser caps Node
+  (habitcraft-klag). Node answers it with Express's HTML error page. A declared
+  `Content-Length` over the cap is refused unread. Neither server's 413 is in
+  the spec.
 
 One parity detail takes more than the generated types: an update clears a
 description sent as `null` and keeps one not sent at all, as Node does. The
@@ -192,6 +215,10 @@ server, err := habitcraft.New(habitcraft.Config{
 handler, err := server.Handler()
 mux.Handle("/", handler)
 ```
+
+Set `Config.TrustedProxyHops` to the number of proxies in front of the
+application. The zero value ignores `X-Forwarded-For`, which is right only with
+none.
 
 The handler's paths are absolute (`/health`, `/api/v1/...`), as the spec writes
 them. To mount it under a prefix, wrap it in `http.StripPrefix`. The in-process

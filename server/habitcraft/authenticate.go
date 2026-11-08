@@ -115,12 +115,14 @@ func accessTokenIn(r *http.Request) (token, problem, reason string) {
 
 // securityEvent logs what the Node backend's logSecurityEvent records: the
 // event, the caller's address and user agent, and the details given. Failures
-// log at Warn, everything else at Info.
+// log at Warn, everything else at Info. The address is the one the rate
+// limits count, never the raw X-Forwarded-For, which would let a caller choose
+// what is recorded against their own failed logins.
 func (s *Server) securityEvent(r *http.Request, event string, details ...any) {
 	level := slog.LevelInfo
 	if strings.HasSuffix(event, "_FAILURE") {
 		level = slog.LevelWarn
 	}
-	attrs := append([]any{"event", event, "ip", r.RemoteAddr, "userAgent", r.UserAgent()}, details...)
+	attrs := append([]any{"event", event, "ip", clientIP(r, s.trustedProxyHops), "userAgent", r.UserAgent()}, details...)
 	s.logger.Log(r.Context(), level, "security event", attrs...)
 }
