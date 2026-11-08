@@ -22,5 +22,7 @@ module.exports = {
     },
   },
   testMatch: ['**/__tests__/**/*.test.{ts,tsx}', '**/*.test.{ts,tsx}'],
-  testPathIgnorePatterns: ['/node_modules/', '/e2e/'],
+  // e2e/tests/ is the Detox suite and needs a device. The pure helpers beside
+  // it in e2e/config/ do not, and their unit tests run here (habitcraft-nu7h).
+  testPathIgnorePatterns: ['/node_modules/', '/e2e/tests/'],
 };

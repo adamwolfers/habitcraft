@@ -528,7 +528,8 @@ emulator because macOS runners have no Docker, and the job needs the
   miss the job boots it, runs `mobile/scripts/settle-android-emulator.sh`, and
   caches the snapshot. Later runs restore that settled snapshot.
 - **On failure:** Detox logs and screenshots of the failing cases are uploaded
-  as the `detox-artifacts` artifact.
+  as the `detox-artifacts` artifact, kept for 30 days. A failure before any
+  test runs, such as the emulator failing to boot, leaves nothing to upload.
 
 ### Writing a test
 
@@ -575,6 +576,13 @@ The mobile auth screens themselves are described in
   window focus`. Neither points at the emulator. Run
   `mobile/scripts/settle-android-emulator.sh` first. It waits for the load to
   stay low and closes stray ANR dialogs.
+- **`PID still not available` on Android.** `am instrument` exited without
+  starting the app, and Detox spent about 100s polling for a process that never
+  appeared. It shows up as a `launchApp` failure, often inside a `beforeEach`.
+  Every launch in `mobile/e2e/config/testSetup.ts` retries this once and logs
+  `[e2e] launch attempt 1/2 failed` when it does (`launchRetry.ts`,
+  habitcraft-nu7h). A crash after the app starts is not retried. If that warning
+  turns up regularly in CI logs, find the cause instead of adding attempts.
 - **`Can't find service: package` on Android.** The emulator's
   `system_server` has died. Run `adb emu kill` and let Detox cold-boot it.
 - **iOS build fails in the Hermes script phase with `No such file or

@@ -958,7 +958,10 @@ jobs:
         with:
           name: detox-artifacts
           path: mobile/artifacts/
-          retention-days: 7
+          # Longer than the other suites' 7 days. Android flakes get re-run green
+          # and investigated later, and the device log from run 41238333025 had
+          # expired by the time anyone looked (habitcraft-nu7h).
+          retention-days: 30
 
       - name: Stop the backend
         if: always()

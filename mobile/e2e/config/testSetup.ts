@@ -1,6 +1,7 @@
 import { execFileSync } from 'child_process';
 import path from 'path';
 import { device, element, by, waitFor } from 'detox';
+import { withLaunchRetry } from './launchRetry';
 
 // Value entry here is replaceText(), never typeText(). typeText() delivers one
 // keystroke at a time and does not reliably land a full string in a
@@ -243,6 +244,25 @@ function seedLaunchArgs(session: E2ESession) {
 }
 
 /**
+ * device.launchApp(), retried once if the app process never appeared.
+ *
+ * Every launch in the suite goes through here. On the CI emulator `am
+ * instrument` occasionally exits without starting the app, and Detox then
+ * spends about 100s polling for a PID that cannot appear (habitcraft-nu7h; the
+ * reasoning is in launchRetry.ts). A crash after starting is not retried.
+ *
+ * The retry terminates first so Detox drops the dead instrumentation and spawns
+ * a new one, rather than trying to resume an activity that has no process.
+ * Retrying with the same arguments is safe because nothing launched, so nothing
+ * was seeded. jest.config.js's testTimeout leaves room for the one retry.
+ */
+async function launchApp(params: Parameters<typeof device.launchApp>[0]): Promise<void> {
+  await withLaunchRetry(() => device.launchApp(params), {
+    beforeRetry: () => device.terminateApp(),
+  });
+}
+
+/**
  * Launch the app with no session at all, on the Welcome screen.
  *
  * Welcome is the auth stack's initial route, so this is what "logged out" looks
@@ -250,7 +270,7 @@ function seedLaunchArgs(session: E2ESession) {
  */
 export async function launchLoggedOut(): Promise<void> {
   await clearDeviceSession();
-  await device.launchApp({ delete: true, newInstance: true });
+  await launchApp({ delete: true, newInstance: true });
   await waitForElement('welcome-screen', 30000);
 }
 
@@ -272,7 +292,7 @@ export async function returnToLoggedOut(): Promise<void> {
   if (device.getPlatform() === 'ios') {
     await device.reloadReactNative();
   } else {
-    await device.launchApp({ newInstance: true });
+    await launchApp({ newInstance: true });
   }
   await waitForElement('welcome-screen', 30000);
 }
@@ -296,7 +316,7 @@ export async function launchAuthenticated(
   // failing (habitcraft-bqhe.7).
   await clearDeviceSession();
 
-  await device.launchApp({
+  await launchApp({
     delete: true,
     newInstance: true,
     launchArgs: seedLaunchArgs(tokens),
@@ -322,7 +342,7 @@ export async function launchAuthenticated(
 export async function relaunchAuthenticated(session: E2ESession): Promise<void> {
   await clearDeviceSession();
 
-  await device.launchApp({
+  await launchApp({
     newInstance: true,
     launchArgs: seedLaunchArgs(session),
   });
@@ -339,7 +359,7 @@ export async function relaunchAuthenticated(session: E2ESession): Promise<void> 
  * the previous step left in storage is what the app comes back with.
  */
 export async function relaunchWithoutSeeding(): Promise<void> {
-  await device.launchApp({ newInstance: true, launchArgs: {} });
+  await launchApp({ newInstance: true, launchArgs: {} });
 }
 
 /**
