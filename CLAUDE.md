@@ -306,20 +306,32 @@ it("logs error when habit not found", async () => {
 
 ## Database Migrations
 
-We use [dbmate](https://github.com/amacneil/dbmate) for database migrations. Migrations are pure SQL files in `db/migrations/`.
+Migrations are pure SQL files in [dbmate](https://github.com/amacneil/dbmate)'s
+format in `server/schema/migrations/`, inside the Go module so the server can
+embed them (habitcraft-vxln.6.1). **`habitcraft migrate` applies them
+everywhere** — compose, CI, `schema-dump.sh` — except production's Cloud Run
+job, which stays on dbmate (`db/Dockerfile`) until cutover. dbmate is the
+authoring tool. Both use the same `schema_migrations` table.
 
 ### Quick Commands
 
 ```bash
-# Create a new migration
+# Create a new migration (.dbmaterc points at server/schema/migrations/)
 dbmate new add_feature_name
 
 # Run migrations (local, non-Docker)
-DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable" dbmate up
+(cd server && DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable" \
+  go run ./cmd/habitcraft migrate)
 
 # Check status
 DATABASE_URL="..." dbmate status
 ```
+
+Never point a consumer at the migrations directory to *apply* them; run
+`habitcraft migrate`. The migrate images embed the files, so the test stack's
+must be rebuilt after adding one: `scripts/test-all.sh`, `db-recreate.sh` and
+`test-db-reset.sh` pass `--build`, and the dev compose file's
+`pull_policy: build` rebuilds on every `up`.
 
 ### Local Development
 
@@ -339,13 +351,15 @@ docker compose up -d
    (habitcraft-nld).
 5. Regenerate the committed schema dump: `./scripts/schema-dump.sh`
 
-`db/migrations/` is the **only** source of truth for the schema, and the only
-migrations directory. `db/schema.sql` is a generated `pg_dump` of those
+`server/schema/migrations/` is the **only** source of truth for the schema, and
+the only migrations directory. `server/schema/schema.sql` is a generated `pg_dump` of those
 migrations, committed so schema changes are reviewable as a diff — nothing
 executes it and it must never be hand-edited. `scripts/schema-dump.sh --check`
 regenerates and diffs it; it runs as the `verify-schema-dump` CI job and as a
 phase of `scripts/test-all.sh`, so a migration without a regenerated dump turns
-CI red. See [db/README.md](db/README.md#the-generated-schema-dump-dbschemasql).
+CI red. The check applies the migrations with `habitcraft migrate`, so it also
+proves the Go runner matches the dump. See
+[db/README.md](db/README.md#the-generated-schema-dump-schemasql).
 
 ### Forward-Only Strategy
 
@@ -354,7 +368,7 @@ We don't rollback migrations. If something breaks, fix forward with a new migrat
 ## The API Contract
 
 `shared/api-spec/openapi.yaml` is the **only** source of truth for the HTTP
-interface, and the same generate-and-verify shape as `db/schema.sql` applies to
+interface, and the same generate-and-verify shape as `server/schema/schema.sql` applies to
 it. Three gates make it load-bearing:
 
 | Gate | Question | CI job |
@@ -378,13 +392,13 @@ its DSL the limits to test at, `backend/validators/apiLimits.generated.js`
 is the same numbers as CommonJS for the backend, and `server/api/api.gen.go` is
 the Go server's types, strict server interface and embedded spec (oapi-codegen,
 pinned in `server/go.mod`, so codegen needs Go installed). All of them **must
-never be hand-edited** — the same rule as `db/schema.sql`.
+never be hand-edited** — the same rule as `server/schema/schema.sql`.
 
 **Never write a validation limit as a literal** — not in a component, not in a
 backend validator, not in an error message, and not in a test. Import it from
 the generated limits (habitcraft-467, habitcraft-34d.3). The one number that
 cannot be imported is a migration's `VARCHAR` width;
-`backend/validators/apiLimits.test.js` parses `db/schema.sql` and fails if a
+`backend/validators/apiLimits.test.js` parses `server/schema/schema.sql` and fails if a
 column disagrees with the spec.
 
 `shared/` now holds only the spec and the test fixtures. The hand-written type

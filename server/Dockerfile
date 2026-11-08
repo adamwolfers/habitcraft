@@ -3,7 +3,12 @@
 # docker-compose.test.yml runs it as server-test, the Go target of the
 # acceptance suite (habitcraft-8ml9). The build context is the repo root, for
 # web/; Dockerfile.dockerignore beside this file keeps it to server/ and web/.
-# The spec is embedded in api/api.gen.go, so nothing else is needed.
+# The spec is embedded in api/api.gen.go and the migrations in package schema,
+# so nothing else is needed.
+#
+# --target migrate builds the same binary without the web app, to run
+# "habitcraft migrate": both compose files' migrate services use it, so they
+# skip the Node stage. It carries psql too, for the test stack's fixtures.
 
 FROM node:24-alpine AS web
 
@@ -17,7 +22,7 @@ COPY web/ ./
 # Writes the bundle into ../server/cmd/habitcraft/spa/dist (vite.config.ts)
 RUN npm run build
 
-FROM golang:1.25-alpine AS build
+FROM golang:1.25-alpine AS source
 
 WORKDIR /src
 
@@ -26,6 +31,20 @@ COPY server/go.mod server/go.sum ./
 RUN go mod download
 
 COPY server/ ./
+
+# The API alone, for the migrate target
+FROM source AS build-api
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 go build -trimpath -o /out/habitcraft ./cmd/habitcraft
+
+FROM alpine:3.22 AS migrate
+RUN apk add --no-cache postgresql-client
+COPY --from=build-api /out/habitcraft /usr/local/bin/habitcraft
+USER nobody
+ENTRYPOINT ["habitcraft", "migrate"]
+
+# The default target, last, so a build without --target still gets it
+FROM source AS build
 COPY --from=web /src/server/cmd/habitcraft/spa/dist ./cmd/habitcraft/spa/dist
 # The build cache persists across builds, so scripts/test-all.sh can rebuild
 # this image on every run without paying for a cold compile

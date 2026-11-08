@@ -104,8 +104,7 @@ habittracker_fullstack/
 ├── backend/              # Node.js + Express backend
 ├── frontend/             # Next.js frontend
 ├── mobile/               # React Native (Expo) mobile app
-├── db/                   # dbmate SQL migrations (schema source of truth)
-│                         #   + schema.sql, generated from them
+├── db/                   # production's dbmate migrations image + its runbook
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI spec: enforced against responses, and
 │   │                     #   generates each client's types + validation limits
@@ -149,19 +148,18 @@ The database includes:
   - Test User 1: `test@example.com` / `Test1234!` (ID: `11111111-1111-1111-1111-111111111111`)
   - Test User 2: `test2@example.com` / `Test1234!` (ID: `22222222-2222-2222-2222-222222222222`)
 
-Manual setup (needs [dbmate](https://github.com/amacneil/dbmate) on your PATH —
-`brew install dbmate`):
+Manual setup (needs Go, for `habitcraft migrate`):
 
 ```bash
 # Create database
 createdb habitcraft
 
-# Apply the migrations -- db/migrations/ is the source of truth, and dbmate
-# records what it applied in schema_migrations. Do NOT load db/schema.sql
-# instead: it is a generated dump and leaves dbmate with no record, so the
-# next `dbmate up` would try to re-apply everything.
+# Apply the migrations -- server/schema/migrations/ is the source of truth,
+# and habitcraft migrate records what it applied in schema_migrations. Do NOT
+# load server/schema/schema.sql instead: it is a generated dump and leaves no
+# record, so the next migrate would try to re-apply everything.
 export DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable"
-dbmate up
+(cd server && go run ./cmd/habitcraft migrate)
 ```
 
 ## Current Features

@@ -17,7 +17,7 @@ HabitCraft is a free, open-source, self-hostable habit tracker. Its core package
 
 It is being **rebuilt side by side** on a new stack (decided 2026-10-10). The current stack and production keep running until the new one reaches parity, then the old one is deleted:
 
-- **Backend:** a Go monolith whose server is generated from `shared/api-spec/openapi.yaml` (`oapi-codegen`), packaged as an embeddable Go module plus a standalone binary. `db/migrations/` carries over unchanged.
+- **Backend:** a Go monolith whose server is generated from `shared/api-spec/openapi.yaml` (`oapi-codegen`), packaged as an embeddable Go module plus a standalone binary. The migrations carry over unchanged, now in `server/schema/migrations/` so the binary embeds them and applies them with `habitcraft migrate`.
 - **Web:** a React + Vite SPA, a static bundle served by the Go binary (no Node in production). It ships new views rather than copying the Next.js UI (decided 2026-10-11):
   - **Today** (the default): the active habits not yet done today. A completed habit leaves the list, and a collapsed "Completed today (N)" row at the bottom expands to list them, where a completion can be undone.
   - **Dots**: one compact grid per habit, a dot per day running back up to a year. Filled means done, so consistency shows at a glance.
@@ -47,11 +47,12 @@ habittracker_fullstack/
 ├── mobile/               # React Native (Expo) mobile app
 ├── server/               # Go server, the rebuild (habitcraft-vxln): embeddable
 │                         #   package + standalone binary, generated from api-spec/
+│   └── schema/           # SQL migrations (schema source of truth)
+│                         #   + schema.sql, generated from them
 ├── web/                  # React + Vite web app, the rebuild: embedded in the
 │                         #   Go binary, replaces frontend/
 ├── acceptance/           # Four-layer acceptance suite (Node and Go backends)
-├── db/                   # dbmate SQL migrations (schema source of truth)
-│                         #   + schema.sql, generated from them
+├── db/                   # production's dbmate migrations image + its runbook
 ├── shared/               # Shared resources
 │   ├── api-spec/         # OpenAPI spec: enforced against responses, and
 │   │                     #   generates each client's types + validation limits
@@ -141,8 +142,8 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](./docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
 - **[API Specification](./shared/api-spec/openapi.yaml)** - The API contract: enforced against every backend integration response, generates the clients' types and limits, and gated for breaking changes ([how](./shared/api-spec/README.md))
-- **[Database Migrations](./db/README.md)** - dbmate migrations, the source of truth for the schema
-- **[Generated Schema](./db/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
+- **[Database Migrations](./db/README.md)** - the SQL migrations (the source of truth for the schema) and how each environment applies them
+- **[Generated Schema](./server/schema/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
 
 ## API Endpoints
 

@@ -15,8 +15,8 @@ import (
 // The store's rules, run against both stores: the fake the handler tests use,
 // and pgStore on a real database. Running both keeps the fake honest.
 //
-// pgStore runs only when HABITCRAFT_TEST_DATABASE_URL names a database
-// migrated with db/migrations, as CI's server-unit-tests job and
+// pgStore runs only when HABITCRAFT_TEST_DATABASE_URL names a migrated
+// database, as CI's server-unit-tests job and
 // scripts/test-all.sh provide. Each test makes its own users with unique
 // emails, so the database needs no reset and may hold other data.
 

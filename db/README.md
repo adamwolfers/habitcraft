@@ -1,22 +1,39 @@
 # Database Migrations
 
-HabitCraft uses [dbmate](https://github.com/amacneil/dbmate) for database migrations. dbmate is language-agnostic and uses pure SQL migration files.
+The migrations are pure SQL files in
+[dbmate](https://github.com/amacneil/dbmate)'s format, in
+[`server/schema/migrations/`](../server/schema/migrations/). They live in the
+Go module so the server can embed them: `habitcraft migrate` (and
+`habitcraft.Migrate`, for an application embedding the server) applies them,
+recording each in dbmate's `schema_migrations` table (habitcraft-vxln.6.1).
+
+dbmate is still the **authoring** tool, and production's migrations image
+(this directory) still applies them with dbmate until cutover
+(habitcraft-vxln.10). The two read and write the same table, so either can
+migrate a database the other has.
+
+| Who applies them | With |
+|---|---|
+| Dev and test compose stacks (`db-migrate`, `db-migrate-test`) | `habitcraft migrate` |
+| CI (`server-unit-tests`, `backend-integration-tests`, `verify-schema-dump`) | `habitcraft migrate` |
+| An application embedding the server | `habitcraft.Migrate(ctx, pool)` |
+| Production, the Node stack on Cloud Run | dbmate, from `db/Dockerfile` |
 
 ## Quick Reference
 
 ```bash
-# Create a new migration
+# Create a new migration (.dbmaterc points dbmate at server/schema/migrations/)
 dbmate new add_email_reminders
 
-# Run all pending migrations
-dbmate up
+# Apply the pending migrations to the dev database
+(cd server && DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable" \
+  go run ./cmd/habitcraft migrate)
 
-# Check migration status
+# Check migration status (dbmate reads the same schema_migrations table)
 dbmate status
-
-# Roll back last migration (if down migration exists)
-dbmate down
 ```
+
+There is no `down`: migrations are [forward-only](#forward-only).
 
 ## Local Development
 
@@ -26,7 +43,10 @@ Migrations run automatically when you start the development environment:
 docker compose up -d
 ```
 
-The `db-migrate` service runs before backends start, ensuring the schema is always up to date.
+The `db-migrate` service runs `habitcraft migrate` before the backends start,
+so the schema is always up to date. It is built from `server/Dockerfile`'s
+`migrate` target, which embeds the migrations, and `pull_policy: build`
+rebuilds it on every `up`, so a migration you just added is never skipped.
 
 ### Loading Seed Data
 
@@ -37,15 +57,9 @@ Seed data (test users, sample habits) is loaded separately to avoid duplicates o
 docker compose --profile seed run --rm db-seed
 ```
 
-For manual migration runs (e.g., non-Docker workflow):
-
-```bash
-# Set database URL
-export DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable"
-
-# Run migrations
-dbmate up
-```
+For manual migration runs (e.g., non-Docker workflow), use the Quick
+Reference command above. `dbmate up` works too, since `.dbmaterc` names the
+directory.
 
 ## Creating Migrations
 
@@ -54,7 +68,7 @@ dbmate up
    dbmate new add_feature_name
    ```
 
-2. Edit the generated file in `db/migrations/`:
+2. Edit the generated file in `server/schema/migrations/`:
    ```sql
    -- migrate:up
    ALTER TABLE users ADD COLUMN feature_flag BOOLEAN DEFAULT FALSE;
@@ -77,7 +91,7 @@ dbmate up
    ```bash
    ./scripts/schema-dump.sh
    ```
-   CI fails if you skip this -- see [The Generated Schema Dump](#the-generated-schema-dump-dbschemasql).
+   CI fails if you skip this -- see [The Generated Schema Dump](#the-generated-schema-dump-schemasql).
 
 ## Migration Strategy
 
@@ -114,12 +128,12 @@ For high-risk migrations (data changes, column drops):
 - [ ] **Dry-run on clone**: Test against a cloned instance first
 - [ ] **Communication sent**: Notify team of planned migration window
 
-## The Generated Schema Dump (`db/schema.sql`)
+## The Generated Schema Dump (`schema.sql`)
 
-`db/migrations/` is the only thing that is ever executed. `db/schema.sql` is a
-`pg_dump` of what those migrations add up to, committed so that schema changes
-show up as a readable diff in review. **Nothing runs it, and nothing should
-edit it by hand.**
+`server/schema/migrations/` is the only thing that is ever executed.
+`server/schema/schema.sql` is a `pg_dump` of what those migrations add up to,
+committed so that schema changes show up as a readable diff in review.
+**Nothing runs it, and nothing should edit it by hand.**
 
 It is trustworthy only because it is re-derived and compared, never because it
 is asserted to be correct:
@@ -137,7 +151,9 @@ dump cannot reach `master` quietly:
 
 The dump is produced in a **throwaway** postgres container, not against the dev
 or test database, so it cannot pick up hand-applied local changes and needs
-nothing else to be running. Both images are **pinned by digest** inside
+nothing else to be running. The migrations are applied by `habitcraft migrate`,
+so the check also proves the Go runner builds exactly the committed schema;
+dbmate is used only for its `pg_dump`. Both images are **pinned by digest** inside
 `scripts/schema-dump.sh`: `pg_dump` output shifts with both the client and the
 server version, so a moving tag would eventually turn CI red without any schema
 change at all. Bump both digests in one commit and regenerate. The two
@@ -150,24 +166,29 @@ drifted apart from each other before anyone noticed -- see habitcraft-by9.
 ## CI/CD Pipeline
 
 1. **Schema drift**: `verify-schema-dump` regenerates `schema.sql` and fails on any diff
-2. **Integration tests**: Migrations run via dbmate before tests
+2. **Integration tests**: `habitcraft migrate` runs before tests
 3. **Production deploy**: Cloud Run Job executes migrations before service deployments
 4. **Sequencing**: migrate → deploy backend → deploy frontend
 
 ## Files
 
 ```
-db/
+server/schema/
 ├── migrations/           # Migration SQL files -- THE SOURCE OF TRUTH
 │   └── 20260117000000_baseline.sql
 ├── schema.sql            # Generated from migrations/; never edited by hand
-├── Dockerfile            # Migration container for Cloud Run Job
+└── schema.go             # Embeds migrations/ as schema.Migrations
+server/habitcraft/migrate.go  # habitcraft.Migrate, the runner
+
+db/
+├── Dockerfile            # Production's dbmate container for the Cloud Run Job
+├── Dockerfile.dockerignore  # Its build context is the repo root
 ├── entrypoint.sh         # Builds DATABASE_URL from component env vars
 └── README.md             # This file
 
-.dbmaterc                 # dbmate configuration
+.dbmaterc                 # dbmate configuration, for authoring
 scripts/schema-dump.sh    # Regenerates and verifies schema.sql
-scripts/db-recreate.sh    # Recreates the dev and test databases from migrations/
+scripts/db-recreate.sh    # Recreates the dev and test databases from the migrations
 ```
 
 ## Production
@@ -385,6 +406,8 @@ INSERT INTO schema_migrations (version) VALUES ('YYYYMMDDHHMMSS');
 ```bash
 DATABASE_URL="postgresql://habituser:habitpass@localhost:5432/habitcraft?sslmode=disable" dbmate status
 ```
+
+`habitcraft migrate` logs each version it applies, or "nothing to apply".
 
 ### View applied migrations
 

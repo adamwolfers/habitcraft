@@ -9,7 +9,15 @@
 #   docker buildx bake -f docker-compose.test.yml -f docker-bake.test.hcl --load
 
 group "default" {
-  targets = ["backend-test", "server-test", "frontend-test"]
+  targets = ["db-migrate-test", "backend-test", "server-test", "frontend-test"]
+}
+
+# The server image's API-only target, which runs "habitcraft migrate"
+target "db-migrate-test" {
+  context = "."
+  dockerfile = "./server/Dockerfile"
+  target = "migrate"
+  tags = ["habitcraft-db-migrate-test:latest"]
 }
 
 target "backend-test" {

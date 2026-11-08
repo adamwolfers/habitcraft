@@ -1,8 +1,14 @@
-# Database Migration Container
-# Uses dbmate for language-agnostic SQL migrations
+# Database Migration Container (production, the Node stack on Cloud Run)
+# Uses dbmate to apply server/schema/migrations/. Every other environment runs
+# `habitcraft migrate` instead (habitcraft-vxln.6.1); this image keeps prod on
+# dbmate until cutover (habitcraft-vxln.10) retires it, so the move did not
+# change prod's migration tool. Both record versions in schema_migrations.
+#
+# The build context is the repo root, for server/schema/; the
+# Dockerfile.dockerignore beside this file keeps it to what is copied.
 #
 # Usage (local with DATABASE_URL):
-#   docker build -t habitcraft-migrations ./db
+#   docker build -t habitcraft-migrations -f db/Dockerfile .
 #   docker run --rm -e DATABASE_URL=... habitcraft-migrations
 #
 # Usage (GCP with component env vars):
@@ -11,11 +17,11 @@
 
 FROM ghcr.io/amacneil/dbmate:2
 
-# Copy migration files
-COPY migrations /db/migrations
+# Copy migration files, where dbmate looks by default
+COPY server/schema/migrations /db/migrations
 
 # Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
+COPY db/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

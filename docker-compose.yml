@@ -20,19 +20,25 @@ services:
       retries: 5
 
   # Database Migrations (runs once before backends start)
+  # "habitcraft migrate", from the server image's API-only target. The
+  # migrations are embedded in the binary (server/schema/), so nothing is
+  # mounted, and pull_policy: build rebuilds it on every `up`: a stale image
+  # would silently skip a migration added since. Go's build cache keeps an
+  # unchanged rebuild to seconds.
   db-migrate:
-    image: ghcr.io/amacneil/dbmate:2
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+      target: migrate
+    pull_policy: build
     container_name: habitcraft-db-migrate
     environment:
       DATABASE_URL: postgresql://${DB_USER:-habituser}:${DB_PASSWORD:-habitpass}@postgres:5432/${DB_NAME:-habitcraft}?sslmode=disable
-    volumes:
-      - ./db/migrations:/db/migrations:ro
     depends_on:
       postgres:
         condition: service_healthy
     networks:
       - habitcraft-network
-    command: ["--wait", "--wait-timeout", "60s", "up"]
 
   # Seed data for development (run manually: docker compose run --rm db-seed)
   # Uses test-fixtures.sql for consistency with CI/test environments

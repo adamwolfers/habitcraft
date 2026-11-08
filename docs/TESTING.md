@@ -241,7 +241,7 @@ A separate Docker container runs the test database to avoid conflicts with devel
 | Container | `docker-compose.test.yml` |
 | Database | `habitcraft_test` |
 | Port | 5433 (dev uses 5432) |
-| Schema | Built from `db/migrations/` by dbmate — the same migrations dev and production run |
+| Schema | Built from `server/schema/migrations/` by `habitcraft migrate` — the same migrations dev and production run (production applies them with dbmate until cutover) |
 
 ### Setup Scripts
 
@@ -253,7 +253,7 @@ Located in `scripts/`:
 | `test-db-stop.sh` | Stop test database container |
 | `test-db-reset.sh` | Reset to clean state with fixtures |
 | `test-db-fresh.sh` | Remove all data and start fresh |
-| `db-recreate.sh` | Recreate the dev **and** test databases from `db/migrations/` and check both reached the newest migration — the step for testing a new migration |
+| `db-recreate.sh` | Recreate the dev **and** test databases from `server/schema/migrations/` and check both reached the newest migration — the step for testing a new migration |
 
 ### Test Fixtures
 
@@ -323,12 +323,13 @@ Notes on that table:
   ordering. `--keep-going` runs everything regardless.
 - **Phases 8 and 10 need the docker *daemon*, but not the compose stack.**
   `scripts/schema-dump.sh` starts a throwaway postgres of its own, applies
-  `db/migrations/`, dumps the result, and diffs it against the committed
-  `db/schema.sql`; the whole phase is about five seconds. It sits in the
+  the migrations with `habitcraft migrate`, dumps the result, and diffs it
+  against the committed `server/schema/schema.sql`; the whole phase is about
+  ten seconds. It sits in the
   fail-fast group deliberately — a docker daemon that is down should be
   reported here rather than after several minutes of lint and typecheck. In CI
   the same check is the `verify-schema-dump` job. See
-  [db/README.md](../db/README.md#the-generated-schema-dump-dbschemasql) for why
+  [db/README.md](../db/README.md#the-generated-schema-dump-schemasql) for why
   the dump is generated rather than hand-maintained.
 - **Phases 9 and 10 are the API contract's two halves.** Phase 9 regenerates
   each consumer's `api.generated.ts` and `apiLimits.generated.ts`, the
@@ -814,7 +815,7 @@ failed 4 times in 5; after it, 20 in 20 succeeded with no retry needed.
 **Only one thing may drive the test stack at a time.** Two suites — or a suite
 and a bare `scripts/test-db-reset.sh` — running against `docker-compose.test.yml`
 together will wreck each other, because each reset drops the database the other
-is using and `dbmate` recreates it. That produces a *different* set of errors,
+is using and `habitcraft migrate` recreates it. That produces a *different* set of errors,
 and none of them are the race above:
 
 | Error | Meaning |

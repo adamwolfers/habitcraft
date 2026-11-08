@@ -14,7 +14,7 @@ import (
 // uniqueViolation is Postgres's SQLSTATE for a duplicate key.
 const uniqueViolation = "23505"
 
-// pgStore is the store on the schema in db/migrations.
+// pgStore is the store on the schema that Migrate builds (package schema).
 type pgStore struct {
 	pool *pgxpool.Pool
 }

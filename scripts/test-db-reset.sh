@@ -52,6 +52,7 @@ docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" exec -T postgres-test 
 
 # Run migrations and load fixtures via db-migrate-test service
 echo "Running migrations and loading fixtures..."
-docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" run --rm db-migrate-test
+# --build: the image embeds the migrations, so a stale one would apply old ones.
+docker compose -f "$PROJECT_ROOT/docker-compose.test.yml" run --rm --build db-migrate-test
 
 echo "Test database reset complete!"

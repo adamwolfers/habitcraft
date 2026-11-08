@@ -27,7 +27,7 @@ import (
 
 // Config is what the server needs from the application running it.
 type Config struct {
-	// DB is the HabitCraft database, already migrated with db/migrations.
+	// DB is the HabitCraft database, already migrated by Migrate.
 	DB *pgxpool.Pool
 	// JWTSecret signs and verifies the access and refresh tokens. It must be
 	// at least 32 bytes. Use the Node backend's JWT_SECRET while both run,

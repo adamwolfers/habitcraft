@@ -1,9 +1,15 @@
 // Command habitcraft runs the HabitCraft server on its own, with the web app
 // (web/) embedded beside the API when it was built first; see webapp.go.
 //
+//	habitcraft          serve the API and the web app
+//	habitcraft migrate  apply the migrations the database lacks, then exit
+//
+// The server never migrates on its own: run "habitcraft migrate" first. It
+// waits up to a minute for the database to answer, so it can start beside it.
+//
 // Configuration is from the environment:
 //
-//	DATABASE_URL      required; a database migrated with db/migrations (dbmate)
+//	DATABASE_URL      required; for serving, a database "habitcraft migrate" has migrated
 //	JWT_SECRET        required; at least 32 bytes, the Node backend's while both run
 //	PORT              optional; default 8080
 //	INSECURE_COOKIES  optional; "true" for local development over plain HTTP
@@ -15,6 +21,8 @@
 //	SKIP_RATE_LIMIT   optional; "true" turns the rate limits off, for test
 //	                  suites that make many requests from one address, as on
 //	                  the Node backend. Never in production.
+//
+// "habitcraft migrate" reads DATABASE_URL alone.
 package main
 
 import (
@@ -42,16 +50,84 @@ import (
 const shutdownGrace = 10 * time.Second
 
 func main() {
-	if err := run(); err != nil {
-		slog.Error("habitcraft stopped", "err", err)
+	command, err := commandFrom(os.Args[1:])
+	if err == nil {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if command == "migrate" {
+			err = migrate(ctx)
+		} else {
+			err = runServer(ctx)
+		}
+	}
+	if err != nil {
+		slog.Error("habitcraft stopped", "command", command, "err", err)
 		os.Exit(1)
 	}
 }
 
-func run() error {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
+// commandFrom reads the command line: nothing to serve, "migrate" to migrate.
+func commandFrom(args []string) (string, error) {
+	switch {
+	case len(args) == 0:
+		return "serve", nil
+	case len(args) == 1 && args[0] == "migrate":
+		return "migrate", nil
+	}
+	return "", fmt.Errorf("unknown arguments %q: run habitcraft to serve, or habitcraft migrate", args)
+}
 
+// migrateWait is how long migrate waits for the database to answer, as
+// long as dbmate's --wait-timeout was in the compose files it replaced.
+const migrateWait = 60 * time.Second
+
+func migrate(ctx context.Context) error {
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		return errors.New("DATABASE_URL is not set")
+	}
+	db, err := pgxpool.New(ctx, databaseURL)
+	if err != nil {
+		return fmt.Errorf("configuring the database pool: %w", err)
+	}
+	defer db.Close()
+	if err := waitForDatabase(ctx, db.Ping, migrateWait, time.Second); err != nil {
+		return err
+	}
+	applied, err := habitcraft.Migrate(ctx, db)
+	for _, version := range applied {
+		slog.Info("habitcraft migrate: applied", "version", version)
+	}
+	if err != nil {
+		return err
+	}
+	if len(applied) == 0 {
+		slog.Info("habitcraft migrate: nothing to apply")
+	}
+	return nil
+}
+
+// waitForDatabase pings until the database answers, every interval, for up
+// to timeout. It returns the last ping's error when the time runs out.
+func waitForDatabase(ctx context.Context, ping func(context.Context) error, timeout, interval time.Duration) error {
+	deadline := time.Now().Add(timeout)
+	for {
+		err := ping(ctx)
+		if err == nil {
+			return nil
+		}
+		if time.Now().Add(interval).After(deadline) {
+			return fmt.Errorf("the database did not answer within %s: %w", timeout, err)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(interval):
+		}
+	}
+}
+
+func runServer(ctx context.Context) error {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		return errors.New("DATABASE_URL is not set")

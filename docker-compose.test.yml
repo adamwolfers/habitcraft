@@ -24,13 +24,17 @@ services:
       retries: 10
 
   # Database Migrations for Test Environment
+  # "habitcraft migrate" (see db-migrate in docker-compose.yml), then the
+  # fixtures, with the psql the migrate target carries.
   db-migrate-test:
-    image: ghcr.io/amacneil/dbmate:2
+    build:
+      context: .
+      dockerfile: ./server/Dockerfile
+      target: migrate
     container_name: habitcraft-db-migrate-test
     environment:
       DATABASE_URL: postgresql://habituser:habitpass@postgres-test:5432/habitcraft_test?sslmode=disable
     volumes:
-      - ./db/migrations:/db/migrations:ro
       - ./shared/database/test-fixtures.sql:/db/test-fixtures.sql:ro
     depends_on:
       postgres-test:
@@ -40,7 +44,7 @@ services:
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
-        dbmate --wait --wait-timeout 60s up && \
+        habitcraft migrate && \
         psql "$$DATABASE_URL" -f /db/test-fixtures.sql
 
   # Node.js Backend for Integration Tests

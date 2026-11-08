@@ -18,10 +18,10 @@ const path = require('path');
 
 const { schemaLimits, requestLimits } = require('./apiLimits.generated');
 
-const SCHEMA_PATH = path.join(__dirname, '..', '..', 'db', 'schema.sql');
+const SCHEMA_PATH = path.join(__dirname, '..', '..', 'server', 'schema', 'schema.sql');
 
 /**
- * Parses `db/schema.sql` into { table: { column: width } } for every
+ * Parses `server/schema/schema.sql` into { table: { column: width } } for every
  * `character varying(N)` column. The generated dump is pg_dump output, so the
  * shape is stable: one column per line inside a CREATE TABLE block.
  */
@@ -112,7 +112,7 @@ describe('parseVarcharWidths', () => {
   });
 });
 
-describe('generated limits against db/schema.sql', () => {
+describe('generated limits against server/schema/schema.sql', () => {
   const widths = parseVarcharWidths(fs.readFileSync(SCHEMA_PATH, 'utf8'));
 
   // Without this, a parser that silently matched nothing would leave every

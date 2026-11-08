@@ -301,8 +301,8 @@ run_phase "🧹" "$LBL_WEB_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT/web" \
 run_phase "🔤" "$LBL_WEB_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/web" \
     npm run typecheck || STATIC_FAILED=1
 
-# db/migrations/ is the sole source of truth; db/schema.sql is generated from
-# it and committed. This regenerates and diffs, so a migration landing without
+# server/schema/migrations/ is the sole source of truth; server/schema/schema.sql
+# is generated from it and committed. This regenerates and diffs, so a migration landing without
 # a regenerated dump fails here exactly as it does in CI (habitcraft-by9).
 run_phase "🗄️ " "$LBL_SCHEMA_DUMP" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
     "$PROJECT_ROOT/scripts/schema-dump.sh" --check || STATIC_FAILED=1
@@ -419,10 +419,13 @@ fi
 DOCKER_STARTED=1
 
 # The lock-file hash above says nothing about Go code, and `up` reuses an
-# existing image, so a stale server-test would test old code. Rebuild it every
-# run; the Dockerfile's build cache keeps an unchanged rebuild to seconds.
-echo "Rebuilding the Go server container..."
-docker compose -f docker-compose.test.yml up -d --build server-test
+# existing image, so a stale server-test would test old code, and a stale
+# db-migrate-test would skip a migration added since: both embed server/.
+# Rebuild them every run; the Dockerfile's build cache keeps an unchanged
+# rebuild to seconds. Rerunning the migrate service is safe: it applies only
+# what is missing, and the fixtures insert ON CONFLICT DO NOTHING.
+echo "Rebuilding the Go server and migrate containers..."
+docker compose -f docker-compose.test.yml up -d --build db-migrate-test server-test
 
 # Wait for database to be healthy first
 echo "Waiting for database..."

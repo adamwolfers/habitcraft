@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Recreate BOTH local databases from db/migrations/ and confirm each one
+# Recreate BOTH local databases from the migrations and confirm each one
 # reached the newest migration. This is the "test a new migration locally"
 # step in CLAUDE.md and db/README.md.
 #
 # Usage: ./scripts/db-recreate.sh
 #
-# There are two compose projects, and each runs dbmate against its own volume:
+# There are two compose files, and each runs `habitcraft migrate` against its
+# own volume:
 #
 #   docker-compose.yml       habitcraft-db       :5432  dev
 #   docker-compose.test.yml  habitcraft-db-test  :5433  integration tests
@@ -30,16 +31,18 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
-# The version dbmate records for the newest file in db/migrations/.
-EXPECTED=$(find "$PROJECT_ROOT/db/migrations" -name '*.sql' -exec basename {} \; \
+# The version recorded for the newest migration file.
+EXPECTED=$(find "$PROJECT_ROOT/server/schema/migrations" -name '*.sql' -exec basename {} \; \
     | sort | tail -1 | cut -d_ -f1)
 
 # Running each migrate service in the foreground, rather than letting `up -d`
-# start it, makes a failing migration stop this script with dbmate's error.
+# start it, makes a failing migration stop this script with its error. --build
+# rebuilds the migrate image, which embeds the migrations: a stale one would
+# apply yesterday's.
 echo "Recreating the dev database (docker-compose.yml)..."
 "${DEV[@]}" down -v
 "${DEV[@]}" up -d postgres
-"${DEV[@]}" run --rm db-migrate
+"${DEV[@]}" run --rm --build db-migrate
 "${DEV[@]}" up -d
 
 # db-migrate-test also loads shared/database/test-fixtures.sql, which the
@@ -47,7 +50,7 @@ echo "Recreating the dev database (docker-compose.yml)..."
 echo "Recreating the test database (docker-compose.test.yml)..."
 "${TEST[@]}" down -v
 "${TEST[@]}" up -d postgres-test
-"${TEST[@]}" run --rm db-migrate-test
+"${TEST[@]}" run --rm --build db-migrate-test
 
 # applied_version <compose file> <service> <database>
 applied_version() {

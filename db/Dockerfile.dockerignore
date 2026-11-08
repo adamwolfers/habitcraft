@@ -1,0 +1,6 @@
+# The build context is the repo root (see Dockerfile). BuildKit reads this file
+# in place of a root .dockerignore, and only for this Dockerfile. Send the
+# migrations and the entrypoint alone.
+*
+!server/schema/migrations/
+!db/entrypoint.sh

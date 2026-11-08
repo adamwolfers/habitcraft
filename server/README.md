@@ -53,8 +53,13 @@ session started on one is honoured by the other. `INSECURE_COOKIES=true` drops
 `Secure` from the auth cookies and relaxes `SameSite=Strict` to `Lax`, for a
 browser on plain HTTP. Never set it in production.
 
-The schema is `db/migrations/`, applied by dbmate exactly as for the Node
-backend. The server never migrates the database itself. To build a binary, use
+The schema is [`schema/migrations/`](schema/migrations/), embedded in the
+binary (package `schema`). The server never migrates the database while
+serving: run `habitcraft migrate` first, with the same `DATABASE_URL`. It
+applies what the database lacks, recording it in dbmate's `schema_migrations`
+table, so a database dbmate migrated (the Node backend's, production's) carries
+straight over. It waits up to a minute for the database to answer. See
+[db/README.md](../db/README.md). To build a binary, use
 `go build -o bin/habitcraft ./cmd/habitcraft`. `bin/` is gitignored, and a bare
 `go build ./cmd/habitcraft` fails because the output name collides with the
 `habitcraft/` package directory.
@@ -80,9 +85,10 @@ its build context is the repo root.
 go test -race ./...        # unit tests; the database is faked
 ../scripts/go-lint.sh      # gofmt and go vet, as CI runs them
 
-# The store tests on a real database too (any database migrated by dbmate)
+# The store and Migrate tests on a real database too (any migrated database;
+# the Migrate tests each work in a throwaway Postgres schema of their own)
 HABITCRAFT_TEST_DATABASE_URL='postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable' \
-  go test -race -run TestPostgresStore ./habitcraft/
+  go test -race -run 'TestPostgresStore|TestMigrateOnPostgres' ./habitcraft/
 ```
 
 The handler tests run on `fakeStore`, an in-memory store. `store_test.go` holds

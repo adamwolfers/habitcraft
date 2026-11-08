@@ -5,16 +5,16 @@ CI, and the test environments. That is all it holds.
 
 ## Where the schema lives
 
-`db/migrations/` is the source of truth for the database structure. It is what
-dbmate executes, in every environment:
+`server/schema/migrations/` is the source of truth for the database structure.
+It is what runs, in every environment:
 
 | Environment | What runs the migrations |
 |---|---|
-| dev | `db-migrate` service in `docker-compose.yml` |
-| test | `db-migrate-test` service in `docker-compose.test.yml`, plus `dbmate up` in the `backend-integration-tests` CI job |
-| prod | Cloud Run Job `habitcraft-migrations` |
+| dev | `db-migrate` service in `docker-compose.yml` (`habitcraft migrate`) |
+| test | `db-migrate-test` service in `docker-compose.test.yml`, plus the `backend-integration-tests` and `server-unit-tests` CI jobs (`habitcraft migrate`) |
+| prod | Cloud Run Job `habitcraft-migrations` (dbmate, until cutover) |
 
-To **read** the current schema, open `db/schema.sql`. It is a generated
+To **read** the current schema, open `server/schema/schema.sql`. It is a generated
 `pg_dump` of what the migrations add up to, committed for reviewability;
 `scripts/schema-dump.sh --check` regenerates it and CI fails on any diff, which
 is the only reason it can be trusted. Never edit it by hand, and never run it —
@@ -24,7 +24,7 @@ This directory used to carry its own `schema.sql` and a second `migrations/`
 directory. Nothing executed either one, nothing verified them, and they had
 already drifted from the real schema and from each other. Both were deleted in
 habitcraft-by9. If you are here because a document sent you looking for
-`shared/database/schema.sql`, `db/schema.sql` is what you want.
+`shared/database/schema.sql`, `server/schema/schema.sql` is what you want.
 
 ## test-fixtures.sql
 

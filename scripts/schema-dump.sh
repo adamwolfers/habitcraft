@@ -1,30 +1,35 @@
 #!/bin/bash
 
-# Generate db/schema.sql from db/migrations/, or verify the committed file
-# still matches those migrations.
+# Generate server/schema/schema.sql from the migrations, or verify the
+# committed file still matches them.
 #
 # Usage:
-#   ./scripts/schema-dump.sh            regenerate db/schema.sql in place
+#   ./scripts/schema-dump.sh            regenerate server/schema/schema.sql in place
 #   ./scripts/schema-dump.sh --check    fail (with a diff) if it is out of date
 #
-# db/migrations/ is the ONLY source of truth for the schema (habitcraft-by9).
-# db/schema.sql is a generated, human-readable view of what those migrations
-# add up to; nothing executes it. It exists so schema changes are reviewable as
-# a diff, and it is trustworthy only because this script re-derives it and CI
-# fails on any difference -- see db/README.md.
+# The migrations (server/schema/migrations/) are the ONLY source of truth for
+# the schema (habitcraft-by9). schema.sql is a generated, human-readable view
+# of what they add up to; nothing executes it. It exists so schema changes are
+# reviewable as a diff, and it is trustworthy only because this script
+# re-derives it and CI fails on any difference -- see db/README.md.
+#
+# The migrations are applied by "habitcraft migrate", the same command every
+# other environment runs, built from server/Dockerfile's migrate target. So
+# this check also proves the Go runner builds exactly the committed schema
+# (habitcraft-vxln.6.1). dbmate is used only for its bundled pg_dump.
 #
 # The dump is produced in a THROWAWAY postgres container, not against the dev
 # or test database, so it depends on nothing being up and cannot be polluted by
-# hand-applied local changes. Both images are pinned BY DIGEST: pg_dump output
-# is version-sensitive on both the client and the server, so a moving tag would
-# eventually shift the dump underneath this check and turn CI red for no
-# schema change at all. To move to newer images, bump both digests here in one
-# commit and regenerate.
+# hand-applied local changes. The dbmate and postgres images are pinned BY
+# DIGEST: pg_dump output is version-sensitive on both the client and the
+# server, so a moving tag would eventually shift the dump underneath this check
+# and turn CI red for no schema change at all. To move to newer images, bump
+# both digests here in one commit and regenerate.
 
 set -euo pipefail
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SCHEMA_FILE="$PROJECT_ROOT/db/schema.sql"
+SCHEMA_FILE="$PROJECT_ROOT/server/schema/schema.sql"
 
 # Pinned by digest -- see the note above before changing either of these.
 # dbmate 2.35.0 (bundles pg_dump 18.4) / postgres 14.24
@@ -52,18 +57,22 @@ fi
 SUFFIX="schema-dump-$$"
 NETWORK="habitcraft-$SUFFIX"
 PG_CONTAINER="habitcraft-pg-$SUFFIX"
+MIGRATE_IMAGE="habitcraft-migrate:$SUFFIX"
 WORKDIR=$(mktemp -d)
 
 cleanup() {
     docker rm -f "$PG_CONTAINER" > /dev/null 2>&1 || true
     docker network rm "$NETWORK" > /dev/null 2>&1 || true
+    docker image rm "$MIGRATE_IMAGE" > /dev/null 2>&1 || true
     rm -rf "$WORKDIR"
 }
 trap cleanup EXIT
 
-# dbmate resolves ./db/migrations relative to its working directory (/), so the
-# staging dir is mounted at /db and the dump lands at /db/schema.sql.
-cp -R "$PROJECT_ROOT/db/migrations" "$WORKDIR/migrations"
+# The migrations are embedded in the binary, so this builds from the working
+# tree and mounts nothing.
+echo "Building habitcraft migrate (server/Dockerfile, target migrate)..."
+docker build --quiet --target migrate -f "$PROJECT_ROOT/server/Dockerfile" \
+    -t "$MIGRATE_IMAGE" "$PROJECT_ROOT" > /dev/null
 
 docker network create "$NETWORK" > /dev/null
 
@@ -77,18 +86,17 @@ docker run -d --rm \
 
 DB_URL="postgresql://habituser:habitpass@$PG_CONTAINER:5432/habitcraft?sslmode=disable"
 
-run_dbmate() {
-    docker run --rm \
-        --network "$NETWORK" \
-        -v "$WORKDIR:/db" \
-        -e "DATABASE_URL=$DB_URL" \
-        "$DBMATE_IMAGE" --wait --wait-timeout 60s "$@"
-}
+echo "Applying the migrations to a throwaway database..."
+# migrate waits for the database itself, as dbmate's --wait did.
+docker run --rm --network "$NETWORK" -e "DATABASE_URL=$DB_URL" "$MIGRATE_IMAGE"
 
-echo "Applying db/migrations/ to a throwaway database..."
-run_dbmate --no-dump-schema up
+# dbmate dump writes --schema-file, here /db/schema.sql in the mounted WORKDIR.
 echo "Dumping schema..."
-run_dbmate dump
+docker run --rm \
+    --network "$NETWORK" \
+    -v "$WORKDIR:/db" \
+    -e "DATABASE_URL=$DB_URL" \
+    "$DBMATE_IMAGE" --wait --wait-timeout 60s --schema-file /db/schema.sql dump
 
 # pg_dump stamps its own version and the server's into two header comments.
 # They say nothing about the schema and would make the committed file churn on
@@ -101,32 +109,32 @@ grep -v '^-- Dumped \(from database\|by pg_dump\) version ' "$WORKDIR/schema.sql
 # would report success.
 if ! grep -q '^CREATE TABLE ' "$GENERATED"; then
     echo "❌ The generated dump contains no CREATE TABLE statements -- refusing to use it."
-    echo "   Something went wrong applying db/migrations/ or dumping the result."
+    echo "   Something went wrong applying the migrations or dumping the result."
     exit 1
 fi
 
 if [ "$CHECK_MODE" = false ]; then
     cp "$GENERATED" "$SCHEMA_FILE"
-    echo "✅ Wrote db/schema.sql"
+    echo "✅ Wrote server/schema/schema.sql"
     exit 0
 fi
 
 if [ ! -f "$SCHEMA_FILE" ]; then
-    echo "❌ db/schema.sql is missing. Run ./scripts/schema-dump.sh and commit it."
+    echo "❌ server/schema/schema.sql is missing. Run ./scripts/schema-dump.sh and commit it."
     exit 1
 fi
 
 if diff -u "$SCHEMA_FILE" "$GENERATED" > "$WORKDIR/schema.diff"; then
-    echo "✅ db/schema.sql matches db/migrations/"
+    echo "✅ server/schema/schema.sql matches the migrations"
     exit 0
 fi
 
 echo ""
-echo "❌ db/schema.sql does not match what db/migrations/ produces."
-echo "   db/migrations/ is the source of truth; db/schema.sql is generated."
+echo "❌ server/schema/schema.sql does not match what the migrations produce."
+echo "   The migrations are the source of truth; schema.sql is generated."
 echo "   Regenerate and commit it:  ./scripts/schema-dump.sh"
 echo ""
-echo "--- committed db/schema.sql"
-echo "+++ generated from db/migrations/"
+echo "--- committed server/schema/schema.sql"
+echo "+++ generated from server/schema/migrations/"
 sed '1,2d' "$WORKDIR/schema.diff"
 exit 1

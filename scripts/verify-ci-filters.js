@@ -97,7 +97,16 @@ const CASES = [
   ['web/README.md', false, []],
 
   // --- Other packages -------------------------------------------------------
-  ['db/migrations/20250101000000_init.sql', true, ['db']],
+  // --- Schema (habitcraft-vxln.6.1): the migrations live in the Go module, and
+  // `db` gates run-migrations-gcp, so a migration must match it or it never
+  // reaches prod. Under 'every' and an extglob, '**' is one segment deep:
+  // these cases are the proof that the nested migrations/ still match.
+  ['server/schema/migrations/20250101000000_init.sql', true, ['db', 'server']],
+  ['server/schema/schema.sql', true, ['db', 'server']],
+  ['server/schema/schema.go', true, ['server']], // ships nothing to the database
+  ['db/Dockerfile', true, ['db', 'e2e-infra']], // production's migrations image
+  ['db/Dockerfile.dockerignore', true, ['db', 'e2e-infra']],
+  ['db/entrypoint.sh', true, ['db']],
   ['shared/database/test-fixtures.sql', true, ['shared']],
   ['shared/api-spec/openapi.yaml', true, ['shared']],
 

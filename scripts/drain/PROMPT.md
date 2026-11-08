@@ -53,7 +53,7 @@ already satisfied, and each pass did nearby work the bead never asked for.)
 ## 3. Work
 
 Follow `CLAUDE.md` exactly: TDD (failing test first), no literal validation
-limits, never hand-edit generated files (`db/schema.sql`, `*.generated.*`),
+limits, never hand-edit generated files (`server/schema/schema.sql`, `*.generated.*`),
 update docs alongside the change.
 
 Protect your context window:

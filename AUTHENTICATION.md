@@ -514,7 +514,7 @@ asymmetric algorithm against a string key.
 
 - [Getting Started Guide](GETTING_STARTED.md)
 - [API Specification](shared/api-spec/openapi.yaml) (the API contract — see [shared/api-spec/README.md](shared/api-spec/README.md))
-- [Database Migrations](db/README.md) (schema source of truth; generated dump in [db/schema.sql](db/schema.sql))
+- [Database Migrations](db/README.md) (schema source of truth; generated dump in [server/schema/schema.sql](server/schema/schema.sql))
 - [Backend README](backend/README.md)
 - [Frontend README](frontend/README.md)
 

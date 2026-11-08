@@ -183,7 +183,7 @@ title, its file and line, and its body, with only `await` and trailing
 semicolons removed. Nothing is paraphrased. A hand-written summary drifted
 from the tests, claiming things no test checked, and this page replaced it.
 
-It is generated and committed, like `db/schema.sql`. Regenerate it whenever a
+It is generated and committed, like `server/schema/schema.sql`. Regenerate it whenever a
 test case changes:
 
 ```bash

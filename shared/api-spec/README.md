@@ -74,13 +74,13 @@ on PATH (habitcraft-vxln.3; see [server/README.md](../../server/README.md)).
 becomes a build-tree coupling point between components that otherwise share
 nothing; per-consumer generation couples them to an interface instead. The
 duplication is fine because it is derived and CI-verified — the same reasoning
-that makes a committed `db/schema.sql` acceptable.
+that makes a committed `server/schema/schema.sql` acceptable.
 
 ### The one link that cannot be an import
 
 A migration's `VARCHAR(100)` is the same fact written in SQL, and no amount of
 codegen can make Postgres import a constant. `backend/validators/apiLimits.test.js`
-parses the column widths out of `db/schema.sql` and fails if any of them
+parses the column widths out of `server/schema/schema.sql` and fails if any of them
 disagrees with the generated limit. A width narrower than the spec means the
 server promises to accept input Postgres will reject; wider means the column
 tolerates rows the spec says cannot exist.

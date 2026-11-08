@@ -20,9 +20,10 @@
  * against a spec that had said 100 all along (habitcraft-34d.3).
  *
  * This is the other half: the spec generates what the clients consume, and CI
- * fails on drift. Same shape as db/migrations -> db/schema.sql: one source of
- * truth, a derived artifact committed so it is reviewable as a diff, and a
- * --check mode that re-derives and compares. See scripts/schema-dump.sh.
+ * fails on drift. Same shape as the migrations -> server/schema/schema.sql:
+ * one source of truth, a derived artifact committed so it is reviewable as a
+ * diff, and a --check mode that re-derives and compares. See
+ * scripts/schema-dump.sh.
  *
  * WHY GENERATE INTO EACH CONSUMER, NOT INTO shared/
  *

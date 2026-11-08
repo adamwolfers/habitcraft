@@ -240,7 +240,7 @@ things in the first two runs:
   (`ci-yml-if-block-scalar`). Re-run that memory's check.
 - **New paths:** `npm run verify:ci-filters` must pass. A path that matches no
   CI filter gets a green run that ran nothing.
-- **Generated files** (`*.generated.*`, `db/schema.sql`) are never edited by
+- **Generated files** (`*.generated.*`, `server/schema/schema.sql`) are never edited by
   hand.
 - **Every commit has a body** saying why. One commit in the first run did not.
 - **Each pass's hand-off comment.** It lists what the pass wants a human to
