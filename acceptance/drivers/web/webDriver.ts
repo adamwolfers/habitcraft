@@ -416,9 +416,10 @@ export class WebDriver implements ProtocolDriver {
     const card = this.card(habitName);
     await expect(card, `a card for "${habitName}"`).toHaveCount(1);
 
-    const weeks = Math.round(
-      (sundayOf(date) - sundayOf(new Date().toISOString().slice(0, 10))) / (7 * DAY_MS)
-    );
+    // Counted from today where the browser is, whose week the card shows, not
+    // from today in UTC: the two weeks differ while UTC has crossed into a new
+    // one and the user's zone has not (habitcraft-837w).
+    const weeks = Math.round((sundayOf(date) - sundayOf(todayIn(this.timeZone))) / (7 * DAY_MS));
     const step = card.getByRole('button', { name: weeks < 0 ? 'Previous week' : 'Next week' });
     for (let i = 0; i < Math.abs(weeks); i++) await step.click();
 
@@ -534,6 +535,11 @@ function datesFrom(from: IsoDate, to: IsoDate): IsoDate[] {
     dates.push(new Date(t).toISOString().slice(0, 10));
   }
   return dates;
+}
+
+/** Today in a time zone, as a browser context in that zone reckons it. */
+function todayIn(timeZone: string): IsoDate {
+  return new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date());
 }
 
 function sundayOf(date: IsoDate): number {
