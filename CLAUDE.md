@@ -116,6 +116,20 @@ It is not a `pre-push` check, because a repo with broken hooks never runs
 CI, and CI has no `bd`. Its *tests* need no `bd`, so they do run in both: the
 `verify-beads-doctor` CI job and a test-all phase (habitcraft-308j).
 
+### Claude Code hooks: the short-SHA guard
+
+A `PreToolUse` hook on Bash runs `scripts/guard-gh-short-sha.sh`, which blocks
+any command passing `gh run list --commit` (or `-c`) a literal hash shorter
+than 40 characters. gh matches only the full SHA, so a short one returns an
+empty list with exit 0 and a CI wait loop spins forever on runs that already
+passed. A bd memory warned about this and agents hit it four times anyway
+(habitcraft-fl1b). Wait for CI with `scripts/ci-wait.sh <rev>` instead. The
+guard checks only literals, never `$sha` or `$(git rev-parse …)`, and it allows
+any input it cannot parse, so a broken guard never blocks every Bash call.
+Tests: `scripts/guard-gh-short-sha.test.sh` and `scripts/ci-wait.test.sh`.
+Like the drain scripts' tests, they are agent tooling and run in neither CI
+nor `test-all.sh`.
+
 ### Claude Code hooks (beads-only sessions)
 
 `pre-push` only fires when there **is** a git push. A session that only touches

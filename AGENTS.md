@@ -67,9 +67,12 @@ from the user not to commit or push still wins (habitcraft-od9u).
    append-only trace showing which hook fired and when.
 5. **Wait for CI, then close** - Close a bead only once the CI run for the pushed
    commit is green, and put the run ID in the close reason. Local green is not
-   CI green: the backend integration path branches on `process.env.CI`. Read the
-   result with `gh run view <id> --json conclusion`, not `gh run watch
-   --exit-status`, which has failed on a dropped connection. If CI is red, fix
+   CI green: the backend integration path branches on `process.env.CI`. Wait
+   with `scripts/ci-wait.sh <rev>` in the background: it prints each run's ID
+   and conclusion and exits non-zero unless all are green. Do not hand-roll the
+   wait. `gh run list --commit` silently matches nothing for a short SHA, and a
+   `PreToolUse` guard now blocks that form (habitcraft-fl1b). Nor use `gh run
+   watch --exit-status`, which has failed on a dropped connection. If CI is red, fix
    it (or confirm a flake) before closing. When the acceptance criteria name
    another workflow, that run must be green too (bd memory
    `close-beads-last-ci-green`; habitcraft-j0bm closed early and was reopened)
