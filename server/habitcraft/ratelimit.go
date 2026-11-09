@@ -107,7 +107,7 @@ func (l *limiter) hit(operation, client string, limit rateLimit) (remaining int,
 // authentication, so an anonymous request to a protected operation is a 401
 // and not counted, and before validation, so an invalid request is counted.
 // Both are the Node backend's order.
-func (s *Server) rateLimiting(spec *openapi3.T) (func(http.Handler) http.Handler, error) {
+func (s *server) rateLimiting(spec *openapi3.T) (func(http.Handler) http.Handler, error) {
 	if err := checkRateLimits(spec, rateLimits); err != nil {
 		return nil, err
 	}

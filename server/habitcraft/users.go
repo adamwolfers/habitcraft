@@ -12,7 +12,7 @@ import (
 // GetCurrentUser and ChangePassword are with the auth operations in auth.go.
 
 // UpdateCurrentUser changes the user's name, email, or both.
-func (s *Server) UpdateCurrentUser(ctx context.Context, request api.UpdateCurrentUserRequestObject) (api.UpdateCurrentUserResponseObject, error) {
+func (s *server) UpdateCurrentUser(ctx context.Context, request api.UpdateCurrentUserRequestObject) (api.UpdateCurrentUserResponseObject, error) {
 	var name, email *string
 	if request.Body.Name != nil {
 		trimmed := strings.TrimSpace(*request.Body.Name)
@@ -45,7 +45,7 @@ func (s *Server) UpdateCurrentUser(ctx context.Context, request api.UpdateCurren
 
 // DeleteCurrentUser deletes the account and everything in it, once the
 // password checks out.
-func (s *Server) DeleteCurrentUser(ctx context.Context, request api.DeleteCurrentUserRequestObject) (api.DeleteCurrentUserResponseObject, error) {
+func (s *server) DeleteCurrentUser(ctx context.Context, request api.DeleteCurrentUserRequestObject) (api.DeleteCurrentUserResponseObject, error) {
 	r := requestFrom(ctx)
 	if request.Body.Password == "" {
 		return api.DeleteCurrentUser400JSONResponse{Error: "Password confirmation required"}, nil

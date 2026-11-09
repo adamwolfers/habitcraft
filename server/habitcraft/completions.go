@@ -20,7 +20,7 @@ import (
 // never the 403 Node answers. A caller cannot learn which habit ids exist.
 
 // ListCompletions lists a habit's completions, newest first.
-func (s *Server) ListCompletions(ctx context.Context, request api.ListCompletionsRequestObject) (api.ListCompletionsResponseObject, error) {
+func (s *server) ListCompletions(ctx context.Context, request api.ListCompletionsRequestObject) (api.ListCompletionsResponseObject, error) {
 	from, to := dateOrNil(request.Params.StartDate), dateOrNil(request.Params.EndDate)
 	list, err := s.store.completions(ctx, userFrom(ctx), request.HabitId, from, to)
 	if errors.Is(err, errNoSuchHabit) {
@@ -43,7 +43,7 @@ const maxRangeDays = embedDays
 
 // ListCompletionsInRange lists every habit the user has, each with its
 // completions in the range, so a client draws them all from one request.
-func (s *Server) ListCompletionsInRange(ctx context.Context, request api.ListCompletionsInRangeRequestObject) (api.ListCompletionsInRangeResponseObject, error) {
+func (s *server) ListCompletionsInRange(ctx context.Context, request api.ListCompletionsInRangeRequestObject) (api.ListCompletionsInRangeResponseObject, error) {
 	from, to := request.Params.StartDate.Time, request.Params.EndDate.Time
 	switch {
 	case to.Before(from):
@@ -72,7 +72,7 @@ func (s *Server) ListCompletionsInRange(ctx context.Context, request api.ListCom
 
 // CreateCompletion records the habit as done on a day, today or before, where
 // today is the date in the user's time zone (habitcraft-vxln.19).
-func (s *Server) CreateCompletion(ctx context.Context, request api.CreateCompletionRequestObject) (api.CreateCompletionResponseObject, error) {
+func (s *server) CreateCompletion(ctx context.Context, request api.CreateCompletionRequestObject) (api.CreateCompletionResponseObject, error) {
 	date := request.Body.Date.Time
 	today, ok := todayIn(request.Body.TimeZone)
 	if !ok {
@@ -108,7 +108,7 @@ func (s *Server) CreateCompletion(ctx context.Context, request api.CreateComplet
 
 // UpdateCompletionNote sets a completed day's note. A null, blank or missing
 // note clears it.
-func (s *Server) UpdateCompletionNote(ctx context.Context, request api.UpdateCompletionNoteRequestObject) (api.UpdateCompletionNoteResponseObject, error) {
+func (s *server) UpdateCompletionNote(ctx context.Context, request api.UpdateCompletionNoteRequestObject) (api.UpdateCompletionNoteResponseObject, error) {
 	var notes *string
 	if request.Body.Notes != nil {
 		notes = nilIfBlank(*request.Body.Notes)
@@ -126,7 +126,7 @@ func (s *Server) UpdateCompletionNote(ctx context.Context, request api.UpdateCom
 }
 
 // DeleteCompletion unchecks a day.
-func (s *Server) DeleteCompletion(ctx context.Context, request api.DeleteCompletionRequestObject) (api.DeleteCompletionResponseObject, error) {
+func (s *server) DeleteCompletion(ctx context.Context, request api.DeleteCompletionRequestObject) (api.DeleteCompletionResponseObject, error) {
 	err := s.store.deleteCompletion(ctx, userFrom(ctx), request.HabitId, request.Date.Time)
 	switch {
 	case errors.Is(err, errNoSuchHabit):

@@ -20,7 +20,7 @@ const (
 // days. Each window starts no earlier than the habit did: the earlier of its
 // creation day in UTC and its first completion, since a day before creation
 // can be checked off. So a rate is never above 1, and today always counts.
-func (s *Server) GetHabitStats(ctx context.Context, request api.GetHabitStatsRequestObject) (api.GetHabitStatsResponseObject, error) {
+func (s *server) GetHabitStats(ctx context.Context, request api.GetHabitStatsRequestObject) (api.GetHabitStatsResponseObject, error) {
 	user, habitID := userFrom(ctx), request.HabitId
 	created, firstDone, err := s.store.habitStart(ctx, user, habitID)
 	if errors.Is(err, errNoSuchHabit) {
@@ -46,7 +46,7 @@ func (s *Server) GetHabitStats(ctx context.Context, request api.GetHabitStatsReq
 }
 
 // daysDone lists the days the habit was done from from to to inclusive.
-func (s *Server) daysDone(ctx context.Context, user, habitID uuid.UUID, from, to time.Time) ([]time.Time, error) {
+func (s *server) daysDone(ctx context.Context, user, habitID uuid.UUID, from, to time.Time) ([]time.Time, error) {
 	completions, err := s.store.completions(ctx, user, habitID, &from, &to)
 	if err != nil {
 		return nil, err

@@ -33,7 +33,7 @@ func limitedApp(t *testing.T, edits ...func(*Config)) (*app, *clock) {
 	st := newFakeStore()
 	s := newServer(fakeDB{}, st, cfg)
 	s.limiter.now = c.now
-	handler, err := s.Handler()
+	handler, err := s.handler()
 	if err != nil {
 		t.Fatal(err)
 	}

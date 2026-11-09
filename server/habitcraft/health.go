@@ -20,7 +20,7 @@ const healthTimeout = 2 * time.Second
 
 // HealthCheck reports liveness and whether the database answers. An
 // unreachable database is a 503 with the same shape, not an error body.
-func (s *Server) HealthCheck(ctx context.Context, _ api.HealthCheckRequestObject) (api.HealthCheckResponseObject, error) {
+func (s *server) HealthCheck(ctx context.Context, _ api.HealthCheckRequestObject) (api.HealthCheckResponseObject, error) {
 	now := time.Now().UTC()
 	ctx, cancel := context.WithTimeout(ctx, healthTimeout)
 	defer cancel()
@@ -44,6 +44,6 @@ func (s *Server) HealthCheck(ctx context.Context, _ api.HealthCheckRequestObject
 }
 
 // HelloWorld is the smoke-test endpoint.
-func (s *Server) HelloWorld(context.Context, api.HelloWorldRequestObject) (api.HelloWorldResponseObject, error) {
+func (s *server) HelloWorld(context.Context, api.HelloWorldRequestObject) (api.HelloWorldResponseObject, error) {
 	return api.HelloWorld200JSONResponse{Message: "Hello World!"}, nil
 }

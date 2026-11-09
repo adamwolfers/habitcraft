@@ -44,7 +44,7 @@ func newApp(t *testing.T, edits ...func(*Config)) *app {
 		edit(&cfg)
 	}
 	st := newFakeStore()
-	handler, err := newServer(fakeDB{}, st, cfg).Handler()
+	handler, err := newServer(fakeDB{}, st, cfg).handler()
 	if err != nil {
 		t.Fatal(err)
 	}

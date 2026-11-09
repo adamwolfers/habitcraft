@@ -21,7 +21,7 @@ import (
 // flows.
 
 // Register creates an account and starts its first session.
-func (s *Server) Register(ctx context.Context, request api.RegisterRequestObject) (api.RegisterResponseObject, error) {
+func (s *server) Register(ctx context.Context, request api.RegisterRequestObject) (api.RegisterResponseObject, error) {
 	email := normalizeEmail(string(request.Body.Email))
 	name := strings.TrimSpace(request.Body.Name)
 	if name == "" {
@@ -53,7 +53,7 @@ func (s *Server) Register(ctx context.Context, request api.RegisterRequestObject
 }
 
 // Login checks the credentials and starts a session.
-func (s *Server) Login(ctx context.Context, request api.LoginRequestObject) (api.LoginResponseObject, error) {
+func (s *server) Login(ctx context.Context, request api.LoginRequestObject) (api.LoginResponseObject, error) {
 	r := requestFrom(ctx)
 	email := normalizeEmail(string(request.Body.Email))
 	refused := api.Login401JSONResponse{Error: "Invalid credentials"}
@@ -89,7 +89,7 @@ func (s *Server) Login(ctx context.Context, request api.LoginRequestObject) (api
 
 // RefreshToken trades a refresh token for a new pair. The old refresh token
 // is revoked, so each one works once.
-func (s *Server) RefreshToken(ctx context.Context, _ api.RefreshTokenRequestObject) (api.RefreshTokenResponseObject, error) {
+func (s *server) RefreshToken(ctx context.Context, _ api.RefreshTokenRequestObject) (api.RefreshTokenResponseObject, error) {
 	r := requestFrom(ctx)
 	token := refreshTokenIn(r)
 	if token == "" {
@@ -133,7 +133,7 @@ func (s *Server) RefreshToken(ctx context.Context, _ api.RefreshTokenRequestObje
 
 // Logout ends the session in the refreshToken cookie, if there is one, and
 // clears both cookies. It always succeeds: the caller is signed out either way.
-func (s *Server) Logout(ctx context.Context, _ api.LogoutRequestObject) (api.LogoutResponseObject, error) {
+func (s *server) Logout(ctx context.Context, _ api.LogoutRequestObject) (api.LogoutResponseObject, error) {
 	r := requestFrom(ctx)
 	if cookie, err := r.Cookie(refreshCookie); err == nil && cookie.Value != "" {
 		if err := s.store.endSession(ctx, hashToken(cookie.Value)); err != nil {
@@ -150,7 +150,7 @@ func (s *Server) Logout(ctx context.Context, _ api.LogoutRequestObject) (api.Log
 }
 
 // GetCurrentUser returns the signed-in user's profile.
-func (s *Server) GetCurrentUser(ctx context.Context, _ api.GetCurrentUserRequestObject) (api.GetCurrentUserResponseObject, error) {
+func (s *server) GetCurrentUser(ctx context.Context, _ api.GetCurrentUserRequestObject) (api.GetCurrentUserResponseObject, error) {
 	u, err := s.store.userByID(ctx, userFrom(ctx))
 	if errors.Is(err, errNoSuchUser) {
 		return api.GetCurrentUser404JSONResponse{UserNotFoundJSONResponse: api.UserNotFoundJSONResponse{Error: "User not found"}}, nil
@@ -165,7 +165,7 @@ func (s *Server) GetCurrentUser(ctx context.Context, _ api.GetCurrentUserRequest
 // session the user has is revoked, the caller's included, and the caller gets
 // a fresh pair: a copy of any old token, stolen or not, stops working, and the
 // user stays signed in where they made the change (habitcraft-4k7v).
-func (s *Server) ChangePassword(ctx context.Context, request api.ChangePasswordRequestObject) (api.ChangePasswordResponseObject, error) {
+func (s *server) ChangePassword(ctx context.Context, request api.ChangePasswordRequestObject) (api.ChangePasswordResponseObject, error) {
 	r := requestFrom(ctx)
 	body := request.Body
 	if body.ConfirmPassword != body.NewPassword {
@@ -212,7 +212,7 @@ func (s *Server) ChangePassword(ctx context.Context, request api.ChangePasswordR
 }
 
 // startSession issues a pair for an existing user and stores its refresh token.
-func (s *Server) startSession(ctx context.Context, userID uuid.UUID) (tokenPair, error) {
+func (s *server) startSession(ctx context.Context, userID uuid.UUID) (tokenPair, error) {
 	pair, err := s.tokens.issue(userID)
 	if err != nil {
 		return tokenPair{}, err
@@ -273,21 +273,21 @@ func fieldError(field, message string) api.ValidationFailedJSONResponse {
 
 // sessionCookies carry a pair for the web client, with the lifetimes the
 // tokens themselves have.
-func (s *Server) sessionCookies(pair tokenPair) []*http.Cookie {
+func (s *server) sessionCookies(pair tokenPair) []*http.Cookie {
 	return []*http.Cookie{
 		s.cookie(accessCookie, pair.access, accessTokenTTL),
 		s.cookie(refreshCookie, pair.refresh, refreshTokenTTL),
 	}
 }
 
-func (s *Server) clearedCookie(name string) *http.Cookie {
+func (s *server) clearedCookie(name string) *http.Cookie {
 	c := s.cookie(name, "", 0)
 	c.MaxAge = -1 // Max-Age=0: delete now
 	c.Expires = time.Unix(0, 0)
 	return c
 }
 
-func (s *Server) cookie(name, value string, lifetime time.Duration) *http.Cookie {
+func (s *server) cookie(name, value string, lifetime time.Duration) *http.Cookie {
 	c := &http.Cookie{
 		Name:     name,
 		Value:    value,

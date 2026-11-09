@@ -36,7 +36,7 @@ func testConfig() Config {
 
 func serve(t *testing.T, db pinger, method, target, body string, edits ...func(*http.Request)) *httptest.ResponseRecorder {
 	t.Helper()
-	handler, err := newServer(db, newFakeStore(), testConfig()).Handler()
+	handler, err := newServer(db, newFakeStore(), testConfig()).handler()
 	if err != nil {
 		t.Fatal(err)
 	}

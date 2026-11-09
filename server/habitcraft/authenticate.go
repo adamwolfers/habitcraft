@@ -41,7 +41,7 @@ func userFrom(ctx context.Context) uuid.UUID {
 //
 // spec is modified: its servers are dropped, as validation.Middleware drops
 // them, because the router would otherwise match requests by host.
-func (s *Server) authentication(spec *openapi3.T) (func(http.Handler) http.Handler, error) {
+func (s *server) authentication(spec *openapi3.T) (func(http.Handler) http.Handler, error) {
 	spec.Servers = nil
 	router, err := gorillamux.NewRouter(spec)
 	if err != nil {
@@ -77,7 +77,7 @@ func protected(spec *openapi3.T, operation *openapi3.Operation) bool {
 
 // authenticate returns the user r's access token belongs to, or the 401
 // message for the caller and the reason for the security log.
-func (s *Server) authenticate(r *http.Request) (userID uuid.UUID, problem, reason string) {
+func (s *server) authenticate(r *http.Request) (userID uuid.UUID, problem, reason string) {
 	token, problem, reason := accessTokenIn(r)
 	if problem != "" {
 		return uuid.Nil, problem, reason
@@ -118,7 +118,7 @@ func accessTokenIn(r *http.Request) (token, problem, reason string) {
 // log at Warn, everything else at Info. The address is the one the rate
 // limits count, never the raw X-Forwarded-For, which would let a caller choose
 // what is recorded against their own failed logins.
-func (s *Server) securityEvent(r *http.Request, event string, details ...any) {
+func (s *server) securityEvent(r *http.Request, event string, details ...any) {
 	level := slog.LevelInfo
 	if strings.HasSuffix(event, "_FAILURE") {
 		level = slog.LevelWarn

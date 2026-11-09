@@ -31,7 +31,7 @@ const (
 )
 
 // ListHabits lists the user's habits, each with its recent completions.
-func (s *Server) ListHabits(ctx context.Context, request api.ListHabitsRequestObject) (api.ListHabitsResponseObject, error) {
+func (s *server) ListHabits(ctx context.Context, request api.ListHabitsRequestObject) (api.ListHabitsResponseObject, error) {
 	status := ""
 	if request.Params.Status != nil {
 		status = string(*request.Params.Status)
@@ -53,7 +53,7 @@ func (s *Server) ListHabits(ctx context.Context, request api.ListHabitsRequestOb
 }
 
 // CreateHabit saves a new habit, unless the user already has the most allowed.
-func (s *Server) CreateHabit(ctx context.Context, request api.CreateHabitRequestObject) (api.CreateHabitResponseObject, error) {
+func (s *server) CreateHabit(ctx context.Context, request api.CreateHabitRequestObject) (api.CreateHabitResponseObject, error) {
 	in, problem := cleanHabitInput(*request.Body)
 	if problem != "" {
 		return api.CreateHabit400JSONResponse{HabitBadRequestJSONResponse: habitBadRequest(problem)}, nil
@@ -83,7 +83,7 @@ func (s *Server) CreateHabit(ctx context.Context, request api.CreateHabitRequest
 
 // UpdateHabit changes the fields the request names. A description sent as
 // null or blank is cleared; one not sent is left alone.
-func (s *Server) UpdateHabit(ctx context.Context, request api.UpdateHabitRequestObject) (api.UpdateHabitResponseObject, error) {
+func (s *server) UpdateHabit(ctx context.Context, request api.UpdateHabitRequestObject) (api.UpdateHabitResponseObject, error) {
 	in, problem := cleanHabitInput(*request.Body)
 	if problem != "" {
 		return api.UpdateHabit400JSONResponse{HabitBadRequestJSONResponse: habitBadRequest(problem)}, nil
@@ -107,7 +107,7 @@ func (s *Server) UpdateHabit(ctx context.Context, request api.UpdateHabitRequest
 }
 
 // DeleteHabit removes a habit and its completions.
-func (s *Server) DeleteHabit(ctx context.Context, request api.DeleteHabitRequestObject) (api.DeleteHabitResponseObject, error) {
+func (s *server) DeleteHabit(ctx context.Context, request api.DeleteHabitRequestObject) (api.DeleteHabitResponseObject, error) {
 	err := s.store.deleteHabit(ctx, userFrom(ctx), request.HabitId)
 	if errors.Is(err, errNoSuchHabit) {
 		return api.DeleteHabit404JSONResponse{HabitNotFoundJSONResponse: habitNotFound()}, nil
@@ -179,7 +179,7 @@ func habitNotFound() api.HabitNotFoundJSONResponse {
 }
 
 // habitFailure logs err and returns the 500 a habits route documents.
-func (s *Server) habitFailure(ctx context.Context, message string, err error) api.HabitInternalErrorJSONResponse {
+func (s *server) habitFailure(ctx context.Context, message string, err error) api.HabitInternalErrorJSONResponse {
 	s.logger.ErrorContext(ctx, "request failed", "err", err)
 	return api.HabitInternalErrorJSONResponse{Error: "Internal server error", Message: message, StatusCode: 500}
 }

@@ -57,8 +57,16 @@ type pinger interface {
 	Ping(ctx context.Context) error
 }
 
-// Server implements every operation in the spec.
+// Server is HabitCraft, ready to mount on an application's mux. Its only
+// method is Handler.
 type Server struct {
+	s *server
+}
+
+// server implements every operation in the spec. The generated interface's
+// methods are on it rather than on Server, so they are not part of the API an
+// embedding application sees.
+type server struct {
 	db              pinger
 	store           store
 	tokens          tokens
@@ -70,7 +78,7 @@ type Server struct {
 	limiter          *limiter
 }
 
-var _ api.StrictServerInterface = (*Server)(nil)
+var _ api.StrictServerInterface = (*server)(nil)
 
 // New returns a server for cfg. It does not touch the database.
 func New(cfg Config) (*Server, error) {
@@ -83,16 +91,16 @@ func New(cfg Config) (*Server, error) {
 	if cfg.TrustedProxyHops < 0 {
 		return nil, errNegativeHops
 	}
-	return newServer(cfg.DB, pgStore{pool: cfg.DB}, cfg), nil
+	return &Server{s: newServer(cfg.DB, pgStore{pool: cfg.DB}, cfg)}, nil
 }
 
 // newServer takes everything but the database from cfg, so tests can fake it.
-func newServer(db pinger, st store, cfg Config) *Server {
+func newServer(db pinger, st store, cfg Config) *server {
 	logger := cfg.Logger
 	if logger == nil {
 		logger = slog.Default()
 	}
-	return &Server{
+	return &server{
 		db:              db,
 		store:           st,
 		tokens:          tokens{secret: cfg.JWTSecret, now: time.Now},
@@ -114,6 +122,10 @@ func newServer(db pinger, st store, cfg Config) *Server {
 // handler. Authentication goes before validation so an anonymous caller gets a
 // 401 before any field is checked, and never sees per-field errors.
 func (s *Server) Handler() (http.Handler, error) {
+	return s.s.handler()
+}
+
+func (s *server) handler() (http.Handler, error) {
 	spec, err := api.GetSwagger()
 	if err != nil {
 		return nil, fmt.Errorf("habitcraft: loading the embedded spec: %w", err)
@@ -208,14 +220,14 @@ func requestFrom(ctx context.Context) *http.Request {
 }
 
 // serverError answers a handler's error.
-func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
+func (s *server) serverError(w http.ResponseWriter, r *http.Request, err error) {
 	s.logger.ErrorContext(r.Context(), "request failed", "method", r.Method, "path", r.URL.Path, "err", err)
 	writeJSON(w, http.StatusInternalServerError, api.Error{Error: "Internal server error"})
 }
 
 // badParameter answers a path or query parameter the generated router could
 // not bind. Validation rejects those first, so this is a backstop.
-func (s *Server) badParameter(w http.ResponseWriter, _ *http.Request, err error) {
+func (s *server) badParameter(w http.ResponseWriter, _ *http.Request, err error) {
 	writeJSON(w, http.StatusBadRequest, api.Error{Error: err.Error()})
 }
 
