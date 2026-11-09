@@ -46,7 +46,7 @@
  *                           openapi-typescript does NOT emit -- they are
  *                           validation keywords, not type information, so the
  *                           numbers a UI needs for `maxLength` would be lost.
- *   server/api/api.gen.go   the Go server's types, strict server interface and
+ *   server/internal/api/api.gen.go   the Go server's types, strict server interface and
  *                           embedded spec, from oapi-codegen (habitcraft-vxln.3).
  *                           It needs no limits file: the server validates every
  *                           request against the embedded spec itself.
@@ -122,11 +122,11 @@ const CONSUMERS = [
   },
 ];
 
-// The Go server's generated interface. Its config (server/api/oapi-codegen.yaml)
-// is shared with the `go generate` directive in server/api/generate.go, so both
+// The Go server's generated interface. Its config (server/internal/api/oapi-codegen.yaml)
+// is shared with the `go generate` directive in server/internal/api/generate.go, so both
 // routes produce the same file.
 const GO_SERVER = {
-  dir: path.join(PROJECT_ROOT, 'server/api'),
+  dir: path.join(PROJECT_ROOT, 'server/internal/api'),
   config: 'oapi-codegen.yaml',
   file: 'api.gen.go',
 };
@@ -330,7 +330,7 @@ function renderGoServer() {
     );
   } catch (err) {
     if (err.code === 'ENOENT') {
-      throw new Error('`go` is not on PATH; it is needed to generate server/api/api.gen.go');
+      throw new Error('`go` is not on PATH; it is needed to generate server/internal/api/api.gen.go');
     }
     throw err;
   }

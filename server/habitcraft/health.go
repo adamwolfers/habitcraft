@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // The service name and version the Node backend reports, kept so a load

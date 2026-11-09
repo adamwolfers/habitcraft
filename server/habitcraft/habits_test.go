@@ -11,7 +11,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // A user is a registered account and its access token.

@@ -42,8 +42,8 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/adamwolfers/habitcraft/server/api"
 	"github.com/adamwolfers/habitcraft/server/habitcraft"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // shutdownGrace is how long in-flight requests get to finish on SIGTERM.

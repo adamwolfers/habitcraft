@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // The windows GetHabitStats measures, each ending today.

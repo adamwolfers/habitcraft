@@ -5,4 +5,4 @@
 // `npm run api:codegen` from the repo root.
 package api
 
-//go:generate go tool oapi-codegen -config oapi-codegen.yaml -o api.gen.go ../../shared/api-spec/openapi.yaml
+//go:generate go tool oapi-codegen -config oapi-codegen.yaml -o api.gen.go ../../../shared/api-spec/openapi.yaml

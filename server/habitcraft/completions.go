@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // The completion operations, matching the Node backend's routes/completions.js

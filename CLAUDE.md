@@ -389,7 +389,7 @@ npm run api:breaking           # fails on a change that breaks a deployed client
 into `frontend/`, `mobile/src/` and `web/src/`, `acceptance/drivers/api/api.generated.ts` types
 the acceptance suite's API driver, `acceptance/dsl/apiLimits.generated.ts` gives
 its DSL the limits to test at, `backend/validators/apiLimits.generated.js`
-is the same numbers as CommonJS for the backend, and `server/api/api.gen.go` is
+is the same numbers as CommonJS for the backend, and `server/internal/api/api.gen.go` is
 the Go server's types, strict server interface and embedded spec (oapi-codegen,
 pinned in `server/go.mod`, so codegen needs Go installed). All of them **must
 never be hand-edited** — the same rule as `server/schema/schema.sql`.

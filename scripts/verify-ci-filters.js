@@ -81,7 +81,7 @@ const CASES = [
   // --- Go server (habitcraft-vxln.3): no deploy job yet, so one filter ------
   ['server/habitcraft/health.go', true, ['server']],
   ['server/habitcraft/habitcraft_test.go', true, ['server']],
-  ['server/api/api.gen.go', true, ['server']], // generated, and verified by verify-api-codegen
+  ['server/internal/api/api.gen.go', true, ['server']], // generated, and verified by verify-api-codegen
   ['server/go.mod', true, ['server']],
   ['server/cmd/habitcraft/webapp.go', true, ['server']],
   ['server/cmd/habitcraft/spa/README.md', false, []],

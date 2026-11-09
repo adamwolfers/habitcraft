@@ -3,7 +3,7 @@
 # docker-compose.test.yml runs it as server-test, the Go target of the
 # acceptance suite (habitcraft-8ml9). The build context is the repo root, for
 # web/; Dockerfile.dockerignore beside this file keeps it to server/ and web/.
-# The spec is embedded in api/api.gen.go and the migrations in package schema,
+# The spec is embedded in internal/api/api.gen.go and the migrations in package schema,
 # so nothing else is needed.
 #
 # --target migrate builds the same binary without the web app, to run

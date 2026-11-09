@@ -12,7 +12,7 @@ import (
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 	"github.com/google/uuid"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // The cookies the web client's session lives in. The mobile client has no

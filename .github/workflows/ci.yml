@@ -426,7 +426,7 @@ jobs:
   # Unit Tests
   # ===========================================
   # The Go server (habitcraft-vxln.3). `shared` because the server validates
-  # requests against the spec embedded in server/api/api.gen.go; `tooling`
+  # requests against the spec embedded in server/internal/api/api.gen.go; `tooling`
   # covers scripts/go-lint.sh.
   server-unit-tests:
     name: Server Unit Tests

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 // The profile operations, matching the Node backend's routes/users.js.

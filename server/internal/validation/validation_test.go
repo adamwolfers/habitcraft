@@ -17,7 +17,7 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 
-	"github.com/adamwolfers/habitcraft/server/api"
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 const habitID = "7e0b6c1e-4d1a-4a7e-9a55-0c7d6f1b2a33"

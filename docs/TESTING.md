@@ -334,7 +334,7 @@ Notes on that table:
 - **Phases 9 and 10 are the API contract's two halves.** Phase 9 regenerates
   each consumer's `api.generated.ts` and `apiLimits.generated.ts`, the
   backend's CommonJS `apiLimits.generated.js` and the Go server's
-  `server/api/api.gen.go`, from
+  `server/internal/api/api.gen.go`, from
   `shared/api-spec/openapi.yaml` and diffs them against the committed files, so
   a spec edit that skipped `npm run api:codegen` fails here — the same idea as
   phase 8, one layer up. The limits a migration states in SQL are held to the

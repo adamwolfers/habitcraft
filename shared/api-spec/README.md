@@ -43,7 +43,7 @@ web/src/types/apiLimits.generated.ts
 backend/validators/apiLimits.generated.js   the same numbers, as CommonJS
 acceptance/drivers/api/api.generated.ts
 acceptance/dsl/apiLimits.generated.ts
-server/api/api.gen.go                     oapi-codegen: Go types, strict server, embedded spec
+server/internal/api/api.gen.go            oapi-codegen: Go types, strict server, embedded spec
 ```
 
 Two files rather than one because `openapi-typescript` does not emit
@@ -61,7 +61,7 @@ the *numbers*: `validateHabitInput` and the auth routes each wrote out a
 (habitcraft-34d.3).
 
 **The Go server takes the whole spec, and needs no limits file.**
-`server/api/api.gen.go` holds the request and response types, a *strict* server
+`server/internal/api/api.gen.go` holds the request and response types, a *strict* server
 interface, and the spec itself, embedded. Each handler can return only the
 response types the spec documents for its operation, so an undocumented status
 or shape does not compile. The server also validates every request against the
