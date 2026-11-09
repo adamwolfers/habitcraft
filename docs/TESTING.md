@@ -229,6 +229,12 @@ Rules:
   is the cutover criterion.
 - Call them **acceptance tests**, not "executable specifications": "spec" is
   already overloaded here (habitcraft-a8lq).
+- **One exception: features whose user is a Go program.** The embedding API
+  (habitcraft-vxln.6) has no HTTP or UI channel of its own to drive, so its
+  acceptance test is Go: [`server/habitcraft/embed_test.go`](../server/habitcraft/embed_test.go)
+  is a host app, outside the package, that migrates a Postgres schema of its
+  own, mounts the handler and checks the events real requests produce. It
+  still starts the bead, failing, and still speaks in the host's terms.
 
 ## Test Infrastructure
 
@@ -302,11 +308,11 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 12 | Test Collection Check | `scripts/verify-test-collection.js` | no |
 | 13 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
 | 14 | Acceptance Review Page | `acceptance: npm run review:check && npm run test:review` | no |
-| 15 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet) | no |
+| 15 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet), then `scripts/go-api-check.sh` (apidiff against the last `server/v*` tag) | no |
 | 16 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
 | 17 | Web Unit Tests | `web: npm run test:coverage` | no |
 | 18 | Server Unit Tests | `server: go test -race ./...` | no |
-| 19 | Server Store Tests | `server: go test -run TestPostgresStore` on the test database | yes |
+| 19 | Server Store Tests | `server: go test` of the store, `Migrate` and embedding tests on the test database | yes |
 | 20 | Backend Unit Tests | `backend: npm test` | yes |
 | 21 | Frontend Unit Tests | `frontend: npm test` | yes |
 | 22 | Backend Integration Tests | `backend: npm run test:integration` | yes |
@@ -364,7 +370,9 @@ Notes on that table:
   runs the same tests against an in-memory fake; with
   `HABITCRAFT_TEST_DATABASE_URL` set they also run against the real schema, so
   the SQL and the fake are held to one set of rules (habitcraft-vxln.4). They
-  make their own users and need no reset. In CI the `server-unit-tests` job
+  make their own users and need no reset. The phase also runs the `Migrate`
+  tests and the embedding acceptance test (`embed_test.go`), which each work
+  in a throwaway Postgres schema. In CI the `server-unit-tests` job
   starts a migrated Postgres of its own and runs both in one `go test`.
 - **Phase 24 runs the acceptance suite against the stack phases 20–23 already
   use**, with no database reset: the DSL makes a fresh user for every test.

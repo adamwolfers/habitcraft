@@ -342,9 +342,10 @@ run_phase "🔤" "$LBL_ACCEPTANCE_TYPECHECK" "$TIMEOUT_STATIC" "$PROJECT_ROOT/ac
 run_phase "📖" "$LBL_ACCEPTANCE_REVIEW" "$TIMEOUT_STATIC" "$PROJECT_ROOT/acceptance" \
     sh -c 'npm run review:check && npm run test:review' || STATIC_FAILED=1
 
-# gofmt and go vet over the Go server, as CI's server-unit-tests job runs them.
+# gofmt and go vet over the Go server, then its exported API against the last
+# server/v* release, as CI's server-unit-tests job runs them.
 run_phase "🐹" "$LBL_SERVER_LINT" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
-    "$PROJECT_ROOT/scripts/go-lint.sh" || STATIC_FAILED=1
+    sh -c "$PROJECT_ROOT/scripts/go-lint.sh && $PROJECT_ROOT/scripts/go-api-check.sh" || STATIC_FAILED=1
 
 if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     echo "🛑 Static checks failed -- stopping before the docker and E2E phases."
@@ -464,12 +465,13 @@ fi
 echo "✅ Go server is ready"
 echo ""
 
-# The Go server's store tests on the real test database, as CI's
-# server-unit-tests job runs them. They make their own uniquely named users,
-# so they need no reset and leave the fixtures alone.
+# The Go server's tests on the real test database, as CI's server-unit-tests
+# job runs them: the store rules, Migrate, and the embedding acceptance test.
+# They make their own uniquely named users, or work in a throwaway Postgres
+# schema, so they need no reset and leave the fixtures alone.
 run_phase "🐹" "$LBL_SERVER_STORE" "$TIMEOUT_SERVER_UNIT" "$PROJECT_ROOT/server" \
     env HABITCRAFT_TEST_DATABASE_URL="postgresql://habituser:habitpass@localhost:5433/habitcraft_test?sslmode=disable" \
-    go test -race -count=1 -run TestPostgresStore ./habitcraft/ || true
+    go test -race -count=1 -run 'TestPostgresStore|TestMigrateOnPostgres|TestAHostAppEmbedsHabitCraft' ./habitcraft/ || true
 
 # Backend Unit Tests
 run_phase "📦" "$LBL_BACKEND_UNIT" "$TIMEOUT_BACKEND_UNIT" "$PROJECT_ROOT/backend" \

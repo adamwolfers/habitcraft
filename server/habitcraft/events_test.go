@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/adamwolfers/habitcraft/server/internal/api"
 )
 
 func TestAPanickingOnCompletionDoesNotChangeTheResponse(t *testing.T) {
@@ -105,5 +107,19 @@ func TestCompletionKindNames(t *testing.T) {
 		if k.String() != want {
 			t.Errorf("%d is %q, want %q", int(k), k.String(), want)
 		}
+	}
+}
+
+func TestOnCompletionCannotRewriteTheNoteInTheResponse(t *testing.T) {
+	a := newApp(t, func(c *Config) {
+		c.OnCompletion = func(_ context.Context, e CompletionEvent) { *e.Notes = "rewritten" }
+	})
+	alice := a.newUser()
+	h := a.createHabit(alice, `{"name":"Run"}`)
+
+	w := a.checkOffDay(alice, h.Id, `{"date":"`+dateString(0)+`","notes":"5k"}`)
+
+	if got := decode[api.Completion](t, w); got.Notes == nil || *got.Notes != "5k" {
+		t.Errorf("responded with note %v", got.Notes)
 	}
 }

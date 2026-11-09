@@ -1,10 +1,12 @@
 // Package habitcraft is the HabitCraft server as an embeddable Go package. An
-// application that wants habit tracking mounts Handler on its own mux; the
+// application that wants habit tracking runs Migrate, mounts Handler on its
+// own mux, and may set Config.OnCompletion to hear of completed days; the
 // standalone binary in cmd/habitcraft does the same thing with nothing else
-// around it.
+// around it. server/README.md's Embedding section documents the whole API,
+// and server/CHANGELOG.md its versions.
 //
 // The HTTP interface is generated from shared/api-spec/openapi.yaml (package
-// api). Every request is validated against that spec before a handler runs,
+// internal/api). Every request is validated against that spec before a handler runs,
 // and every handler can return only the responses the spec documents.
 package habitcraft
 

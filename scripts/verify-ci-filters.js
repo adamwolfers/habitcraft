@@ -88,6 +88,8 @@ const CASES = [
   // The image's context is the repo root; this keeps it to server/ and web/.
   ['server/Dockerfile.dockerignore', true, ['server', 'e2e-infra']],
   ['scripts/go-lint.sh', true, ['tooling']],
+  ['scripts/go-api-check.sh', true, ['tooling']],
+  ['server/CHANGELOG.md', false, []], // docs: the API check reads it, but no job needs to run for it
 
   // --- Web app (habitcraft-vxln.8): embedded by the server, so one filter ---
   ['web/src/App.tsx', true, ['web']],

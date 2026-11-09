@@ -427,7 +427,7 @@ jobs:
   # ===========================================
   # The Go server (habitcraft-vxln.3). `shared` because the server validates
   # requests against the spec embedded in server/internal/api/api.gen.go; `tooling`
-  # covers scripts/go-lint.sh.
+  # covers scripts/go-lint.sh and scripts/go-api-check.sh.
   server-unit-tests:
     name: Server Unit Tests
     runs-on: ubuntu-latest
@@ -460,7 +460,11 @@ jobs:
           --health-retries 5
 
     steps:
+      # fetch-depth: 0 for the tags: the API check compares against the
+      # newest server/v* release.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -470,6 +474,11 @@ jobs:
 
       - name: Run linter (gofmt, go vet)
         run: ../scripts/go-lint.sh
+
+      # apidiff against the last release; an incompatible change must be
+      # listed under Breaking in server/CHANGELOG.md (habitcraft-vxln.6).
+      - name: Check the Go API against the last release
+        run: ../scripts/go-api-check.sh
 
       - name: Migrate the test database
         env:

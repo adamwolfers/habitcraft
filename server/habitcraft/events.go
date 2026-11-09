@@ -48,14 +48,19 @@ type CompletionEvent struct {
 }
 
 // emit hands e to the host's OnCompletion, if it set one. The change is
-// already committed, so nothing here may alter the response: a panic is
-// logged and swallowed, and the callback's context is not cancelled when the
-// client goes away.
+// already committed, so nothing here may alter the response: the callback
+// gets its own copy of the note, a panic is logged and swallowed, and the
+// callback's context is not cancelled when the client goes away.
 func (s *server) emit(ctx context.Context, e CompletionEvent) {
 	if s.onCompletion == nil {
 		return
 	}
 	e.At = time.Now()
+	if e.Notes != nil {
+		// The response is built from the same note after this returns.
+		notes := *e.Notes
+		e.Notes = &notes
+	}
 	ctx = context.WithoutCancel(ctx)
 	defer func() {
 		if r := recover(); r != nil {
