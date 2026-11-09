@@ -50,6 +50,17 @@ type Config struct {
 	DisableRateLimiting bool
 	// Logger defaults to slog.Default().
 	Logger *slog.Logger
+	// OnCompletion, if set, is called once for each day checked off,
+	// unchecked, or whose note changed, after the change is committed. It
+	// runs on the request's goroutine before the response is written, so
+	// slow work belongs on a goroutine of the host's; the response is the same
+	// whatever it does, and a panic in it is logged and recovered. Its context
+	// carries the request's values but is not cancelled with it.
+	//
+	// Delivery is at most once: a process that dies between the commit and
+	// the call loses the event. Deleting a habit or an account removes its
+	// completions without an event for each.
+	OnCompletion func(context.Context, CompletionEvent)
 }
 
 // pinger is the slice of the database that the health check needs.
@@ -72,6 +83,7 @@ type server struct {
 	tokens          tokens
 	insecureCookies bool
 	logger          *slog.Logger
+	onCompletion    func(context.Context, CompletionEvent)
 
 	trustedProxyHops int
 	rateLimitingOff  bool
@@ -106,6 +118,7 @@ func newServer(db pinger, st store, cfg Config) *server {
 		tokens:          tokens{secret: cfg.JWTSecret, now: time.Now},
 		insecureCookies: cfg.InsecureCookies,
 		logger:          logger,
+		onCompletion:    cfg.OnCompletion,
 
 		trustedProxyHops: cfg.TrustedProxyHops,
 		rateLimitingOff:  cfg.DisableRateLimiting,

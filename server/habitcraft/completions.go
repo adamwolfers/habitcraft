@@ -103,6 +103,7 @@ func (s *server) CreateCompletion(ctx context.Context, request api.CreateComplet
 	case err != nil:
 		return nil, err
 	}
+	s.emit(ctx, CompletionEvent{Kind: Completed, UserID: userFrom(ctx), HabitID: c.habitID, Date: c.date, Notes: c.notes})
 	return api.CreateCompletion201JSONResponse(completionOut(c)), nil
 }
 
@@ -122,6 +123,7 @@ func (s *server) UpdateCompletionNote(ctx context.Context, request api.UpdateCom
 	case err != nil:
 		return nil, err
 	}
+	s.emit(ctx, CompletionEvent{Kind: NoteChanged, UserID: userFrom(ctx), HabitID: c.habitID, Date: c.date, Notes: c.notes})
 	return api.UpdateCompletionNote200JSONResponse(completionOut(c)), nil
 }
 
@@ -136,6 +138,7 @@ func (s *server) DeleteCompletion(ctx context.Context, request api.DeleteComplet
 	case err != nil:
 		return nil, err
 	}
+	s.emit(ctx, CompletionEvent{Kind: Uncompleted, UserID: userFrom(ctx), HabitID: request.HabitId, Date: request.Date.Time})
 	return api.DeleteCompletion200JSONResponse{
 		Message: "Completion deleted successfully",
 		HabitId: request.HabitId.String(),
