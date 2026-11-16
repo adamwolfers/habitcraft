@@ -101,7 +101,7 @@ describe('openapi/responseValidator', () => {
       const [violation] = validator.drainViolations();
 
       expect(violation).toContain('status not documented');
-      expect(violation).toContain('200, 401, 500');
+      expect(violation).toContain('200, 400, 401, 500');
     });
 
     it('rejects a path the spec never mentions', () => {

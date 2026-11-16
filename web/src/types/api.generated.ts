@@ -272,7 +272,12 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List completions */
+        /**
+         * List completions
+         * @description A malformed startDate or endDate is a 400. Only the Go server sends
+         *     it; the Node backend passes the date to the database
+         *     (habitcraft-vxln.3.1).
+         */
         get: operations["listCompletions"];
         put?: never;
         /** Mark habit complete */
@@ -1143,6 +1148,22 @@ export interface operations {
                     "application/json": components["schemas"]["HabitWithCompletions"][];
                 };
             };
+            /** @description status is not one of its listed values. Only the Go server sends this; the Node backend answers an unknown status with an empty list (habitcraft-vxln.3.1). */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "error": "Validation error",
+                     *       "message": "status: value is not one of the allowed values [\"active\",\"archived\"]",
+                     *       "statusCode": 400
+                     *     }
+                     */
+                    "application/json": components["schemas"]["DetailedError"];
+                };
+            };
             401: components["responses"]["Unauthorized"];
             500: components["responses"]["HabitInternalError"];
         };
@@ -1299,6 +1320,7 @@ export interface operations {
                     "application/json": components["schemas"]["Completion"][];
                 };
             };
+            400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
             404: components["responses"]["CompletionNotFound"];

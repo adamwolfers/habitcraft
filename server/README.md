@@ -218,6 +218,10 @@ tell the servers apart, except where Node is wrong or unbounded:
   spec states no limit, so Node answers 500.
 - **An impossible date such as `2026-02-30` is a 400** wherever it is sent.
   `internal/validation` checks `format: date` as a calendar date.
+- **A bad list filter is a 400.** `GET /habits?status=bogus` and a malformed
+  `startDate` or `endDate` on a habit's completions list are refused, as the
+  spec documents (habitcraft-vxln.3.1). Node answers the first with an empty
+  list and passes the second to Postgres.
 - **A habit can be created archived**: `POST /habits` honours `status`, which
   the spec allows and Node ignores.
 - **A body over 100 KiB is a 413** `{"error": "Request body too large"}`,

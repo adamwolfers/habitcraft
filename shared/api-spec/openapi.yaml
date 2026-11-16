@@ -478,6 +478,19 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/HabitWithCompletions'
+        '400':
+          description: >-
+            status is not one of its listed values. Only the Go server sends
+            this; the Node backend answers an unknown status with an empty
+            list (habitcraft-vxln.3.1).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedError'
+              example:
+                error: Validation error
+                message: 'status: value is not one of the allowed values ["active","archived"]'
+                statusCode: 400
         '401':
           $ref: '#/components/responses/Unauthorized'
         '500':
@@ -630,6 +643,10 @@ paths:
       tags:
         - Completions
       summary: List completions
+      description: |
+        A malformed startDate or endDate is a 400. Only the Go server sends
+        it; the Node backend passes the date to the database
+        (habitcraft-vxln.3.1).
       operationId: listCompletions
       security:
         - bearerAuth: []
@@ -657,6 +674,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Completion'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

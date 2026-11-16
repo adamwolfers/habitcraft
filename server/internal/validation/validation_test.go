@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -130,6 +131,20 @@ func TestHabitRoutesAnswerWithADetailedError(t *testing.T) {
 	}
 }
 
+func TestAnUnknownHabitStatusFilterIsADetailedError(t *testing.T) {
+	h := newHandler(t)
+
+	w := send(t, h, http.MethodGet, "/api/v1/habits?status=bogus", "")
+
+	got := decode[api.DetailedError](t, w)
+	if w.Code != http.StatusBadRequest || got.StatusCode != http.StatusBadRequest {
+		t.Fatalf("status = %d, body statusCode = %d, want 400 for both", w.Code, got.StatusCode)
+	}
+	if !strings.HasPrefix(got.Message, "status: ") {
+		t.Errorf("message = %q, want it to name status", got.Message)
+	}
+}
+
 func TestCompletionRoutesAnswerWithABareError(t *testing.T) {
 	h := newHandler(t)
 
@@ -249,14 +264,12 @@ func TestEveryDocumented400MatchesTheSpec(t *testing.T) {
 	}
 }
 
-// Operations that can be refused by validation but whose spec documents no 400.
-// Each answers with the bare Error shape, which the acceptance suite would
-// report as an undocumented status. Remove an entry when the spec documents
-// its 400 (habitcraft-vxln.3.1). oapi-codegen capitalises the operationIds in
-// the spec it embeds.
-var undocumented400 = []string{"ListCompletions", "ListHabits"}
-
-func TestOnlyKnownOperationsLackADocumented400(t *testing.T) {
+// An operation that validation can refuse but whose spec documents no 400
+// answers with the bare Error shape, which the acceptance suite reports as an
+// undocumented status. Document the operation's 400 rather than exempting it
+// here (habitcraft-vxln.3.1). oapi-codegen capitalises the operationIds in the
+// spec it embeds.
+func TestEveryOperationWithInputsDocumentsA400(t *testing.T) {
 	spec := loadSpec(t)
 	var missing []string
 	for _, item := range spec.Paths.Map() {
@@ -270,17 +283,28 @@ func TestOnlyKnownOperationsLackADocumented400(t *testing.T) {
 		}
 	}
 	slices.Sort(missing)
-	if !slices.Equal(missing, undocumented400) {
-		t.Errorf("operations with inputs but no documented 400 = %v, want %v", missing, undocumented400)
+	if len(missing) > 0 {
+		t.Errorf("operations with inputs but no documented 400 = %v, want none", missing)
 	}
 }
 
 var pathParam = regexp.MustCompile(`\{[^}]+\}`)
 
-// invalidRequest builds a request no operation accepts: every path parameter
-// fails its format, and a JSON array stands where each body wants an object.
+// invalidRequest builds a request no operation accepts: every path and query
+// parameter fails its format or enum, and a JSON array stands where each body
+// wants an object. The query parameters matter for an operation such as
+// listHabits, whose only input is one.
 func invalidRequest(path string, operation *openapi3.Operation) (target, body string) {
 	target = pathParam.ReplaceAllString(path, "not-valid")
+	query := url.Values{}
+	for _, param := range operation.Parameters {
+		if param.Value != nil && param.Value.In == openapi3.ParameterInQuery {
+			query.Set(param.Value.Name, "not-valid")
+		}
+	}
+	if len(query) > 0 {
+		target += "?" + query.Encode()
+	}
 	if operation.RequestBody != nil {
 		body = "[]"
 	}

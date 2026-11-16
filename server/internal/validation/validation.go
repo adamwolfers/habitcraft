@@ -208,9 +208,9 @@ func reject(w http.ResponseWriter, route *routers.Route, problems []problem) {
 			"statusCode": http.StatusBadRequest,
 		}
 	default:
-		// "Error", and the operations that document no 400 at all. Those take
-		// no body and only a few parameters, so a 400 there means the spec is
-		// missing a response it should list.
+		// "Error", and any operation that documents no 400 at all. None
+		// should: TestEveryOperationWithInputsDocumentsA400 fails on one, as a
+		// 400 there means the spec is missing a response it should list.
 		body = map[string]string{"error": joined(problems)}
 	}
 
