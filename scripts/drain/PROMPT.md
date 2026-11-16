@@ -31,6 +31,15 @@ Mark it **stuck** (section 6) instead of working on it if it needs any of:
   mobile Detox E2E suite
 - changes to `scripts/drain/`, `.claude/`, `.husky/`, or the rules in
   `CLAUDE.md`/`AGENTS.md`
+- accepting a security advisory the bead does not name.
+  `node scripts/audit-advisories.js --update` rewrites
+  `scripts/audit-baseline.json` from every advisory npm reports today, not
+  only the ones your change adds. Before running it, run the script without
+  `--update` and read its `NEW since the baseline` list. If that list holds
+  an advisory the bead does not name, or one in a package the bead does not
+  add, do not refresh the baseline: list those advisories in the stuck
+  comment. Accepting an advisory is a human's triage decision
+  (habitcraft-snoq).
 
 **Check first whether the bead is already done.** Beads go stale: earlier
 work often fixes what one describes, or meets the target it sets. Before

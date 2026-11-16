@@ -249,6 +249,12 @@ things in the first two runs:
   CI filter gets a green run that ran nothing.
 - **Generated files** (`*.generated.*`, `server/schema/schema.sql`) are never edited by
   hand.
+- **`scripts/audit-baseline.json`:** a diff here accepts advisories. Check
+  that every added entry is one the bead names. `--update` accepts everything
+  npm reports that day. The pr1h pass added `web/` and also accepted five
+  unrelated `mobile/` advisories, which silenced a scheduled audit failure
+  nobody had triaged. The prompt now sends such a pass to stuck
+  (habitcraft-snoq).
 - **Every commit has a body** saying why. One commit in the first run did not.
 - **Each pass's hand-off comment.** It lists what the pass wants a human to
   check, and the follow-up beads it filed.
