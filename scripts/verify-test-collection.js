@@ -74,7 +74,14 @@ const PACKAGES = {
   // jest.smoke.config.js is jest.config.js narrowed by test name, not by file,
   // so it collects the same files and needs no entry of its own.
   mobile: [jest(), jest('e2e/jest.config.js')],
-  acceptance: [playwright('playwright.config.ts'), playwright('playwright.review.config.ts')],
+  acceptance: [
+    playwright('playwright.config.ts'),
+    playwright('playwright.review.config.ts'),
+    playwright('playwright.smoke-test.config.ts'),
+    // Collects only *.smoke.ts, which is not test-shaped; listed so that its
+    // collection breaking fails rule 2.
+    playwright('playwright.smoke.config.ts'),
+  ],
   root: [],
 };
 

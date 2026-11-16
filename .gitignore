@@ -44,6 +44,7 @@ playwright-report/
 blob-report/
 test-results/
 test-results-go/
+test-results-smoke/
 .e2e-shard-logs/
 
 # Next.js
