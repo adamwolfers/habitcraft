@@ -6,6 +6,7 @@
 # Options:
 #   -n, --max-passes N    Stop after N passes (default 10)
 #   -t, --pass-timeout S  Kill a pass after S seconds (default 3600)
+#   -m, --model M         Model for every pass (default opus, or $DRAIN_MODEL)
 #   -h, --help            Show this help message
 #
 # Each pass is a new process with an empty context window; state carries
@@ -29,12 +30,18 @@ MAX_PASSES=10
 PASS_TIMEOUT=3600
 LABEL="agent-ok"
 PERMISSION_MODE="${DRAIN_PERMISSION_MODE:-auto}"
+# Named here and not left to the user's saved default, which changes with
+# /model in any interactive session. One bead with test-all.sh as its gate
+# does not need the largest model (habitcraft-bky6). PROMPT.md's
+# Co-Authored-By line names this model; change both together.
+MODEL="${DRAIN_MODEL:-opus}"
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -n|--max-passes) MAX_PASSES="$2"; shift ;;
         -t|--pass-timeout) PASS_TIMEOUT="$2"; shift ;;
-        -h|--help) sed -n '3,9p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -m|--model) MODEL="$2"; shift ;;
+        -h|--help) sed -n '3,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown parameter: $1"; exit 1 ;;
     esac
     shift
@@ -96,7 +103,7 @@ sync_beads() {
     bd dolt push >/dev/null 2>&1 || log "WARN: bd dolt push failed; beads changes are only in this clone"
 }
 
-log "start branch=$BRANCH max_passes=$MAX_PASSES pass_timeout=${PASS_TIMEOUT}s mode=$PERMISSION_MODE awake=$AWAKE"
+log "start branch=$BRANCH max_passes=$MAX_PASSES pass_timeout=${PASS_TIMEOUT}s mode=$PERMISSION_MODE model=$MODEL awake=$AWAKE"
 
 for ((pass = 1; pass <= MAX_PASSES; pass++)); do
     sync_beads
@@ -114,6 +121,7 @@ for ((pass = 1; pass <= MAX_PASSES; pass++)); do
     status=0
     perl -e 'alarm shift; exec @ARGV' "$PASS_TIMEOUT" \
         claude -p "$(cat "$PROMPT_FILE")" \
+            --model "$MODEL" \
             --permission-mode "$PERMISSION_MODE" \
             --disallowedTools ScheduleWakeup Monitor CronCreate \
             --output-format stream-json --verbose \

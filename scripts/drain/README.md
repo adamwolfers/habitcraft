@@ -203,6 +203,13 @@ Passes run in Claude Code's `auto` permission mode; override with
 `DRAIN_PERMISSION_MODE`. Each pass is killed after `-t` seconds (default an
 hour).
 
+Every pass uses the model `drain.sh` names: `opus` unless `-m <model>` or
+`DRAIN_MODEL` says otherwise (habitcraft-bky6). It is passed explicitly because
+the saved default changes whenever `/model` is used in an interactive session.
+The `start` line in `summary.log` records it as `model=`. `PROMPT.md` tells
+each pass to sign commits as Claude Opus 5.5, so change that line when you
+change the model for good.
+
 A `-p` session ends the moment the agent replies without a tool call, so a
 pass that backgrounds a long command and says it will "pick up later" just
 dies mid-bead (habitcraft-9e00). The prompt forbids that, and the scheduling
