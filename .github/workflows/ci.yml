@@ -331,6 +331,30 @@ jobs:
         run: ./scripts/schema-dump.sh --check
 
   # ===========================================
+  # Database Backup Round Trip
+  # ===========================================
+  # Backs a seeded database up to a throwaway S3-compatible store, restores it
+  # into an empty one and compares, plus pruning and the failures that must
+  # exit non-zero (habitcraft-vxln.9.3). `tooling` covers the scripts, `db` a
+  # migration that might not survive a dump, `server` the migrate image the
+  # test seeds with. Needs only docker and curl; images are pinned in the test.
+  verify-db-backup:
+    name: Verify Database Backup and Restore
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: |
+      needs.detect-changes.outputs.db == 'true' ||
+      needs.detect-changes.outputs.server == 'true' ||
+      needs.detect-changes.outputs.tooling == 'true' ||
+      needs.detect-changes.outputs.workflow == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run db-backup tests
+        run: ./scripts/db-backup.test.sh
+
+  # ===========================================
   # API Contract Checks
   # ===========================================
   # Comments belong ABOVE the `if:` key, never indented under it: those gates

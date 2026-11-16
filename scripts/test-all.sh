@@ -65,6 +65,7 @@ LBL_SCHEMA_DUMP="Generated Schema Check"
 LBL_API_CODEGEN="Generated API Artifacts Check"
 LBL_API_BREAKING="OpenAPI Breaking Changes"
 LBL_BEADS_DOCTOR="Beads Wiring Tests"
+LBL_DB_BACKUP="Database Backup Round Trip"
 LBL_TEST_COLLECTION="Test Collection Check"
 LBL_MOBILE_UNIT="Mobile Unit Tests"
 LBL_WEB_UNIT="Web Unit Tests"
@@ -77,7 +78,7 @@ LBL_E2E="E2E Tests"
 LBL_ACCEPTANCE="Acceptance Tests"
 LBL_ACCEPTANCE_GO="Acceptance Tests (Go server)"
 
-TOTAL_PHASES=25
+TOTAL_PHASES=26
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -325,6 +326,12 @@ run_phase "🚦" "$LBL_API_BREAKING" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
 # CI's verify-beads-doctor job (habitcraft-308j). Needs no bd and no docker.
 run_phase "🪝" "$LBL_BEADS_DOCTOR" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
     sh "$PROJECT_ROOT/scripts/beads-doctor.test.sh" || STATIC_FAILED=1
+
+# Backs a seeded database up to a throwaway S3-compatible store and restores
+# it, as CI's verify-db-backup job does (habitcraft-vxln.9.3). Like the schema
+# check it brings up its own containers, so it needs docker but not the stack.
+run_phase "💾" "$LBL_DB_BACKUP" "$TIMEOUT_STATIC" "$PROJECT_ROOT" \
+    "$PROJECT_ROOT/scripts/db-backup.test.sh" || STATIC_FAILED=1
 
 # Asks every jest and Playwright config what it collects and fails if a
 # test-shaped file is collected by none -- a misnamed *.spec.* file, or a test
