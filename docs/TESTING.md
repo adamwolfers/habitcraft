@@ -124,6 +124,12 @@ package is audited with `--omit=dev`: a dev-only advisory is reachable solely by
 someone already running this repo's code on their own machine, which is a
 different risk from what a user's browser or phone touches.
 
+The audited packages are `root`, `backend`, `frontend`, `mobile` and `web` (the
+`PACKAGES` list in the script). `web/` is there because its build is embedded in
+the Go server and runs in users' browsers. `acceptance/` is left out on purpose,
+since it is test tooling that ships to nobody (habitcraft-pr1h). The Go `server/`
+module is not covered by `npm audit` at all; govulncheck for it is habitcraft-vxln.21.
+
 The baseline is generated — refresh it with `--update` after triaging, and do
 not hand-edit it. `npm audit` reads the lockfile and queries the registry, so no
 `npm ci` is needed to run any of this.

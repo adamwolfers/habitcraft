@@ -42,7 +42,7 @@ jobs:
         with:
           node-version: '20'
 
-      # No `npm ci` in any of the four packages: npm audit reads package.json and
+      # No `npm ci` in any audited package: npm audit reads package.json and
       # package-lock.json and queries the registry, so installing would add
       # minutes and change nothing. Verified against a lockfile-only copy.
       - name: Report advisories new since the baseline

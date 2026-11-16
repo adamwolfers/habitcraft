@@ -44,6 +44,11 @@ const PACKAGES = [
     dir: 'mobile',
     notes: "npm marks expo as a prod dep, so most of this is build toolchain, not shipped code",
   },
+  // web/ is the post-cutover frontend (habitcraft-vxln.10). Its build is embedded
+  // in the Go binary, so its production dependencies reach users' browsers.
+  // acceptance/ is deliberately absent: it is test tooling that ships to nobody
+  // (habitcraft-pr1h).
+  { name: 'web', dir: 'web', notes: 'SPA embedded in the Go server; ships to browsers' },
 ];
 
 function audit(dir) {
