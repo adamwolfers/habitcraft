@@ -215,3 +215,15 @@ describe('Sanitize Middleware', () => {
     });
   });
 });
+
+// The Go server's fallback for passwords Node filtered before hashing is
+// proved against a fixture the real js-xss wrote (habitcraft-ti91). A newer
+// xss could filter passwords by rules that fixture lacks, so the dependency is
+// pinned to exactly the version that wrote it (habitcraft-xpd1).
+describe('xss version pin', () => {
+  it('pins xss to exactly the version that wrote the password-transform fixture', () => {
+    const { dependencies } = require('../package.json');
+    const { xssVersion } = require('../../server/habitcraft/testdata/node-password-transform.json');
+    expect(dependencies.xss).toBe(xssVersion);
+  });
+});

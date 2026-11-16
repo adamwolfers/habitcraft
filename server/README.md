@@ -173,7 +173,9 @@ token hashes are interchangeable with the Node backend's.
   hash anyway. The port has to match js-xss byte for byte:
   `testdata/node-password-transform.json`, written by the real library
   through `scripts/password-transform-fixture.js` while `backend/` exists, is
-  the test. Once those log lines stop, the fallback can be deleted.
+  the test. `backend/package.json` pins xss to the exact version that wrote
+  it, and `backend/middleware/sanitize.test.js` fails if the two part
+  (habitcraft-xpd1). Once those log lines stop, the fallback can be deleted.
 - **Rate limits** are Node's, request for request: register 10 an hour, login
   15, refresh 30, change password 5 and delete account 5 per 15 minutes, each
   per client address and operation (`habitcraft/ratelimit.go`,

@@ -243,7 +243,9 @@ Rules:
   Node left them. The port of Node's filter is checked against
   `server/habitcraft/testdata/node-password-transform.json`, which the real
   library wrote. Regenerate it with `node scripts/password-transform-fixture.js`
-  while `backend/` exists. `--check` fails if it is stale.
+  while `backend/` exists. `--check` fails if it is stale. xss is pinned to
+  the version that wrote it, and a backend unit test fails if the pin and the
+  fixture's `xssVersion` disagree (habitcraft-xpd1).
 
 ## Test Infrastructure
 
