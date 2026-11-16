@@ -278,6 +278,40 @@ Rules:
   the version that wrote it, and a backend unit test fails if the pin and the
   fixture's `xssVersion` disagree (habitcraft-xpd1).
 
+## Post-deploy Smoke Check
+
+`/health` passes on a `SELECT 1` while every habits request can 500
+(habitcraft-0jq), so a deploy is checked by using the product once:
+
+```bash
+scripts/smoke-check.sh https://staging.example.org   # any base URL
+scripts/smoke-check.sh http://localhost:3020         # server-test
+```
+
+It registers a throwaway `smoke-<ms>-<hex>@smoke.example.com` user, creates a
+habit, checks it off today (UTC), reads both back, then deletes the account
+and confirms it no longer answers. **The deletion runs whether or not the round
+trip passed**: the old GCP smoke suite leaked a user on every run
+(habitcraft-whs). If the deletion itself fails, the error starts with
+`LEFT A USER BEHIND:` and names the email to remove by hand. It exits 0 only
+when every step passed and the user is gone.
+
+One run makes one register call and no logins, so it stays under the login
+rate limit (5 per 15 minutes), and it is never retried, since a retry would
+register a second user. Every response is checked against `openapi.yaml`, as
+in the acceptance suite.
+
+It reuses the acceptance suite's API protocol driver
+([`acceptance/smoke/`](../acceptance/smoke/)) but is not part of that suite,
+which assumes a disposable database. It needs `acceptance/` installed (`npm
+ci`) and no browser. Its own tests,
+`acceptance/smoke/smokeCheck.test.ts`, run the real command through a proxy in
+front of `server-test` (`SMOKE_TEST_TARGET_URL`, default `:3020`): it passes,
+it fails when the proxy turns every habits request into a 500, it leaves no
+user behind either way, and it makes no logins. They are phase 27 of
+[`scripts/test-all.sh`](#all-tests) and a step of CI's `acceptance-tests` job.
+The deploy job runs the command itself (habitcraft-vxln.9.5).
+
 ## Test Infrastructure
 
 ### Test Database
@@ -331,7 +365,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **26 phases, one per CI step**, so a green local run predicts a
+The script runs **27 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -362,6 +396,7 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 24 | E2E Tests | `frontend: playwright, 3 shards` | yes |
 | 25 | Acceptance Tests | `acceptance: playwright test --project api --project web` | yes |
 | 26 | Acceptance Tests (Go server) | `acceptance: playwright test --project api --project spa` against `server-test` | yes |
+| 27 | Post-deploy Smoke Check Tests | `acceptance: playwright test -c playwright.smoke-test.config.ts` against `server-test` | yes |
 
 Notes on that table:
 
@@ -434,6 +469,9 @@ Notes on that table:
   The script rebuilds `server-test` on every run, since the
   dependency hash only covers the `package-lock.json` files. In CI it is a
   second step of the same `acceptance-tests` job.
+- **Phase 27 tests the post-deploy smoke check** against `server-test`, the
+  image a deploy ships (see [Post-deploy Smoke Check](#post-deploy-smoke-check)).
+  In CI it is a third step of the `acceptance-tests` job.
 - **Every phase must report exactly one result.** The summary count is asserted
   against `TOTAL_PHASES` before exit; if they disagree the run fails with an
   internal error rather than reporting green. That guard exists because the E2E

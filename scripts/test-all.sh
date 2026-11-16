@@ -77,8 +77,9 @@ LBL_INTEGRATION="Backend Integration Tests"
 LBL_E2E="E2E Tests"
 LBL_ACCEPTANCE="Acceptance Tests"
 LBL_ACCEPTANCE_GO="Acceptance Tests (Go server)"
+LBL_SMOKE="Post-deploy Smoke Check Tests"
 
-TOTAL_PHASES=26
+TOTAL_PHASES=27
 PHASE_NUM=0
 
 # Results accumulate as "<status>|<label>" lines: pass, fail, or skip. Every
@@ -368,6 +369,7 @@ if [ "$STATIC_FAILED" -eq 1 ] && [ "$KEEP_GOING" = false ]; then
     record_phase skip "$LBL_E2E"
     record_phase skip "$LBL_ACCEPTANCE"
     record_phase skip "$LBL_ACCEPTANCE_GO"
+    record_phase skip "$LBL_SMOKE"
     finish
 fi
 
@@ -625,5 +627,12 @@ run_phase "🧪" "$LBL_ACCEPTANCE" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptan
 run_phase "🧪" "$LBL_ACCEPTANCE_GO" "$TIMEOUT_ACCEPTANCE" "$PROJECT_ROOT/acceptance" \
     env ACCEPTANCE_API_URL=http://localhost:3020 ACCEPTANCE_BACKEND=go \
     npx playwright test --project api --project spa --output test-results-go || true
+
+# The post-deploy smoke check (scripts/smoke-check.sh, habitcraft-vxln.9.1)
+# against server-test, the image a deploy ships, through a proxy that can break
+# the habits API, as CI's acceptance-tests job runs it.
+run_phase "🚬" "$LBL_SMOKE" "$TIMEOUT_STATIC" "$PROJECT_ROOT/acceptance" \
+    env SMOKE_TEST_TARGET_URL=http://localhost:3020 \
+    npx playwright test -c playwright.smoke-test.config.ts || true
 
 finish

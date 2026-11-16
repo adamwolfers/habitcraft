@@ -51,6 +51,11 @@ and `spa` against the Go server (`server-test`), and `scripts/test-all.sh` does
 the same in its last two phases, so a failing acceptance test blocks a deploy.
 See [docs/TESTING.md](../docs/TESTING.md#all-tests).
 
+`smoke/` holds the post-deploy smoke check (`scripts/smoke-check.sh
+<base-url>`), which drives the API driver through one habit round trip and
+deletes its user. It is not part of this suite; see
+[docs/TESTING.md](../docs/TESTING.md#post-deploy-smoke-check).
+
 No database reset is needed between runs, and none happens. The DSL registers
 fresh users with unique emails for every test, so tests share nothing and run
 in parallel against a database that earlier runs have already written to.

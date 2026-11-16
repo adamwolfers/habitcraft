@@ -1185,6 +1185,7 @@ jobs:
         needs.detect-changes.outputs.acceptance == 'true' ||
         needs.detect-changes.outputs.server == 'true' ||
         needs.detect-changes.outputs.web == 'true' ||
+        needs.detect-changes.outputs.tooling == 'true' ||
         needs.detect-changes.outputs.workflow == 'true'
       )
     defaults:
@@ -1265,6 +1266,16 @@ jobs:
           ACCEPTANCE_BACKEND: go
         run: npx playwright test --project api --project spa --output test-results-go
 
+      # The post-deploy smoke check (scripts/smoke-check.sh, habitcraft-vxln.9.1)
+      # run against server-test, the image a deploy ships, through a proxy
+      # that can break the habits API: it must pass, fail when habits 500, and
+      # delete its throwaway user either way.
+      - name: Test the post-deploy smoke check
+        if: success() || failure()
+        env:
+          SMOKE_TEST_TARGET_URL: http://localhost:3020
+        run: npx playwright test -c playwright.smoke-test.config.ts
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: failure()
@@ -1273,6 +1284,7 @@ jobs:
           path: |
             acceptance/test-results/
             acceptance/test-results-go/
+            acceptance/test-results-smoke/
           retention-days: 7
 
       - name: Show service logs
