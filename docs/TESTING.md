@@ -18,6 +18,7 @@ This document covers the testing infrastructure, conventions, and isolation stra
 | CI Path Filters | plain node + picomatch | `scripts/verify-ci-filters.js` | `ci.yml` path filters select the right jobs |
 | Dependency Advisories | plain node + `npm audit` | `scripts/audit-advisories.js` | Weekly report of advisories new since `scripts/audit-baseline.json`; never gates a push |
 | Beads Wiring | plain POSIX sh | `scripts/beads-doctor.test.sh` | `scripts/beads-doctor.sh` catches each way the beads hooks have broken |
+| Database Backup | bash + docker | `scripts/db-backup.test.sh` | A backup restores into an empty database with the same rows; pruning and failures behave. See [Database Backup Round Trip](#database-backup-round-trip) |
 | Test Collection | plain node + each runner's listing | `scripts/verify-test-collection.js` | Every `*.test.*` / `*.spec.*` file is collected by some runner |
 
 ### CI Path Filter Verification
@@ -159,6 +160,36 @@ makes it. It is also phase 11 of `scripts/test-all.sh`. It needs only `sh`, `git
 and the root `npm ci`, never `bd`, and it must stay that way, because CI has no
 `bd` (habitcraft-308j).
 
+### Database Backup Round Trip
+
+`scripts/db-backup.sh` and `scripts/db-restore.sh` back the database up to
+S3-compatible object storage and restore it (habitcraft-vxln.9.3; the
+procedure is in [DEPLOYMENT.md](DEPLOYMENT.md#database-backups)). A backup
+that has never been restored is not a backup, so the test does the whole trip:
+
+```bash
+scripts/db-backup.test.sh
+```
+
+It seeds a throwaway Postgres with the real migrations and
+`shared/database/test-fixtures.sql`, backs it up to a throwaway RustFS
+container (an S3-compatible store; MinIO no longer publishes a pullable
+image), restores into an empty database, and compares every table's rows and
+the schema as the catalogs describe it. It then checks retention pruning
+(only the newest `BACKUP_KEEP` dumps stay, other objects are untouched) and
+that a rejected upload, a missing bucket, an unreachable store, a failed
+`pg_dump`, and a restore over existing data all exit non-zero without
+changing what was there.
+
+`pg_dump --schema-only` output is not compared, because Postgres deparses
+some `CHECK` constraints differently after a dump: the same constraint,
+written two ways.
+
+It needs only docker and curl, with both images pinned by digest, and takes
+about ten seconds. It runs in CI as the `verify-db-backup` job, gated on
+`db`, `server`, `tooling` and `workflow`, and as phase 12 of
+`scripts/test-all.sh`.
+
 ### Test Collection Check
 
 Test files are named `*.test.*` in every package. Three of the repo's configs
@@ -185,7 +216,7 @@ files that contain tests, so an empty `frontend/e2e/*.test.ts` is reported too.
 it collects are reported as orphans. `mobile/e2e/jest.smoke.config.js` is not
 listed because it narrows by test name, not by file.
 
-Phase 12 of `scripts/test-all.sh`. In CI, each package's unit-test job runs it
+Phase 13 of `scripts/test-all.sh`. In CI, each package's unit-test job runs it
 for that package and `root` after `npm ci`, and the `verify-ci-filters` job
 runs it for `root` alone, so no job installs a package it does not already
 need.
@@ -198,7 +229,7 @@ need.
 > profile, habits and completions, the spec's length limits, and the Node
 > backend's known bugs as expected failures. It is green against the Node
 > backend and the Next.js app, and it is a gate: the `acceptance-tests` CI job
-> and phases 13, 24 and 25 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
+> and phases 14, 25 and 26 of [`scripts/test-all.sh`](#all-tests) (habitcraft-a8dg).
 > The `api` project also runs against the Go server, and passes there too
 > (habitcraft-8ml9, habitcraft-vxln.5). The `spa` project drives the Vite app
 > the Go server serves (habitcraft-vxln.8).
@@ -300,7 +331,7 @@ scripts/test-all.sh --rebuild    # Rebuild containers first
 scripts/test-all.sh --keep-going # Don't stop when a static check fails
 ```
 
-The script runs **25 phases, one per CI step**, so a green local run predicts a
+The script runs **26 phases, one per CI step**, so a green local run predicts a
 green CI run (habitcraft-19a). They are ordered cheapest-first:
 
 | # | Phase | Command | Needs docker? |
@@ -316,29 +347,30 @@ green CI run (habitcraft-19a). They are ordered cheapest-first:
 | 9 | Generated API Artifacts Check | `npm run api:codegen -- --check` | no |
 | 10 | OpenAPI Breaking Changes | `scripts/openapi-breaking.sh` | daemon only |
 | 11 | Beads Wiring Tests | `scripts/beads-doctor.test.sh` | no |
-| 12 | Test Collection Check | `scripts/verify-test-collection.js` | no |
-| 13 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
-| 14 | Acceptance Review Page | `acceptance: npm run review:check && npm run test:review` | no |
-| 15 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet), then `scripts/go-api-check.sh` (apidiff against the last `server/v*` tag) | no |
-| 16 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
-| 17 | Web Unit Tests | `web: npm run test:coverage` | no |
-| 18 | Server Unit Tests | `server: go test -race ./...` | no |
-| 19 | Server Store Tests | `server: go test` of the store, `Migrate` and embedding tests on the test database | yes |
-| 20 | Backend Unit Tests | `backend: npm test` | yes |
-| 21 | Frontend Unit Tests | `frontend: npm test` | yes |
-| 22 | Backend Integration Tests | `backend: npm run test:integration` | yes |
-| 23 | E2E Tests | `frontend: playwright, 3 shards` | yes |
-| 24 | Acceptance Tests | `acceptance: playwright test --project api --project web` | yes |
-| 25 | Acceptance Tests (Go server) | `acceptance: playwright test --project api --project spa` against `server-test` | yes |
+| 12 | Database Backup Round Trip | `scripts/db-backup.test.sh` | daemon only |
+| 13 | Test Collection Check | `scripts/verify-test-collection.js` | no |
+| 14 | Acceptance Typecheck | `acceptance: npm run typecheck` | no |
+| 15 | Acceptance Review Page | `acceptance: npm run review:check && npm run test:review` | no |
+| 16 | Server Lint | `scripts/go-lint.sh` (gofmt, go vet), then `scripts/go-api-check.sh` (apidiff against the last `server/v*` tag) | no |
+| 17 | Mobile Unit Tests | `mobile: npm run test:coverage` | no |
+| 18 | Web Unit Tests | `web: npm run test:coverage` | no |
+| 19 | Server Unit Tests | `server: go test -race ./...` | no |
+| 20 | Server Store Tests | `server: go test` of the store, `Migrate` and embedding tests on the test database | yes |
+| 21 | Backend Unit Tests | `backend: npm test` | yes |
+| 22 | Frontend Unit Tests | `frontend: npm test` | yes |
+| 23 | Backend Integration Tests | `backend: npm run test:integration` | yes |
+| 24 | E2E Tests | `frontend: playwright, 3 shards` | yes |
+| 25 | Acceptance Tests | `acceptance: playwright test --project api --project web` | yes |
+| 26 | Acceptance Tests (Go server) | `acceptance: playwright test --project api --project spa` against `server-test` | yes |
 
 Notes on that table:
 
-- **Phases 1–15 fail fast.** All fifteen always run (so you see every static error
+- **Phases 1–16 fail fast.** All sixteen always run (so you see every static error
   at once), but if any failed the script stops before starting containers and
   marks the remaining phases `⏭️ (not run)`. Lint and typecheck are seconds of work and
   the docker phases are many minutes, so this is the main practical win of the
   ordering. `--keep-going` runs everything regardless.
-- **Phases 8 and 10 need the docker *daemon*, but not the compose stack.**
+- **Phases 8, 10 and 12 need the docker *daemon*, but not the compose stack.**
   `scripts/schema-dump.sh` starts a throwaway postgres of its own, applies
   the migrations with `habitcraft migrate`, dumps the result, and diffs it
   against the committed `server/schema/schema.sql`; the whole phase is about
@@ -347,7 +379,9 @@ Notes on that table:
   reported here rather than after several minutes of lint and typecheck. In CI
   the same check is the `verify-schema-dump` job. See
   [db/README.md](../db/README.md#the-generated-schema-dump-schemasql) for why
-  the dump is generated rather than hand-maintained.
+  the dump is generated rather than hand-maintained. Phase 12,
+  `scripts/db-backup.test.sh`, likewise brings up its own postgres and S3
+  store; see [Database Backup Round Trip](#database-backup-round-trip).
 - **Phases 9 and 10 are the API contract's two halves.** Phase 9 regenerates
   each consumer's `api.generated.ts` and `apiLimits.generated.ts`, the
   backend's CommonJS `apiLimits.generated.js` and the Go server's
@@ -371,13 +405,13 @@ Notes on that table:
   instrumentation cost. Web runs `test:coverage` too, as its CI job does.
 - **The web app's build has no phase of its own.** `server/Dockerfile` builds
   it and embeds it in the Go binary. The script rebuilds `server-test` when it
-  starts the docker services, before phase 19, and stops there if the web app
+  starts the docker services, before phase 20, and stops there if the web app
   does not build. In CI the `web-unit-tests` job runs `npm run build` as its
   last step.
-- **The Go server needs Go installed**, for phases 9, 15, 18 and 19
+- **The Go server needs Go installed**, for phases 9, 16, 19 and 20
   (oapi-codegen runs as a `go tool` pinned in `server/go.mod`). The script
   checks for it up front, alongside each package's `node_modules`.
-- **Phase 19 runs the Go server's store tests against Postgres.** Phase 18
+- **Phase 20 runs the Go server's store tests against Postgres.** Phase 19
   runs the same tests against an in-memory fake; with
   `HABITCRAFT_TEST_DATABASE_URL` set they also run against the real schema, so
   the SQL and the fake are held to one set of rules (habitcraft-vxln.4). They
@@ -385,12 +419,12 @@ Notes on that table:
   tests and the embedding acceptance test (`embed_test.go`), which each work
   in a throwaway Postgres schema. In CI the `server-unit-tests` job
   starts a migrated Postgres of its own and runs both in one `go test`.
-- **Phase 24 runs the acceptance suite against the stack phases 20–23 already
+- **Phase 25 runs the acceptance suite against the stack phases 21–24 already
   use**, with no database reset: the DSL makes a fresh user for every test.
   It needs `acceptance/` installed (`npm ci`) and, once, `npx playwright install
   chromium` there for the `web` project. In CI it is the `acceptance-tests` job,
   which `run-migrations-gcp` waits on, so it gates every deploy.
-- **Phase 25 runs the `api` project again, against the Go server**
+- **Phase 26 runs the `api` project again, against the Go server**
   (`server-test` on :3020, same database and JWT secret, habitcraft-8ml9),
   and the `spa` project, which drives the Vite app that server serves
   (habitcraft-vxln.8). The web project stays on Node, because `frontend-test`

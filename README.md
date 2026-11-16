@@ -141,6 +141,7 @@ See [GETTING_STARTED.md](./GETTING_STARTED.md) for detailed setup instructions.
 - **[GETTING_STARTED.md](./GETTING_STARTED.md)** - Quick start and setup guide
 - **[AUTHENTICATION.md](./AUTHENTICATION.md)** - JWT authentication implementation guide
 - **[GCP Architecture](./docs/GCP_ARCHITECTURE.md)** - Production deployment guide (Cloud Run + Cloud SQL)
+- **[Deployment (VPS)](./docs/DEPLOYMENT.md)** - The Go server's single-VPS deployment, being built in habitcraft-vxln.9; so far its database backups and the restore procedure
 - **[API Specification](./shared/api-spec/openapi.yaml)** - The API contract: enforced against every backend integration response, generates the clients' types and limits, and gated for breaking changes ([how](./shared/api-spec/README.md))
 - **[Database Migrations](./db/README.md)** - the SQL migrations (the source of truth for the schema) and how each environment applies them
 - **[Generated Schema](./server/schema/schema.sql)** - `pg_dump` of those migrations, regenerated and diffed in CI
