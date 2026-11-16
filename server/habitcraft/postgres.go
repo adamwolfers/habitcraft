@@ -131,6 +131,17 @@ func (p pgStore) changePassword(ctx context.Context, userID uuid.UUID, passwordH
 	})
 }
 
+func (p pgStore) replacePasswordHash(ctx context.Context, userID uuid.UUID, current, next string) (bool, error) {
+	tag, err := p.pool.Exec(ctx,
+		`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2 AND password_hash = $3`,
+		next, userID, current,
+	)
+	if err != nil {
+		return false, fmt.Errorf("replacing a password hash: %w", err)
+	}
+	return tag.RowsAffected() == 1, nil
+}
+
 func (p pgStore) updateUser(ctx context.Context, id uuid.UUID, name, email *string) (user, error) {
 	u := user{id: id}
 	err := p.pool.QueryRow(ctx,

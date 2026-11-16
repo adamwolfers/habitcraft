@@ -276,6 +276,7 @@ function jwtAuthMiddleware(req, res, next) {
 8. **Error Handling:** Generic error messages to prevent user enumeration
 9. **HTTPS Only:** Tokens should only be transmitted over HTTPS in production
 10. **Security Event Logging:** All auth events logged (logins, failures, token refresh)
+11. **Passwords Node filtered before hashing:** the Node backend's `sanitizeBody` ran passwords through js-xss and `trim()` before bcrypt. The Go server hashes the password as sent, and falls back to Node's form for a password hashed that way, then re-hashes it as typed at the next login (habitcraft-ti91; see [server/README.md](server/README.md))
 
 ## Frontend Implementation (Next.js)
 

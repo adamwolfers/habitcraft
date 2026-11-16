@@ -19,6 +19,9 @@ type fakeStore struct {
 	completed map[uuid.UUID]completion // by completion id
 	last      time.Time                // the latest tick
 	err       error                    // when set, every method fails with it
+	// when set, replacePasswordHash alone fails with it, so a test can fail
+	// the legacy-password rehash and nothing else
+	replacePasswordHashErr error
 }
 
 type fakeSession struct {
@@ -137,6 +140,24 @@ func (f *fakeStore) changePassword(_ context.Context, userID uuid.UUID, password
 	}
 	f.sessions[next.tokenHash] = &fakeSession{session: next}
 	return nil
+}
+
+func (f *fakeStore) replacePasswordHash(_ context.Context, userID uuid.UUID, current, next string) (bool, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.err != nil {
+		return false, f.err
+	}
+	if f.replacePasswordHashErr != nil {
+		return false, f.replacePasswordHashErr
+	}
+	u, ok := f.users[userID]
+	if !ok || u.passwordHash != current {
+		return false, nil
+	}
+	u.passwordHash = next
+	f.users[userID] = u
+	return true, nil
 }
 
 func (f *fakeStore) updateUser(_ context.Context, id uuid.UUID, name, email *string) (user, error) {

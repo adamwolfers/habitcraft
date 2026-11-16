@@ -59,12 +59,16 @@ func (s *server) DeleteCurrentUser(ctx context.Context, request api.DeleteCurren
 	if err != nil {
 		return nil, err
 	}
-	ok, err := passwordMatches(u.passwordHash, request.Body.Password)
+	ok, legacy, err := checkPassword(u.passwordHash, request.Body.Password)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		return api.DeleteCurrentUser401JSONResponse{Error: "Invalid password"}, nil
+	}
+	if legacy {
+		// No repair: the account is about to go.
+		s.legacyPasswordMatched(r, u.id, "delete_account")
 	}
 
 	err = s.store.deleteUser(ctx, u.id)

@@ -220,6 +220,37 @@ func testUserStore(t *testing.T, open func(*testing.T) store) {
 		}
 	})
 
+	t.Run("a password hash can be replaced without touching the sessions", func(t *testing.T) {
+		st, ctx := open(t), t.Context()
+		alice, session := createTestUser(t, st)
+		bob, _ := createTestUser(t, st)
+
+		replaced, err := st.replacePasswordHash(ctx, alice.id, alice.passwordHash, "new hash")
+		if err != nil || !replaced {
+			t.Fatalf("replaced %v, err %v", replaced, err)
+		}
+
+		if got, _ := st.userByID(ctx, alice.id); got.passwordHash != "new hash" {
+			t.Errorf("stored %q", got.passwordHash)
+		}
+
+		// The password changed after the caller read the hash: writing now
+		// would bring the old password back.
+		replaced, err = st.replacePasswordHash(ctx, alice.id, alice.passwordHash, "stale hash")
+		if err != nil || replaced {
+			t.Errorf("a stale replace: replaced %v, err %v", replaced, err)
+		}
+		if got, _ := st.userByID(ctx, alice.id); got.passwordHash != "new hash" {
+			t.Errorf("a stale replace stored %q", got.passwordHash)
+		}
+		if got, _ := st.userByID(ctx, bob.id); got.passwordHash != bob.passwordHash {
+			t.Errorf("bob's hash became %q", got.passwordHash)
+		}
+		if err := st.rotateSession(ctx, session.tokenHash, newSession(alice.id)); err != nil {
+			t.Errorf("her session was revoked: %v", err)
+		}
+	})
+
 	t.Run("a missing user cannot change or be deleted", func(t *testing.T) {
 		st, ctx := open(t), t.Context()
 		name := "Nobody"
@@ -228,6 +259,9 @@ func testUserStore(t *testing.T, open func(*testing.T) store) {
 		}
 		if err := st.deleteUser(ctx, uuid.New()); !errors.Is(err, errNoSuchUser) {
 			t.Errorf("delete: %v", err)
+		}
+		if replaced, err := st.replacePasswordHash(ctx, uuid.New(), "old", "new"); err != nil || replaced {
+			t.Errorf("replace password hash: replaced %v, err %v", replaced, err)
 		}
 	})
 

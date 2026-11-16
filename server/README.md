@@ -158,8 +158,22 @@ token hashes are interchangeable with the Node backend's.
 - **A password change** revokes every refresh token the user has, the
   caller's included, and hands the caller a fresh pair (habitcraft-4k7v).
 - **Passwords** are bcrypt at cost 10, cut at 72 bytes as Node's bcrypt cuts
-  them. A login for an unknown email still spends one bcrypt comparison, so
-  response time does not reveal who has an account.
+  them. A login for an unknown email still spends the bcrypt comparisons a
+  wrong password would, so response time does not reveal who has an account.
+- **Passwords the Node backend altered still work** (habitcraft-ti91). Node
+  ran passwords through its XSS filter and `trim()` before hashing, so one
+  with `<`, `>` or whitespace at either end was stored as a hash of something
+  else. When a password does not match, `checkPassword` (`passwords.go`)
+  tries the form Node would have hashed, from a port of the filter
+  (`nodetransform.go`), unless that form is the same. Login, change password
+  and delete account all use it. On a match the security log gets a
+  `LEGACY_PASSWORD_MATCH` line with the user id and operation. A login also
+  re-hashes the password as typed. That write failing is logged and does not
+  fail the login. Change password and delete account replace or drop the
+  hash anyway. The port has to match js-xss byte for byte:
+  `testdata/node-password-transform.json`, written by the real library
+  through `scripts/password-transform-fixture.js` while `backend/` exists, is
+  the test. Once those log lines stop, the fallback can be deleted.
 - **Rate limits** are Node's, request for request: register 10 an hour, login
   15, refresh 30, change password 5 and delete account 5 per 15 minutes, each
   per client address and operation (`habitcraft/ratelimit.go`,
@@ -196,7 +210,8 @@ tell the servers apart, except where Node is wrong or unbounded:
 - **Strings are trimmed, not HTML-stripped.** Node passes every body string
   through an XSS filter; Go stores what was sent, trimmed, and leaves escaping
   to whatever renders it, as React does. A blank description or note is
-  stored as none.
+  stored as none. Passwords are neither stripped nor trimmed. See the legacy
+  fallback above for passwords Node hashed after filtering.
 - **An icon over ten characters is a 400.** The column is `varchar(10)` and the
   spec states no limit, so Node answers 500.
 - **An impossible date such as `2026-02-30` is a 400** wherever it is sent.

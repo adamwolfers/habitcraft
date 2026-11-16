@@ -235,6 +235,15 @@ Rules:
   is a host app, outside the package, that migrates a Postgres schema of its
   own, mounts the handler and checks the events real requests produce. It
   still starts the bead, failing, and still speaks in the host's terms.
+- **Not an exception, but a limit: state no public channel can make.** Users
+  whose password the Node backend hashed after its XSS filter
+  (habitcraft-ti91) cannot be created through the Go server's API, and the
+  suite has no back door. So their sign-in is tested at the Go handler level,
+  in `server/habitcraft/legacy_passwords_test.go`, which stores the user as
+  Node left them. The port of Node's filter is checked against
+  `server/habitcraft/testdata/node-password-transform.json`, which the real
+  library wrote. Regenerate it with `node scripts/password-transform-fixture.js`
+  while `backend/` exists. `--check` fails if it is stale.
 
 ## Test Infrastructure
 

@@ -101,6 +101,12 @@ type store interface {
 	// changePassword sets the user's password hash, revokes every session
 	// the user has, and starts next, all at once.
 	changePassword(ctx context.Context, userID uuid.UUID, passwordHash string, next session) error
+	// replacePasswordHash stores next as the user's password hash, but only
+	// while the stored one is still current, and reports whether it did. It
+	// is for a new hash of the same password, so no session ends. A password
+	// changed since current was read, or a user who is gone, is left alone:
+	// writing next then would bring the old password back.
+	replacePasswordHash(ctx context.Context, userID uuid.UUID, current, next string) (bool, error)
 
 	// updateUser sets the user's name and email where they are not nil. It
 	// returns errNoSuchUser, or errEmailTaken when another user has the email.

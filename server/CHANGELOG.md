@@ -13,6 +13,11 @@ section does not list that way.
 
 ## Unreleased
 
+- A password the Node backend altered before hashing (one with `<`, `>` or
+  whitespace at either end) is still accepted. Login re-hashes it as typed,
+  and each match writes a `LEGACY_PASSWORD_MATCH` security event
+  (habitcraft-ti91).
+
 ## v0.1.0
 
 The first version an application can embed (habitcraft-vxln.6).

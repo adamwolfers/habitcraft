@@ -67,13 +67,17 @@ func (s *server) Login(ctx context.Context, request api.LoginRequestObject) (api
 	if err != nil {
 		return nil, err
 	}
-	ok, err := passwordMatches(u.passwordHash, request.Body.Password)
+	ok, legacy, err := checkPassword(u.passwordHash, request.Body.Password)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		s.securityEvent(r, "LOGIN_FAILURE", "email", email, "reason", "invalid_password")
 		return refused, nil
+	}
+	if legacy {
+		s.legacyPasswordMatched(r, u.id, "login")
+		s.repairLegacyHash(ctx, u, request.Body.Password)
 	}
 
 	pair, err := s.startSession(ctx, u.id)
@@ -179,13 +183,17 @@ func (s *server) ChangePassword(ctx context.Context, request api.ChangePasswordR
 	if err != nil {
 		return nil, err
 	}
-	ok, err := passwordMatches(u.passwordHash, body.CurrentPassword)
+	ok, legacy, err := checkPassword(u.passwordHash, body.CurrentPassword)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
 		s.securityEvent(r, "PASSWORD_CHANGE_FAILURE", "userId", u.id, "reason", "invalid_password")
 		return api.ChangePassword401JSONResponse{Error: "Invalid current password"}, nil
+	}
+	if legacy {
+		// No repair: the hash is about to be replaced with the new password's.
+		s.legacyPasswordMatched(r, u.id, "change_password")
 	}
 
 	hash, err := hashPassword(body.NewPassword)
@@ -209,6 +217,30 @@ func (s *server) ChangePassword(ctx context.Context, request api.ChangePasswordR
 		},
 		cookies: s.sessionCookies(pair),
 	}, nil
+}
+
+// legacyPasswordMatched records that a password matched only in the form the
+// Node backend hashed in its place (habitcraft-ti91). When these stop
+// appearing, the fallback can go. The line names the user by id only: never
+// the email, the password in either form, or a hash.
+func (s *server) legacyPasswordMatched(r *http.Request, userID uuid.UUID, operation string) {
+	s.securityEvent(r, "LEGACY_PASSWORD_MATCH", "userId", userID, "operation", operation)
+}
+
+// repairLegacyHash stores a hash of the password as typed, so the next check
+// needs no fallback and the user's password is again exactly what they type
+// (Node's stored form was often shorter). The user has already proved who they
+// are, so a failure here is logged and the sign-in goes ahead; the next one
+// tries again. The write replaces only the hash that was checked: if the
+// password was changed while this request ran, the new one stands.
+func (s *server) repairLegacyHash(ctx context.Context, u user, typed string) {
+	hash, err := hashPassword(typed)
+	if err == nil {
+		_, err = s.store.replacePasswordHash(ctx, u.id, u.passwordHash, hash)
+	}
+	if err != nil {
+		s.logger.ErrorContext(ctx, "could not replace a legacy password hash", "userId", u.id, "err", err)
+	}
 }
 
 // startSession issues a pair for an existing user and stores its refresh token.
